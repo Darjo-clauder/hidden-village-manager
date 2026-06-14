@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Hidden Village Manager</title>
+<link rel="stylesheet" href="./style.css">
+</head><body>
+
+<!-- ══ TITLE SCREEN ══ -->
+<div id="st" class="screen active">
+  <div style="position:absolute;font-size:110px;color:#c9a84c;opacity:.05;font-family:serif;top:10px;letter-spacing:10px;pointer-events:none">忍里</div>
+  <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center">
+    <div class="tm">Hidden Village</div>
+    <div class="tk">忍の里</div>
+    <div class="ts">Shinobi Management Simulation — Multiplayer</div>
+    <button class="bstart" onclick="showSetup()">Begin as Kage ↗</button>
+    <div style="margin-top:12px;font-size:8px;color:#2e2820;letter-spacing:3px">BEASTS · ECONOMY · DIPLOMACY · ONLINE</div>
+  </div>
+</div>
+
+<!-- ══ SETUP SCREEN ══ -->
+<div id="sp" class="screen">
+  <div class="sp-box">
+    <div class="tm" style="margin-bottom:4px">Establish Your Village</div>
+    <div class="ts" style="margin-bottom:28px">Configure before joining the world</div>
+    <div class="sp-field">
+      <label class="sp-label">Village Name</label>
+      <input id="sp-vname" class="sp-input" placeholder="Konohagakure" maxlength="32">
+    </div>
+    <div class="sp-field">
+      <label class="sp-label">Your Name (Kage)</label>
+      <input id="sp-kname" class="sp-input" placeholder="Enter your name" maxlength="24">
+    </div>
+    <div class="sp-field">
+      <label class="sp-label">Village Symbol</label>
+      <div id="sp-icons" class="sp-icons"></div>
+    </div>
+    <button class="bstart" onclick="beginGame()">Connect &amp; Begin ↗</button>
+    <div class="sp-hint">Other Kage on this server will see your village on the world map</div>
+  </div>
+</div>
+
+<!-- ══ GAME SCREEN ══ -->
+<div id="sg" class="screen">
+
+  <!-- SIDEBAR -->
+  <div class="sb">
+    <div class="sbl">
+      <div style="font-size:24px" id="sb-icon">🍃</div>
+      <div class="sbn" id="sb-vname">Your Village</div>
+    </div>
+    <nav style="flex:1;overflow-y:auto;padding:5px 0">
+      <div class="nsec">Operations</div>
+      <button class="nb active" onclick="sp('roster')" id="nv-roster">▸ Roster</button>
+      <button class="nb" onclick="sp('squads')" id="nv-squads">▸ Squads</button>
+      <button class="nb" onclick="sp('missions')" id="nv-missions">▸ Missions</button>
+      <div class="nsec">Village</div>
+      <button class="nb" onclick="sp('upgrades')" id="nv-upgrades">▸ Upgrades</button>
+      <button class="nb" onclick="sp('academy')" id="nv-academy">▸ Academy</button>
+      <button class="nb" onclick="sp('economy')" id="nv-economy">▸ Economy</button>
+      <button class="nb" onclick="sp('village')" id="nv-village">▸ Overview</button>
+      <div class="nsec">World</div>
+      <button class="nb" onclick="sp('beasts')" id="nv-beasts">▸ Tailed Beasts</button>
+      <button class="nb" onclick="sp('kage')" id="nv-kage">▸ Kage Council</button>
+      <button class="nb" onclick="sp('exam')" id="nv-exam">▸ Chunin Exam</button>
+      <button class="nb" onclick="sp('intel')" id="nv-intel">▸ Intel</button>
+      <button class="nb" onclick="sp('log')" id="nv-log">▸ Log</button>
+      <div class="nsec">Multiplayer</div>
+      <button class="nb" onclick="sp('world')" id="nv-world">▸ World Map <span class="nb-badge" id="wp-badge" style="display:none">!</span></button>
+    </nav>
+    <div class="sb-online">
+      <div class="sb-dot" id="sb-dot"></div>
+      <span id="sb-online-txt">Offline</span>
+    </div>
+    <div class="sbst">
+      <div class="sbs"><span class="l">Date</span><span class="v" id="sbdt">Y1M1</span></div>
+      <div class="sbs"><span class="l">Ryo</span><span class="v" id="sbryo">-</span></div>
+      <div class="sbs"><span class="l">Rep</span><span class="v" id="sbrep">-</span></div>
+      <div class="sbs"><span class="l">Force</span><span class="v" id="sbf">-</span></div>
+    </div>
+  </div>
+
+  <!-- MAIN AREA -->
+  <div class="ma">
+    <div class="tb">
+      <div class="ts2"><span id="tryo">0</span>Ryo</div>
+      <div class="ts2"><span id="trep">0</span>Rep</div>
+      <div class="ts2"><span id="tmiss">0</span>Missions</div>
+      <div class="ts2"><span id="tinc">+0</span>Income/mo</div>
+      <div class="ts2"><span id="tdate">Y1 M1</span>Season</div>
+      <button class="ab" onclick="adv()">Advance Month ▸</button>
+    </div>
+    <div class="pc">
+
+      <!-- roster -->
+      <div id="p-roster"><div class="pt">Shinobi Force</div><div id="rl"></div></div>
+
+      <!-- squads -->
+      <div id="p-squads" style="display:none">
+        <div class="pt">Squads</div>
+        <button class="gb" onclick="oCS()" style="margin-bottom:12px">+ Form Squad</button>
+        <div id="sql"></div>
+      </div>
+
+      <!-- missions -->
+      <div id="p-missions" style="display:none">
+        <div class="pt">Missions</div>
+        <div class="rb" id="rdb">
+          <div style="font-size:9px;color:#f66;letter-spacing:2px;font-weight:bold;margin-bottom:3px;text-transform:uppercase">⚠ Incoming Threat</div>
+          <div id="rdd" style="font-size:9px;color:#f99"></div>
+        </div>
+        <div class="tabs">
+          <div class="tab active" onclick="mTab('solo')" id="mt-solo">Solo</div>
+          <div class="tab" onclick="mTab('squad')" id="mt-squad">Squad</div>
+          <div class="tab" onclick="mTab('def')" id="mt-def">Defense</div>
+        </div>
+        <div id="ms-solo"></div>
+        <div id="ms-squad" style="display:none"></div>
+        <div id="ms-def" style="display:none"></div>
+      </div>
+
+      <!-- upgrades -->
+      <div id="p-upgrades" style="display:none"><div class="pt">Village Upgrades</div><div id="upl"></div></div>
+
+      <!-- academy -->
+      <div id="p-academy" style="display:none">
+        <div class="pt">Academy Prospects</div>
+        <div style="font-size:9px;color:#7a7060;margin-bottom:10px">2,000 ryo per recruit.</div>
+        <div id="acl"></div>
+      </div>
+
+      <!-- economy -->
+      <div id="p-economy" style="display:none">
+        <div class="pt">Economy</div>
+        <div class="tabs">
+          <div class="tab active" onclick="eTab('trade')" id="et-trade">Trade Routes</div>
+          <div class="tab" onclick="eTab('contracts')" id="et-contracts">Contracts</div>
+          <div class="tab" onclick="eTab('black')" id="et-black">Black Market</div>
+        </div>
+        <div id="ec-trade"></div>
+        <div id="ec-contracts" style="display:none"></div>
+        <div id="ec-black" style="display:none"></div>
+      </div>
+
+      <!-- village overview -->
+      <div id="p-village" style="display:none"><div class="pt">Village Overview</div><div class="vg" id="vst"></div></div>
+
+      <!-- tailed beasts -->
+      <div id="p-beasts" style="display:none">
+        <div class="pt">Tailed Beasts</div>
+        <div style="font-size:9px;color:#7a7060;margin-bottom:12px">Capture beasts with ANBU missions. Seal them into a Jinchuriki.</div>
+        <div id="bstl"></div>
+      </div>
+
+      <!-- kage council -->
+      <div id="p-kage" style="display:none"><div class="pt">Kage Council</div><div id="kgl"></div></div>
+
+      <!-- chunin exam -->
+      <div id="p-exam" style="display:none"><div class="pt">Chunin Exam</div><div id="exl"></div></div>
+
+      <!-- intel -->
+      <div id="p-intel" style="display:none"><div class="pt">Intel</div><div id="itl"></div></div>
+
+      <!-- log -->
+      <div id="p-log" style="display:none"><div class="pt">Event Log</div><div id="logl"></div></div>
+
+      <!-- world map (multiplayer) -->
+      <div id="p-world" style="display:none">
+        <div class="pt">World Map</div>
+        <div class="wmap-wrap">
+          <canvas id="wmap"></canvas>
+          <div class="wmap-empty" id="wmap-empty">Connecting to world...</div>
+        </div>
+        <div class="pt">Active Villages</div>
+        <div id="wvl"></div>
+      </div>
+
+    </div><!-- /.pc -->
+  </div><!-- /.ma -->
+</div><!-- /#sg -->
+
+<!-- ══ MODALS ══ -->
+
+<div class="ov" id="ov-assign">
+  <div class="mo">
+    <div class="mot" id="ma-t">Assign</div>
+    <div style="font-size:9px;color:#7a7060;margin-bottom:10px" id="ma-d"></div>
+    <div id="ma-l"></div>
+    <div class="mbc"><button class="bc" onclick="cm('assign')">Cancel</button></div>
+  </div>
+</div>
+
+<div class="ov" id="ov-sqassign">
+  <div class="mo">
+    <div class="mot" id="msa-t">Squad Mission</div>
+    <div id="msa-l"></div>
+    <div class="mbc"><button class="bc" onclick="cm('sqassign')">Cancel</button></div>
+  </div>
+</div>
+
+<div class="ov" id="ov-csquad">
+  <div class="mo">
+    <div class="mot">Form Squad</div>
+    <div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:7px">Leader (Jonin+)</div>
+    <div id="cs-l"></div>
+    <div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin:8px 0 6px">Members (pick 2)</div>
+    <div id="cs-m"></div>
+    <div style="margin-top:8px;font-size:9px;color:#7a7060">Name: <input id="sqni" style="background:#111;border:1px solid #2e2a22;color:#e8e0cc;padding:3px 7px;font-family:'Courier New',monospace;font-size:9px;width:160px;margin-left:5px" placeholder="Squad 7"></div>
+    <div class="mbc">
+      <button class="bc" onclick="cm('csquad')">Cancel</button>
+      <button class="gb" onclick="doCS()">Form ▸</button>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="ov-examfight">
+  <div class="mo">
+    <div class="mot">Exam Results</div>
+    <div id="ef-c"></div>
+    <div class="mbc"><button class="bc" onclick="cm('examfight')">Close</button></div>
+  </div>
+</div>
+
+<div class="ov" id="ov-dossier">
+  <div class="mo">
+    <div class="mot" id="dos-t">Dossier</div>
+    <div id="dos-c"></div>
+    <div class="mbc"><button class="bc" onclick="cm('dossier')">Close</button></div>
+  </div>
+</div>
+
+<div class="ov" id="ov-diplomacy">
+  <div class="mo">
+    <div class="mot" id="dip-title">Diplomatic Message</div>
+    <div id="dip-body"></div>
+    <div class="mbc">
+      <button class="bc" onclick="cm('diplomacy')">Dismiss</button>
+      <button class="gb gb-g" id="dip-accept" style="display:none" onclick="dipAccept()">Accept ▸</button>
+      <button class="gb gb-r" id="dip-decline" style="display:none" onclick="dipDecline()">Decline</button>
+    </div>
+  </div>
+</div>
+
+<div class="nf" id="nf"></div>
+<script src="/socket.io/socket.io.js"></script>
+<script type="module" src="./js/main.js"></script>
+</body></html>
