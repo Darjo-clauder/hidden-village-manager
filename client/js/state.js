@@ -32,7 +32,8 @@ export function mS(ri = 0) {
   const m = 1 + ri * 0.28
   Object.keys(base).forEach(k => { base[k] = clamp(Math.round(base[k] * m), 1, 99) })
   const p = pk(PERSONALITIES), sal = Math.round((500 + ri * 400) * (1 + (p.effect.salary || 0)))
-  return { id: Math.random().toString(36).slice(2), fn: pk(FNAMES), ln: pk(LNAMES), clan: clan?.n || null, trait: clan?.t || null, spec: pk(SPECS), age, ri, stats: base, potential: rnd(ri * 20 + 45, 99), status: 'available', injDays: 0, missId: null, squadId: null, salary: sal, months: 0, wins: 0, pers: p, backstory: pk(BACKSTORIES), archetype: pk(ARCHETYPES), scouted: false, jk: null }
+  const origin = Math.random() < 0.05 ? pk(['Sunagakure', 'Kirigakure', 'Iwagakure', 'Kumogakure']) : null
+  return { id: Math.random().toString(36).slice(2), fn: pk(FNAMES), ln: pk(LNAMES), clan: clan?.n || null, trait: clan?.t || null, spec: pk(SPECS), age, ri, stats: base, potential: rnd(ri * 20 + 45, 99), status: 'available', injDays: 0, missId: null, squadId: null, salary: sal, months: 0, wins: 0, pers: p, backstory: pk(BACKSTORIES), archetype: pk(ARCHETYPES), scouted: false, monthsWaiting: 0, rivalId: null, origin, jk: null }
 }
 
 // ── stat helpers ───────────────────────────────────────────────────────────
@@ -107,10 +108,28 @@ export function rfM() {
 }
 
 export function rfP() {
-  const lv = G.upgrades.academy, cnt = rnd(3, 4) + lv * 2
-  G.prospects = Array.from({ length: cnt }, () => {
+  const lv = G.upgrades.academy
+  const maxProspects = rnd(4, 6) + lv * 2
+
+  // Age existing prospects
+  G.prospects.forEach(p => { p.monthsWaiting = (p.monthsWaiting || 0) + 1 })
+
+  // Add new prospects to fill up to the cap
+  const toAdd = Math.max(0, maxProspects - G.prospects.length)
+  for (let i = 0; i < toAdd; i++) {
     const s = mS(lv >= 2 && Math.random() < 0.1 ? 2 : 0)
     if (lv > 0) Object.keys(s.stats).forEach(k => { s.stats[k] = clamp(s.stats[k] + lv * 5, 0, 99) })
-    return s
-  })
+    G.prospects.push(s)
+  }
+
+  // 15% chance to spawn a rival pair among unrivaled prospects
+  if (Math.random() < 0.15) {
+    const unrivaled = G.prospects.filter(p => !p.rivalId)
+    if (unrivaled.length >= 2) {
+      const a = unrivaled[Math.floor(Math.random() * unrivaled.length)]
+      const others = unrivaled.filter(p => p.id !== a.id)
+      const b = others[Math.floor(Math.random() * others.length)]
+      a.rivalId = b.id; b.rivalId = a.id
+    }
+  }
 }

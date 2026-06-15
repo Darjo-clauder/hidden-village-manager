@@ -126,8 +126,17 @@ export function initSocket(name, kageName, icon) {
   socket.on('gift_sent', ({ targetName }) => ntf('Gifts sent to ' + targetName + '.'))
   socket.on('sv_notification', msg => ntf(msg))
 
-  socket.on('world_event', ({ text }) => {
+  socket.on('world_event', ({ text, effect }) => {
     addNewsItem(text)
     aL('[World] ' + text, 'ev')
+    if (effect) {
+      if (effect.ryo) {
+        G.ryo = clamp(G.ryo + effect.ryo, 0, Infinity)
+        aL('World event: ' + (effect.ryo > 0 ? '+' : '') + fmt(effect.ryo) + ' ryo.', effect.ryo > 0 ? 'good' : 'bad')
+      }
+      if (effect.morale) G.morale = clamp((G.morale || 75) + effect.morale, 0, 100)
+      if (effect.reputation) G.reputation = clamp((G.reputation || 10) + effect.reputation, 0, 999)
+      upUI()
+    }
   })
 }

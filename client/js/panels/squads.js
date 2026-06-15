@@ -26,8 +26,10 @@ export function rSq() {
     return `<div class="card">
       <div style="font-size:11px;color:#e8e0cc;font-weight:bold;margin-bottom:3px">
         ${sq.n}
+        ${sq.identity ? `<span style="font-size:8px;color:#c9a84c;margin-left:5px">"${sq.identity.title}"</span>` : ''}
         <span style="font-size:8px;color:#7a7060">Power ${pw}${syn.powerMult > 1 ? ` <span style="color:#8fbc8f">(+${Math.round((syn.powerMult - 1) * 100)}%)</span>` : ''}</span>
       </div>
+      ${sq.identity ? `<div style="font-size:8px;color:#7a7060;margin-bottom:3px;font-style:italic">${sq.identity.desc}</div>` : ''}
       <div style="font-size:8px;color:#7a7060;margin-bottom:5px">Leader: ${leader ? sn(leader) : '-'} (${leader ? RANKS[leader.ri] : '-'})</div>
       <div style="margin-bottom:6px">${mbs.map(s => `<span class="squad-mb">${sn(s)} <span style="color:#c9a84c">${RANKS[s.ri]}</span>${s.jk ? ' 🔮' : ''}</span>`).join('')}</div>
       <div style="margin-bottom:6px">
