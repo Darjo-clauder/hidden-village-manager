@@ -93,3 +93,63 @@ export const WORLD_CHOICE_EVENTS=[
     {l:'Destroy them (+5 rep)',fn:'scroll_destroy'},
   ]},
 ]
+
+// ── Injury system ─────────────────────────────────────────────────────────────
+export const INJURY_TYPES = [
+  { id:'muscle',   n:'Muscle Strain',        minMo:1, maxMo:1, statLoss:false, trauma:false, color:'#fa0',  desc:'Strained muscle tissue. Short rest required.' },
+  { id:'chakra',   n:'Chakra Exhaustion',    minMo:1, maxMo:2, statLoss:false, trauma:false, color:'#87ceeb', desc:'Overloaded chakra pathways. Jutsu impossible until healed.' },
+  { id:'bone',     n:'Bone Fracture',        minMo:2, maxMo:3, statLoss:false, trauma:false, color:'#f99',  desc:'Clean fracture requiring full rest and immobilisation.' },
+  { id:'severe',   n:'Severe Wound',         minMo:3, maxMo:6, statLoss:true,  trauma:false, color:'#f44',  desc:'Life-threatening injuries. Risk of permanent stat loss on return.' },
+  { id:'trauma',   n:'Psychological Trauma', minMo:2, maxMo:6, statLoss:false, trauma:true,  color:'#cc7fb8', desc:'The mind carries wounds the body cannot show.' },
+]
+// Base injury chance by mission rank (even on success)
+export const RANK_INJ_CHANCE = { D:0.02, C:0.05, B:0.10, A:0.18, S:0.28 }
+// Workload added per mission rank (0–100 scale)
+export const RANK_WORKLOAD = { D:5, C:10, B:18, A:28, S:40 }
+// Which injury types can appear per rank
+export const RANK_INJ_POOL = {
+  D: ['muscle'],
+  C: ['muscle','chakra'],
+  B: ['muscle','chakra','bone'],
+  A: ['chakra','bone','severe'],
+  S: ['bone','severe','trauma'],
+}
+export const TRAUMA_TRAITS = ['Withdrawn','Haunted','Vengeful']
+
+// ── Staff system ──────────────────────────────────────────────────────────────
+export const STAFF_ROLES = [
+  { id:'head_sensei', n:'Head Sensei',       max:1, stats:['pedagogy','discipline','ninjutsu','experience'], salBase:8000,  desc:'Oversees academy education. Boosts all prospect stat growth.',      effectDesc:'+1 prospect growth per 5 rating points.' },
+  { id:'team_sensei', n:'Team Sensei',       max:4, stats:['pedagogy','tactics','empathy','ninjutsu'],      salBase:4000,  desc:'Mentors squads. Improves cohesion and mission success rates.',       effectDesc:'+2% squad mission success per team sensei on staff.' },
+  { id:'scout_jonin', n:'Scout Jonin',       max:5, stats:['perception','stealth','endurance','ninjutsu'],  salBase:3500,  desc:'Performs independent scouting of prospects.',                         effectDesc:'Scouting cost −15% per scout jonin (max −60%).' },
+  { id:'head_scout',  n:'Head of Scouting',  max:1, stats:['perception','tactics','intelligence','leadership'], salBase:9000, desc:'Coordinates all scouting ops. Unlocks elite candidates.',        effectDesc:'Unlocks Jonin-rank prospects. −20% scouting cost.' },
+  { id:'medical',     n:'Medical Ninja',     max:3, stats:['medical','chakra','precision','empathy'],       salBase:5000,  desc:'Reduces injury risk and recovery time for all shinobi.',             effectDesc:'Injury risk −3% and −0.5mo duration per medical ninja.' },
+  { id:'strategist',  n:'Strategist',        max:1, stats:['tactics','intelligence','foresight','diplomacy'], salBase:7000, desc:'Advises on mission selection and risk management.',               effectDesc:'All mission success +5%.' },
+  { id:'council',     n:'Council Advisor',   max:1, stats:['diplomacy','charisma','intelligence','experience'], salBase:6000, desc:'Manages village politics and reputation.',                     effectDesc:'Reputation gain +10%. Kage event outcomes improved.' },
+  { id:'treasurer',   n:'Treasurer',         max:1, stats:['accounting','intelligence','foresight','discipline'], salBase:6500, desc:'Manages village finances and trade negotiations.',           effectDesc:'Trade income +3% per 5 rating. Financial crisis recovery faster.' },
+  { id:'anbu_cmdr',   n:'ANBU Commander',    max:1, stats:['tactics','ninjutsu','stealth','leadership'],    salBase:10000, desc:'Commands ANBU and S-rank operations.',                               effectDesc:'S-rank/ANBU mission success +10%. Defection events rarer.' },
+]
+
+// ── Finance system ─────────────────────────────────────────────────────────────
+export const FINANCE_TIERS = [
+  { n:'Thriving',    minNet: 5000,    color:'#c9a84c', morale: 5,  desc:'Treasury overflows. Morale soars, trade flourishes.' },
+  { n:'Stable',      minNet: 0,       color:'#8fbc8f', morale: 0,  desc:'Income meets expenditure. Village operates normally.' },
+  { n:'Strained',    minNet: -5000,   color:'#f0a030', morale:-3,  desc:'Spending outpaces income. Staff grow restless.' },
+  { n:'Crisis',      minNet: -15000,  color:'#f99',    morale:-8,  desc:'Deficit spiraling. Trade routes threatened, staff may leave.' },
+  { n:'Bankruptcy',  minNet: -Infinity, color:'#f66',  morale:-15, desc:'Treasury collapsed. Shinobi deserting. Village on the brink.' },
+]
+export const FINANCIAL_EVENTS = [
+  { id:'daimyo_withdraw', n:'Daimyo Withdrawal',   desc:'The daimyo has withdrawn his monthly stipend without warning.', ryo:-15000, rep:-5,  morale:-3 },
+  { id:'black_market_loss',n:'Black Market Loss',  desc:'A black market intermediary absconded with village funds.',     ryo:-8000,  rep:-3,  morale:-2 },
+  { id:'bonus_trade',     n:'Bonus Trade Season',  desc:'Rare goods flood the market — merchants seek your escorts.',    ryo:12000,  morale:3 },
+  { id:'war_reparations', n:'War Reparations',     desc:'A defeated rival village pays tribute under treaty terms.',     ryo:20000,  rep:10,  morale:5 },
+]
+// Mission commission income (village's cut from client payments)
+export const MISSION_COMMISSION = { D:50, C:150, B:400, A:1000, S:3000 }
+// Building maintenance cost per upgrade level (per building, per level)
+export const BUILDING_MAINTENANCE = { academy:500, hospital:600, wall:300, intel:800, training:400, seal:500 }
+// Daimyo bonus by legend tier
+export const DAIMYO_BONUS = [
+  { at:500, amount:10000, label:'Legendary Village' },
+  { at:250, amount:5000,  label:'War-Renowned Village' },
+  { at:100, amount:2000,  label:'Rising Village' },
+]

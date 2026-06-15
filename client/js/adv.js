@@ -1,11 +1,116 @@
 import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend } from './state.js'
-import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS } from './constants.js'
+import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
 import { syncToServer } from './socket.js'
 import { pickNarrative, pickSquadNarrative, pickRankUpNarrative, DARK_MOMENT_POOL, LAST_WORDS_POOL } from './narratives.js'
 import { sqSynergy, SQUAD_IDENTITIES } from './synergy.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
+
+// ── Injury helpers ─────────────────────────────────────────────────────────────
+function pickInjuryType(mRk) {
+  const pool = RANK_INJ_POOL[mRk] || ['muscle']
+  return INJURY_TYPES.find(t => t.id === pool[Math.floor(Math.random() * pool.length)])
+}
+
+function applyInjury(s, injType, hL) {
+  const medNinjaCount = (G.staff || []).filter(st => st.role === 'medical').length
+  const medReduction = medNinjaCount * 0.5  // each medical ninja -0.5 months
+  let dur = rnd(injType.minMo, injType.maxMo)
+  dur = Math.max(1, Math.round(dur - (s.pers?.effect?.injReduct || 0) - hL - medReduction))
+  s.injDays = dur
+  s.injuryType = injType.id
+  s.status = 'injured'
+  s.missId = null
+  if (injType.id === 'severe' && injType.statLoss && Math.random() < 0.3) {
+    const k = pk(['ninjutsu','taijutsu','speed','chakra'])
+    s.stats[k] = Math.max(5, s.stats[k] - rnd(1, 3))
+    aL(sn(s) + ' suffered permanent stat loss from their severe wound.', 'bad')
+  }
+  if (injType.trauma) {
+    applyTrauma(s)
+  }
+  // Long injury → returning form penalty
+  if (dur >= 3) {
+    s.returningForm = 60
+  }
+}
+
+function applyTrauma(s) {
+  s.traumaCount = (s.traumaCount || 0) + 1
+  s.traumaStatus = pk(TRAUMA_TRAITS)
+  s.traumaMonths = rnd(2, 6)
+  // Stat penalty while traumatised
+  Object.keys(s.stats).forEach(k => { s.stats[k] = Math.max(5, s.stats[k] - 2) })
+  G.morale = clamp(G.morale - 5, 0, 100)
+  aL(sn(s) + ' is suffering from psychological trauma — ' + s.traumaStatus + '.', 'warn')
+  addChronicle('Psychological Trauma', sn(s) + ' developed a ' + s.traumaStatus + ' personality after traumatic events.', 'shinobi')
+}
+
+function rollInjuryOnSuccess(s, m, hL) {
+  let chance = RANK_INJ_CHANCE[m.rk] || 0.02
+  if ((s.age || 0) >= 40) chance += 0.08
+  if ((s.consecutiveMissions || 0) >= 2) chance += 0.10
+  if (G.morale < 40) chance += 0.05
+  const medCount = (G.staff || []).filter(st => st.role === 'medical').length
+  chance = clamp(chance - medCount * 0.03, 0, 0.90)
+  if (s.pers?.effect?.riskMod) chance += s.pers.effect.riskMod
+  if (Math.random() < chance) {
+    const injType = pickInjuryType(m.rk)
+    if (injType) {
+      applyInjury(s, injType, hL)
+      aL(sn(s) + ' sustained a ' + injType.n + ' completing "' + m.n + '".', 'warn')
+    }
+  }
+}
+
+function addWorkload(s, mRk) {
+  s.workload = clamp((s.workload || 0) + (RANK_WORKLOAD[mRk] || 10), 0, 100)
+  s.consecutiveMissions = (s.consecutiveMissions || 0) + 1
+}
+
+// ── Finance helpers ────────────────────────────────────────────────────────────
+function computeDaimyoBonus() {
+  const leg = G.legend || 0
+  for (const tier of DAIMYO_BONUS) {
+    if (leg >= tier.at) return tier.amount
+  }
+  return 0
+}
+
+function computeMaintenance() {
+  let total = 0
+  Object.keys(G.upgrades).forEach(k => {
+    const lv = G.upgrades[k]
+    if (lv > 0) total += (BUILDING_MAINTENANCE[k] || 400) * lv
+  })
+  return total
+}
+
+function computeFinanceTier(net) {
+  for (const tier of FINANCE_TIERS) {
+    if (net >= tier.minNet) return tier
+  }
+  return FINANCE_TIERS[FINANCE_TIERS.length - 1]
+}
+
+export function recordMissionCommission(rank) {
+  if (!G.finances) return
+  if (!G.finances.missionCommissions) G.finances.missionCommissions = { D:0,C:0,B:0,A:0,S:0 }
+  G.finances.missionCommissions[rank] = (G.finances.missionCommissions[rank] || 0) + 1
+  const commission = MISSION_COMMISSION[rank] || 0
+  G.ryo += commission
+}
+
+export function recordScoutCost(amount) {
+  if (!G.finances) return
+  G.finances.scoutCostThisMonth = (G.finances.scoutCostThisMonth || 0) + amount
+}
+
+export function recordExamFee(amount) {
+  if (!G.finances) return
+  G.finances.examFees = (G.finances.examFees || 0) + amount
+}
 
 // ── Jutsu unlock check ─────────────────────────────────────────────────────
 function checkJutsu(s) {
@@ -84,10 +189,33 @@ export function resolveChoiceEvent(fnKey) {
   upUI()
 }
 
+// Compute staff-derived modifiers (called from adv and panels)
+export function staffBonus() {
+  const staff = G.staff || []
+  const strategists = staff.filter(s => s.role === 'strategist').length
+  const teamSenseis = staff.filter(s => s.role === 'team_sensei').length
+  const anbuCmdr = staff.find(s => s.role === 'anbu_cmdr')
+  const treasurer = staff.find(s => s.role === 'treasurer')
+  const council = staff.find(s => s.role === 'council')
+  const headSensei = staff.find(s => s.role === 'head_sensei')
+  const headScout = staff.find(s => s.role === 'head_scout')
+  const scoutJonins = staff.filter(s => s.role === 'scout_jonin').length
+  return {
+    missionSuccessBonus: strategists > 0 ? 0.05 : 0,
+    squadMissionBonus: teamSenseis * 0.02,
+    anbuMissionBonus: anbuCmdr ? 0.10 : 0,
+    tradeIncomeMultiplier: treasurer ? 1 + (Math.floor(treasurer.rating / 5) * 0.03) : 1,
+    repGainMultiplier: council ? 1.10 : 1,
+    prospectGrowthBonus: headSensei ? Math.floor(headSensei.rating / 5) : 0,
+    scoutCostReduction: Math.min(0.60, scoutJonins * 0.15 + (headScout ? 0.20 : 0)),
+  }
+}
+
 export function adv() {
   const tgM = G.upgrades.training === 1 ? 2 : G.upgrades.training === 2 ? 3 : 1
   const iB = G.upgrades.intel === 1 ? 0.05 : G.upgrades.intel === 2 ? 0.10 : 0
   const hL = G.upgrades.hospital
+  const sb = staffBonus()
   const season = currentSeason()
   const monthDef = MONTHS[G.month - 1]
 
@@ -134,12 +262,48 @@ export function adv() {
       }
     }
 
+    // Ensure new fields on existing shinobi
+    if (s.workload === undefined) s.workload = 0
+    if (s.consecutiveMissions === undefined) s.consecutiveMissions = 0
+    if (s.traumaStatus === undefined) s.traumaStatus = null
+    if (s.traumaCount === undefined) s.traumaCount = 0
+    if (s.returningForm === undefined) s.returningForm = 100
+    if (s.injuryType === undefined) s.injuryType = null
+
     if (s.status === 'injured') {
       s.injDays = Math.max(0, s.injDays - 1)
-      if (s.injDays === 0) { s.status = 'available'; aL(sn(s) + ' recovered.', 'good') }
+      if (s.injDays === 0) {
+        s.status = 'available'
+        s.injuryType = null
+        aL(sn(s) + ' recovered from injury.', 'good')
+      }
     }
     if (s.status === 'available') {
-      // Stat growth — sensei bonus applies to prospects but we handle that in prospect section
+      // Workload recovery
+      s.workload = Math.max(0, s.workload - 10)
+      s.consecutiveMissions = 0  // reset on rest month
+
+      // Trauma tick-down
+      if (s.traumaStatus && s.traumaMonths !== undefined) {
+        s.traumaMonths = Math.max(0, s.traumaMonths - 1)
+        if (s.traumaMonths === 0) {
+          aL(sn(s) + ' has found peace — their ' + s.traumaStatus + ' trauma has faded.', 'good')
+          s.traumaStatus = null
+        } else if (s.traumaCount >= 2 && Math.random() < 0.12) {
+          // Defection risk after 2 traumas
+          aL('⚠ ' + sn(s) + ' has abandoned the village — trauma and loss drove them to defect.', 'bad')
+          addChronicle('Defection', sn(s) + ' defected after suffering ' + s.traumaCount + ' psychological traumas.', 'shinobi')
+          s.status = 'retired'
+          return
+        }
+      }
+
+      // Returning form — builds back over 2–3 missions
+      if ((s.returningForm || 100) < 100) {
+        s.returningForm = Math.min(100, s.returningForm + 20)
+      }
+
+      // Stat growth
       if (Math.random() < 0.25 * tgM) {
         const k = pk(['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed'])
         const kG = k === 'intelligence' && s.pers.n === 'Bookworm' ? 2 : 1
@@ -252,16 +416,21 @@ export function adv() {
       // Bond bonus
       const bondBonus = _squadBondBonus(sq)
       const pw = Math.round(rawPw * syn.powerMult)
-      const sc = clamp(1 - m.risk + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus, 0.1, 0.97)
+      const anbuBon = (m.rk === 'S' || m.rk === 'A') ? sb.anbuMissionBonus : 0
+      const sc = clamp(1 - m.risk + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon, 0.1, 0.97)
 
       if (Math.random() < sc) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3, 0, 100)
         const prevCohesion = sq.cohesion ?? 0
         sq.cohesion = Math.min(100, prevCohesion + rnd(3, 7))
         sq.wins++
+        recordMissionCommission(m.rk)
         sq.members.forEach(id => {
           const s = G.shinobi.find(x => x.id === id); if (!s) return
-          s.status = 'available'; s.missId = null; s.wins++; s.streak = (s.streak || 0) + 1
+          addWorkload(s, m.rk)
+          s.missId = null; s.wins++; s.streak = (s.streak || 0) + 1
+          s.status = 'available'
+          rollInjuryOnSuccess(s, m, hL)  // may flip back to 'injured'
           if (m.rk === 'B' || m.rk === 'C') s.winsB = (s.winsB || 0) + 1
           if (m.rk === 'S') s.winsS = (s.winsS || 0) + 1
           checkJutsu(s)
@@ -286,9 +455,11 @@ export function adv() {
         const hasPr = sq.members.some(id => G.shinobi.find(s => s.id === id)?.pers.n === 'Protective')
         const kR = hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08
         let hadKIA = false
+        const survivorIds = []
         sq.members.forEach(id => {
           const s = G.shinobi.find(x => x.id === id); if (!s) return
-          s.streak = 0 // reset streak on failure
+          s.streak = 0
+          addWorkload(s, m.rk)
           if (!hasPr && Math.random() < kR) {
             const lastWords = pk(LAST_WORDS_POOL)
             aL(sn(s) + ' KIA on "' + m.n + '". ' + lastWords, 'bad')
@@ -298,9 +469,18 @@ export function adv() {
             G.shinobi = G.shinobi.filter(x => x.id !== s.id)
             hadKIA = true; sq.kills++
           } else {
-            s.injDays = Math.max(1, rnd(1, 3) - hL); s.status = 'injured'; s.missId = null
+            const injType = pickInjuryType(m.rk)
+            if (injType) applyInjury(s, injType, hL)
+            survivorIds.push(s.id)
           }
         })
+        // Survivors who witnessed KIA may develop trauma
+        if (hadKIA) {
+          survivorIds.forEach(id => {
+            const survivor = G.shinobi.find(x => x.id === id)
+            if (survivor && Math.random() < 0.5) applyTrauma(survivor)
+          })
+        }
         sq.cohesion = Math.max(0, (sq.cohesion ?? 0) + (hadKIA ? -15 : -4))
         sq.losses++
         aL('"' + m.n + '" squad mission failed. ' + pickSquadNarrative(m.rk, 'failure', sq.n), 'bad')
@@ -309,18 +489,24 @@ export function adv() {
     } else {
       const s = G.shinobi.find(x => x.id === am.assignedTo); if (!s) return
       const pw = sPow(s), rM = s.pers.effect.riskMod || 0, sM = pw < m.mp ? (s.pers.effect.sucMod || 0) : 0, sB = s.pers.effect.soloBonus || 0
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB, 0.08, 0.97)
+      const soloFormMod = ((s.returningForm || 100) < 100) ? ((s.returningForm - 100) / 500) : 0
+      const soloAnbuBon = (m.rk === 'S' || m.rk === 'A') ? sb.anbuMissionBonus : 0
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod, 0.08, 0.97)
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
+      addWorkload(s, m.rk)
       if (Math.random() < sc) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep + rB, 0, 999); G.morale = clamp(G.morale + 2, 0, 100)
-        s.status = 'available'; s.missId = null; s.wins++; s.streak = (s.streak || 0) + 1
+        recordMissionCommission(m.rk)
+        s.missId = null; s.wins++; s.streak = (s.streak || 0) + 1
+        s.status = 'available'
         if (m.rk === 'B' || m.rk === 'C') s.winsB = (s.winsB || 0) + 1
         if (m.rk === 'S') { s.winsS = (s.winsS || 0) + 1 }
         checkJutsu(s)
         aL(sn(s) + ' completed "' + m.n + '" — +' + fmt(m.ryo) + ' ryo. ' + pickNarrative(m.rk, 'success', sn(s), s.pers.n, { wins: s.wins, streak: s.streak, season }), 'good')
         addLegend(m.rk === 'S' ? 12 : m.rk === 'A' ? 6 : m.rk === 'B' ? 2 : 1)
         if (m.rk === 'S') addChronicle('S-Rank Completed', sn(s) + ' completed the S-rank mission "' + m.n + '".', 'legend')
+        rollInjuryOnSuccess(s, m, hL)
       } else {
         s.streak = 0
         const kR = hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08
@@ -332,13 +518,19 @@ export function adv() {
           G.shinobi = G.shinobi.filter(x => x.id !== s.id)
           G.reputation = clamp(G.reputation - 5, 0, 999)
         } else {
-          // Failed S-rank triggers a dark moment
           if (m.rk === 'S' && !s.darkMoment) {
             s.darkMoment = pk(DARK_MOMENT_POOL)
             aL(sn(s) + ' failed the S-rank and carries something new. "' + s.darkMoment + '"', 'warn')
           }
-          s.injDays = Math.max(1, rnd(1, 3) - hL - (s.pers.effect.injReduct || 0)); s.status = 'injured'; s.missId = null
-          aL('"' + m.n + '" failed — ' + sn(s) + ' injured ' + s.injDays + 'm. ' + pickNarrative(m.rk, 'failure', sn(s), s.pers.n, { wins: s.wins, streak: s.streak, season }), 'bad')
+          const injType = pickInjuryType(m.rk)
+          if (injType) {
+            applyInjury(s, injType, hL)
+            aL('"' + m.n + '" failed — ' + sn(s) + ' has a ' + injType.n + ' (' + s.injDays + 'mo). ' + pickNarrative(m.rk, 'failure', sn(s), s.pers.n, { wins: s.wins, streak: s.streak, season }), 'bad')
+          }
+          // Re-injury risk for those returning from long absence
+          if ((s.returningForm || 100) < 80 && Math.random() < 0.20) {
+            aL(sn(s) + ' re-injured themselves — too soon to return to active duty.', 'warn')
+          }
         }
         G.morale = clamp(G.morale - 3, 0, 100)
       }
@@ -369,12 +561,97 @@ export function adv() {
     }
   })
 
-  // ── Economy ──────────────────────────────────────────────────────────────
-  const trI = G.tradeRoutes.filter(r => r.active).reduce((a, r) => a + r.income, 0) + G.contracts.filter(c => c.active).reduce((a, c) => a + c.income, 0)
+  // ── Staff tick ────────────────────────────────────────────────────────────
+  if (!G.staff) G.staff = [];
+  (G.staff || []).forEach(st => {
+    st.monthsServed = (st.monthsServed || 0) + 1
+    // Development — +1 rating over time
+    if (st.monthsServed > 0 && st.monthsServed % 6 === 0 && Math.random() < 0.30 && st.rating < 20) {
+      st.rating++
+      const role = (G._STAFF_ROLES_REF || []).find(r => r.id === st.role)
+      if (role) {
+        const k = pk(role.stats)
+        st.stats[k] = clamp(st.stats[k] + 1, 1, 20)
+      }
+      aL(st.fn + ' ' + st.ln + ' improved to rating ' + st.rating + '.', 'good')
+    }
+    // Retirement after 60+ months with institutional bonus
+    if (st.monthsServed >= 60 && Math.random() < 0.05) {
+      aL(st.fn + ' ' + st.ln + ' retired after ' + st.monthsServed + ' months. They leave behind institutional knowledge.', 'neutral')
+      st.institutional = Math.floor(st.rating / 4)
+      G.staff = G.staff.filter(x => x.id !== st.id)
+    }
+  })
+
+  // ── Economy & Finance snapshot ────────────────────────────────────────────
+  const trI = Math.round(G.tradeRoutes.filter(r => r.active).reduce((a, r) => a + r.income, 0) * sb.tradeIncomeMultiplier)
+  const coI = Math.round(G.contracts.filter(c => c.active).reduce((a, c) => a + c.income, 0) * sb.tradeIncomeMultiplier)
   const jkI = G.beasts.filter(b => b.sealed && b.n === 'Matatabi' && b.jk).length * 3000
-  G.ryo += trI + jkI
-  const sal = G.shinobi.reduce((a, s) => a + s.salary, 0); G.ryo -= sal
-  if (G.ryo < 0) { aL('Treasury empty! Morale suffers.', 'bad'); G.morale = clamp(G.morale - 8, 0, 100) }
+  const daimyoB = computeDaimyoBonus()
+  const maintenance = computeMaintenance()
+  const shinobiSal = G.shinobi.reduce((a, s) => a + s.salary, 0)
+  const staffSal = (G.staff || []).reduce((a, st) => a + st.salary, 0)
+  const commI = Object.entries(G.finances?.missionCommissions || {}).reduce((a,[,v]) => a + v * 0, 0) // commissions already applied to G.ryo
+  const examFeeAmt = G.finances?.examFees || 0
+  const loanFeeAmt = G.finances?.loanFees || 0
+
+  const totalIncome = trI + coI + jkI + daimyoB + examFeeAmt + loanFeeAmt
+  const totalExpend = shinobiSal + staffSal + maintenance
+  const monthlyNet = totalIncome - totalExpend
+
+  // Apply economy flows
+  G.ryo += trI + coI + jkI + daimyoB + examFeeAmt + loanFeeAmt
+  G.ryo -= shinobiSal + staffSal + maintenance
+
+  // Record finance snapshot
+  if (!G.finances) G.finances = { history:[], deficitMonths:0, healthTier:'Stable', lastMonthNet:0, missionCommissions:{D:0,C:0,B:0,A:0,S:0}, examFees:0, loanFees:0, scoutCostThisMonth:0 }
+  const commByRank = G.finances.missionCommissions || {D:0,C:0,B:0,A:0,S:0}
+  const commTotal = Object.entries(commByRank).reduce((a,[rk,cnt]) => a + cnt * (MISSION_COMMISSION[rk]||0), 0)
+  const snap = {
+    year: G.year, month: G.month,
+    income: { tradeRoutes:trI, contracts:coI, jinchuriki:jkI, daimyoBonus:daimyoB, missionCommissions:commTotal, examFees:examFeeAmt, loanFees:loanFeeAmt },
+    expenditure: { shinobiWages:shinobiSal, staffWages:staffSal, maintenance, scoutCost:G.finances.scoutCostThisMonth||0 },
+    totalIncome, totalExpend, net:monthlyNet,
+    missionBreakdown: { ...commByRank },
+    shinobiByRank: {
+      Genin: G.shinobi.filter(s=>s.ri===0).length,
+      Chunin: G.shinobi.filter(s=>s.ri===1).length,
+      Jonin: G.shinobi.filter(s=>s.ri===2).length,
+      ANBU: G.shinobi.filter(s=>s.ri===3).length,
+      'S-Rank': G.shinobi.filter(s=>s.ri===4).length,
+    }
+  }
+  G.finances.history.push(snap)
+  if (G.finances.history.length > 12) G.finances.history.shift()
+  G.finances.lastMonthNet = monthlyNet
+
+  // Determine health tier
+  const tier = computeFinanceTier(monthlyNet)
+  G.finances.healthTier = tier.n
+  if (tier.morale !== 0) G.morale = clamp(G.morale + tier.morale, 0, 100)
+
+  // Deficit tracking & debt spiral
+  if (monthlyNet < 0) {
+    G.finances.deficitMonths = (G.finances.deficitMonths || 0) + 1
+    if (G.finances.deficitMonths >= 3 && Math.random() < 0.25) {
+      const ev = pk(FINANCIAL_EVENTS)
+      G.ryo = Math.max(0, G.ryo + ev.ryo)
+      if (ev.rep) G.reputation = clamp(G.reputation + ev.rep, 0, 999)
+      if (ev.morale) G.morale = clamp(G.morale + ev.morale, 0, 100)
+      aL('⚠ Financial Crisis: "' + ev.n + '" — ' + ev.desc, 'bad')
+      addChronicle('Financial Crisis', ev.n + ': ' + ev.desc, 'event')
+    }
+  } else {
+    G.finances.deficitMonths = 0
+  }
+
+  // Reset monthly accumulators
+  G.finances.missionCommissions = { D:0, C:0, B:0, A:0, S:0 }
+  G.finances.examFees = 0
+  G.finances.loanFees = 0
+  G.finances.scoutCostThisMonth = 0
+
+  if (G.ryo < 0) { aL('Treasury empty! Morale suffers.', 'bad'); G.morale = clamp(G.morale - 8, 0, 100); G.ryo = 0 }
 
   // ── Diplomacy drift ──────────────────────────────────────────────────────
   G.villages.forEach(v => {

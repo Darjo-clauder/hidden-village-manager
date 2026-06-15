@@ -58,6 +58,8 @@
       <button class="nb" onclick="sp('upgrades')" id="nv-upgrades">▸ Upgrades</button>
       <button class="nb" onclick="sp('academy')" id="nv-academy">▸ Academy</button>
       <button class="nb" onclick="sp('economy')" id="nv-economy">▸ Economy</button>
+      <button class="nb" onclick="sp('finances')" id="nv-finances">▸ Finances</button>
+      <button class="nb" onclick="sp('staff')" id="nv-staff">▸ Staff</button>
       <button class="nb" onclick="sp('village')" id="nv-village">▸ Overview</button>
       <div class="nsec">World</div>
       <button class="nb" onclick="sp('beasts')" id="nv-beasts">▸ Tailed Beasts</button>
@@ -178,6 +180,20 @@
       <!-- memorial wall -->
       <div id="p-memorial" style="display:none"><div class="pt">Memorial Wall</div><div style="font-size:9px;color:#7a7060;margin-bottom:10px">Those who gave their lives in service of the village.</div><div id="meml"></div></div>
 
+      <!-- finances -->
+      <div id="p-finances" style="display:none">
+        <div class="pt">Village Finances</div>
+        <div style="font-size:9px;color:#7a7060;margin-bottom:12px">Monthly income vs expenditure breakdown. Advance month to update.</div>
+        <div id="fil"></div>
+      </div>
+
+      <!-- staff -->
+      <div id="p-staff" style="display:none">
+        <div class="pt">Staff Management</div>
+        <div style="font-size:9px;color:#7a7060;margin-bottom:12px">Staff operate separately from your shinobi force and provide passive bonuses. Salaries are deducted monthly.</div>
+        <div id="stfl"></div>
+      </div>
+
       <!-- world map (multiplayer) -->
       <div id="p-world" style="display:none">
         <div class="pt">World Map</div>
@@ -293,6 +309,24 @@
       <button class="gb gb-g" id="dip-accept" style="display:none" onclick="dipAccept()">Accept ▸</button>
       <button class="gb gb-r" id="dip-decline" style="display:none" onclick="dipDecline()">Decline</button>
     </div>
+  </div>
+</div>
+
+<div class="ov" id="ov-staffhire">
+  <div class="mo">
+    <div class="mot" id="sh-title">Hire Staff</div>
+    <div style="font-size:9px;color:#7a7060;margin-bottom:10px" id="sh-desc"></div>
+    <div id="sh-candidates"></div>
+    <div class="mbc"><button class="bc" onclick="cm('staffhire')">Cancel</button></div>
+  </div>
+</div>
+
+<div class="ov" id="ov-retiretostaff">
+  <div class="mo">
+    <div class="mot" id="rts-title">Retire to Staff</div>
+    <div style="font-size:9px;color:#7a7060;margin-bottom:10px">Select a staff role for this shinobi. Their career stats will determine their initial rating.</div>
+    <div id="rts-roles"></div>
+    <div class="mbc"><button class="bc" onclick="cm('retiretostaff')">Cancel</button></div>
   </div>
 </div>
 

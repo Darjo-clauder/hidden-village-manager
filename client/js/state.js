@@ -1,6 +1,6 @@
 import {
   CLANS, RANKS, FNAMES, LNAMES, SPECS, PERSONALITIES, BACKSTORIES, ARCHETYPES,
-  TAILED_BEASTS, VILLAGES_DEF, MISS_POOL, TRADE_ROUTES, CONTRACTS,
+  TAILED_BEASTS, VILLAGES_DEF, MISS_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
 } from './constants.js'
 
 // ── utilities ──────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ export function mS(ri = 0) {
   Object.keys(base).forEach(k => { base[k] = clamp(Math.round(base[k] * m), 1, 99) })
   const p = pk(PERSONALITIES), sal = Math.round((500 + ri * 400) * (1 + (p.effect.salary || 0)))
   const origin = Math.random() < 0.05 ? pk(['Sunagakure', 'Kirigakure', 'Iwagakure', 'Kumogakure']) : null
-  return { id: Math.random().toString(36).slice(2), fn: pk(FNAMES), ln: pk(LNAMES), clan: clan?.n || null, trait: clan?.t || null, spec: pk(SPECS), age, ri, stats: base, potential: rnd(ri * 20 + 45, 99), status: 'available', injDays: 0, missId: null, squadId: null, salary: sal, months: 0, wins: 0, winsB: 0, winsS: 0, streak: 0, pers: p, backstory: pk(BACKSTORIES), archetype: pk(ARCHETYPES), scouted: false, monthsWaiting: 0, rivalId: null, origin, jk: null, darkMoment: null, jutsu: [], bonds: [], prodigy: false, familyId: null, mentor: null }
+  return { id: Math.random().toString(36).slice(2), fn: pk(FNAMES), ln: pk(LNAMES), clan: clan?.n || null, trait: clan?.t || null, spec: pk(SPECS), age, ri, stats: base, potential: rnd(ri * 20 + 45, 99), status: 'available', injDays: 0, injuryType: null, missId: null, squadId: null, salary: sal, months: 0, wins: 0, winsB: 0, winsS: 0, streak: 0, pers: p, backstory: pk(BACKSTORIES), archetype: pk(ARCHETYPES), scouted: false, monthsWaiting: 0, rivalId: null, origin, jk: null, darkMoment: null, jutsu: [], bonds: [], prodigy: false, familyId: null, mentor: null, workload: 0, consecutiveMissions: 0, traumaStatus: null, traumaCount: 0, returningForm: 100 }
 }
 
 // ── stat helpers ───────────────────────────────────────────────────────────
@@ -92,11 +92,49 @@ export function initState() {
     tradeRoutes: JSON.parse(JSON.stringify(TRADE_ROUTES)),
     contracts: JSON.parse(JSON.stringify(CONTRACTS)),
     keQ: [...KAGE_EVENTS].sort(() => Math.random() - 0.5), keCD: 0,
-    // new systems
     memorial: [], chronicles: [], legend: 0, worldFlags: {}, pendingChoiceEvent: null,
+    // Finance system
+    staff: [],
+    finances: {
+      history: [],        // last 12 monthly snapshots
+      deficitMonths: 0,
+      healthTier: 'Stable',
+      lastMonthNet: 0,
+      // accumulators reset each month in adv()
+      missionCommissions: { D:0, C:0, B:0, A:0, S:0 },
+      examFees: 0,
+      loanFees: 0,
+      scoutCostThisMonth: 0,
+    },
   });
   [2, 2, 1, 1, 1, 0, 0, 0].forEach(r => G.shinobi.push(mS(r)))
   rfM(); rfP()
+}
+
+// ── Staff constructor ──────────────────────────────────────────────────────────
+export function mStaff(roleId, ratingOverride) {
+  const role = STAFF_ROLES.find(r => r.id === roleId)
+  if (!role) return null
+  const stats = {}
+  role.stats.forEach(k => { stats[k] = ratingOverride ? clamp(ratingOverride + rnd(-2, 2), 1, 20) : rnd(5, 15) })
+  const rating = Math.round(Object.values(stats).reduce((a, b) => a + b, 0) / role.stats.length)
+  const salary = Math.round(role.salBase * (0.7 + rating * 0.04))
+  return {
+    id: Math.random().toString(36).slice(2),
+    fn: pk(FNAMES), ln: pk(LNAMES),
+    role: roleId,
+    stats,
+    rating,
+    salary,
+    monthsServed: 0,
+    institutional: 0,
+    fromShinobi: null,
+  }
+}
+
+// Generate staff candidates for hiring modal
+export function genStaffCandidates(roleId, count = 3) {
+  return Array.from({ length: count }, () => mStaff(roleId))
 }
 
 export function addChronicle(title, body, type = 'event') {
