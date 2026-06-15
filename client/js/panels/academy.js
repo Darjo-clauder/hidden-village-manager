@@ -32,13 +32,17 @@ export function rAc() {
     const patienceColor = patience > 60 ? '#8fbc8f' : patience > 30 ? '#fa0' : '#f66'
     const patienceLabel = patience > 60 ? 'Patient' : patience > 30 ? 'Restless' : 'Leaving soon'
 
-    return `<div class="card" style="${waited >= 6 ? 'border-color:#f66' : ''}">
+    const currentSensei = p.mentor ? G.shinobi.find(s => s.id === p.mentor) : null
+    const familySib = p.familyId ? G.prospects.filter(x => x.id !== p.id && x.familyId === p.familyId) : []
+    return `<div class="card" style="${waited >= 6 ? 'border-color:#f66' : p.prodigy ? 'border-color:#c9a84c;box-shadow:0 0 8px rgba(201,168,76,0.2)' : ''}">
       <div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:7px">
         <div style="flex:1">
-          <div style="font-size:11px;color:#e8e0cc;font-weight:bold">${sn(p)}</div>
+          <div style="font-size:11px;color:${p.prodigy ? '#c9a84c' : '#e8e0cc'};font-weight:bold">${sn(p)}${p.prodigy ? ' <span style="font-size:8px;color:#c9a84c">✦ PRODIGY</span>' : ''}</div>
           <div style="font-size:8px;color:#7a7060">${p.clan ? p.clan + ' · ' + p.trait : p.spec} · Age ${p.age}${p.origin ? ' · <span style="color:#cc7fb8">from ' + p.origin + '</span>' : ''}</div>
           ${p.archetype ? `<div style="font-size:8px;color:#cc7fb8;margin-top:2px;letter-spacing:1px">${p.archetype.n}</div>` : ''}
           ${rival ? `<div style="font-size:8px;color:#f66;margin-top:2px">⚔ Rivals with ${sn(rival)}</div>` : ''}
+          ${familySib.length ? `<div style="font-size:8px;color:#87ceeb;margin-top:2px">👪 ${p.ln} family — with ${familySib.map(x => x.fn).join(', ')}</div>` : ''}
+          ${currentSensei ? `<div style="font-size:8px;color:#c9a84c;margin-top:2px">Sensei: ${sn(currentSensei)}</div>` : ''}
         </div>
         <span class="rk ${RKC[p.ri]}">${RANKS[p.ri]}</span>
       </div>
@@ -70,6 +74,7 @@ export function rAc() {
             ? `<div style="font-size:9px;color:#8fbc8f;align-self:center">✓ Scouted</div>`
             : `<button class="gb" onclick="oScout('${p.id}')" ${G.ryo >= 3000 ? '' : 'disabled'}>Scout — 3,000 ryo ►</button>`
         }
+        ${!p.mentor ? `<button class="gb" onclick="oSensei('${p.id}')">Assign Sensei</button>` : ''}
       </div>
     </div>`
   }).join('') || '<div style="color:#7a7060;font-size:10px">No prospects. Advance month.</div>'
@@ -117,6 +122,35 @@ export function oScout(prospectId) {
     </div>`
   ).join('')
   document.getElementById('ov-scout').classList.add('open')
+}
+
+export function oSensei(prospectId) {
+  const p = G.prospects.find(x => x.id === prospectId); if (!p) return
+  const available = G.shinobi.filter(s => s.ri >= 2 && s.status === 'available' && !G.prospects.some(pr => pr.mentor === s.id))
+  if (!available.length) { ntf('No available Jonin+ free to mentor!'); return }
+  ui.scoutTarget = prospectId
+  document.getElementById('sensei-prospect-name').textContent = sn(p)
+  document.getElementById('sensei-list').innerHTML = available.map(s =>
+    `<div class="pi" onclick="doSensei('${s.id}')">
+      <div>
+        <div style="font-size:10px;color:#e8e0cc">${sn(s)}</div>
+        <div style="font-size:8px;color:#7a7060">${RANKS[s.ri]} · ${s.pers.n} · Pwr ${sPow(s)}</div>
+      </div>
+      <span style="font-size:9px;color:#c9a84c">Assign ►</span>
+    </div>`
+  ).join('')
+  document.getElementById('ov-sensei').classList.add('open')
+}
+
+export function doSensei(shinobiId) {
+  const prospectId = ui.scoutTarget
+  const p = G.prospects.find(x => x.id === prospectId)
+  const s = G.shinobi.find(x => x.id === shinobiId)
+  if (!p || !s) { cm('sensei'); return }
+  p.mentor = shinobiId
+  aL(sn(s) + ' assigned as sensei to ' + sn(p) + '. Training accelerated.', 'good')
+  ntf(sn(s) + ' mentoring ' + p.fn + '!')
+  cm('sensei'); upUI()
 }
 
 export function doScout(shinobiId) {

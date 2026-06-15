@@ -1,5 +1,5 @@
 import { G, WS, ui, fmt } from './state.js'
-import { SEASONS } from './constants.js'
+import { SEASONS, MONTHS } from './constants.js'
 import { schEx } from './state.js'
 
 // Panel renderers — circular dep with panels is safe (all uses are in function bodies)
@@ -15,6 +15,8 @@ import { rKa } from './panels/kage.js'
 import { rEx } from './panels/exam.js'
 import { rIn } from './panels/intel.js'
 import { rLo } from './panels/log.js'
+import { rCh } from './panels/chronicles.js'
+import { rMem } from './panels/memorial.js'
 import { rWo } from './world.js'
 
 export { schEx }
@@ -27,11 +29,13 @@ export function upUI() {
   document.getElementById('trep').textContent = G.reputation
   document.getElementById('tmiss').textContent = G.aM.length
   document.getElementById('tinc').textContent = '+' + fmt(trI + jkI) + '/mo'
-  document.getElementById('tdate').textContent = 'Y' + G.year + ' M' + G.month + ' ' + season
+  const monthName = MONTHS[G.month - 1]?.n || season
+  document.getElementById('tdate').textContent = 'Y' + G.year + ' · ' + monthName
   document.getElementById('sbdt').textContent = 'Y' + G.year + 'M' + G.month
   document.getElementById('sbryo').textContent = fmt(G.ryo)
   document.getElementById('sbrep').textContent = G.reputation
   document.getElementById('sbf').textContent = G.shinobi.length + '/' + G.shinobi.filter(s => s.status === 'available').length + 'av'
+  const legendEl = document.getElementById('tlegend'); if (legendEl) { const leg = G.legend || 0; const title = leg >= 500 ? 'Legendary' : leg >= 250 ? 'War-Renowned' : leg >= 100 ? 'Rising' : ''; legendEl.textContent = leg + (title ? ' — ' + title : '') }
   rP(ui.CP)
 }
 
@@ -46,7 +50,7 @@ export function sp(id) {
 }
 
 export function rP(id) {
-  const map = { roster: rRo, squads: rSq, missions: rMi, upgrades: rUp, academy: rAc, economy: rEc, village: rVi, beasts: rBe, kage: rKa, exam: rEx, intel: rIn, log: rLo, world: rWo }
+  const map = { roster: rRo, squads: rSq, missions: rMi, upgrades: rUp, academy: rAc, economy: rEc, village: rVi, beasts: rBe, kage: rKa, exam: rEx, intel: rIn, log: rLo, chronicles: rCh, memorial: rMem, world: rWo }
   map[id]?.()
 }
 

@@ -4,14 +4,15 @@ import { showSetup, selIcon, beginGame } from './setup.js'
 import { adv } from './adv.js'
 import { rRo, oDos, mkJK } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev } from './panels/squads.js'
-import { mTab, oA, doA, pickSq, rDef } from './panels/missions.js'
+import { mTab, oA, doA, pickSq, rDef, openWorldChoice } from './panels/missions.js'
 import { rUp, buyUp } from './panels/upgrades.js'
-import { rAc, rec, oScout, doScout } from './panels/academy.js'
+import { rAc, rec, oScout, doScout, oSensei, doSensei } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl } from './panels/economy.js'
 import { rBe, lCap } from './panels/beasts.js'
 import { rKa, resKE, sGift, propAl, rattle } from './panels/kage.js'
 import { rEx, tEC, startEx, runRound } from './panels/exam.js'
 import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP, dipAccept, dipDecline } from './world.js'
+import { resolveChoiceEvent } from './adv.js'
 
 // defender shorthand helpers used from inline HTML
 function G_defShSet(id) { G.defSh = id; rDef() }
@@ -32,7 +33,7 @@ Object.assign(window, {
   // upgrades
   buyUp,
   // academy
-  rec, oScout, doScout,
+  rec, oScout, doScout, oSensei, doSensei,
   // economy
   eTab, tgTr, tgCo, doBl,
   // beasts
@@ -44,4 +45,6 @@ Object.assign(window, {
   // world / diplomacy
   declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP,
   dipAccept, dipDecline,
+  // world choice events
+  resolveChoiceEvent, openWorldChoice,
 })

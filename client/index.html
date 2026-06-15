@@ -65,6 +65,8 @@
       <button class="nb" onclick="sp('exam')" id="nv-exam">▸ Chunin Exam</button>
       <button class="nb" onclick="sp('intel')" id="nv-intel">▸ Intel</button>
       <button class="nb" onclick="sp('log')" id="nv-log">▸ Log</button>
+      <button class="nb" onclick="sp('chronicles')" id="nv-chronicles">▸ Chronicles</button>
+      <button class="nb" onclick="sp('memorial')" id="nv-memorial">▸ Memorial</button>
       <div class="nsec">Multiplayer</div>
       <button class="nb" onclick="sp('world')" id="nv-world">▸ World Map <span class="nb-badge" id="wp-badge" style="display:none">!</span></button>
     </nav>
@@ -87,7 +89,8 @@
       <div class="ts2"><span id="trep">0</span>Rep</div>
       <div class="ts2"><span id="tmiss">0</span>Missions</div>
       <div class="ts2"><span id="tinc">+0</span>Income/mo</div>
-      <div class="ts2"><span id="tdate">Y1 M1</span>Season</div>
+      <div class="ts2"><span id="tlegend">0</span>Legend</div>
+      <div class="ts2"><span id="tdate">Y1 M1</span>Month</div>
       <button class="ab" onclick="adv()">Advance Month ▸</button>
     </div>
     <div class="pc">
@@ -105,6 +108,11 @@
       <!-- missions -->
       <div id="p-missions" style="display:none">
         <div class="pt">Missions</div>
+        <div id="wce-banner" style="display:none;background:rgba(135,206,235,0.07);border:1px solid #87ceeb;padding:8px 10px;margin-bottom:10px;cursor:pointer" onclick="openWorldChoice()">
+          <div style="font-size:9px;color:#87ceeb;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px">⚡ World Event — Response Required</div>
+          <div style="font-size:9px;color:#e8e0cc" id="wce-banner-name"></div>
+          <div style="font-size:8px;color:#7a7060;margin-top:2px">Click to respond ▸</div>
+        </div>
         <div class="rb" id="rdb">
           <div style="font-size:9px;color:#f66;letter-spacing:2px;font-weight:bold;margin-bottom:3px;text-transform:uppercase">⚠ Incoming Threat</div>
           <div id="rdd" style="font-size:9px;color:#f99"></div>
@@ -163,6 +171,12 @@
 
       <!-- log -->
       <div id="p-log" style="display:none"><div class="pt">Event Log</div><div id="logl"></div></div>
+
+      <!-- chronicles -->
+      <div id="p-chronicles" style="display:none"><div class="pt">Village Chronicles</div><div style="font-size:9px;color:#7a7060;margin-bottom:10px">Major moments in your village's history, recorded automatically.</div><div id="chl"></div></div>
+
+      <!-- memorial wall -->
+      <div id="p-memorial" style="display:none"><div class="pt">Memorial Wall</div><div style="font-size:9px;color:#7a7060;margin-bottom:10px">Those who gave their lives in service of the village.</div><div id="meml"></div></div>
 
       <!-- world map (multiplayer) -->
       <div id="p-world" style="display:none">
@@ -230,6 +244,25 @@
     <div class="mot">Exam Results</div>
     <div id="ef-c"></div>
     <div class="mbc"><button class="bc" onclick="cm('examfight')">Close</button></div>
+  </div>
+</div>
+
+<div class="ov" id="ov-sensei">
+  <div class="mo">
+    <div class="mot">Assign Sensei</div>
+    <div style="font-size:9px;color:#7a7060;margin-bottom:8px">Prospect: <span id="sensei-prospect-name" style="color:#cc7fb8"></span></div>
+    <div style="font-size:8px;color:#7a7060;margin-bottom:10px">A Jonin+ sensei accelerates this prospect's stat growth each month. The sensei remains available for missions.</div>
+    <div id="sensei-list"></div>
+    <div class="mbc"><button class="bc" onclick="cm('sensei')">Cancel</button></div>
+  </div>
+</div>
+
+<div class="ov" id="ov-worldchoice">
+  <div class="mo">
+    <div class="mot" id="wce-title">World Event</div>
+    <div style="font-size:9px;color:#87ceeb;margin-bottom:8px" id="wce-desc"></div>
+    <div id="wce-choices"></div>
+    <div class="mbc"><button class="bc" onclick="cm('worldchoice')">Dismiss</button></div>
   </div>
 </div>
 

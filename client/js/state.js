@@ -33,7 +33,7 @@ export function mS(ri = 0) {
   Object.keys(base).forEach(k => { base[k] = clamp(Math.round(base[k] * m), 1, 99) })
   const p = pk(PERSONALITIES), sal = Math.round((500 + ri * 400) * (1 + (p.effect.salary || 0)))
   const origin = Math.random() < 0.05 ? pk(['Sunagakure', 'Kirigakure', 'Iwagakure', 'Kumogakure']) : null
-  return { id: Math.random().toString(36).slice(2), fn: pk(FNAMES), ln: pk(LNAMES), clan: clan?.n || null, trait: clan?.t || null, spec: pk(SPECS), age, ri, stats: base, potential: rnd(ri * 20 + 45, 99), status: 'available', injDays: 0, missId: null, squadId: null, salary: sal, months: 0, wins: 0, pers: p, backstory: pk(BACKSTORIES), archetype: pk(ARCHETYPES), scouted: false, monthsWaiting: 0, rivalId: null, origin, jk: null }
+  return { id: Math.random().toString(36).slice(2), fn: pk(FNAMES), ln: pk(LNAMES), clan: clan?.n || null, trait: clan?.t || null, spec: pk(SPECS), age, ri, stats: base, potential: rnd(ri * 20 + 45, 99), status: 'available', injDays: 0, missId: null, squadId: null, salary: sal, months: 0, wins: 0, winsB: 0, winsS: 0, streak: 0, pers: p, backstory: pk(BACKSTORIES), archetype: pk(ARCHETYPES), scouted: false, monthsWaiting: 0, rivalId: null, origin, jk: null, darkMoment: null, jutsu: [], bonds: [], prodigy: false, familyId: null, mentor: null }
 }
 
 // ── stat helpers ───────────────────────────────────────────────────────────
@@ -92,9 +92,23 @@ export function initState() {
     tradeRoutes: JSON.parse(JSON.stringify(TRADE_ROUTES)),
     contracts: JSON.parse(JSON.stringify(CONTRACTS)),
     keQ: [...KAGE_EVENTS].sort(() => Math.random() - 0.5), keCD: 0,
+    // new systems
+    memorial: [], chronicles: [], legend: 0, worldFlags: {}, pendingChoiceEvent: null,
   });
   [2, 2, 1, 1, 1, 0, 0, 0].forEach(r => G.shinobi.push(mS(r)))
   rfM(); rfP()
+}
+
+export function addChronicle(title, body, type = 'event') {
+  G.chronicles.push({ year: G.year, month: G.month, title, body, type })
+  if (G.chronicles.length > 80) G.chronicles.shift()
+}
+
+export function addLegend(amount) {
+  G.legend = (G.legend || 0) + amount
+  const titles = [{ at: 500, name: 'Legendary Village' }, { at: 250, name: 'War-Renowned Village' }, { at: 100, name: 'Rising Village' }]
+  const now = G.legend, prev = now - amount
+  titles.forEach(t => { if (now >= t.at && prev < t.at) addChronicle('Legend Milestone', 'Our village has been recognized as "' + t.name + '" with ' + now + ' legend points.', 'legend') })
 }
 
 export function schEx() {
@@ -130,6 +144,29 @@ export function rfP() {
       const others = unrivaled.filter(p => p.id !== a.id)
       const b = others[Math.floor(Math.random() * others.length)]
       a.rivalId = b.id; b.rivalId = a.id
+    }
+  }
+
+  // 1% chance per new prospect to be a prodigy
+  G.prospects.filter(p => !p.prodigy && !p.monthsWaiting).forEach(p => {
+    if (Math.random() < 0.01) {
+      p.prodigy = true
+      p.potential = 95 + Math.floor(Math.random() * 5) // 95-99
+      p.archetype = { id: 'prodigy', n: 'Natural Prodigy', flavor: 'Chakra flows as naturally as breathing. Potential is obvious — and draws dangerous attention.' }
+      if (G.log) G.log.push({ y: G.year, m: G.month, msg: '✦ A prodigy has appeared in the academy: ' + p.fn + ' ' + p.ln + '!', t: 'ev' })
+    }
+  })
+
+  // 8% chance to spawn a family pair (same last name) among new unrelated prospects
+  const noFamily = G.prospects.filter(p => !p.familyId && !p.monthsWaiting)
+  if (noFamily.length >= 2 && Math.random() < 0.08) {
+    const a = noFamily[Math.floor(Math.random() * noFamily.length)]
+    const sameLastName = noFamily.filter(p => p.id !== a.id)
+    if (sameLastName.length) {
+      const b = sameLastName[Math.floor(Math.random() * sameLastName.length)]
+      b.ln = a.ln // share last name
+      const famId = Math.random().toString(36).slice(2)
+      a.familyId = famId; b.familyId = famId
     }
   }
 }

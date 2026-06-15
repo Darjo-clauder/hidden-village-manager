@@ -40,6 +40,13 @@ export function rSq() {
         <div style="background:#2e2a22;height:3px;border-radius:2px"><div style="background:#c9a84c;height:3px;border-radius:2px;width:${cohesionPct}"></div></div>
       </div>
       ${synHtml}
+      <div style="display:flex;gap:10px;font-size:8px;color:#7a7060;margin-top:6px">
+        <span>W: <b style="color:#8fbc8f">${sq.wins||0}</b></span>
+        <span>L: <b style="color:#f66">${sq.losses||0}</b></span>
+        <span>Active: <b style="color:#c9a84c">${sq.monthsActive||0}m</b></span>
+      </div>
+      ${(sq.fallen||[]).length ? `<div style="margin-top:5px;font-size:7px;color:#7a7060;letter-spacing:1px;text-transform:uppercase">Fallen</div>
+        ${sq.fallen.map(f => `<div style="font-size:7px;color:#f66;margin-top:1px">✦ ${f.name} · ${f.rank} · Y${f.year}M${f.month} — "${f.mission}"</div>`).join('')}` : ''}
       ${aM
         ? `<div style="font-size:9px;color:#fa0;margin-top:6px">⟳ On mission — ${aM.daysLeft}m left</div>`
         : `<div style="display:flex;gap:6px;margin-top:8px"><button class="gb" onclick="oSqA('${sq.id}')" ${allAv ? '' : 'disabled'}>Assign ►</button><button class="gb gb-r" onclick="disbSq('${sq.id}')">Disband</button></div>`
@@ -110,7 +117,13 @@ export function disbSq(id) {
   const sq = G.squads.find(q => q.id === id); if (!sq) return
   sq.members.forEach(mid => { const s = G.shinobi.find(x => x.id === mid); if (s) s.squadId = null })
   G.squads = G.squads.filter(q => q.id !== id)
-  aL(sq.n + ' disbanded.', 'neutral'); upUI()
+  if (sq.identity) {
+    sq.cohesion = Math.max(0, (sq.cohesion || 0) - 20)
+    aL('"' + sq.identity.title + '" (' + sq.n + ') has been disbanded. After ' + (sq.wins||0) + ' missions together, the unit dissolves. Some bonds don\'t survive bureaucracy.', 'warn')
+  } else {
+    aL(sq.n + ' disbanded.', 'neutral')
+  }
+  upUI()
 }
 
 export function oSqA(sqId) {

@@ -136,9 +136,51 @@ export const WORLD_EVENTS = [
   { text: 'Several villages were publicly criticized for poor mission completion rates.', effect: { reputation: -3, morale: -2 } },
 ]
 
+// ── Seasonal event additions ──────────────────────────────────────────────
+const SEASONAL_EVENTS = {
+  Winter: [
+    { text: 'Heavy snowfall has blocked major trade routes for the third consecutive week.', effect: { ryo: -2000, morale: -3 } },
+    { text: 'The Long Night has set in. Shinobi patrols are reduced. Bandit activity increases.', effect: { morale: -4 },
+      chain: { text: 'A village was raided under cover of the extended winter darkness.', effect: { ryo: -3000, reputation: -3 } } },
+    { text: 'Emergency supply caravans have been organised to assist isolated border settlements.', effect: { ryo: -1500, reputation: 3 } },
+  ],
+  Spring: [
+    { text: 'Cherry blossom season has drawn unprecedented numbers of travellers to the region.', effect: { ryo: 2500, morale: 4 } },
+    { text: 'Spring thaw has revealed contraband caches hidden beneath the frost all winter.', effect: { reputation: 4 } },
+    { text: 'A spring festival brought rival villages into temporary peaceful contact.', effect: { morale: 5, reputation: 3 } },
+  ],
+  Summer: [
+    { text: 'A severe drought has reduced agricultural output across the Land of Fire.', effect: { ryo: -3000, morale: -4 } },
+    { text: 'Monsoon flooding has disrupted three major mission routes. Delays expected.', effect: { morale: -3, ryo: -1500 } },
+    { text: 'Summer training season draws young shinobi from across the region to the tournament grounds.', effect: { morale: 4, reputation: 2 } },
+  ],
+  Fall: [
+    { text: 'Autumn harvest festivals have boosted civilian morale and trade throughout the region.', effect: { ryo: 2000, morale: 4 } },
+    { text: 'War Moon brings old grudges to the surface. Shinobi skirmishes at the border.', effect: { morale: -4, reputation: -2 } },
+    { text: 'Fog season has made recon missions significantly more dangerous this month.', effect: { morale: -2 } },
+  ],
+}
+
+// ── Event memory — tracks the last few events for context references ──────
+const recentEventTexts = []
+const EVENT_MEMORY_CALLBACKS = [
+  { check: evs => evs.some(t => t.includes('drought')),
+    text: 'In the wake of the recent drought, food prices have surged across the shinobi nations.', effect: { ryo: -1500, morale: -2 } },
+  { check: evs => evs.some(t => t.includes('tailed beast') || t.includes('jinchuriki')),
+    text: 'Still shaken by recent beast activity, villages have quietly doubled border patrols.', effect: { morale: -2, reputation: 2 } },
+  { check: evs => evs.some(t => t.includes('assassin') || t.includes('elimina')),
+    text: 'Rumours persist that the recent assassination was not the work of any known organization.', effect: { reputation: -3 } },
+]
+
 const pendingChains = []
 const EVENT_COOLDOWN_MS = 12_000
 let lastEventAt = 0
+let serverMonth = 1 // increments each rollWorldEvent call to simulate seasons
+
+function currentSeasonFromMonth(m) {
+  const seasons = ['Winter','Winter','Spring','Spring','Spring','Summer','Summer','Summer','Fall','Fall','Fall','Winter']
+  return seasons[(m - 1) % 12]
+}
 
 function resolveText(text) {
   const vs = [...villages.values()]
@@ -150,10 +192,10 @@ function resolveText(text) {
 
 function fireEvent(io, ev) {
   const text = resolveText(ev.text)
+  recentEventTexts.push(text.toLowerCase())
+  if (recentEventTexts.length > 8) recentEventTexts.shift()
   io.emit('world_event', { text, ts: Date.now(), effect: ev.effect || null })
-  if (ev.chain) {
-    pendingChains.push({ event: ev.chain, ticksLeft: rnd(2, 4) })
-  }
+  if (ev.chain) pendingChains.push({ event: ev.chain, ticksLeft: rnd(2, 4) })
 }
 
 export function rollWorldEvent(io) {
@@ -171,5 +213,24 @@ export function rollWorldEvent(io) {
   if (Math.random() > 0.22) return
 
   lastEventAt = now
+  serverMonth = (serverMonth % 12) + 1
+
+  // 25% chance to use a seasonal event
+  const season = currentSeasonFromMonth(serverMonth)
+  if (Math.random() < 0.25 && SEASONAL_EVENTS[season]) {
+    fireEvent(io, pk(SEASONAL_EVENTS[season]))
+    return
+  }
+
+  // 10% chance to use an event memory callback if applicable
+  if (recentEventTexts.length >= 2 && Math.random() < 0.10) {
+    for (const cb of EVENT_MEMORY_CALLBACKS) {
+      if (cb.check(recentEventTexts)) {
+        fireEvent(io, cb)
+        return
+      }
+    }
+  }
+
   fireEvent(io, WORLD_EVENTS[Math.floor(Math.random() * WORLD_EVENTS.length)])
 }

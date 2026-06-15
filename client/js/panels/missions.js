@@ -12,7 +12,28 @@ export function mTab(t) {
   })
 }
 
-export function rMi() { rRB(); rSoloM(); rSqM(); rDef() }
+export function rMi() { rRB(); rWCE(); rSoloM(); rSqM(); rDef() }
+
+export function rWCE() {
+  const el = document.getElementById('wce-banner')
+  if (!el) return
+  if (G.pendingChoiceEvent) {
+    el.style.display = ''
+    document.getElementById('wce-banner-name').textContent = G.pendingChoiceEvent.n
+  } else {
+    el.style.display = 'none'
+  }
+}
+
+export function openWorldChoice() {
+  const ev = G.pendingChoiceEvent; if (!ev) return
+  document.getElementById('wce-title').textContent = ev.n
+  document.getElementById('wce-desc').textContent = ev.desc
+  document.getElementById('wce-choices').innerHTML = ev.choices.map(c =>
+    `<button class="gb" style="display:block;width:100%;margin-bottom:6px;text-align:left" onclick="resolveChoiceEvent('${c.fn}')">${c.l}</button>`
+  ).join('')
+  document.getElementById('ov-worldchoice').classList.add('open')
+}
 
 export function rRB() {
   const b = document.getElementById('rdb'), d = document.getElementById('rdd')

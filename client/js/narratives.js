@@ -364,17 +364,105 @@ const RANK_UP_NARRATIVES = {
   ],
 }
 
-export function pickNarrative(rank, outcome, shinobiName, traitName = null) {
+// Veteran legendary lines — shinobi with 50+ wins
+const VETERAN_NARRATIVES = {
+  success: [
+    '{name} has seen a hundred missions like this. It showed.',
+    'The enemy recognized {name} too late. Veterans earn that.',
+    '{name}\'s file is longer than most shinobi\'s careers. Today added another line.',
+    'Fifty missions don\'t lie. {name} finished it before the briefing was cold.',
+    '{name} moved through the operation like a force of nature. Age is wisdom.',
+    'The kind of calm that only comes from having seen worse. {name} delivered.',
+    'They\'ve tried to stop {name} before. It hasn\'t worked.',
+    '{name} doesn\'t rush. Doesn\'t hesitate. The mission ended accordingly.',
+  ],
+  failure: [
+    'Even {name}\'s years couldn\'t account for this. It happens to legends too.',
+    '{name} has failed before and rebuilt. That knowledge is its own kind of victory.',
+    'The mission broke against something new. {name} lived. That\'s the important part.',
+    'A veteran\'s rare stumble. {name} will carry it, learn from it, return.',
+  ],
+}
+
+// Win streak momentum — 3+ consecutive wins
+const STREAK_NARRATIVES = {
+  success: [
+    '{name} is on fire. There\'s a momentum here that\'s starting to feel inevitable.',
+    'Another one. {name} is building something, mission by mission.',
+    'Three in a row and counting. {name}\'s form is sharpening into something rare.',
+    '{name} hasn\'t slowed down. The streak continues.',
+    'Unstoppable right now. {name} knows it. The enemy wishes they didn\'t.',
+  ],
+}
+
+// Dark moments — stored on shinobi when they fail an S-rank
+export const DARK_MOMENT_POOL = [
+  'The day they faced something they couldn\'t name, and it looked back.',
+  'The mission they don\'t discuss. The one that changed the weight of silence.',
+  'Three days unaccounted for in the field. What happened there is classified — even from themselves.',
+  'The target got away. What they left behind did not.',
+  'The debrief said "mission failed." The report didn\'t say what was lost.',
+  'They came back different. No one asks about it directly.',
+  'A name they won\'t speak again. A face they see in the dark.',
+  'The failure that cost more than ryo and reputation.',
+]
+
+// Last words — displayed when a shinobi dies in the field
+export const LAST_WORDS_POOL = [
+  '"Tell them the Will of Fire never dies."',
+  '"I\'ve no regrets. This was the path I chose."',
+  '"Don\'t mourn. Finish it."',
+  '"The village... protect it. That was all I ever wanted."',
+  '"I can see... the training grounds... from here..."',
+  '"Not yet. Not yet. ...Oh."',
+  '"I always knew it would end in the field. Good."',
+  '"Remember my name."',
+  '"Pass the torch. Someone has to."',
+  '"It didn\'t hurt as much as I feared."',
+]
+
+// Seasonal narrative flavor — prefixed onto standard lines
+const SEASONAL_FLAVOR = {
+  Winter: ['In the bitter cold, ', 'Under snow-grey skies, ', 'Through the frozen dark, '],
+  Spring: ['As blossoms fell around them, ', 'In the warmth of returning spring, ', 'Through the blooming countryside, '],
+  Summer: ['In the blistering heat, ', 'Under the punishing sun, ', 'Through monsoon rain, '],
+  Fall:   ['As leaves turned red, ', 'Through the amber fog of autumn, ', 'In the fading light of fall, '],
+}
+
+export function pickNarrative(rank, outcome, shinobiName, traitName = null, opts = {}) {
+  const { wins = 0, streak = 0, season = null } = opts
+  const name = shinobiName || 'Your shinobi'
+
+  // Veteran legendary lines (50+ wins, 25% chance)
+  if (wins >= 50 && VETERAN_NARRATIVES[outcome] && Math.random() < 0.25) {
+    const pool = VETERAN_NARRATIVES[outcome]
+    return _apply(pool[Math.floor(Math.random() * pool.length)], name, season)
+  }
+
+  // Win streak momentum (3+ consecutive wins, success only, 30% chance)
+  if (streak >= 3 && outcome === 'success' && Math.random() < 0.30) {
+    const pool = STREAK_NARRATIVES.success
+    return _apply(pool[Math.floor(Math.random() * pool.length)], name, season)
+  }
+
   // Try trait-reactive first (40% chance if applicable)
   if (traitName && TRAIT_NARRATIVES[traitName] && Math.random() < 0.40) {
     const pool = TRAIT_NARRATIVES[traitName][outcome]
-    if (pool?.length) {
-      return pool[Math.floor(Math.random() * pool.length)].replace(/\{name\}/g, shinobiName || 'Your shinobi')
-    }
+    if (pool?.length) return _apply(pool[Math.floor(Math.random() * pool.length)], name, season)
   }
+
   const pool = NARRATIVES[rank]?.[outcome]
   if (!pool) return ''
-  return pool[Math.floor(Math.random() * pool.length)].replace(/\{name\}/g, shinobiName || 'Your shinobi')
+  return _apply(pool[Math.floor(Math.random() * pool.length)], name, season)
+}
+
+function _apply(line, name, season) {
+  let s = line.replace(/\{name\}/g, name)
+  if (season && SEASONAL_FLAVOR[season] && Math.random() < 0.18) {
+    const flavors = SEASONAL_FLAVOR[season]
+    s = flavors[Math.floor(Math.random() * flavors.length)] + s.charAt(0).toLowerCase() + s.slice(1)
+  }
+  return s
 }
 
 export function pickSquadNarrative(rank, outcome, squadName) {
