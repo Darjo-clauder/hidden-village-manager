@@ -1,6 +1,7 @@
 import { G, ui, sPow, sqP, sn, fmt } from '../state.js'
 import { RANKS, RKC } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
+import { sqSynergy, cohesionLabel } from '../synergy.js'
 
 export function rSq() {
   const el = document.getElementById('sql')
@@ -8,10 +9,40 @@ export function rSq() {
   el.innerHTML = G.squads.map(sq => {
     const mbs = sq.members.map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
     const leader = G.shinobi.find(s => s.id === sq.leaderId)
-    const pw = sqP(sq) + (leader?.pers.n === 'Charismatic' ? 5 : 0)
+    const rawPw = sqP(sq) + (leader?.pers.n === 'Charismatic' ? 5 : 0)
+    const syn = sqSynergy(sq, G.shinobi)
+    const pw = Math.round(rawPw * syn.powerMult)
     const allAv = mbs.every(s => s.status === 'available')
     const aM = G.aM.find(am => am.squadId === sq.id)
-    return `<div class="card"><div style="font-size:11px;color:#e8e0cc;font-weight:bold;margin-bottom:3px">${sq.n} <span style="font-size:8px;color:#7a7060">Power ${pw}</span></div><div style="font-size:8px;color:#7a7060;margin-bottom:7px">Leader: ${leader ? sn(leader) : '-'} (${leader ? RANKS[leader.ri] : '-'})</div><div style="margin-bottom:8px">${mbs.map(s => `<span class="squad-mb">${sn(s)} <span style="color:#c9a84c">${RANKS[s.ri]}</span>${s.jk ? ' 🔮' : ''}</span>`).join('')}</div>${aM ? `<div style="font-size:9px;color:#fa0">⟳ On mission — ${aM.daysLeft}m left</div>` : `<div style="display:flex;gap:6px"><button class="gb" onclick="oSqA('${sq.id}')" ${allAv ? '' : 'disabled'}>Assign ►</button><button class="gb gb-r" onclick="disbSq('${sq.id}')">Disband</button></div>`}</div>`
+    const cohesion = sq.cohesion ?? 0
+    const cohesionPct = cohesion + '%'
+
+    const synHtml = syn.bonuses.length
+      ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${syn.bonuses.map(b =>
+          `<span title="${b.desc}" style="font-size:7px;padding:2px 6px;border:1px solid ${b.color};color:${b.color};cursor:help">${b.label}</span>`
+        ).join('')}</div>`
+      : ''
+
+    return `<div class="card">
+      <div style="font-size:11px;color:#e8e0cc;font-weight:bold;margin-bottom:3px">
+        ${sq.n}
+        <span style="font-size:8px;color:#7a7060">Power ${pw}${syn.powerMult > 1 ? ` <span style="color:#8fbc8f">(+${Math.round((syn.powerMult - 1) * 100)}%)</span>` : ''}</span>
+      </div>
+      <div style="font-size:8px;color:#7a7060;margin-bottom:5px">Leader: ${leader ? sn(leader) : '-'} (${leader ? RANKS[leader.ri] : '-'})</div>
+      <div style="margin-bottom:6px">${mbs.map(s => `<span class="squad-mb">${sn(s)} <span style="color:#c9a84c">${RANKS[s.ri]}</span>${s.jk ? ' 🔮' : ''}</span>`).join('')}</div>
+      <div style="margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;font-size:8px;color:#7a7060;margin-bottom:3px">
+          <span>Cohesion — <span style="color:#e8e0cc">${cohesionLabel(cohesion)}</span></span>
+          <span style="color:#c9a84c">${cohesion}/100</span>
+        </div>
+        <div style="background:#2e2a22;height:3px;border-radius:2px"><div style="background:#c9a84c;height:3px;border-radius:2px;width:${cohesionPct}"></div></div>
+      </div>
+      ${synHtml}
+      ${aM
+        ? `<div style="font-size:9px;color:#fa0;margin-top:6px">⟳ On mission — ${aM.daysLeft}m left</div>`
+        : `<div style="display:flex;gap:6px;margin-top:8px"><button class="gb" onclick="oSqA('${sq.id}')" ${allAv ? '' : 'disabled'}>Assign ►</button><button class="gb gb-r" onclick="disbSq('${sq.id}')">Disband</button></div>`
+      }
+    </div>`
   }).join('')
 }
 
@@ -30,7 +61,7 @@ export function csSL(id, el) {
   ui.csL = id
   document.querySelectorAll('[id^="csl-"]').forEach(e => e.style.background = '')
   el.style.background = 'rgba(201,168,76,0.1)'
-  rCSM()
+  rCSM(); rSynPrev()
 }
 
 export function rCSM() {
@@ -45,6 +76,21 @@ export function csMT(id) {
   if (ui.csM.includes(id)) ui.csM = ui.csM.filter(x => x !== id)
   else if (ui.csM.length < 2) ui.csM.push(id)
   rCSM()
+  rSynPrev()
+}
+
+export function rSynPrev() {
+  const el = document.getElementById('cs-synergy')
+  if (!el) return
+  const all = [ui.csL, ...ui.csM].filter(Boolean)
+  if (all.length < 2) { el.innerHTML = ''; return }
+  const fakeSq = { id: '_prev', members: all, leaderId: ui.csL, cohesion: 0 }
+  const syn = sqSynergy(fakeSq, G.shinobi)
+  if (!syn.bonuses.length) { el.innerHTML = '<div style="font-size:8px;color:#3a3630">No synergy detected.</div>'; return }
+  el.innerHTML = `<div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Synergy Preview</div>` +
+    syn.bonuses.map(b =>
+      `<div style="margin-bottom:4px"><span style="font-size:8px;color:${b.color};font-weight:bold">${b.label}</span><div style="font-size:8px;color:#7a7060">${b.desc}</div></div>`
+    ).join('')
 }
 
 export function doCS() {
@@ -52,7 +98,7 @@ export function doCS() {
   if (ui.csM.length !== 2) { ntf('Pick 2 members!'); return }
   const name = document.getElementById('sqni').value.trim() || 'Squad ' + (G.squads.length + 1)
   const all = [ui.csL, ...ui.csM]
-  const sq = { id: Math.random().toString(36).slice(2), n: name, leaderId: ui.csL, members: all }
+  const sq = { id: Math.random().toString(36).slice(2), n: name, leaderId: ui.csL, members: all, cohesion: 0 }
   G.squads.push(sq)
   all.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s) s.squadId = sq.id })
   cm('csquad'); aL(name + ' formed.', 'neutral'); ntf(name + ' ready!'); upUI()

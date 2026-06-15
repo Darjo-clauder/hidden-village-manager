@@ -3,10 +3,10 @@ import { sp, cm, upUI, schEx } from './ui.js'
 import { showSetup, selIcon, beginGame } from './setup.js'
 import { adv } from './adv.js'
 import { rRo, oDos, mkJK } from './panels/roster.js'
-import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA } from './panels/squads.js'
+import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef } from './panels/missions.js'
 import { rUp, buyUp } from './panels/upgrades.js'
-import { rAc, rec } from './panels/academy.js'
+import { rAc, rec, oScout, doScout } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl } from './panels/economy.js'
 import { rBe, lCap } from './panels/beasts.js'
 import { rKa, resKE, sGift, propAl, rattle } from './panels/kage.js'
@@ -26,13 +26,13 @@ Object.assign(window, {
   // roster
   oDos, mkJK,
   // squads
-  oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA,
+  oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev,
   // missions
   mTab, oA, doA, pickSq, G_defShSet, G_defShClear,
   // upgrades
   buyUp,
   // academy
-  rec,
+  rec, oScout, doScout,
   // economy
   eTab, tgTr, tgCo, doBl,
   // beasts

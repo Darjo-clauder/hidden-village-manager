@@ -3,6 +3,7 @@ import { RAID_POOL } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
 import { syncToServer } from './socket.js'
 import { pickNarrative } from './narratives.js'
+import { sqSynergy } from './synergy.js'
 
 export function adv() {
   const tgM = G.upgrades.training === 1 ? 2 : G.upgrades.training === 2 ? 3 : 1
@@ -27,6 +28,19 @@ export function adv() {
 
   G.aM.forEach(am => am.daysLeft--)
   G.aM.filter(am => am.daysLeft <= 0).forEach(am => {
+    if (am.isScout) {
+      const scout = G.shinobi.find(x => x.id === am.assignedTo)
+      if (scout) { scout.status = 'available'; scout.missId = null }
+      const prospect = G.prospects.find(x => x.id === am.scoutTargetId)
+      if (prospect) {
+        prospect.scouted = true
+        aL('Intel on ' + sn(prospect) + ' confirmed — Potential: ' + prospect.potential + '. ' + prospect.archetype.flavor, 'good')
+        ntf(prospect.fn + '\'s potential revealed!')
+      } else {
+        aL('Scouting complete — prospect has already moved on.', 'neutral')
+      }
+      return
+    }
     if (am.isBeastCapture) {
       const b = G.beasts.find(x => x.n === am.beastName), s = G.shinobi.find(x => x.id === am.assignedTo)
       if (!b || !s) return
@@ -39,13 +53,17 @@ export function adv() {
     const m = G.avM.find(x => x.id === am.missionId); if (!m) return
     if (am.isSquad) {
       const sq = G.squads.find(q => q.id === am.squadId); if (!sq) return
-      const pw = sqP(sq) + (G.shinobi.find(s => s.id === sq.leaderId)?.pers.n === 'Charismatic' ? 5 : 0)
-      const sc = clamp(1 - m.risk + (pw - m.mp) * 0.005 + iB, 0.1, 0.97)
+      const syn = sqSynergy(sq, G.shinobi)
+      const rawPw = sqP(sq) + (G.shinobi.find(s => s.id === sq.leaderId)?.pers.n === 'Charismatic' ? 5 : 0)
+      const pw = Math.round(rawPw * syn.powerMult)
+      const sc = clamp(1 - m.risk + (pw - m.mp) * 0.005 + iB + syn.successMod, 0.1, 0.97)
       if (Math.random() < sc) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3, 0, 100)
+        sq.cohesion = Math.min(100, (sq.cohesion ?? 0) + rnd(3, 7))
         sq.members.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s) { s.status = 'available'; s.missId = null; s.wins++ } })
         aL(sq.n + ' completed "' + m.n + '" — +' + fmt(m.ryo) + ' ryo. ' + pickNarrative(m.rk, 'success', sq.n), 'good')
       } else {
+        sq.cohesion = Math.min(100, (sq.cohesion ?? 0) + 1)
         const kR = hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08, hasPr = sq.members.some(id => G.shinobi.find(s => s.id === id)?.pers.n === 'Protective')
         sq.members.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (!s) return; if (!hasPr && Math.random() < kR) { aL(sn(s) + ' KIA.', 'bad'); G.shinobi = G.shinobi.filter(x => x.id !== s.id) } else { s.injDays = Math.max(1, rnd(1, 3) - hL); s.status = 'injured'; s.missId = null } })
         aL('"' + m.n + '" squad mission failed. ' + pickNarrative(m.rk, 'failure', sq.n), 'bad'); G.morale = clamp(G.morale - 5, 0, 100)
