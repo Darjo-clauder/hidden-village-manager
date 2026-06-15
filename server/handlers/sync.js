@@ -1,4 +1,5 @@
 import { villages } from '../state.js'
+import { rollWorldEvent } from '../worldEvents.js'
 import db from '../db.js'
 
 export function registerSync(io, socket) {
@@ -15,6 +16,8 @@ export function registerSync(io, socket) {
       id: socket.id, power: v.power, reputation: v.reputation,
       shinobiCount: v.shinobiCount, sealedBeasts: v.sealedBeasts,
     })
+
+    rollWorldEvent(io)
 
     if (db && v.playerId) {
       db.from('villages').update({

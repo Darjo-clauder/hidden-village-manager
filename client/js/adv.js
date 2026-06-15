@@ -2,6 +2,7 @@ import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS } from
 import { RAID_POOL } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
 import { syncToServer } from './socket.js'
+import { pickNarrative } from './narratives.js'
 
 export function adv() {
   const tgM = G.upgrades.training === 1 ? 2 : G.upgrades.training === 2 ? 3 : 1
@@ -43,11 +44,11 @@ export function adv() {
       if (Math.random() < sc) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3, 0, 100)
         sq.members.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s) { s.status = 'available'; s.missId = null; s.wins++ } })
-        aL(sq.n + ' completed "' + m.n + '" — +' + fmt(m.ryo) + ' ryo.', 'good')
+        aL(sq.n + ' completed "' + m.n + '" — +' + fmt(m.ryo) + ' ryo. ' + pickNarrative(m.rk, 'success', sq.n), 'good')
       } else {
         const kR = hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08, hasPr = sq.members.some(id => G.shinobi.find(s => s.id === id)?.pers.n === 'Protective')
         sq.members.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (!s) return; if (!hasPr && Math.random() < kR) { aL(sn(s) + ' KIA.', 'bad'); G.shinobi = G.shinobi.filter(x => x.id !== s.id) } else { s.injDays = Math.max(1, rnd(1, 3) - hL); s.status = 'injured'; s.missId = null } })
-        aL('"' + m.n + '" squad mission failed.', 'bad'); G.morale = clamp(G.morale - 5, 0, 100)
+        aL('"' + m.n + '" squad mission failed. ' + pickNarrative(m.rk, 'failure', sq.n), 'bad'); G.morale = clamp(G.morale - 5, 0, 100)
       }
     } else {
       const s = G.shinobi.find(x => x.id === am.assignedTo); if (!s) return
@@ -56,11 +57,12 @@ export function adv() {
       const rB = ['A', 'S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
       if (Math.random() < sc) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep + rB, 0, 999); G.morale = clamp(G.morale + 2, 0, 100)
-        s.status = 'available'; s.missId = null; s.wins++; aL(sn(s) + ' completed "' + m.n + '" — +' + fmt(m.ryo) + ' ryo.', 'good')
+        s.status = 'available'; s.missId = null; s.wins++
+        aL(sn(s) + ' completed "' + m.n + '" — +' + fmt(m.ryo) + ' ryo. ' + pickNarrative(m.rk, 'success', sn(s)), 'good')
       } else {
         const kR = hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08
-        if (Math.random() < kR) { aL(sn(s) + ' KIA on "' + m.n + '".', 'bad'); G.shinobi = G.shinobi.filter(x => x.id !== s.id); G.reputation = clamp(G.reputation - 5, 0, 999) }
-        else { s.injDays = Math.max(1, rnd(1, 3) - hL - (s.pers.effect.injReduct || 0)); s.status = 'injured'; s.missId = null; aL('"' + m.n + '" failed — ' + sn(s) + ' injured ' + s.injDays + 'm.', 'bad') }
+        if (Math.random() < kR) { aL(sn(s) + ' KIA on "' + m.n + '". ' + pickNarrative(m.rk, 'failure', sn(s)), 'bad'); G.shinobi = G.shinobi.filter(x => x.id !== s.id); G.reputation = clamp(G.reputation - 5, 0, 999) }
+        else { s.injDays = Math.max(1, rnd(1, 3) - hL - (s.pers.effect.injReduct || 0)); s.status = 'injured'; s.missId = null; aL('"' + m.n + '" failed — ' + sn(s) + ' injured ' + s.injDays + 'm. ' + pickNarrative(m.rk, 'failure', sn(s)), 'bad') }
         G.morale = clamp(G.morale - 3, 0, 100)
       }
     }

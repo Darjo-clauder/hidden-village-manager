@@ -1,6 +1,7 @@
 import { G, WS, clamp, fmt } from './state.js'
 import { aL, ntf, upUI, setOnline } from './ui.js'
 import { rWo, setWorldSocket, setRelLocal, showDip, respondAlliance } from './world.js'
+import { addNewsItem } from './news.js'
 
 export let socket = null
 
@@ -124,4 +125,9 @@ export function initSocket(name, kageName, icon) {
 
   socket.on('gift_sent', ({ targetName }) => ntf('Gifts sent to ' + targetName + '.'))
   socket.on('sv_notification', msg => ntf(msg))
+
+  socket.on('world_event', ({ text }) => {
+    addNewsItem(text)
+    aL('[World] ' + text, 'ev')
+  })
 }
