@@ -1,0 +1,526 @@
+import { G, sn, sPow, clamp, fmt, rnd, pk, pDesc, personalityJudge, genTransferPool } from '../state.js'
+import { TRANSFER_CATS, TRANSFER_WINDOWS, BINGO_TIERS, RANKS, VILLAGES_DEF } from '../constants.js'
+import { aL, ntf, upUI } from '../ui.js'
+
+// ── Pending negotiation state ─────────────────────────────────────────────────
+let _negTarget = null   // { pool shinobi object }
+let _negFee = 0         // agreed fee
+let _termTarget = null  // pool shinobi for personal terms
+
+export function rTr() {
+  const el = document.getElementById('trl')
+  if (!el) return
+  const tm = G.transferMarket || {}
+  const tw = TRANSFER_WINDOWS.find(w => w.id === tm.windowSeason)
+  const judgeLevel = personalityJudge()
+
+  const tabId = window._trTab || 'market'
+
+  el.innerHTML = `
+    <!-- Window status bar -->
+    <div style="background:${tm.windowOpen ? '#1a2e1a' : '#1a1a1a'};border:1px solid ${tm.windowOpen ? '#4a7a4a' : '#333'};border-radius:6px;padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:1.2rem">${tw?.icon || '🗓'}</span>
+      <div style="flex:1">
+        <div style="font-size:.85rem;color:${tm.windowOpen ? '#8fbc8f' : '#888'};font-weight:bold">
+          ${tm.windowOpen ? (tw?.n || 'Transfer Window') + ' — OPEN' : 'Transfer Window Closed'}
+        </div>
+        <div style="font-size:.75rem;color:#666">
+          ${tm.windowOpen
+            ? `${tm.windowMonthsLeft} month${tm.windowMonthsLeft !== 1 ? 's' : ''} remaining · ${(tm.pool || []).length} shinobi available`
+            : 'Next windows: 🌸 Month 3 (Spring) and 🍂 Month 9 (Autumn). Free agents and missing-nin available outside windows.'}
+        </div>
+      </div>
+      ${tm.windowOpen
+        ? `<button onclick="refreshTransferPool()" style="background:#2a2a1a;border:1px solid #554;color:#c9a84c;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.75rem">Refresh Pool</button>`
+        : ''}
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap">
+      ${[['market','🏪 Market',' ('+((tm.pool||[]).length)+')'],['sellpressure','📨 Approaches',' ('+(G.sellPressure||[]).length+')'],['loans','🔄 Loans',' ('+((tm.loanOut||[]).length + (tm.loanIn||[]).length)+')'],['bingo','📖 Bingo Book'],['offers','📋 Offer History',' ('+(tm.offers||[]).length+')']].map(([tid,tlabel,tbadge]) =>
+        `<button onclick="trTab('${tid}')" style="background:${tabId===tid?'#2a2a1a':'#111'};border:1px solid ${tabId===tid?'#c9a84c':'#333'};color:${tabId===tid?'#c9a84c':'#888'};border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.78rem">${tlabel}${tbadge||''}</button>`
+      ).join('')}
+    </div>
+
+    ${tabId === 'market' ? renderMarket(tm, judgeLevel) : ''}
+    ${tabId === 'sellpressure' ? renderSellPressure() : ''}
+    ${tabId === 'loans' ? renderLoans(tm) : ''}
+    ${tabId === 'bingo' ? renderBingo(judgeLevel) : ''}
+    ${tabId === 'offers' ? renderOffers(tm) : ''}
+  `
+}
+
+function renderMarket(tm, judgeLevel) {
+  const pool = tm.pool || []
+  const freeAgents = pool.filter(p => ['free_agent','missing_nin','retired_return','foreign_specialist'].includes(p.transferCategory))
+  const windowOnly = pool.filter(p => p.transferCategory === 'village_listed')
+
+  if (pool.length === 0 && !tm.windowOpen) {
+    return `<div style="color:#555;text-align:center;padding:40px;font-size:.85rem">
+      No transfer market pool active.<br>
+      <span style="color:#444;font-size:.8rem">Windows open Month 3 (Spring) and Month 9 (Autumn).<br>Free agents and missing-nin may appear outside windows via scout contacts.</span>
+    </div>`
+  }
+  if (pool.length === 0) {
+    return `<div style="color:#555;text-align:center;padding:30px;font-size:.85rem">Window is open but pool is empty — try refreshing.</div>`
+  }
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px">
+    ${pool.map(p => marketCard(p, judgeLevel)).join('')}
+  </div>`
+}
+
+function marketCard(p, judgeLevel) {
+  const catDef = TRANSFER_CATS.find(c => c.id === p.transferCategory) || TRANSFER_CATS[0]
+  const isFree = p.transferCategory === 'free_agent' || p.transferCategory === 'missing_nin' || p.transferCategory === 'retired_return' || p.transferCategory === 'foreign_specialist'
+  const canDirectSign = isFree
+  const signable = G.ryo >= p.askingFee
+
+  // Personality reads
+  const showMatrix = judgeLevel >= 6 && p.pMatrix
+  const matTraits = showMatrix ? ['loyalty','ambition','professionalism','temperament','adaptability'].map(k => {
+    const d = pDesc(p.pMatrix[k], k, judgeLevel)
+    return `<span style="font-size:.68rem;color:${p.pMatrix[k] >= 13 ? '#8fbc8f' : p.pMatrix[k] >= 8 ? '#aaa' : '#f99'}">${k.slice(0,3).toUpperCase()}: ${d}</span>`
+  }).join('  ') : ''
+
+  return `<div style="background:#1a1a1a;border:1px solid ${catDef.color}33;border-radius:6px;padding:12px;border-top:2px solid ${catDef.color}">
+    <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:6px">
+      <div>
+        <div style="color:#e8d5a3;font-weight:bold">${p.fn} ${p.ln}</div>
+        <div style="font-size:.72rem;color:#888">${RANKS[p.ri]} · ${p.clan || p.spec} · Age ${p.age}</div>
+      </div>
+      <span style="font-size:.72rem;background:#111;border:1px solid ${catDef.color};color:${catDef.color};border-radius:3px;padding:2px 6px">${catDef.icon} ${catDef.n}</span>
+    </div>
+    ${p.originVillage ? `<div style="font-size:.72rem;color:#777;margin-bottom:4px">From: ${p.originVillage}</div>` : ''}
+    <div style="font-size:.75rem;color:#888;margin-bottom:6px">${catDef.desc}</div>
+    <div style="font-size:.75rem;color:#aaa;margin-bottom:8px">
+      Power: <strong>${sPow(p)}</strong> · Pot: <strong>${p.potential}</strong>
+      · Avail: <span style="color:${(p.monthsAvailable||1)<=1?'#f66':'#aaa'}">${p.monthsAvailable||1}mo</span>
+    </div>
+    ${showMatrix ? `<div style="margin-bottom:8px;line-height:1.8">${matTraits}</div>` : judgeLevel < 6 ? `<div style="font-size:.7rem;color:#444;margin-bottom:8px">Staff personality judgment too low to read character.</div>` : ''}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <span style="font-size:.8rem;color:#c9a84c;font-weight:bold">${fmt(p.askingFee)} ryo</span>
+      ${!signable ? `<span style="font-size:.7rem;color:#f66">Insufficient funds</span>` : ''}
+    </div>
+    <div style="display:flex;gap:6px">
+      ${canDirectSign
+        ? `<button onclick="openPersonalTerms('${p.id}')" ${!signable?'disabled':''} style="flex:1;background:${signable?'#1a2e1a':'#111'};border:1px solid ${signable?'#4a7a4a':'#333'};color:${signable?'#8fbc8f':'#555'};border-radius:4px;padding:5px;cursor:${signable?'pointer':'not-allowed'};font-size:.75rem">
+            ✓ Sign Direct
+          </button>`
+        : `<button onclick="openNegotiation('${p.id}')" ${!signable?'disabled':''} style="flex:1;background:#1a1a2e;border:1px solid #44a;color:#87ceeb;border-radius:4px;padding:5px;cursor:pointer;font-size:.75rem">
+            ⇄ Negotiate
+          </button>
+          <button onclick="poachAttempt('${p.id}')" style="background:#2e1a1a;border:1px solid #744;color:#f99;border-radius:4px;padding:5px;cursor:pointer;font-size:.75rem" title="Approach directly — cheaper but risks diplomatic incident">
+            🕵 Poach
+          </button>`
+      }
+    </div>
+  </div>`
+}
+
+function renderSellPressure() {
+  const sp = G.sellPressure || []
+  if (sp.length === 0) return `<div style="color:#555;text-align:center;padding:30px;font-size:.85rem">No rival approaches currently. Rival villages may approach your high-performing shinobi at any time.</div>`
+  return sp.map(pressure => {
+    const s = (G.shinobi || []).find(x => x.id === pressure.shinobiId)
+    if (!s) return ''
+    return `<div style="background:#1a1a1a;border:1px solid #f0a030;border-radius:6px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <span style="font-size:1.1rem">📨</span>
+        <div style="flex:1">
+          <div style="color:#e8d5a3;font-weight:bold">${pressure.villageName} has approached ${sn(s)}</div>
+          <div style="font-size:.75rem;color:#888">Offer: <strong style="color:#c9a84c">${fmt(pressure.offerRyo)} ryo</strong> · Expires Y${pressure.expiresYear}M${pressure.expiresMonth}</div>
+        </div>
+        <div style="font-size:.75rem;color:#aaa;text-align:right">
+          <div>Loyalty: ${s.pMatrix?.loyalty ?? '?'}</div>
+          <div>Commit: ${s.commitment ?? 70}</div>
+        </div>
+      </div>
+      <div style="font-size:.78rem;color:#888;margin-bottom:10px">
+        ${(s.pMatrix?.loyalty || 10) >= 14 ? '★ High loyalty — likely to stay if you act.' : (s.pMatrix?.loyalty || 10) >= 8 ? 'Moderate loyalty — outcome uncertain.' : '⚠ Low loyalty — genuine risk of accepting.'}
+      </div>
+      <div style="display:flex;gap:6px">
+        <button onclick="sellPressureBlock('${pressure.shinobiId}')" style="flex:1;background:#1a1a2e;border:1px solid #44a;color:#87ceeb;border-radius:4px;padding:6px;cursor:pointer;font-size:.75rem">
+          🚫 Block approach<br><span style="font-size:.68rem;color:#666">−5 rel with ${pressure.villageName}</span>
+        </button>
+        <button onclick="sellPressureAccept('${pressure.shinobiId}')" style="flex:1;background:#1a2e1a;border:1px solid #4a7a4a;color:#8fbc8f;border-radius:4px;padding:6px;cursor:pointer;font-size:.75rem">
+          💰 Accept offer<br><span style="font-size:.68rem;color:#666">+${fmt(pressure.offerRyo)} ryo</span>
+        </button>
+        <button onclick="sellPressureLetDecide('${pressure.shinobiId}')" style="flex:1;background:#2e1a1a;border:1px solid #744;color:#f99;border-radius:4px;padding:6px;cursor:pointer;font-size:.75rem">
+          🤔 Let them decide<br><span style="font-size:.68rem;color:#666">Loyalty check</span>
+        </button>
+      </div>
+    </div>`
+  }).join('')
+}
+
+function renderLoans(tm) {
+  const lOut = tm.loanOut || []
+  const lIn = tm.loanIn || []
+  return `
+    <h3 style="color:#aaa;font-size:.82rem;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px">Loans Out (${lOut.length})</h3>
+    ${lOut.length === 0
+      ? '<div style="color:#555;font-size:.8rem;margin-bottom:16px">No shinobi currently on loan. Loan shinobi out to earn monthly fees.</div>'
+      : lOut.map(lo => {
+          const s = (G.shinobi || []).find(x => x.id === lo.shinobiId)
+          return s ? `<div style="background:#1a1a1a;border:1px solid #333;border-radius:5px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:.8rem">
+            <div style="flex:1"><span style="color:#e8d5a3">${sn(s)}</span> <span style="color:#888">· ${RANKS[s.ri]}</span></div>
+            <div style="color:#8fbc8f">+${fmt(lo.monthlyFee)}/mo</div>
+            <div style="color:#c9a84c">${lo.monthsRemaining}mo left</div>
+            <button onclick="recallLoan('${lo.shinobiId}')" style="background:#2e1a1a;border:1px solid #744;color:#f99;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:.72rem">Recall early</button>
+          </div>` : ''
+        }).join('')
+    }
+    <h3 style="color:#aaa;font-size:.82rem;text-transform:uppercase;letter-spacing:.08em;margin:12px 0 8px">Loans In (${lIn.length})</h3>
+    ${lIn.length === 0
+      ? '<div style="color:#555;font-size:.8rem;margin-bottom:16px">No loan players. Bring in loan shinobi from the market to fill gaps — they cannot enter Chunin Exams.</div>'
+      : lIn.map(li => {
+          const s = (G.shinobi || []).find(x => x.id === li.shinobiId)
+          return s ? `<div style="background:#1a1a1a;border:1px solid #333;border-radius:5px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:.8rem">
+            <div style="flex:1"><span style="color:#e8d5a3">${sn(s)}</span> <span style="color:#888">· ${RANKS[s.ri]}</span> <span style="font-size:.68rem;color:#cc7fb8">[LOAN]</span></div>
+            <div style="color:#f0a030">−${fmt(li.monthlyCost)}/mo</div>
+            <div style="color:#c9a84c">${li.monthsRemaining}mo left</div>
+          </div>` : ''
+        }).join('')
+    }
+    <!-- Send out loan form -->
+    <div style="background:#111;border:1px solid #333;border-radius:6px;padding:12px;margin-top:10px">
+      <div style="font-size:.8rem;color:#aaa;margin-bottom:8px">Send Shinobi on Loan</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="loan-out-shinobi" style="background:#1a1a1a;color:#e8d5a3;border:1px solid #555;border-radius:4px;padding:4px 8px;font-size:.78rem;flex:1">
+          <option value="">Select shinobi…</option>
+          ${(G.shinobi || []).filter(s => s.status === 'available' && !lOut.find(l => l.shinobiId === s.id)).map(s => `<option value="${s.id}">${sn(s)} (${RANKS[s.ri]}) — ${fmt(s.salary)}/mo</option>`).join('')}
+        </select>
+        <select id="loan-out-dur" style="background:#1a1a1a;color:#e8d5a3;border:1px solid #555;border-radius:4px;padding:4px 8px;font-size:.78rem">
+          <option value="3">3 months</option>
+          <option value="6">6 months</option>
+        </select>
+        <button onclick="sendLoan()" style="background:#1a2e1a;border:1px solid #4a7a4a;color:#8fbc8f;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:.78rem">Send on Loan</button>
+      </div>
+      <div style="font-size:.7rem;color:#555;margin-top:4px">Monthly fee earned: salary × 1.5. Commitment decays slightly while on loan.</div>
+    </div>
+  `
+}
+
+function renderBingo(judgeLevel) {
+  const listed = (G.shinobi || []).filter(s => s.bingoBookPresence > 0)
+  const suppCost = 8000
+  const promCost = 3000
+  return `
+    <div style="font-size:.8rem;color:#aaa;margin-bottom:12px">Shinobi in the Bingo Book attract rival assassins — but also generate prestige. Suppress entries to reduce risk; promote to maximize legend gain.</div>
+    ${listed.length === 0
+      ? '<div style="color:#555;text-align:center;padding:30px">No shinobi listed yet. S-rank shinobi and those with 3+ S-rank wins are auto-listed.</div>'
+      : `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px">
+          ${listed.map(s => {
+            const tier = BINGO_TIERS[Math.min(s.bingoBookPresence, BINGO_TIERS.length - 1)]
+            return `<div style="background:#1a1a1a;border:1px solid ${tier.color}44;border-top:2px solid ${tier.color};border-radius:6px;padding:12px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <span style="color:${tier.color};font-size:1.3rem">${tier.icon}</span>
+                <div>
+                  <div style="color:#e8d5a3;font-weight:bold">${sn(s)}</div>
+                  <div style="font-size:.72rem;color:${tier.color}">${tier.n}</div>
+                </div>
+              </div>
+              <div style="font-size:.75rem;color:#888;margin-bottom:8px">
+                Assassination risk: <span style="color:#f66">${Math.round(tier.assasRisk * 100)}%/mo</span>
+                · Prestige: <span style="color:#c9a84c">+${tier.prestigeBonus}/mo</span>
+              </div>
+              ${s.bingoBookSuppressed ? '<div style="font-size:.72rem;color:#8fbc8f;margin-bottom:6px">✓ Suppressed — attacks paused</div>' : ''}
+              <div style="display:flex;gap:5px;flex-wrap:wrap">
+                ${!s.bingoBookSuppressed
+                  ? `<button onclick="bingoSuppress('${s.id}')" style="background:#1a1a2e;border:1px solid #44a;color:#87ceeb;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:.72rem">🛡 Suppress (${fmt(suppCost)})</button>`
+                  : ''}
+                ${s.bingoBookPresence < 3
+                  ? `<button onclick="bingoPromote('${s.id}')" style="background:#2e1a00;border:1px solid #a64;color:#f0a030;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:.72rem">⬆ Promote (${fmt(promCost)})</button>`
+                  : ''}
+              </div>
+            </div>`
+          }).join('')}
+        </div>`
+    }
+  `
+}
+
+function renderOffers(tm) {
+  const offers = tm.offers || []
+  if (offers.length === 0) return `<div style="color:#555;text-align:center;padding:30px;font-size:.85rem">No offer history. Negotiate with village-listed shinobi to create offers.</div>`
+  return `<div>
+    ${offers.slice().reverse().map(o => {
+      const statusColor = o.status === 'accepted' ? '#8fbc8f' : o.status === 'rejected' ? '#f66' : o.status === 'countered' ? '#f0a030' : '#aaa'
+      return `<div style="background:#1a1a1a;border:1px solid #333;border-radius:5px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:.8rem">
+        <div style="flex:1">
+          <span style="color:#e8d5a3">${o.name}</span>
+          <span style="color:#888"> — offered <strong style="color:#c9a84c">${fmt(o.amount)} ryo</strong></span>
+          ${o.counterAmount ? ` <span style="color:#f0a030">· counter: ${fmt(o.counterAmount)}</span>` : ''}
+        </div>
+        <span style="color:${statusColor};font-size:.75rem">${o.status.toUpperCase()}</span>
+        ${o.status === 'countered'
+          ? `<button onclick="acceptCounter('${o.id}')" style="background:#1a2e1a;border:1px solid #4a7a4a;color:#8fbc8f;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:.72rem">Accept Counter</button>`
+          : ''}
+      </div>`
+    }).join('')}
+  </div>`
+}
+
+// ── Actions exposed to window ─────────────────────────────────────────────────
+
+export function trTab(id) { window._trTab = id; rTr() }
+
+export function refreshTransferPool() {
+  if (!G.transferMarket) return
+  G.transferMarket.pool = genTransferPool()
+  rTr()
+  ntf('Transfer pool refreshed.')
+}
+
+export function openNegotiation(poolId) {
+  const p = (G.transferMarket?.pool || []).find(x => x.id === poolId)
+  if (!p) return
+  _negTarget = p
+  document.getElementById('neg-title').textContent = p.fn + ' ' + p.ln + ' — Negotiation'
+  document.getElementById('neg-asking').textContent = fmt(p.askingFee)
+  document.getElementById('neg-offer').value = Math.round(p.askingFee * 0.85)
+  document.getElementById('neg-result').textContent = ''
+  document.getElementById('ov-negotiate').classList.add('open')
+}
+
+export function submitOffer() {
+  if (!_negTarget) return
+  const p = _negTarget
+  const amount = parseInt(document.getElementById('neg-offer').value, 10) || 0
+  if (G.ryo < amount) { document.getElementById('neg-result').textContent = 'Not enough ryo.'; return }
+  const village = (G.villages || []).find(v => v.n === p.originVillage)
+  const relScore = village?.rel ?? 50
+
+  let status, counter = 0
+  if (amount >= p.askingFee * 0.88 && relScore >= 25) {
+    status = 'accepted'
+    _negFee = amount
+  } else if (amount >= p.askingFee * 0.60 && relScore >= 15) {
+    status = 'countered'
+    counter = p.askingFee
+    _negFee = counter
+  } else {
+    status = 'rejected'
+  }
+
+  G.transferMarket.offers = G.transferMarket.offers || []
+  const offerId = Math.random().toString(36).slice(2)
+  G.transferMarket.offers.push({ id: offerId, name: p.fn + ' ' + p.ln, amount, counterAmount: counter || null, status })
+
+  const resultEl = document.getElementById('neg-result')
+  if (status === 'accepted') {
+    resultEl.textContent = '✓ Offer accepted! Proceed to personal terms.'
+    resultEl.style.color = '#8fbc8f'
+    document.getElementById('neg-confirm').style.display = ''
+    _termTarget = p
+  } else if (status === 'countered') {
+    resultEl.textContent = `Counteroffer: ${fmt(counter)} ryo. Accept or walk away.`
+    resultEl.style.color = '#f0a030'
+    document.getElementById('neg-confirm').style.display = ''
+    document.getElementById('neg-confirm').textContent = `Accept Counter (${fmt(counter)})`
+    _termTarget = p
+  } else {
+    resultEl.textContent = `Rejected.${relScore < 25 ? ' Diplomatic standing too low.' : ' Offer too low.'}`
+    resultEl.style.color = '#f66'
+    document.getElementById('neg-confirm').style.display = 'none'
+  }
+}
+
+export function negConfirm() {
+  if (!_termTarget) return
+  document.getElementById('ov-negotiate').classList.remove('open')
+  openPersonalTerms(_termTarget.id)
+}
+
+export function openPersonalTerms(poolId) {
+  const p = (G.transferMarket?.pool || []).find(x => x.id === poolId)
+  if (!p) return
+  _termTarget = p
+  document.getElementById('pt-title').textContent = p.fn + ' ' + p.ln + ' — Personal Terms'
+  document.getElementById('pt-fee').textContent = fmt(_negFee || p.askingFee) + ' ryo'
+  document.getElementById('pt-rank-info').textContent = 'Currently: ' + RANKS[p.ri]
+  document.getElementById('ov-personalterms').classList.add('open')
+}
+
+export function confirmTransfer() {
+  const p = _termTarget
+  if (!p) return
+  const fee = _negFee || p.askingFee
+  if (G.ryo < fee) { ntf('Not enough ryo for transfer fee!'); return }
+  const roleGuar = document.getElementById('pt-role-guar')?.checked || false
+  const rankTL = parseInt(document.getElementById('pt-rank-tl')?.value || '0', 10)
+  const sigBonus = parseInt(document.getElementById('pt-sig-bonus')?.value || '0', 10)
+  const totalCost = fee + sigBonus
+  if (G.ryo < totalCost) { ntf('Not enough ryo including signing bonus!'); return }
+
+  G.ryo -= totalCost
+  const catDef = TRANSFER_CATS.find(c => c.id === p.transferCategory)
+  p.commitment = clamp(50 + (catDef?.loyaltyBonus || 0) * 4 + (roleGuar ? 10 : 0) + Math.floor(sigBonus / 500), 0, 100)
+  p.roleGuarantee = roleGuar
+  if (rankTL > 0) {
+    p.promotionDeadline = G.month + rankTL
+    p.promotionDeadlineYear = G.year + Math.floor((G.month + rankTL - 1) / 12)
+    p.promotionDeadline = ((G.month + rankTL - 1) % 12) + 1
+  }
+  p.status = 'available'
+  p.months = 0
+  // Missing-nin diplomatic risk
+  if (p.transferCategory === 'missing_nin') {
+    const v = pk(G.villages || [])
+    if (v) { v.rel = clamp(v.rel - 10, 0, 100); aL('Signing a missing-nin angered ' + v.n + '.', 'warn') }
+  }
+  // Loan-in option
+  const loanDur = parseInt(document.getElementById('pt-loan-dur')?.value || '0', 10)
+  if (loanDur > 0) {
+    G.transferMarket.loanIn = G.transferMarket.loanIn || []
+    G.transferMarket.loanIn.push({ shinobiId: p.id, shinobiName: p.fn + ' ' + p.ln, monthsRemaining: loanDur, monthlyCost: Math.round(p.salary * 1.2) })
+    p.loanIn = true
+  }
+  G.shinobi.push(p)
+  G.transferMarket.pool = (G.transferMarket.pool || []).filter(x => x.id !== p.id)
+  aL(p.fn + ' ' + p.ln + ' signed! Fee: ' + fmt(fee) + ' ryo' + (sigBonus ? ' + ' + fmt(sigBonus) + ' signing bonus' : '') + '.', 'good')
+  ntf(p.fn + ' ' + p.ln + ' signed!')
+  document.getElementById('ov-personalterms').classList.remove('open')
+  _negTarget = null; _negFee = 0; _termTarget = null
+  rTr(); upUI()
+}
+
+export function poachAttempt(poolId) {
+  const p = (G.transferMarket?.pool || []).find(x => x.id === poolId)
+  if (!p) return
+  const poachFee = Math.round(p.askingFee * 0.70)
+  if (G.ryo < poachFee) { ntf('Not enough ryo to poach (' + fmt(poachFee) + ' needed).'); return }
+  const loyLow = (p.pMatrix?.loyalty || 10) < 10
+  const success = Math.random() < (loyLow ? 0.68 : 0.40)
+  if (success) {
+    G.ryo -= poachFee
+    p.status = 'available'; p.commitment = 45; p.months = 0
+    G.shinobi.push(p)
+    G.transferMarket.pool = (G.transferMarket.pool || []).filter(x => x.id !== p.id)
+    aL(p.fn + ' ' + p.ln + ' approached directly and agreed — signed for ' + fmt(poachFee) + ' ryo!', 'good')
+    ntf(p.fn + ' signed via direct approach!')
+    rTr(); upUI()
+  } else {
+    // Diplomatic incident
+    if (p.originVillage) {
+      const v = (G.villages || []).find(x => x.n === p.originVillage)
+      if (v) {
+        v.rel = clamp(v.rel - 15, 0, 100)
+        v.grudgeTicks = (v.grudgeTicks || 0) + 4
+        aL('Poaching attempt on ' + p.fn + ' ' + p.ln + ' failed — diplomatic incident with ' + v.n + '!', 'bad')
+      }
+    } else {
+      aL('Poaching attempt on ' + p.fn + ' ' + p.ln + ' failed.', 'bad')
+    }
+    ntf('Poach failed!')
+    rTr()
+  }
+}
+
+export function sellPressureBlock(shinobiId) {
+  const sp = (G.sellPressure || []).find(x => x.shinobiId === shinobiId)
+  if (!sp) return
+  const v = (G.villages || []).find(x => x.n === sp.villageName)
+  if (v) v.rel = clamp(v.rel - 5, 0, 100)
+  G.sellPressure = (G.sellPressure || []).filter(x => x.shinobiId !== shinobiId)
+  const s = G.shinobi.find(x => x.id === shinobiId)
+  aL('Blocked ' + sp.villageName + '\'s approach on ' + (s ? sn(s) : 'shinobi') + '.', 'neutral')
+  rTr(); upUI()
+}
+
+export function sellPressureAccept(shinobiId) {
+  const sp = (G.sellPressure || []).find(x => x.shinobiId === shinobiId)
+  if (!sp) return
+  const s = G.shinobi.find(x => x.id === shinobiId)
+  G.ryo += sp.offerRyo
+  const v = (G.villages || []).find(x => x.n === sp.villageName)
+  if (v) v.rel = clamp(v.rel + 5, 0, 100)
+  G.sellPressure = (G.sellPressure || []).filter(x => x.shinobiId !== shinobiId)
+  aL((s ? sn(s) : 'Shinobi') + ' sold to ' + sp.villageName + ' for ' + fmt(sp.offerRyo) + ' ryo.', 'neutral')
+  if (s) {
+    G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, year: G.year, month: G.month, wins: s.wins, lastWords: 'Transferred to ' + sp.villageName + '.', transfer: true })
+    G.shinobi = G.shinobi.filter(x => x.id !== shinobiId)
+  }
+  rTr(); upUI()
+}
+
+export function sellPressureLetDecide(shinobiId) {
+  const sp = (G.sellPressure || []).find(x => x.shinobiId === shinobiId)
+  if (!sp) return
+  const s = G.shinobi.find(x => x.id === shinobiId)
+  G.sellPressure = (G.sellPressure || []).filter(x => x.shinobiId !== shinobiId)
+  if (!s) { rTr(); return }
+  const loyaltyCheck = (s.pMatrix?.loyalty || 10) + (s.commitment || 70) / 5
+  const stays = Math.random() < loyaltyCheck / 25
+  if (stays) {
+    s.commitment = clamp((s.commitment || 70) + 5, 0, 100)
+    aL(sn(s) + ' turned down ' + sp.villageName + '\'s offer and committed to staying.', 'good')
+  } else {
+    G.ryo += sp.offerRyo * 0.1  // small compensation
+    G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, year: G.year, month: G.month, wins: s.wins, lastWords: 'Chose to transfer to ' + sp.villageName + '.', transfer: true })
+    G.shinobi = G.shinobi.filter(x => x.id !== shinobiId)
+    aL(sn(s) + ' chose to transfer to ' + sp.villageName + '!', 'bad')
+  }
+  rTr(); upUI()
+}
+
+export function sendLoan() {
+  const shinobiId = document.getElementById('loan-out-shinobi')?.value
+  const duration = parseInt(document.getElementById('loan-out-dur')?.value || '3', 10)
+  const s = G.shinobi.find(x => x.id === shinobiId)
+  if (!s) { ntf('Select a shinobi to loan.'); return }
+  const monthlyFee = Math.round(s.salary * 1.5)
+  s.status = 'mission'  // unavailable while on loan
+  G.transferMarket.loanOut = G.transferMarket.loanOut || []
+  G.transferMarket.loanOut.push({ shinobiId: s.id, monthsRemaining: duration, monthlyFee })
+  aL(sn(s) + ' sent on a ' + duration + '-month loan. Earns ' + fmt(monthlyFee) + '/mo.', 'good')
+  ntf(sn(s) + ' on loan for ' + duration + 'mo.')
+  rTr(); upUI()
+}
+
+export function recallLoan(shinobiId) {
+  const lo = (G.transferMarket?.loanOut || []).find(x => x.shinobiId === shinobiId)
+  if (!lo) return
+  G.transferMarket.loanOut = (G.transferMarket.loanOut || []).filter(x => x.shinobiId !== shinobiId)
+  const s = G.shinobi.find(x => x.id === shinobiId)
+  if (s) { s.status = 'available'; s.commitment = clamp((s.commitment || 70) - 8, 0, 100) }
+  aL((s ? sn(s) : 'Shinobi') + ' recalled from loan early. Commitment penalty applied.', 'warn')
+  rTr(); upUI()
+}
+
+export function bingoSuppress(shinobiId) {
+  const s = G.shinobi.find(x => x.id === shinobiId)
+  if (!s) return
+  const cost = 8000
+  if (G.ryo < cost) { ntf('Not enough ryo (' + fmt(cost) + ' needed).'); return }
+  G.ryo -= cost
+  s.bingoBookSuppressed = true
+  aL(sn(s) + '\'s Bingo Book entry suppressed for now.', 'neutral')
+  rTr(); upUI()
+}
+
+export function bingoPromote(shinobiId) {
+  const s = G.shinobi.find(x => x.id === shinobiId)
+  if (!s || s.bingoBookPresence >= 3) return
+  const cost = 3000
+  if (G.ryo < cost) { ntf('Not enough ryo (' + fmt(cost) + ' needed).'); return }
+  G.ryo -= cost
+  s.bingoBookPresence = Math.min(3, (s.bingoBookPresence || 1) + 1)
+  const tier = BINGO_TIERS[s.bingoBookPresence]
+  aL(sn(s) + ' promoted in the Bingo Book to: ' + tier.n + '.', 'warn')
+  rTr(); upUI()
+}
+
+export function acceptCounter(offerId) {
+  const offer = (G.transferMarket?.offers || []).find(o => o.id === offerId)
+  if (!offer || offer.status !== 'countered') return
+  if (!offer.counterAmount) return
+  _negFee = offer.counterAmount
+  const poolEntry = (G.transferMarket?.pool || []).find(p => p.fn + ' ' + p.ln === offer.name)
+  if (poolEntry) {
+    offer.status = 'accepted'
+    _termTarget = poolEntry
+    openPersonalTerms(poolEntry.id)
+  }
+  rTr()
+}

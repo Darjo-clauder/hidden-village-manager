@@ -1,4 +1,4 @@
-import { G, sPow, clamp, sn, fmt } from '../state.js'
+import { G, sPow, clamp, sn, fmt, pDesc, personalityJudge } from '../state.js'
 import { RANKS, RKC, JUTSU_LIST, INJURY_TYPES } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 
@@ -72,8 +72,46 @@ export function oDos(id) {
     <div style="font-size:7px;color:#3a3630;margin-top:2px">High workload (60%+) increases injury risk.</div>
     ${(s.consecutiveMissions||0) >= 2 ? `<div style="font-size:7px;color:#fa0;margin-top:2px">⚠ ${s.consecutiveMissions} consecutive missions — overuse risk +10%</div>` : ''}
   </div>`
+  // Personality matrix section
+  const judgeLevel = personalityJudge()
+  const pm = s.pMatrix || {}
+  const pmTraits = ['loyalty','ambition','professionalism','temperament','adaptability']
+  const pmHtml = `<div style="margin-bottom:10px">
+    <div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Character Read ${judgeLevel >= 16 ? '(Precise)' : judgeLevel >= 11 ? '(General)' : judgeLevel >= 6 ? '(Broad)' : '(Unknown)'}</div>
+    ${pmTraits.map(k => {
+      const val = pm[k] !== undefined ? pm[k] : 10
+      const desc = pDesc(val, k, judgeLevel)
+      const color = judgeLevel < 6 ? '#3a3630' : val >= 13 ? '#8fbc8f' : val >= 8 ? '#aaa' : '#f99'
+      return `<div style="display:flex;gap:6px;font-size:8px;margin-bottom:3px"><span style="color:#7a7060;width:80px;text-transform:capitalize">${k}</span><span style="color:${color}">${desc}</span></div>`
+    }).join('')}
+    ${judgeLevel < 6 ? '<div style="font-size:7px;color:#3a3630;margin-top:4px">Hire a Council Advisor or Head Sensei to read character more accurately.</div>' : ''}
+  </div>`
+  // Individual morale & commitment bars
+  const indMor = s.indMorale ?? 70
+  const commit = s.commitment ?? 70
+  const mColor = indMor >= 70 ? '#8fbc8f' : indMor >= 45 ? '#f0a030' : '#f66'
+  const cColor = commit >= 60 ? '#c9a84c' : commit >= 30 ? '#f0a030' : '#f66'
+  const moraleCommitHtml = `<div style="margin-bottom:10px">
+    <div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">State of Mind</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+      <div style="font-size:7px;color:#7a7060;width:70px">Individual Morale</div>
+      <div style="flex:1;background:#222;height:4px;border-radius:2px"><div style="width:${indMor}%;height:100%;background:${mColor}"></div></div>
+      <div style="font-size:8px;color:${mColor};min-width:24px">${indMor}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+      <div style="font-size:7px;color:#7a7060;width:70px">Commitment</div>
+      <div style="flex:1;background:#222;height:4px;border-radius:2px"><div style="width:${commit}%;height:100%;background:${cColor}"></div></div>
+      <div style="font-size:8px;color:${cColor};min-width:24px">${commit}</div>
+    </div>
+    ${s.legendStatus ? '<div style="font-size:8px;color:#c9a84c;margin-top:2px">★ Village Legend — exceptionally loyal</div>' : ''}
+    ${commit <= 25 ? '<div style="font-size:7px;color:#f66;margin-top:2px">⚠ Low commitment — transfer risk! Consider a 1-on-1 meeting.</div>' : ''}
+    ${s.roleGuarantee ? '<div style="font-size:7px;color:#87ceeb;margin-top:2px">Role guarantee promised — must deploy regularly.</div>' : ''}
+    ${s.promotionDeadline ? '<div style="font-size:7px;color:#f0a030;margin-top:2px">⏳ Promotion deadline: month ' + s.promotionDeadline + '</div>' : ''}
+    ${s.bingoBookPresence > 0 ? '<div style="font-size:7px;color:#f0a030;margin-top:2px">📖 Bingo Book: ' + ['','Listed','Featured','Legendary'][s.bingoBookPresence] + (s.bingoBookSuppressed ? ' (suppressed)' : '') + '</div>' : ''}
+  </div>`
+
   document.getElementById('dos-c').innerHTML =
-    `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div style="font-size:14px;color:#e8e0cc;font-weight:bold">${sn(s)}</div><div style="font-size:9px;color:#7a7060;margin-top:2px">${RANKS[s.ri]} · ${s.clan ? s.clan + ' Clan' : s.spec} · Age ${s.age}${s.prodigy ? ' · <span style="color:#c9a84c">✦ Prodigy</span>' : ''}</div>${jkB ? `<div style="font-size:9px;color:#c9a84c;margin-top:2px">Jinchuriki of ${jkB.n} (${jkB.tails} tails)</div>` : ''}${sq ? `<div style="font-size:9px;color:#cc7fb8;margin-top:2px">Member of ${sq.n}</div>` : ''}</div><span class="rk ${RKC[s.ri]}" style="font-size:10px">${RANKS[s.ri]}</span></div><div style="margin-bottom:10px"><div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Stats</div><div class="sg">${sBars(s)}</div></div>${injuryHtml}<div style="margin-bottom:10px"><div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Personality</div><span class="trait-tag ${pCl(s.pers)}">${s.pers.n}</span><div style="font-size:9px;color:#7a7060;margin-top:5px">${s.pers.desc}</div></div><div>${s.archetype ? `<div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Archetype</div><div style="font-size:9px;color:#cc7fb8;margin-bottom:3px">${s.archetype.n}</div><div style="font-size:9px;color:#7a7060;margin-bottom:10px;font-style:italic">${s.archetype.flavor}</div>` : ''}</div>${darkHtml}${jutsuHtml}${bondsHtml}<div><div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Background</div><div class="dossier">${s.backstory}</div></div><div style="margin-top:10px;display:flex;gap:10px;font-size:9px;color:#7a7060"><span>Power: <b style="color:#e8e0cc">${sPow(s)}</b></span><span>Potential: <b style="color:#c9a84c">${s.scouted === false ? '???' : s.potential}</b></span><span>Wins: <b style="color:#8fbc8f">${s.wins}</b></span><span>Streak: <b style="color:${(s.streak||0)>=3?'#c9a84c':'#7a7060'}">${s.streak||0}</b></span></div>${s.status === 'available' && !jkB && G.beasts.some(b => b.sealed && !b.jk) ? `<div style="margin-top:10px"><div style="font-size:9px;color:#7a7060;margin-bottom:6px">Assign as Jinchuriki:</div>${G.beasts.filter(b => b.sealed && !b.jk).map(b => `<button class="gb gb-g" onclick="mkJK('${s.id}','${b.n}')" style="margin-right:5px">Seal ${b.n} ►</button>`).join('')}</div>` : ''}`
+    `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div style="font-size:14px;color:#e8e0cc;font-weight:bold">${sn(s)}</div><div style="font-size:9px;color:#7a7060;margin-top:2px">${RANKS[s.ri]} · ${s.clan ? s.clan + ' Clan' : s.spec} · Age ${s.age}${s.prodigy ? ' · <span style="color:#c9a84c">✦ Prodigy</span>' : ''}</div>${jkB ? `<div style="font-size:9px;color:#c9a84c;margin-top:2px">Jinchuriki of ${jkB.n} (${jkB.tails} tails)</div>` : ''}${sq ? `<div style="font-size:9px;color:#cc7fb8;margin-top:2px">Member of ${sq.n}</div>` : ''}</div><span class="rk ${RKC[s.ri]}" style="font-size:10px">${RANKS[s.ri]}</span></div><div style="margin-bottom:10px"><div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Stats</div><div class="sg">${sBars(s)}</div></div>${injuryHtml}${moraleCommitHtml}<div style="margin-bottom:10px"><div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Personality</div><span class="trait-tag ${pCl(s.pers)}">${s.pers.n}</span><div style="font-size:9px;color:#7a7060;margin-top:5px">${s.pers.desc}</div></div>${pmHtml}<div>${s.archetype ? `<div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Archetype</div><div style="font-size:9px;color:#cc7fb8;margin-bottom:3px">${s.archetype.n}</div><div style="font-size:9px;color:#7a7060;margin-bottom:10px;font-style:italic">${s.archetype.flavor}</div>` : ''}</div>${darkHtml}${jutsuHtml}${bondsHtml}<div><div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Background</div><div class="dossier">${s.backstory}</div></div><div style="margin-top:10px;display:flex;gap:10px;font-size:9px;color:#7a7060"><span>Power: <b style="color:#e8e0cc">${sPow(s)}</b></span><span>Potential: <b style="color:#c9a84c">${s.scouted === false ? '???' : s.potential}</b></span><span>Wins: <b style="color:#8fbc8f">${s.wins}</b></span><span>Streak: <b style="color:${(s.streak||0)>=3?'#c9a84c':'#7a7060'}">${s.streak||0}</b></span></div>${s.status === 'available' && !jkB && G.beasts.some(b => b.sealed && !b.jk) ? `<div style="margin-top:10px"><div style="font-size:9px;color:#7a7060;margin-bottom:6px">Assign as Jinchuriki:</div>${G.beasts.filter(b => b.sealed && !b.jk).map(b => `<button class="gb gb-g" onclick="mkJK('${s.id}','${b.n}')" style="margin-right:5px">Seal ${b.n} ►</button>`).join('')}</div>` : ''}`
   document.getElementById('ov-dossier').classList.add('open')
 }
 

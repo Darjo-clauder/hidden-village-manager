@@ -143,7 +143,142 @@ export const FINANCIAL_EVENTS = [
   { id:'bonus_trade',     n:'Bonus Trade Season',  desc:'Rare goods flood the market — merchants seek your escorts.',    ryo:12000,  morale:3 },
   { id:'war_reparations', n:'War Reparations',     desc:'A defeated rival village pays tribute under treaty terms.',     ryo:20000,  rep:10,  morale:5 },
 ]
-// Mission commission income (village's cut from client payments)
+// ── Scouting regions ──────────────────────────────────────────────────────────
+export const REGIONS = [
+  { id:'fire',      n:'Land of Fire',      icon:'🔥', clanAffinity:['Uchiha','Senju'],            statBonus:{ ninjutsu:5, intelligence:3 }, desc:'Rich chakra potential. Ninjutsu-heavy bloodlines.' },
+  { id:'lightning', n:'Land of Lightning',  icon:'⚡', clanAffinity:['Hyuga'],                     statBonus:{ speed:5, taijutsu:3 },         desc:'Fast and aggressive. Speed and taijutsu specialists.' },
+  { id:'water',     n:'Land of Water',      icon:'🌊', clanAffinity:['Inuzuka','Aburame'],         statBonus:{ chakra:4, genjutsu:4 },        desc:'Hidden talent and illusion arts. Rare genjutsu bloodlines.' },
+  { id:'wind',      n:'Land of Wind',       icon:'💨', clanAffinity:[],                            statBonus:{ speed:6, taijutsu:2 },         desc:'Desert-bred endurance. Natural speed from harsh conditions.' },
+  { id:'earth',     n:'Land of Earth',      icon:'🪨', clanAffinity:['Nara','Akimichi','Yamanaka'], statBonus:{ taijutsu:4, chakra:4 },        desc:'Clan-rich territory. Tactical bloodlines and strong physiques.' },
+  { id:'iron',      n:'Land of Iron',       icon:'⚔️', clanAffinity:[],                            statBonus:{ taijutsu:8 },                  desc:'Samurai country. Non-chakra fighters with exceptional taijutsu.' },
+]
+
+// ── Youth Academy development ─────────────────────────────────────────────────
+export const DEV_TRACKS = [
+  { id:'balanced',  n:'Balanced',  icon:'⚖',  growBonus:{},                              growRandom:3, desc:'Even growth across all attributes.' },
+  { id:'ninjutsu',  n:'Ninjutsu',  icon:'🔥', growBonus:{ ninjutsu:2, intelligence:1 }, growRandom:0, desc:'Elemental jutsu and chakra transformation.' },
+  { id:'taijutsu',  n:'Taijutsu',  icon:'👊', growBonus:{ taijutsu:2, speed:1 },        growRandom:0, desc:'Physical arts, stamina, close combat.' },
+  { id:'genjutsu',  n:'Genjutsu',  icon:'🌀', growBonus:{ genjutsu:2, chakra:1 },       growRandom:0, desc:'Illusionary arts and chakra manipulation.' },
+  { id:'stealth',   n:'Stealth',   icon:'🌑', growBonus:{ speed:2, intelligence:1 },    growRandom:0, desc:'Infiltration and covert operations.' },
+  { id:'medical',   n:'Medical',   icon:'💊', growBonus:{ chakra:2, intelligence:1 },   growRandom:0, desc:'Healing arts and precision chakra control.' },
+]
+export const INTENSITY_LEVELS = [
+  { id:'low',    n:'Low',    mult:0.5, burnoutRisk:0, desc:'Safe pace. No burnout risk.' },
+  { id:'medium', n:'Medium', mult:1.0, burnoutRisk:2, desc:'Standard pace. Manageable burnout risk.' },
+  { id:'high',   n:'High',   mult:1.5, burnoutRisk:5, desc:'Accelerated growth. Significant burnout risk.' },
+]
+
+// ── Personality Matrix descriptors ────────────────────────────────────────────
+export const PM_DESC = {
+  loyalty: [
+    { max:5,  short:'mercenary',       full:'motivated by ryo — will leave for a better offer' },
+    { max:10, short:'pragmatic',       full:'loyalty real but conditional on fair treatment' },
+    { max:15, short:'dependable',      full:'reliably committed under normal circumstances' },
+    { max:20, short:'fiercely loyal',  full:'deeply rooted — would take a major incident to consider leaving' },
+  ],
+  ambition: [
+    { max:5,  short:'content',            full:'satisfied with current standing, not seeking advancement' },
+    { max:10, short:'quietly driven',     full:'has goals but won\'t push for them aggressively' },
+    { max:15, short:'ambitious',          full:'actively seeking rank and recognition' },
+    { max:20, short:'restless ambition',  full:'needs constant progression or grows deeply unsettled' },
+  ],
+  professionalism: [
+    { max:5,  short:'erratic',      full:'conduct is unpredictable — hard to manage reliably' },
+    { max:10, short:'inconsistent', full:'professionalism varies significantly by circumstance' },
+    { max:15, short:'professional', full:'reliable conduct across most situations' },
+    { max:20, short:'exemplary',    full:'a model of discipline — sets the standard' },
+  ],
+  temperament: [
+    { max:5,  short:'volatile',      full:'prone to emotional outbursts — needs careful handling' },
+    { max:10, short:'moody',         full:'emotional state shifts and affects performance' },
+    { max:15, short:'even-keeled',   full:'generally steady under pressure' },
+    { max:20, short:'unshakeable',   full:'calm and composed in any situation' },
+  ],
+  adaptability: [
+    { max:5,  short:'rigid',           full:'struggles significantly with change or new environments' },
+    { max:10, short:'cautious',        full:'adapts, but slowly and with some resistance' },
+    { max:15, short:'flexible',        full:'adjusts well to most new situations' },
+    { max:20, short:'highly adaptable',full:'thrives in unfamiliar conditions — welcomes challenge' },
+  ],
+}
+
+// ── 1-on-1 meeting types ──────────────────────────────────────────────────────
+export const MEETING_TYPES = [
+  { id:'underused',   n:'Wants More Missions',      icon:'⚔',  urgency:'low',
+    desc:'%name% feels underutilized. Without regular deployment, their edge will dull.',
+    responses: [
+      { id:'promise', n:'Promise more deployment', effect:{ indMorale:8,  commitment:5  }, desc:'Commit to prioritizing them in upcoming missions.' },
+      { id:'explain', n:'Explain the strategy',   effect:{ indMorale:3,  commitment:2  }, desc:'Lay out the tactical reasons for limited use.' },
+      { id:'dismiss', n:'Dismiss the concern',    effect:{ indMorale:-10,commitment:-8 }, desc:'Tell them to wait their turn.' },
+    ] },
+  { id:'promotion',   n:'Promotion Overdue',         icon:'🏅', urgency:'medium',
+    desc:'%name% believes they have earned advancement. Patience is wearing thin.',
+    responses: [
+      { id:'promote',  n:'Promote immediately',   effect:{ indMorale:15, commitment:12, promote:true }, desc:'Fast-track their promotion now.' },
+      { id:'timeline', n:'Set a clear timeline',  effect:{ indMorale:6,  commitment:4              }, desc:'Commit to a promotion within 3 months.' },
+      { id:'deny',     n:'Tell them to earn it',  effect:{ indMorale:-12,commitment:-10            }, desc:'Make clear they need better results first.' },
+    ] },
+  { id:'grieving',    n:'Grieving a Squadmate',      icon:'🕯', urgency:'medium',
+    desc:'%name% is struggling after losing someone close. They need to feel supported.',
+    responses: [
+      { id:'counsel',   n:'Offer personal counselling', effect:{ indMorale:12, commitment:6, traumaClear:true }, desc:'Sit with them — give proper time for grief.' },
+      { id:'lightduty', n:'Assign light duties',        effect:{ indMorale:5,  commitment:3              }, desc:'Give them time and easier assignments.' },
+      { id:'push',      n:'Tell them to push through',  effect:{ indMorale:-6, commitment:-5             }, desc:'Insist the village needs them operational.' },
+    ] },
+  { id:'squad_clash', n:'Squad Personality Clash',   icon:'💥', urgency:'medium',
+    desc:'%name% has serious issues with a squadmate. Performance is suffering.',
+    responses: [
+      { id:'reassign', n:'Reassign them',             effect:{ indMorale:8,  commitment:4,  reassign:true }, desc:'Move them to a different squad.' },
+      { id:'mediate',  n:'Mediate the conflict',      effect:{ indMorale:4,  commitment:2              }, desc:'Bring both parties together to resolve tensions.' },
+      { id:'ignore',   n:'Tell them to sort it out',  effect:{ indMorale:-8, commitment:-6             }, desc:'Leave them to deal with it themselves.' },
+    ] },
+  { id:'leaving',     n:'Considering Leaving',        icon:'🚪', urgency:'critical',
+    desc:'%name% is seriously considering a transfer request. This may be your last chance.',
+    responses: [
+      { id:'ryo_bonus', n:'Offer a ryo bonus',    effect:{ indMorale:10, commitment:20, ryo:-5000       }, desc:'Show financial appreciation — 5,000 ryo bonus.' },
+      { id:'appeal',    n:'Make a personal appeal',effect:{ indMorale:6,  commitment:12              }, desc:'Appeal to their history and belonging here.' },
+      { id:'let_go',    n:'Accept their decision', effect:{ indMorale:0,  commitment:-40, transfer:true }, desc:'Respect their wishes and begin transfer proceedings.' },
+    ] },
+  { id:'milestone',   n:'Personal Milestone',         icon:'🌟', urgency:'low',
+    desc:'%name% has reached a significant milestone. Acknowledging it strengthens the relationship.',
+    responses: [
+      { id:'celebrate',   n:'Celebrate publicly',    effect:{ indMorale:12, commitment:8, legend:2 }, desc:'Host a recognition ceremony. The village takes notice.' },
+      { id:'acknowledge', n:'Private recognition',   effect:{ indMorale:6,  commitment:4           }, desc:'A personal word of appreciation.' },
+      { id:'nothing',     n:'Keep focus forward',    effect:{ indMorale:-3, commitment:-2          }, desc:'Stay professional — there\'s still work to do.' },
+    ] },
+]
+
+// ── Transfer windows ──────────────────────────────────────────────────────────
+export const TRANSFER_WINDOWS = [
+  { id:'spring', n:'Spring Transfer Window', month:3, duration:2, icon:'🌸', desc:'Month of the Crane — primary recruitment window (6 weeks)' },
+  { id:'autumn', n:'Autumn Transfer Window', month:9, duration:1, icon:'🍂', desc:'Month of the Wolf — secondary recruitment window (4 weeks)' },
+]
+
+// ── Transfer market categories ─────────────────────────────────────────────────
+export const TRANSFER_CATS = [
+  { id:'free_agent',        n:'Free Agent',         icon:'🌐', color:'#8fbc8f', loyaltyBonus:0,   dipRisk:0,  desc:'Unaffiliated — no fee negotiation required.' },
+  { id:'village_listed',    n:'Village Transfer',   icon:'🏯', color:'#c9a84c', loyaltyBonus:-3,  dipRisk:0,  desc:'Listed by their village — negotiation required.' },
+  { id:'missing_nin',       n:'Missing-Nin',        icon:'💀', color:'#f66',    loyaltyBonus:-10, dipRisk:15, desc:'High stats, low loyalty, diplomatic risk.' },
+  { id:'retired_return',    n:'Retired Return',     icon:'🎌', color:'#87ceeb', loyaltyBonus:8,   dipRisk:0,  desc:'Known quantity — high loyalty, lower ceiling.' },
+  { id:'foreign_specialist',n:'Foreign Specialist', icon:'⭐', color:'#cc7fb8', loyaltyBonus:-2,  dipRisk:5,  desc:'Unique stat profiles not seen domestically.' },
+]
+
+// ── Bingo Book presence tiers ─────────────────────────────────────────────────
+export const BINGO_TIERS = [
+  { presence:0, n:'Unknown',   icon:'◯', assasRisk:0,    prestigeBonus:0,  color:'#555' },
+  { presence:1, n:'Listed',    icon:'●', assasRisk:0.03, prestigeBonus:2,  color:'#c9a84c' },
+  { presence:2, n:'Featured',  icon:'◉', assasRisk:0.06, prestigeBonus:5,  color:'#f0a030' },
+  { presence:3, n:'Legendary', icon:'★', assasRisk:0.10, prestigeBonus:10, color:'#f66' },
+]
+
+// ── Dressing room harmony crisis events ───────────────────────────────────────
+export const HARMONY_EVENTS = [
+  { id:'argument',  n:'Public Argument',       harmonyThresh:35, morale:-4,  indMorale:-6,  desc:'A heated argument erupted in the common room.' },
+  { id:'fistfight', n:'Training Ground Brawl', harmonyThresh:25, morale:-7,  indMorale:-10, desc:'A fight broke out in the training grounds.' },
+  { id:'faction',   n:'Faction Forming',       harmonyThresh:15, morale:-12, indMorale:-8,  desc:'Cliques are forming — the locker room is divided.' },
+]
+
+// ── Mission commission income (village's cut from client payments)
 export const MISSION_COMMISSION = { D:50, C:150, B:400, A:1000, S:3000 }
 // Building maintenance cost per upgrade level (per building, per level)
 export const BUILDING_MAINTENANCE = { academy:500, hospital:600, wall:300, intel:800, training:400, seal:500 }

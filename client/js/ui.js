@@ -21,6 +21,8 @@ import { rFi } from './panels/finances.js'
 import { rSt } from './panels/staff.js'
 import { rSco } from './panels/scouting.js'
 import { rYA } from './panels/youthacademy.js'
+import { rMeet } from './panels/meetings.js'
+import { rTr } from './panels/transfers.js'
 import { rWo } from './world.js'
 
 export { schEx }
@@ -40,6 +42,7 @@ export function upUI() {
   document.getElementById('sbrep').textContent = G.reputation
   document.getElementById('sbf').textContent = G.shinobi.length + '/' + G.shinobi.filter(s => s.status === 'available').length + 'av'
   const legendEl = document.getElementById('tlegend'); if (legendEl) { const leg = G.legend || 0; const title = leg >= 500 ? 'Legendary' : leg >= 250 ? 'War-Renowned' : leg >= 100 ? 'Rising' : ''; legendEl.textContent = leg + (title ? ' — ' + title : '') }
+  const meetBadge = document.getElementById('meet-badge'); if (meetBadge) meetBadge.style.display = (G.meetingQueue?.length > 0) ? '' : 'none'
   rP(ui.CP)
 }
 
@@ -54,7 +57,7 @@ export function sp(id) {
 }
 
 export function rP(id) {
-  const map = { roster: rRo, squads: rSq, missions: rMi, upgrades: rUp, academy: rAc, economy: rEc, village: rVi, beasts: rBe, kage: rKa, exam: rEx, intel: rIn, log: rLo, chronicles: rCh, memorial: rMem, finances: rFi, staff: rSt, scouting: rSco, youthacademy: rYA, world: rWo }
+  const map = { roster: rRo, squads: rSq, missions: rMi, upgrades: rUp, academy: rAc, economy: rEc, village: rVi, beasts: rBe, kage: rKa, exam: rEx, intel: rIn, log: rLo, chronicles: rCh, memorial: rMem, finances: rFi, staff: rSt, scouting: rSco, youthacademy: rYA, meetings: rMeet, transfers: rTr, world: rWo }
   map[id]?.()
 }
 

@@ -62,6 +62,8 @@
       <button class="nb" onclick="sp('staff')" id="nv-staff">▸ Staff</button>
       <button class="nb" onclick="sp('scouting')" id="nv-scouting">▸ Scouting</button>
       <button class="nb" onclick="sp('youthacademy')" id="nv-youthacademy">▸ Youth Academy</button>
+      <button class="nb" onclick="sp('meetings')" id="nv-meetings">▸ People <span class="nb-badge" id="meet-badge" style="display:none">!</span></button>
+      <button class="nb" onclick="sp('transfers')" id="nv-transfers">▸ Transfer Market</button>
       <button class="nb" onclick="sp('village')" id="nv-village">▸ Overview</button>
       <div class="nsec">World</div>
       <button class="nb" onclick="sp('beasts')" id="nv-beasts">▸ Tailed Beasts</button>
@@ -210,6 +212,20 @@
         <div id="yal"></div>
       </div>
 
+      <!-- people management / meetings -->
+      <div id="p-meetings" style="display:none">
+        <div class="pt">People Management</div>
+        <div style="font-size:9px;color:#7a7060;margin-bottom:12px">One-on-one meetings, dressing room harmony, and individual morale. Advance month to generate meeting requests.</div>
+        <div id="meetl"></div>
+      </div>
+
+      <!-- transfer market -->
+      <div id="p-transfers" style="display:none">
+        <div class="pt">Transfer Market &amp; Bingo Book</div>
+        <div style="font-size:9px;color:#7a7060;margin-bottom:12px">Sign free agents and negotiate village transfers during windows. Manage loans, respond to sell pressure, and track Bingo Book presence.</div>
+        <div id="trl"></div>
+      </div>
+
       <!-- world map (multiplayer) -->
       <div id="p-world" style="display:none">
         <div class="pt">World Map</div>
@@ -343,6 +359,71 @@
     <div style="font-size:9px;color:#7a7060;margin-bottom:10px">Select a staff role for this shinobi. Their career stats will determine their initial rating.</div>
     <div id="rts-roles"></div>
     <div class="mbc"><button class="bc" onclick="cm('retiretostaff')">Cancel</button></div>
+  </div>
+</div>
+
+<!-- Negotiation modal -->
+<div class="ov" id="ov-negotiate">
+  <div class="mo">
+    <div class="mot" id="neg-title">Negotiation</div>
+    <div style="font-size:9px;color:#7a7060;margin-bottom:10px">Submit an offer to the shinobi's village. Asking price: <strong id="neg-asking" style="color:#c9a84c"></strong> ryo.</div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:9px;color:#7a7060">Your offer (ryo):</label><br>
+      <input id="neg-offer" type="number" style="background:#111;color:#e8d5a3;border:1px solid #555;border-radius:4px;padding:5px 8px;width:100%;margin-top:4px;font-size:12px">
+    </div>
+    <div id="neg-result" style="font-size:10px;margin-bottom:10px;min-height:16px"></div>
+    <div class="mbc">
+      <button class="bc" onclick="submitOffer()">Submit Offer</button>
+      <button class="bc" id="neg-confirm" style="display:none" onclick="negConfirm()">Proceed to Personal Terms ▸</button>
+      <button class="bc" onclick="cm('negotiate')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Personal terms modal -->
+<div class="ov" id="ov-personalterms">
+  <div class="mo">
+    <div class="mot" id="pt-title">Personal Terms</div>
+    <div style="font-size:9px;color:#7a7060;margin-bottom:4px">Transfer fee agreed: <strong id="pt-fee" style="color:#c9a84c"></strong></div>
+    <div style="font-size:9px;color:#7a7060;margin-bottom:12px" id="pt-rank-info"></div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:9px;color:#e8d5a3;display:flex;align-items:center;gap:8px">
+        <input id="pt-role-guar" type="checkbox" style="width:14px;height:14px">
+        Mission role guarantee (promise regular deployment)
+      </label>
+      <div style="font-size:8px;color:#7a7060;margin-top:3px;margin-left:22px">Boosts arrival commitment +10. Breach costs commitment each month unused.</div>
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:9px;color:#7a7060">Rank timeline expectation:</label>
+      <select id="pt-rank-tl" style="background:#1a1a1a;color:#e8d5a3;border:1px solid #555;border-radius:4px;padding:4px 8px;width:100%;margin-top:4px;font-size:11px">
+        <option value="0">No promise</option>
+        <option value="3">Promote within 3 months</option>
+        <option value="6">Promote within 6 months</option>
+        <option value="12">Promote within 12 months</option>
+      </select>
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:9px;color:#7a7060">Signing bonus:</label>
+      <select id="pt-sig-bonus" style="background:#1a1a1a;color:#e8d5a3;border:1px solid #555;border-radius:4px;padding:4px 8px;width:100%;margin-top:4px;font-size:11px">
+        <option value="0">None</option>
+        <option value="1000">1,000 ryo</option>
+        <option value="3000">3,000 ryo</option>
+        <option value="5000">5,000 ryo</option>
+      </select>
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:9px;color:#7a7060">Sign as loan (temporary):</label>
+      <select id="pt-loan-dur" style="background:#1a1a1a;color:#e8d5a3;border:1px solid #555;border-radius:4px;padding:4px 8px;width:100%;margin-top:4px;font-size:11px">
+        <option value="0">Permanent signing</option>
+        <option value="3">Loan — 3 months</option>
+        <option value="6">Loan — 6 months</option>
+      </select>
+      <div style="font-size:8px;color:#7a7060;margin-top:3px">Loan players cannot enter the Chunin Exam.</div>
+    </div>
+    <div class="mbc">
+      <button class="bc" onclick="confirmTransfer()">Confirm &amp; Sign ▸</button>
+      <button class="bc" onclick="cm('personalterms')">Cancel</button>
+    </div>
   </div>
 </div>
 

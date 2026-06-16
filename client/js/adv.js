@@ -1,5 +1,5 @@
-import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent } from './state.js'
-import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES } from './constants.js'
+import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc } from './state.js'
+import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
 import { syncToServer } from './socket.js'
 import { pickNarrative, pickSquadNarrative, pickRankUpNarrative, DARK_MOMENT_POOL, LAST_WORDS_POOL } from './narratives.js'
@@ -851,6 +851,191 @@ export function adv() {
       addLegend(graduates.length * 2)
     }
   }
+
+  // ── Individual morale, commitment & people management tick ────────────────
+  if (!G.meetingQueue) G.meetingQueue = []
+  if (!G.sellPressure) G.sellPressure = []
+  if (!G.transferMarket) G.transferMarket = { pool:[], offers:[], loanOut:[], loanIn:[], windowOpen:false, windowSeason:null, windowMonthsLeft:0 }
+
+  G.shinobi.forEach(s => {
+    // Backfill missing fields on old saves
+    if (!s.pMatrix) s.pMatrix = { loyalty:rnd(3,18), ambition:rnd(3,18), professionalism:rnd(3,18), temperament:rnd(3,18), adaptability:rnd(3,18) }
+    if (s.indMorale === undefined) s.indMorale = 70
+    if (s.commitment === undefined) s.commitment = 70
+
+    // Individual morale drifts toward village morale
+    const mgap = G.morale - s.indMorale
+    s.indMorale = clamp(s.indMorale + Math.round(mgap * 0.08), 0, 100)
+
+    // Commitment decay: 1–2/month
+    s.commitment = clamp(s.commitment - rnd(1, 2), 0, 100)
+    // Restless ambition drains faster if not promoted
+    if ((s.pMatrix.ambition || 10) >= 15 && s.ri < 3) s.commitment = clamp(s.commitment - 1, 0, 100)
+    // High loyalty slows decay
+    if ((s.pMatrix.loyalty || 10) >= 15) s.commitment = clamp(s.commitment + 1, 0, 100)
+    // Deployment streak renews commitment
+    if ((s.streak || 0) >= 2) s.commitment = clamp(s.commitment + 2, 0, 100)
+
+    // Legend status: 10+ years (120 months)
+    if (!s.legendStatus && s.months >= 120) {
+      s.legendStatus = true
+      s.commitment = clamp(s.commitment + 20, 0, 100)
+      aL(sn(s) + ' is now a Village Legend — a decade of service!', 'good')
+      addChronicle('Village Legend', sn(s) + ' became a legend after a decade of service.', 'shinobi')
+      addLegend(10)
+    }
+
+    // Meeting trigger (cooldown guard)
+    s.meetingCooldown = Math.max(0, (s.meetingCooldown || 0) - 1)
+    if (s.meetingCooldown === 0 && !G.meetingQueue.find(m => m.shinobiId === s.id)) {
+      let mType = null
+      if (s.commitment < 20) mType = 'leaving'
+      else if (s.traumaStatus && Math.random() < 0.40) mType = 'grieving'
+      else if (s.status === 'available' && (s.workload || 0) < 15 && s.months > 3 && Math.random() < 0.22) mType = 'underused'
+      else if (s.months > 12 && s.ri < 4 && (s.pMatrix.ambition || 10) >= 13 && Math.random() < 0.18) mType = 'promotion'
+      else if (s.squadId && (s.pMatrix.temperament || 10) < 7 && Math.random() < 0.15) mType = 'squad_clash'
+      else if (s.wins > 0 && s.wins % 25 === 0 && Math.random() < 0.55) mType = 'milestone'
+      if (mType) {
+        G.meetingQueue.push({ id: Math.random().toString(36).slice(2), shinobiId: s.id, type: mType, month: G.month, year: G.year })
+        s.meetingCooldown = 3
+        aL(sn(s) + ' has requested a one-on-one meeting — check People Management!', 'ev')
+        ntf('Meeting request: ' + sn(s))
+      }
+    }
+
+    // Promotion deadline missed
+    if (s.promotionDeadline && G.month >= s.promotionDeadline && G.year >= (s.promotionDeadlineYear || G.year)) {
+      s.commitment = clamp(s.commitment - 15, 0, 100)
+      s.indMorale = clamp(s.indMorale - 10, 0, 100)
+      s.promotionDeadline = null
+      aL(sn(s) + '\'s promised promotion deadline passed — they are deeply disappointed.', 'bad')
+    }
+
+    // Role guarantee breach
+    if (s.roleGuarantee && s.status === 'available' && (s.workload || 0) < 10 && s.months > 1) {
+      s.commitment = clamp(s.commitment - 3, 0, 100)
+      s.indMorale = clamp(s.indMorale - 4, 0, 100)
+    }
+
+    // Transfer at zero commitment (loyalty check)
+    if (s.commitment <= 0 && !s.legendStatus) {
+      const loyRoll = s.pMatrix.loyalty || 10
+      if (loyRoll < 10 && Math.random() < 0.40) {
+        aL(sn(s) + ' has submitted a transfer request and left the village!', 'bad')
+        G.memorial.push({ name: sn(s), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri], clan: s.clan, year: G.year, month: G.month, wins: s.wins, lastWords: 'Submitted a transfer request.', transfer: true })
+        addChronicle('Transfer Departure', sn(s) + ' left the village after losing all commitment.', 'event')
+        G.morale = clamp(G.morale - 4, 0, 100)
+        G.shinobi = G.shinobi.filter(x => x.id !== s.id)
+      }
+    }
+  })
+
+  // ── Dressing room harmony ──────────────────────────────────────────────────
+  const harmony = computeHarmony()
+  G.harmonyScore = harmony
+  if (harmony > 70) G.morale = clamp(G.morale + 1, 0, 100)
+  if (harmony < 40 && Math.random() < 0.28) {
+    const eligible = HARMONY_EVENTS.filter(e => harmony <= e.harmonyThresh)
+    const ev = eligible.length ? pk(eligible) : HARMONY_EVENTS[0]
+    G.morale = clamp(G.morale + ev.morale, 0, 100)
+    G.shinobi.forEach(s => { s.indMorale = clamp((s.indMorale || 70) + ev.indMorale, 0, 100) })
+    aL('Dressing Room: "' + ev.n + '" — ' + ev.desc, 'bad')
+    addChronicle('Dressing Room Crisis', ev.n + ': ' + ev.desc, 'event')
+  }
+  // Leadership group mediates after losses
+  if (harmony < 60) {
+    const leaders = G.shinobi.slice()
+      .sort((a, b) => ((b.pMatrix?.loyalty || 0) + Math.floor(b.months / 12)) - ((a.pMatrix?.loyalty || 0) + Math.floor(a.months / 12)))
+      .slice(0, 5)
+    if (leaders.filter(l => (l.pMatrix?.loyalty || 0) >= 14).length >= 2) {
+      G.morale = clamp(G.morale + 2, 0, 100)
+    }
+  }
+
+  // ── Transfer window tick ────────────────────────────────────────────────────
+  const tw = TRANSFER_WINDOWS.find(w => w.month === G.month)
+  if (tw && !G.transferMarket.windowOpen) {
+    G.transferMarket.windowOpen = true
+    G.transferMarket.windowSeason = tw.id
+    G.transferMarket.windowMonthsLeft = tw.duration
+    G.transferMarket.pool = genTransferPool()
+    aL(tw.icon + ' ' + tw.n + ' is now open — browse available shinobi!', 'ev')
+    ntf(tw.n + ' open!')
+  }
+  if (G.transferMarket.windowOpen) {
+    G.transferMarket.windowMonthsLeft = Math.max(0, G.transferMarket.windowMonthsLeft - 1)
+    G.transferMarket.pool.forEach(p => { p.monthsAvailable = Math.max(0, (p.monthsAvailable || 1) - 1) })
+    G.transferMarket.pool = G.transferMarket.pool.filter(p => p.monthsAvailable > 0)
+    if (G.transferMarket.windowMonthsLeft <= 0) {
+      G.transferMarket.windowOpen = false
+      G.transferMarket.windowSeason = null
+      aL('Transfer window closed. Market resets next season.', 'neutral')
+    }
+  }
+
+  // ── Sell pressure (rival villages approach your shinobi) ───────────────────
+  G.sellPressure = (G.sellPressure || []).filter(sp => {
+    const stillValid = !(sp.expiresYear < G.year || (sp.expiresYear === G.year && sp.expiresMonth <= G.month))
+    return stillValid
+  })
+  if (Math.random() < 0.10 && G.shinobi.length > 0) {
+    const targets = G.shinobi.filter(s => (s.ri >= 2 || s.wins >= 20) && !G.sellPressure.find(sp => sp.shinobiId === s.id))
+    if (targets.length > 0) {
+      const target = pk(targets)
+      const village = pk(G.villages)
+      const offer = Math.round(target.salary * rnd(12, 24))
+      G.sellPressure.push({ shinobiId: target.id, villageName: village.n, offerRyo: offer, expiresMonth: G.month + 2, expiresYear: G.year + (G.month > 10 ? 1 : 0) })
+      aL(village.n + ' has approached ' + sn(target) + ' with a transfer offer of ' + fmt(offer) + ' ryo!', 'ev')
+      ntf(village.n + ' wants ' + sn(target) + '!')
+    }
+  }
+
+  // ── Loan tick ──────────────────────────────────────────────────────────────
+  const tm = G.transferMarket
+  // Loans out (our shinobi sent away)
+  tm.loanOut = (tm.loanOut || []).filter(lo => {
+    lo.monthsRemaining = Math.max(0, (lo.monthsRemaining || 1) - 1)
+    G.ryo += lo.monthlyFee || 0
+    if (lo.monthsRemaining <= 0) {
+      const s = G.shinobi.find(x => x.id === lo.shinobiId)
+      if (s) { s.status = 'available'; s.commitment = clamp((s.commitment || 70) - 5, 0, 100) }
+      aL((s ? sn(s) : 'Loaned shinobi') + ' returned from loan.', 'neutral')
+      return false
+    }
+    return true
+  })
+  // Loans in (borrowed shinobi)
+  tm.loanIn = (tm.loanIn || []).filter(li => {
+    li.monthsRemaining = Math.max(0, (li.monthsRemaining || 1) - 1)
+    G.ryo -= li.monthlyCost || 0
+    if (li.monthsRemaining <= 0) {
+      G.shinobi = G.shinobi.filter(s => s.id !== li.shinobiId)
+      aL((li.shinobiName || 'Loan player') + ' returned to their village.', 'neutral')
+      return false
+    }
+    return true
+  })
+
+  // ── Bingo Book tick ────────────────────────────────────────────────────────
+  G.shinobi.forEach(s => {
+    if (!s.bingoBookPresence && (s.ri >= 4 || (s.winsS || 0) >= 3)) {
+      s.bingoBookPresence = 1
+      aL(sn(s) + ' has been listed in the Bingo Book!', 'warn')
+    }
+    if (!s.bingoBookPresence) return
+    if (s.bingoBookSuppressed && Math.random() < 0.14) s.bingoBookSuppressed = false
+    if (!s.bingoBookSuppressed) {
+      const bTier = BINGO_TIERS[Math.min(s.bingoBookPresence, BINGO_TIERS.length - 1)]
+      addLegend(bTier.prestigeBonus)
+      if (Math.random() < bTier.assasRisk) {
+        aL('⚠ Assassination attempt on ' + sn(s) + '! (Bingo Book: ' + bTier.n + ')', 'bad')
+        if (Math.random() < 0.30) {
+          const injType = pickInjuryType(s.ri >= 4 ? 'S' : 'A')
+          if (injType) { applyInjury(s, injType, hL); aL(sn(s) + ' was injured in the assassination attempt.', 'bad') }
+        }
+      }
+    }
+  })
 
   // ── Prodigy event (1% per month in rfP) — handled in rfP ────────────────
   if (G.tempDef > 0) G.tempDef = Math.max(0, G.tempDef - 5)

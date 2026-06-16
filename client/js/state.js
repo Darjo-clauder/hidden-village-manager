@@ -1,7 +1,7 @@
 import {
   CLANS, RANKS, FNAMES, LNAMES, SPECS, PERSONALITIES, BACKSTORIES, ARCHETYPES,
   TAILED_BEASTS, VILLAGES_DEF, MISS_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
-  REGIONS,
+  REGIONS, PM_DESC,
 } from './constants.js'
 
 // ── utilities ──────────────────────────────────────────────────────────────
@@ -34,7 +34,33 @@ export function mS(ri = 0) {
   Object.keys(base).forEach(k => { base[k] = clamp(Math.round(base[k] * m), 1, 99) })
   const p = pk(PERSONALITIES), sal = Math.round((500 + ri * 400) * (1 + (p.effect.salary || 0)))
   const origin = Math.random() < 0.05 ? pk(['Sunagakure', 'Kirigakure', 'Iwagakure', 'Kumogakure']) : null
-  return { id: Math.random().toString(36).slice(2), fn: pk(FNAMES), ln: pk(LNAMES), clan: clan?.n || null, trait: clan?.t || null, spec: pk(SPECS), age, ri, stats: base, potential: rnd(ri * 20 + 45, 99), status: 'available', injDays: 0, injuryType: null, missId: null, squadId: null, salary: sal, months: 0, wins: 0, winsB: 0, winsS: 0, streak: 0, pers: p, backstory: pk(BACKSTORIES), archetype: pk(ARCHETYPES), scouted: false, monthsWaiting: 0, rivalId: null, origin, jk: null, darkMoment: null, jutsu: [], bonds: [], prodigy: false, familyId: null, mentor: null, workload: 0, consecutiveMissions: 0, traumaStatus: null, traumaCount: 0, returningForm: 100 }
+  return {
+    id: Math.random().toString(36).slice(2), fn: pk(FNAMES), ln: pk(LNAMES),
+    clan: clan?.n || null, trait: clan?.t || null, spec: pk(SPECS), age, ri,
+    stats: base, potential: rnd(ri * 20 + 45, 99),
+    status: 'available', injDays: 0, injuryType: null, missId: null, squadId: null,
+    salary: sal, months: 0, wins: 0, winsB: 0, winsS: 0, streak: 0,
+    pers: p, backstory: pk(BACKSTORIES), archetype: pk(ARCHETYPES),
+    scouted: false, monthsWaiting: 0, rivalId: null, origin, jk: null,
+    darkMoment: null, jutsu: [], bonds: [], prodigy: false, familyId: null, mentor: null,
+    workload: 0, consecutiveMissions: 0, traumaStatus: null, traumaCount: 0, returningForm: 100,
+    // Personality matrix (hidden from player — revealed via staff)
+    pMatrix: {
+      loyalty:         rnd(3, 18),
+      ambition:        rnd(3, 18),
+      professionalism: rnd(3, 18),
+      temperament:     rnd(3, 18),
+      adaptability:    rnd(3, 18),
+    },
+    indMorale:         rnd(55, 85),  // individual morale 0–100
+    commitment:        rnd(55, 90),  // 0–100, decays monthly
+    legendStatus:      false,        // true after 10 years of service
+    meetingCooldown:   0,            // months before next meeting request
+    promotionDeadline: null,         // month by which they expect promotion
+    roleGuarantee:     false,        // Kage promised regular deployment
+    bingoBookPresence: 0,            // 0=none 1=listed 2=featured 3=legendary
+    bingoBookSuppressed: false,
+  }
 }
 
 // ── stat helpers ───────────────────────────────────────────────────────────
@@ -112,6 +138,20 @@ export function initState() {
     intakeClass: [],
     lastIntakeYear: null,
     kageTrainingUsedYear: 0,
+    // People Management
+    meetingQueue: [],
+    harmonyScore: 70,
+    // Transfer Market
+    transferMarket: {
+      pool: [],
+      offers: [],
+      loanOut: [],
+      loanIn: [],
+      windowOpen: false,
+      windowSeason: null,
+      windowMonthsLeft: 0,
+    },
+    sellPressure: [],
   });
   [2, 2, 1, 1, 1, 0, 0, 0].forEach(r => G.shinobi.push(mS(r)))
   rfM(); rfP()
@@ -239,6 +279,98 @@ export function genStudent(academyLevel, headSenseiRating) {
   delete base.jutsu
   delete base.bonds
   return base
+}
+
+// Personality descriptor — returns text based on staff judgment level
+export function pDesc(value, trait, judgmentLevel) {
+  if (judgmentLevel < 6) return '???'
+  const tiers = PM_DESC[trait]
+  if (!tiers) return '???'
+  const tier = tiers.find(t => value <= t.max) || tiers[tiers.length - 1]
+  if (judgmentLevel < 11) return value >= 13 ? 'positive' : value >= 8 ? 'neutral' : 'concerning'
+  if (judgmentLevel < 16) return tier.short
+  return tier.full
+}
+
+// Personality judgment level based on council/head sensei stats
+export function personalityJudge() {
+  const council = (G.staff || []).find(st => st.role === 'council')
+  const headSensei = (G.staff || []).find(st => st.role === 'head_sensei')
+  const cScore = council ? ((council.stats.charisma || 0) + (council.stats.diplomacy || 0)) / 2 : 0
+  const sScore = headSensei ? ((headSensei.stats.pedagogy || 0) + (headSensei.stats.empathy || 0)) / 2 : 0
+  return Math.floor(Math.max(cScore, sScore))
+}
+
+// Dressing room harmony score (0–100)
+export function computeHarmony() {
+  if (!G.shinobi || G.shinobi.length === 0) return 70
+  let harmony = 70
+  G.squads.forEach(sq => {
+    const members = sq.members.map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
+    for (let i = 0; i < members.length; i++) {
+      for (let j = i + 1; j < members.length; j++) {
+        const a = members[i], b = members[j]
+        if (!a.pMatrix || !b.pMatrix) continue
+        const tempDiff = Math.abs((a.pMatrix.temperament || 10) - (b.pMatrix.temperament || 10))
+        if (tempDiff > 10) harmony -= 6
+        if ((a.pMatrix.ambition || 10) > 14 && (b.pMatrix.ambition || 10) > 14 && a.ri === b.ri) harmony -= 5
+        const isRival = (a.bonds || []).some(bnd => bnd.otherId === b.id && bnd.type === 'Rivals')
+        if (isRival) harmony -= 8
+        const isBros = (a.bonds || []).some(bnd => bnd.otherId === b.id && bnd.type === 'Brothers-in-Arms')
+        if (isBros) harmony += 4
+      }
+    }
+  })
+  const lowLoyal = G.shinobi.filter(s => s.pMatrix && s.pMatrix.loyalty < 8).length
+  harmony -= lowLoyal * 3
+  // Leadership group: top shinobi by loyalty + tenure
+  const leaders = G.shinobi
+    .slice()
+    .sort((a, b) => ((b.pMatrix?.loyalty || 0) + Math.floor(b.months / 12)) - ((a.pMatrix?.loyalty || 0) + Math.floor(a.months / 12)))
+    .slice(0, 5)
+  const loyalLeaders = leaders.filter(l => (l.pMatrix?.loyalty || 0) >= 14).length
+  harmony += loyalLeaders * 4
+  return clamp(harmony, 0, 100)
+}
+
+// Generate transfer market pool for a window
+export function genTransferPool() {
+  const pool = []
+  // Free agents: 2-3
+  for (let i = 0; i < rnd(2, 3); i++) {
+    const s = mS(rnd(0, 2))
+    s.transferCategory = 'free_agent'; s.askingFee = 2000 + s.ri * 1500
+    s.originVillage = null; s.monthsAvailable = rnd(2, 4); pool.push(s)
+  }
+  // Village-listed: 2-4
+  for (let i = 0; i < rnd(2, 4); i++) {
+    const s = mS(rnd(1, 3))
+    s.transferCategory = 'village_listed'; s.askingFee = 5000 + s.ri * 3000
+    s.originVillage = pk(VILLAGES_DEF).n; s.monthsAvailable = rnd(1, 2); pool.push(s)
+  }
+  // Missing-nin: 1-2
+  for (let i = 0; i < rnd(1, 2); i++) {
+    const s = mS(rnd(2, 4))
+    s.transferCategory = 'missing_nin'
+    s.pMatrix = { loyalty: rnd(1, 7), ambition: rnd(12, 20), professionalism: rnd(2, 10), temperament: rnd(2, 10), adaptability: rnd(8, 18) }
+    s.askingFee = 3000 + s.ri * 2000; s.originVillage = null; s.monthsAvailable = rnd(1, 3); pool.push(s)
+  }
+  // Retired return: 0-1
+  if (Math.random() < 0.5) {
+    const s = mS(rnd(2, 3))
+    s.transferCategory = 'retired_return'
+    s.pMatrix = { loyalty: rnd(14, 20), ambition: rnd(2, 10), professionalism: rnd(14, 20), temperament: rnd(12, 18), adaptability: rnd(8, 14) }
+    s.potential = rnd(35, 55); s.askingFee = 1500 + s.ri * 1000; s.originVillage = null; s.monthsAvailable = rnd(2, 3); pool.push(s)
+  }
+  // Foreign specialists: 0-2
+  for (let i = 0; i < rnd(0, 2); i++) {
+    const s = mS(rnd(1, 3))
+    const specialStat = pk(Object.keys(s.stats))
+    s.stats[specialStat] = clamp(s.stats[specialStat] + rnd(20, 35), 0, 99)
+    s.transferCategory = 'foreign_specialist'; s.askingFee = 4000 + s.ri * 2500
+    s.originVillage = pk(VILLAGES_DEF).n; s.monthsAvailable = rnd(1, 2); pool.push(s)
+  }
+  return pool
 }
 
 export function addChronicle(title, body, type = 'event') {

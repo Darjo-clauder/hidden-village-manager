@@ -17,6 +17,8 @@ import { rFi } from './panels/finances.js'
 import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff } from './panels/staff.js'
 import { rSco, assignScout } from './panels/scouting.js'
 import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining } from './panels/youthacademy.js'
+import { rMeet, doMeeting } from './panels/meetings.js'
+import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms, confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide, sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter } from './panels/transfers.js'
 
 // defender shorthand helpers used from inline HTML
 function G_defShSet(id) { G.defSh = id; rDef() }
@@ -57,4 +59,10 @@ Object.assign(window, {
   assignScout,
   // youth academy
   yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining,
+  // people management
+  doMeeting,
+  // transfer market
+  trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms,
+  confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide,
+  sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter,
 })
