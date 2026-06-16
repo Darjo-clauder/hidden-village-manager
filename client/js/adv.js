@@ -1,5 +1,5 @@
-import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve } from './state.js'
-import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES } from './constants.js'
+import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice } from './state.js'
+import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
 import { syncToServer } from './socket.js'
 import { pickNarrative, pickSquadNarrative, pickRankUpNarrative, DARK_MOMENT_POOL, LAST_WORDS_POOL } from './narratives.js'
@@ -155,6 +155,9 @@ function tryFormBonds(sq) {
       b.bonds.push({ otherId: a.id, type, formed: { year: G.year, month: G.month } })
       aL(sn(a) + ' and ' + sn(b) + ' have formed a bond: ' + type + '.', 'good')
       addChronicle('Bond Formed', sn(a) + ' and ' + sn(b) + ' are now ' + type + ' after ' + wins + ' missions together.', 'shinobi')
+      addNotice(type === 'Rivals'
+        ? sn(a) + ' and ' + sn(b) + ' have become rivals — sparks are flying in the training grounds.'
+        : sn(a) + ' and ' + sn(b) + ' are now ' + type + ' after fighting side by side.', type === 'Rivals' ? 'warn' : 'good')
     }
   }
 }
@@ -289,6 +292,12 @@ export function adv() {
         if (s.traumaMonths === 0) {
           aL(sn(s) + ' has found peace — their ' + s.traumaStatus + ' trauma has faded.', 'good')
           s.traumaStatus = null
+          // Personality evolution: surviving trauma leaves a permanent mark
+          const evolvedTrait = Math.random() < 0.5 ? 'Resilient' : 'Haunted'
+          if (addTrait(s, evolvedTrait)) {
+            aL(sn(s) + ' emerged from the experience ' + evolvedTrait.toLowerCase() + '.', evolvedTrait === 'Resilient' ? 'good' : 'warn')
+            addNotice(sn(s) + ' has returned to duty, changed by what they endured.', 'neutral')
+          }
         } else if (s.traumaCount >= 2 && Math.random() < 0.12) {
           // Defection risk after 2 traumas
           aL('⚠ ' + sn(s) + ' has abandoned the village — trauma and loss drove them to defect.', 'bad')
@@ -976,12 +985,18 @@ export function adv() {
   if (!G.meetingQueue) G.meetingQueue = []
   if (!G.sellPressure) G.sellPressure = []
   if (!G.transferMarket) G.transferMarket = { pool:[], offers:[], loanOut:[], loanIn:[], windowOpen:false, windowSeason:null, windowMonthsLeft:0 }
+  if (!G.rumors) G.rumors = []
+  if (!G.noticeboard) G.noticeboard = []
+  if (!G.serviceAwardQueue) G.serviceAwardQueue = []
+  if (!G.reviewQueue) G.reviewQueue = []
 
   G.shinobi.forEach(s => {
     // Backfill missing fields on old saves
     if (!s.pMatrix) s.pMatrix = { loyalty:rnd(3,18), ambition:rnd(3,18), professionalism:rnd(3,18), temperament:rnd(3,18), adaptability:rnd(3,18) }
     if (s.indMorale === undefined) s.indMorale = 70
     if (s.commitment === undefined) s.commitment = 70
+    if (!s.traits) s.traits = []
+    if (s.lowCommitMonths === undefined) s.lowCommitMonths = 0
 
     // Individual morale drifts toward village morale
     const mgap = G.morale - s.indMorale
@@ -996,13 +1011,36 @@ export function adv() {
     // Deployment streak renews commitment
     if ((s.streak || 0) >= 2) s.commitment = clamp(s.commitment + 2, 0, 100)
 
+    // Personality evolution: consistent winners grow Confident
+    if ((s.streak || 0) >= 5 && addTrait(s, 'Confident')) {
+      aL(sn(s) + ' has grown Confident after a streak of consistent success.', 'good')
+      addNotice(sn(s) + ' is riding high after a string of victories.', 'good')
+    }
+
     // Legend status: 10+ years (120 months)
     if (!s.legendStatus && s.months >= 120) {
       s.legendStatus = true
       s.commitment = clamp(s.commitment + 20, 0, 100)
       aL(sn(s) + ' is now a Village Legend — a decade of service!', 'good')
       addChronicle('Village Legend', sn(s) + ' became a legend after a decade of service.', 'shinobi')
+      addNotice(sn(s) + ' has been recognized as a Village Legend.', 'good')
       addLegend(10)
+    }
+
+    // Long-service award milestones (5/10/15 years)
+    SERVICE_AWARDS.forEach(award => {
+      if (s.months === award.years * 12 && !G.serviceAwardQueue.find(a => a.shinobiId === s.id && a.years === award.years)) {
+        G.serviceAwardQueue.push({ id: Math.random().toString(36).slice(2), shinobiId: s.id, years: award.years, year: G.year, month: G.month })
+        ntf(sn(s) + ' reached ' + award.years + ' years of service — check People Management!')
+      }
+    })
+
+    // Annual review (once per shinobi per year, December)
+    if (G.month === 12 && s.lastReviewYear !== G.year && s.status !== 'exam') {
+      s.lastReviewYear = G.year
+      const expected = (s.ri + 1) * 6
+      const outcome = s.wins >= expected * 1.4 ? 'exceeded' : s.wins >= expected * 0.7 ? 'met' : 'disappointed'
+      G.reviewQueue.push({ id: Math.random().toString(36).slice(2), shinobiId: s.id, outcome, year: G.year })
     }
 
     // Meeting trigger (cooldown guard)
@@ -1023,18 +1061,34 @@ export function adv() {
       }
     }
 
-    // Promotion deadline missed
+    // Promotion deadline missed — personality evolution: feeling overlooked breeds resentment
     if (s.promotionDeadline && G.month >= s.promotionDeadline && G.year >= (s.promotionDeadlineYear || G.year)) {
       s.commitment = clamp(s.commitment - 15, 0, 100)
       s.indMorale = clamp(s.indMorale - 10, 0, 100)
       s.promotionDeadline = null
       aL(sn(s) + '\'s promised promotion deadline passed — they are deeply disappointed.', 'bad')
+      if (addTrait(s, 'Resentful')) {
+        aL(sn(s) + ' has grown Resentful after being passed over.', 'warn')
+        addNotice(sn(s) + ' feels overlooked by village leadership.', 'bad')
+      }
     }
 
     // Role guarantee breach
     if (s.roleGuarantee && s.status === 'available' && (s.workload || 0) < 10 && s.months > 1) {
       s.commitment = clamp(s.commitment - 3, 0, 100)
       s.indMorale = clamp(s.indMorale - 4, 0, 100)
+    }
+
+    // Rumor system: sustained low commitment surfaces rumors (early warning system)
+    if (s.commitment < 35) {
+      s.lowCommitMonths = (s.lowCommitMonths || 0) + 1
+      const hasActiveRumor = G.rumors.some(r => r.shinobiId === s.id && !r.resolved)
+      if (s.lowCommitMonths >= 2 && !hasActiveRumor && Math.random() < 0.25) {
+        addRumor(s, pk(RUMOR_TEMPLATES))
+        ntf('A rumor is circulating about ' + sn(s) + ' — check People Management.')
+      }
+    } else {
+      s.lowCommitMonths = 0
     }
 
     // Transfer at zero commitment (loyalty check)
@@ -1044,6 +1098,7 @@ export function adv() {
         aL(sn(s) + ' has submitted a transfer request and left the village!', 'bad')
         G.memorial.push({ name: sn(s), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri], clan: s.clan, year: G.year, month: G.month, wins: s.wins, lastWords: 'Submitted a transfer request.', transfer: true })
         addChronicle('Transfer Departure', sn(s) + ' left the village after losing all commitment.', 'event')
+        addNotice(sn(s) + ' has left the village for good.', 'bad')
         G.morale = clamp(G.morale - 4, 0, 100)
         G.shinobi = G.shinobi.filter(x => x.id !== s.id)
       }
@@ -1061,14 +1116,41 @@ export function adv() {
     G.shinobi.forEach(s => { s.indMorale = clamp((s.indMorale || 70) + ev.indMorale, 0, 100) })
     aL('Dressing Room: "' + ev.n + '" — ' + ev.desc, 'bad')
     addChronicle('Dressing Room Crisis', ev.n + ': ' + ev.desc, 'event')
+    addNotice(ev.n + ': ' + ev.desc, 'bad')
   }
   // Leadership group mediates after losses
+  const leadershipGroup = getLeadershipGroup()
   if (harmony < 60) {
-    const leaders = G.shinobi.slice()
-      .sort((a, b) => ((b.pMatrix?.loyalty || 0) + Math.floor(b.months / 12)) - ((a.pMatrix?.loyalty || 0) + Math.floor(a.months / 12)))
-      .slice(0, 5)
-    if (leaders.filter(l => (l.pMatrix?.loyalty || 0) >= 14).length >= 2) {
+    if (leadershipGroup.filter(l => (l.pMatrix?.loyalty || 0) >= 14).length >= 2) {
       G.morale = clamp(G.morale + 2, 0, 100)
+    }
+  }
+
+  // ── Group dynamics events (beyond 1-on-1 meetings) ─────────────────────────
+  if (Math.random() < 0.18) {
+    const rivalPairExists = G.shinobi.some(s => s.rivalId && G.shinobi.some(o => o.id === s.rivalId && o.squadId === s.squadId))
+    const squadMilestone = G.squads.some(sq => sq.wins > 0 && sq.wins % 10 === 0)
+    const prodigyPresent = G.shinobi.some(s => s.trait === 'Prodigy' || s.prodigy)
+    const legendPresent = G.shinobi.some(s => s.legendStatus)
+    const newcomerPresent = G.shinobi.some(s => (s.months || 0) <= 1)
+    const eligible = GROUP_EVENTS.filter(ev => {
+      if (ev.requires === 'rivals') return rivalPairExists
+      if (ev.requires === 'leader') return leadershipGroup.length >= 2
+      if (ev.requires === 'squadwin') return squadMilestone
+      if (ev.requires === 'lowharmony') return harmony < 50
+      if (ev.requires === 'prodigy') return prodigyPresent
+      if (ev.requires === 'legend') return legendPresent
+      if (ev.requires === 'newcomer') return newcomerPresent
+      return false
+    })
+    if (eligible.length) {
+      const gev = pk(eligible)
+      G.morale = clamp(G.morale + gev.moraleMod, 0, 100)
+      G.harmonyScore = clamp((G.harmonyScore || 70) + gev.harmonyMod, 0, 100)
+      G.shinobi.forEach(s => { s.indMorale = clamp((s.indMorale || 70) + gev.indMoraleMod, 0, 100) })
+      aL(gev.icon + ' ' + gev.n + ' — ' + gev.desc, gev.kind === 'good' ? 'good' : gev.kind === 'bad' ? 'bad' : 'neutral')
+      addChronicle(gev.n, gev.desc, 'event')
+      addNotice(gev.icon + ' ' + gev.desc, gev.kind === 'good' ? 'good' : gev.kind === 'bad' ? 'bad' : 'neutral')
     }
   }
 

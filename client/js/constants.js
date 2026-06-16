@@ -293,6 +293,68 @@ export const HARMONY_EVENTS = [
   { id:'faction',   n:'Faction Forming',       harmonyThresh:15, morale:-12, indMorale:-8,  desc:'Cliques are forming — the locker room is divided.' },
 ]
 
+// ── Group dynamics events (beyond 1-on-1 meetings) ────────────────────────────
+export const GROUP_EVENTS = [
+  { id:'public_clash',        n:'Rivals Clash in Training',     icon:'⚡', kind:'bad',     requires:'rivals',     harmonyMod:-8,  moraleMod:-2, indMoraleMod:-5,  desc:'Two rivals came to blows during a training session — the whole squad watched.' },
+  { id:'leadership_challenge',n:'Leader Challenges a Decision', icon:'🗣',  kind:'mixed',   requires:'leader',     harmonyMod:-3,  moraleMod:0,  indMoraleMod:0,   desc:'A senior member openly questioned a Kage decision in front of others — respect or resentment, depending how it lands.' },
+  { id:'milestone_party',     n:'Squad Celebrates a Milestone', icon:'🎉', kind:'good',    requires:'squadwin',   harmonyMod:10, moraleMod:3,  indMoraleMod:8,   desc:'A squad threw an impromptu celebration after a string of wins. Spirits are high.' },
+  { id:'mentor_circle',       n:'Veterans Hold a Mentor Circle',icon:'📿', kind:'good',    requires:'leader',     harmonyMod:6,  moraleMod:1,  indMoraleMod:5,   desc:'Senior shinobi gathered the younger ranks to share hard-earned lessons.' },
+  { id:'factional_grumbling', n:'Factional Grumbling',          icon:'😤', kind:'bad',     requires:'lowharmony', harmonyMod:-6, moraleMod:-2, indMoraleMod:-4,  desc:'Quiet cliques are forming. Conversations stop when the Kage walks by.' },
+  { id:'prodigy_resentment',  n:'Resentment Toward a Prodigy',  icon:'🌀', kind:'bad',     requires:'prodigy',    harmonyMod:-5, moraleMod:-1, indMoraleMod:-6,  desc:'Talk in the barracks turns bitter whenever the prodigy\'s name comes up.' },
+  { id:'veteran_speech',      n:'Legend Gives a Speech',        icon:'🎙', kind:'good',    requires:'legend',     harmonyMod:8,  moraleMod:2,  indMoraleMod:6,   desc:'A Village Legend addressed the ranks. Morale lifts village-wide.' },
+  { id:'newcomer_friction',   n:'Newcomer Friction',            icon:'🆕', kind:'bad',     requires:'newcomer',   harmonyMod:-4, moraleMod:-1, indMoraleMod:-5,  desc:'A recent arrival is struggling to fit in with the established roster.' },
+]
+
+// ── Personality evolution traits (triggered by events, not random) ───────────
+export const EVOLVED_TRAITS = {
+  Resilient: 'Grew stronger through hardship — trauma recovery left them tougher, not broken.',
+  Haunted:   'Carries something that never fully faded, even after the wounds healed.',
+  Confident: 'Riding a wave of consistent success — walks taller than they used to.',
+  Resentful: 'Feels passed over and undervalued. Trust has quietly eroded.',
+}
+
+// ── Long-service award milestones ─────────────────────────────────────────────
+export const SERVICE_AWARDS = [
+  { years:5,  n:'Five-Year Service',  icon:'🎖',
+    desc:'%name% has served the village for five years and reflects on the path taken so far.',
+    responses: [
+      { id:'honor',  n:'Hold a formal honoring', effect:{ loyalty:3, indMorale:10, commitment:8, ryo:-2000 }, desc:'A modest ceremony recognizing their service.' },
+      { id:'word',   n:'A personal word of thanks', effect:{ loyalty:2, indMorale:6, commitment:4 }, desc:'Take a moment privately to thank them.' },
+      { id:'nothing',n:'Let the moment pass',     effect:{ loyalty:-2, indMorale:-4, commitment:-3 }, desc:'There are more pressing matters today.' },
+    ] },
+  { years:10, n:'Ten-Year Service',   icon:'🏆',
+    desc:'%name% has given a full decade to the village. This is a defining moment in their career.',
+    responses: [
+      { id:'honor',  n:'Grand ceremony + bonus',  effect:{ loyalty:5, indMorale:15, commitment:12, ryo:-6000, legend:3 }, desc:'A village-wide ceremony with a generous bonus.' },
+      { id:'word',   n:'Sincere private gratitude',effect:{ loyalty:3, indMorale:8, commitment:6 }, desc:'A heartfelt, private acknowledgment.' },
+      { id:'nothing',n:'Treat it as routine',     effect:{ loyalty:-4, indMorale:-8, commitment:-6 }, desc:'Service is expected, not specially rewarded.' },
+    ] },
+  { years:15, n:'Fifteen-Year Service', icon:'👑',
+    desc:'%name% has served fifteen years — few shinobi reach this point. They wonder if it has been worth it.',
+    responses: [
+      { id:'honor',  n:'Name them a Living Legend', effect:{ loyalty:6, indMorale:18, commitment:15, ryo:-10000, legend:5 }, desc:'Formal recognition as a pillar of the village.' },
+      { id:'word',   n:'A quiet, honest conversation', effect:{ loyalty:4, indMorale:10, commitment:8 }, desc:'Speak frankly about what they\'ve meant to the village.' },
+      { id:'nothing',n:'No special acknowledgment', effect:{ loyalty:-6, indMorale:-12, commitment:-10 }, desc:'Fifteen years passes without comment.' },
+    ] },
+]
+
+// ── Annual review response options (effects modified by personality at runtime) ──
+export const REVIEW_RESPONSES = [
+  { id:'praise',   n:'Praise their performance', desc:'Publicly commend their work this year.' },
+  { id:'standard', n:'Standard acknowledgment',  desc:'A routine, professional review.' },
+  { id:'push',     n:'Push for more next year',  desc:'Set higher expectations going forward.' },
+]
+
+// ── Rumor flavor templates (%name% token) ─────────────────────────────────────
+export const RUMOR_TEMPLATES = [
+  '%name% has been overheard complaining about their treatment in the village.',
+  'Word is %name% has been in contact with a rival village\'s recruiters.',
+  'Some say %name% is quietly stockpiling savings — preparing to leave?',
+  '%name% reportedly skipped a mandatory briefing without explanation.',
+  'Rumor has it %name% confided in a squadmate about wanting out.',
+  '%name% has been seen arguing with staff behind closed doors.',
+]
+
 // ── Village prestige tiers (D→S by legend score) ─────────────────────────────
 export const PRESTIGE_TIERS = [
   { id:'D', min:0,   n:'D — Village Unknown',   color:'#777',    staffTier:0, scoutSlots:1, examHostEligible:false },

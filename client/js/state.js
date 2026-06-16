@@ -60,6 +60,9 @@ export function mS(ri = 0) {
     roleGuarantee:     false,        // Kage promised regular deployment
     bingoBookPresence: 0,            // 0=none 1=listed 2=featured 3=legendary
     bingoBookSuppressed: false,
+    traits: [],                      // evolved traits: Resilient, Haunted, Confident, Resentful...
+    lowCommitMonths: 0,              // consecutive months under commitment threshold (rumor trigger)
+    lastReviewYear: null,            // year of last annual review
   }
 }
 
@@ -178,6 +181,11 @@ export function initState() {
     // Youth academy depth
     academyRecords: {},        // statKey -> { value, name, year }
     gradTracking: [],          // { id, name, gradYear, gradMonth, clan }
+    // People management depth
+    rumors: [],                 // { id, shinobiId, shinobiName, text, year, month, isFalse, resolved }
+    noticeboard: [],            // { year, month, text, type }
+    serviceAwardQueue: [],      // { id, shinobiId, years, year, month }
+    reviewQueue: [],            // { id, shinobiId, outcome, year }
   });
   [2, 2, 1, 1, 1, 0, 0, 0].forEach(r => G.shinobi.push(mS(r)))
   rfM(); rfP()
@@ -416,13 +424,73 @@ export function computeHarmony() {
   const lowLoyal = G.shinobi.filter(s => s.pMatrix && s.pMatrix.loyalty < 8).length
   harmony -= lowLoyal * 3
   // Leadership group: top shinobi by loyalty + tenure
-  const leaders = G.shinobi
-    .slice()
-    .sort((a, b) => ((b.pMatrix?.loyalty || 0) + Math.floor(b.months / 12)) - ((a.pMatrix?.loyalty || 0) + Math.floor(a.months / 12)))
-    .slice(0, 5)
+  const leaders = getLeadershipGroup()
   const loyalLeaders = leaders.filter(l => (l.pMatrix?.loyalty || 0) >= 14).length
   harmony += loyalLeaders * 4
   return clamp(harmony, 0, 100)
+}
+
+// Shared leadership-group computation (top 5 by loyalty + tenure) — used by
+// harmony scoring, the meetings panel, and group dynamics events.
+export function getLeadershipGroup(list) {
+  return (list || G.shinobi || [])
+    .slice()
+    .sort((a, b) => ((b.pMatrix?.loyalty || 0) + Math.floor(b.months / 12)) - ((a.pMatrix?.loyalty || 0) + Math.floor(a.months / 12)))
+    .slice(0, 5)
+}
+
+// Add an evolved trait if not already present. Returns true if newly added.
+export function addTrait(s, trait) {
+  if (!s.traits) s.traits = []
+  if (s.traits.includes(trait)) return false
+  s.traits.push(trait)
+  return true
+}
+
+// Build a relationship web: nodes (shinobi) + edges (bonds and rivalries)
+export function buildRelationshipWeb() {
+  const nodes = (G.shinobi || []).map(s => ({ id: s.id, name: sn(s), ri: s.ri, traits: s.traits || [] }))
+  const edges = []
+  const seen = new Set()
+  ;(G.shinobi || []).forEach(a => {
+    (a.bonds || []).forEach(bnd => {
+      const key = [a.id, bnd.otherId].sort().join('|') + bnd.type
+      if (seen.has(key)) return
+      seen.add(key)
+      const b = G.shinobi.find(x => x.id === bnd.otherId)
+      if (!b) return
+      edges.push({ aId: a.id, aName: sn(a), bId: b.id, bName: sn(b), type: bnd.type, sign: bnd.type === 'Rivals' ? -1 : 1 })
+    })
+    if (a.rivalId) {
+      const b = G.shinobi.find(x => x.id === a.rivalId)
+      if (b) {
+        const key = [a.id, b.id].sort().join('|') + 'RivalFlag'
+        if (!seen.has(key)) { seen.add(key); edges.push({ aId: a.id, aName: sn(a), bId: b.id, bName: sn(b), type: 'Rivals', sign: -1 }) }
+      }
+    }
+  })
+  return { nodes, edges }
+}
+
+// Add a rumor about an unhappy shinobi. 20% chance the rumor is false (no actual mechanical basis).
+export function addRumor(s, template) {
+  if (!G.rumors) G.rumors = []
+  const isFalse = Math.random() < 0.20
+  G.rumors.push({
+    id: Math.random().toString(36).slice(2),
+    shinobiId: s.id, shinobiName: sn(s),
+    text: template.replace('%name%', s.fn),
+    year: G.year, month: G.month,
+    isFalse, resolved: false,
+  })
+  if (G.rumors.length > 20) G.rumors.shift()
+}
+
+// Add a narrative entry to the village noticeboard feed.
+export function addNotice(text, type = 'neutral') {
+  if (!G.noticeboard) G.noticeboard = []
+  G.noticeboard.push({ year: G.year, month: G.month, text, type })
+  if (G.noticeboard.length > 60) G.noticeboard.shift()
 }
 
 // Generate transfer market pool for a window
