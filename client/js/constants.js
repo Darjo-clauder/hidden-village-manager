@@ -261,6 +261,13 @@ export const MEETING_TYPES = [
       { id:'acknowledge', n:'Private recognition',   effect:{ indMorale:6,  commitment:4           }, desc:'A personal word of appreciation.' },
       { id:'nothing',     n:'Keep focus forward',    effect:{ indMorale:-3, commitment:-2          }, desc:'Stay professional — there\'s still work to do.' },
     ] },
+  { id:'wage_tension', n:'Wage Gap Discovered',        icon:'💰', urgency:'medium',
+    desc:'%name% learned a new signing earns more than they do, despite years of loyal service. They want answers.',
+    responses: [
+      { id:'raise',    n:'Raise their salary to match', effect:{ indMorale:14, commitment:10, ryo:0 }, desc:'Adjust their pay to close the gap (handled automatically).' },
+      { id:'explain',  n:'Explain market rates',         effect:{ indMorale:2,  commitment:1  }, desc:'Lay out how transfer fees and market rates differ from internal wages.' },
+      { id:'dismiss',  n:'Tell them pay is final',        effect:{ indMorale:-12,commitment:-10 }, desc:'Make clear there will be no renegotiation.' },
+    ] },
 ]
 
 // ── Transfer windows ──────────────────────────────────────────────────────────
@@ -284,6 +291,30 @@ export const BINGO_TIERS = [
   { presence:1, n:'Listed',    icon:'●', assasRisk:0.03, prestigeBonus:2,  color:'#c9a84c' },
   { presence:2, n:'Featured',  icon:'◉', assasRisk:0.06, prestigeBonus:5,  color:'#f0a030' },
   { presence:3, n:'Legendary', icon:'★', assasRisk:0.10, prestigeBonus:10, color:'#f66' },
+]
+
+// ── Transfer agents (intermediaries for A-rank+ shinobi) ─────────────────────
+export const AGENT_AGENDAS = [
+  { id:'ryo',           n:'Ryo-Focused',       desc:'Cares only about the size of the fee and signing bonus.' },
+  { id:'role_guarantee',n:'Security-Focused',  desc:'Pushes hard for a guaranteed role and deployment promises.' },
+  { id:'prestige',      n:'Prestige-Focused',  desc:'Wants their client at a high-prestige village, fee secondary.' },
+]
+
+// ── Daimyo seasonal objectives ────────────────────────────────────────────────
+export const DAIMYO_OBJECTIVES = [
+  { id:'top_prestige',    n:'Reach B-Tier Prestige or Higher',     desc:'The Daimyo expects the village to be recognized among the regional powers.' },
+  { id:'win_exam',        n:'Produce a Chunin Exam Promotion',     desc:'The Daimyo wants to see the village\'s training bear fruit this year.' },
+  { id:'financial_stable',n:'Maintain Financial Stability',        desc:'No more than one deficit month this year — the treasury must stay sound.' },
+  { id:'sign_grads',      n:'Promote 2 Academy Graduates to Roster', desc:'The Daimyo values homegrown talent over expensive transfers.' },
+  { id:'no_incidents',    n:'Avoid Diplomatic Incidents',          desc:'No village relations should drop by more than 15 points this year.' },
+]
+
+// ── Sponsorship deals (merchant clans offering passive income with strings) ──
+export const SPONSORSHIP_OFFERS = [
+  { id:'iron_merchants',  n:'Iron Merchants Guild',   monthlyRyo:2200, desc:'Steady patronage from the weapons trade.', obligation:'Must field at least 1 ANBU+ rank shinobi every month.', restrictedVillage:null, minRi:3 },
+  { id:'silk_consortium', n:'Silk Road Consortium',   monthlyRyo:1600, desc:'Luxury traders want your village\'s name attached to their caravans.', obligation:'Restricted from trading with Iwagakure while active.', restrictedVillage:'Iwagakure', minRi:0 },
+  { id:'herb_combine',    n:'Medicinal Herb Combine', monthlyRyo:1200, desc:'Healers\' guild offers a modest stipend.', obligation:'Must field at least 1 medical-track graduate.', restrictedVillage:null, minRi:0 },
+  { id:'shadow_patrons',  n:'Shadow Patrons',         monthlyRyo:3000, desc:'Unnamed backers offer generous funding.', obligation:'Restricted from trading with Kirigakure while active.', restrictedVillage:'Kirigakure', minRi:0 },
 ]
 
 // ── Dressing room harmony crisis events ───────────────────────────────────────

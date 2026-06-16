@@ -1,5 +1,5 @@
-import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice } from './state.js'
-import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES } from './constants.js'
+import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice, computeMarketValue } from './state.js'
+import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
 import { syncToServer } from './socket.js'
 import { pickNarrative, pickSquadNarrative, pickRankUpNarrative, DARK_MOMENT_POOL, LAST_WORDS_POOL } from './narratives.js'
@@ -592,11 +592,86 @@ export function adv() {
     }
   })
 
+  // ── Daimyo seasonal objectives (set January, evaluated December) ───────────
+  if (!G.daimyoObjectives && G.month !== 1) {
+    // Backfill for old saves mid-year — assign on next January naturally
+  }
+  if (G.month === 1) {
+    const ids = [...DAIMYO_OBJECTIVES].sort(() => Math.random() - 0.5).slice(0, 3).map(o => o.id)
+    G.daimyoObjectives = { ids, year: G.year, startRel: G.villages.map(v => ({ n: v.n, rel: v.rel })) }
+    aL('The Daimyo has set 3 objectives for the year — check Finances.', 'ev')
+    addChronicle('Daimyo Objectives', 'This year\'s objectives: ' + ids.map(id => DAIMYO_OBJECTIVES.find(o=>o.id===id)?.n).join(', ') + '.', 'event')
+  }
+  if (G.month === 12 && G.daimyoObjectives && G.daimyoObjectives.year === G.year) {
+    const ids = G.daimyoObjectives.ids
+    const met = ids.map(id => {
+      if (id === 'top_prestige') return ['B','A','S'].includes(G.prestigeTier)
+      if (id === 'win_exam') return (G.dynastyRecords?.examWins || 0) > 0
+      if (id === 'financial_stable') return (G.finances?.deficitMonths || 0) <= 1
+      if (id === 'sign_grads') return G.shinobi.filter(s => s.homegrown).length >= 2
+      if (id === 'no_incidents') {
+        const start = G.daimyoObjectives.startRel || []
+        return G.villages.every(v => { const s = start.find(x => x.n === v.n); return !s || (s.rel - v.rel) <= 15 })
+      }
+      return false
+    })
+    const allMet = met.every(Boolean)
+    if (allMet) {
+      G.daimyoBudgetMult = clamp((G.daimyoBudgetMult || 1) + 0.15, 1, 2)
+      aL('The Daimyo is pleased — all objectives met! Budget increased for next season.', 'good')
+      addChronicle('Daimyo Satisfied', 'All 3 objectives met this year. Daimyo budget multiplier now ' + G.daimyoBudgetMult.toFixed(2) + 'x.', 'milestone')
+    } else {
+      G.daimyoBudgetMult = clamp((G.daimyoBudgetMult || 1) - 0.10, 0.5, 2)
+      G.reputation = clamp(G.reputation - 5, 0, 999)
+      aL('The Daimyo is disappointed — objectives missed. Budget cut, relationship damaged.', 'bad')
+      addChronicle('Daimyo Disappointed', met.filter(m=>!m).length + ' objective(s) missed. Budget multiplier now ' + G.daimyoBudgetMult.toFixed(2) + 'x.', 'event')
+    }
+    G.daimyoObjectiveHistory = G.daimyoObjectiveHistory || []
+    G.daimyoObjectiveHistory.push({ year: G.year, met, budgetMult: G.daimyoBudgetMult })
+  }
+
+  // ── Sponsorship deals ────────────────────────────────────────────────────────
+  if (!G.sponsorship && !G.sponsorshipOffer && Math.random() < 0.06) {
+    const eligible = SPONSORSHIP_OFFERS.filter(o => G.shinobi.some(s => s.ri >= o.minRi))
+    if (eligible.length) {
+      G.sponsorshipOffer = pk(eligible)
+      aL(G.sponsorshipOffer.n + ' has offered a sponsorship deal — check Finances.', 'ev')
+      ntf('Sponsorship offer: ' + G.sponsorshipOffer.n)
+    }
+  }
+  let sponsorshipIncome = 0
+  if (G.sponsorship) {
+    const obligationBroken = G.sponsorship.id === 'iron_merchants' && !G.shinobi.some(s => s.ri >= 3 && s.status !== 'retired')
+    if (obligationBroken) {
+      aL(G.sponsorship.n + ' pulled out — obligation unmet.', 'bad')
+      G.sponsorship = null
+    } else {
+      sponsorshipIncome = G.sponsorship.monthlyRyo
+    }
+  }
+
+  // ── Black market ledger (off-books tracking, separate from G.ryo health) ───
+  if (!G.blackLedger) G.blackLedger = { balance: 0, history: [] }
+  if (G.blackLedger.balance > 0) {
+    const catchChance = clamp(G.blackLedger.balance / 200000, 0.02, 0.35)
+    if (Math.random() < catchChance) {
+      const v = pk(G.villages)
+      const penalty = Math.round(G.blackLedger.balance * 0.4)
+      G.ryo = Math.max(0, G.ryo - penalty)
+      if (v) v.rel = clamp(v.rel - 25, 0, 100)
+      G.reputation = clamp(G.reputation - 15, 0, 999)
+      aL('⚠ Rival intel uncovered black market dealings — massive diplomatic and financial penalty!', 'bad')
+      addChronicle('Black Market Exposed', 'Off-books dealings exposed. Penalty: ' + fmt(penalty) + ' ryo, relations and reputation damaged.', 'event')
+      G.blackLedger.history.push({ year: G.year, month: G.month, type: 'caught', amount: -penalty })
+      G.blackLedger.balance = 0
+    }
+  }
+
   // ── Economy & Finance snapshot ────────────────────────────────────────────
   const trI = Math.round(G.tradeRoutes.filter(r => r.active).reduce((a, r) => a + r.income, 0) * sb.tradeIncomeMultiplier)
   const coI = Math.round(G.contracts.filter(c => c.active).reduce((a, c) => a + c.income, 0) * sb.tradeIncomeMultiplier)
   const jkI = G.beasts.filter(b => b.sealed && b.n === 'Matatabi' && b.jk).length * 3000
-  const daimyoB = computeDaimyoBonus()
+  const daimyoB = Math.round(computeDaimyoBonus() * (G.daimyoBudgetMult || 1))
   const maintenance = computeMaintenance()
   const shinobiSal = G.shinobi.reduce((a, s) => a + s.salary, 0)
   const staffSal = (G.staff || []).reduce((a, st) => a + st.salary, 0)
@@ -604,12 +679,12 @@ export function adv() {
   const examFeeAmt = G.finances?.examFees || 0
   const loanFeeAmt = G.finances?.loanFees || 0
 
-  const totalIncome = trI + coI + jkI + daimyoB + examFeeAmt + loanFeeAmt
+  const totalIncome = trI + coI + jkI + daimyoB + examFeeAmt + loanFeeAmt + sponsorshipIncome
   const totalExpend = shinobiSal + staffSal + maintenance
   const monthlyNet = totalIncome - totalExpend
 
   // Apply economy flows
-  G.ryo += trI + coI + jkI + daimyoB + examFeeAmt + loanFeeAmt
+  G.ryo += trI + coI + jkI + daimyoB + examFeeAmt + loanFeeAmt + sponsorshipIncome
   G.ryo -= shinobiSal + staffSal + maintenance
 
   // Record finance snapshot
@@ -618,7 +693,7 @@ export function adv() {
   const commTotal = Object.entries(commByRank).reduce((a,[rk,cnt]) => a + cnt * (MISSION_COMMISSION[rk]||0), 0)
   const snap = {
     year: G.year, month: G.month,
-    income: { tradeRoutes:trI, contracts:coI, jinchuriki:jkI, daimyoBonus:daimyoB, missionCommissions:commTotal, examFees:examFeeAmt, loanFees:loanFeeAmt },
+    income: { tradeRoutes:trI, contracts:coI, jinchuriki:jkI, daimyoBonus:daimyoB, missionCommissions:commTotal, examFees:examFeeAmt, loanFees:loanFeeAmt, sponsorship:sponsorshipIncome },
     expenditure: { shinobiWages:shinobiSal, staffWages:staffSal, maintenance, scoutCost:G.finances.scoutCostThisMonth||0 },
     totalIncome, totalExpend, net:monthlyNet,
     missionBreakdown: { ...commByRank },
@@ -652,6 +727,30 @@ export function adv() {
     }
   } else {
     G.finances.deficitMonths = 0
+  }
+
+  // ── End-of-year financial report ────────────────────────────────────────────
+  if (G.month === 12) {
+    const yearSnaps = G.finances.history.filter(h => h.year === G.year)
+    const yearIncome = yearSnaps.reduce((a, h) => a + h.totalIncome, 0)
+    const yearExpend = yearSnaps.reduce((a, h) => a + h.totalExpend, 0)
+    const yearNet = yearIncome - yearExpend
+    const streams = {
+      tradeRoutes: yearSnaps.reduce((a,h)=>a+(h.income?.tradeRoutes||0),0),
+      contracts: yearSnaps.reduce((a,h)=>a+(h.income?.contracts||0),0),
+      daimyoBonus: yearSnaps.reduce((a,h)=>a+(h.income?.daimyoBonus||0),0),
+      missionCommissions: yearSnaps.reduce((a,h)=>a+(h.income?.missionCommissions||0),0),
+      sponsorship: yearSnaps.reduce((a,h)=>a+(h.income?.sponsorship||0),0),
+      wages: yearSnaps.reduce((a,h)=>a+(h.expenditure?.shinobiWages||0)+(h.expenditure?.staffWages||0),0),
+      maintenance: yearSnaps.reduce((a,h)=>a+(h.expenditure?.maintenance||0),0),
+    }
+    const daimyoReaction = yearNet >= 0
+      ? 'The Daimyo notes the village remained financially sound through Year ' + G.year + '.'
+      : 'The Daimyo expresses concern over Year ' + G.year + '\'s deficit and urges fiscal discipline.'
+    G.yearEndReports = G.yearEndReports || []
+    G.yearEndReports.push({ year: G.year, totalIncome: yearIncome, totalExpend: yearExpend, net: yearNet, streams, daimyoReaction })
+    if (G.yearEndReports.length > 10) G.yearEndReports.shift()
+    addChronicle('Year ' + G.year + ' Financial Report', `Income ${fmt(yearIncome)} / Expenditure ${fmt(yearExpend)} / Net ${yearNet>=0?'+':''}${fmt(yearNet)}. ${daimyoReaction}`, 'milestone')
   }
 
   // Reset monthly accumulators
@@ -1025,6 +1124,12 @@ export function adv() {
       addChronicle('Village Legend', sn(s) + ' became a legend after a decade of service.', 'shinobi')
       addNotice(sn(s) + ' has been recognized as a Village Legend.', 'good')
       addLegend(10)
+      // Homegrown achievement — village-wide morale boost
+      if (s.homegrown) {
+        G.morale = clamp(G.morale + 5, 0, 100)
+        aL('The whole village takes pride — ' + sn(s) + ' is homegrown talent.', 'good')
+        addNotice(sn(s) + ', raised in our own Academy, has become a Village Legend.', 'good')
+      }
     }
 
     // Long-service award milestones (5/10/15 years)
@@ -1079,6 +1184,16 @@ export function adv() {
       s.indMorale = clamp(s.indMorale - 4, 0, 100)
     }
 
+    // Transfer-listed fallout: awkward presence in training while unsold
+    if (s.transferListed) {
+      s.transferListedMonths = (s.transferListedMonths || 0) + 1
+      s.indMorale = clamp(s.indMorale - 2, 0, 100)
+      if (s.transferListedMonths === 1 || s.transferListedMonths % 3 === 0) {
+        aL(sn(s) + ' remains an awkward presence in training, still listed for transfer.', 'warn')
+        addNotice('Other shinobi have noticed ' + sn(s) + ' is still around despite requesting a transfer.', 'warn')
+      }
+    }
+
     // Rumor system: sustained low commitment surfaces rumors (early warning system)
     if (s.commitment < 35) {
       s.lowCommitMonths = (s.lowCommitMonths || 0) + 1
@@ -1104,6 +1219,24 @@ export function adv() {
       }
     }
   })
+
+  // ── Wage structure tension ──────────────────────────────────────────────────
+  // A veteran who discovers a recent signing earns more than they do requests a meeting.
+  const recentSignings = G.shinobi.filter(s => (s.months || 0) <= 2)
+  if (recentSignings.length) {
+    const topNewSalary = Math.max(...recentSignings.map(s => s.salary))
+    G.shinobi.filter(s => (s.months || 0) > 24 && s.salary < topNewSalary && !G.meetingQueue.find(m => m.shinobiId === s.id)).forEach(vet => {
+      const gap = topNewSalary - vet.salary
+      const gapRatio = gap / Math.max(1, vet.salary)
+      const chance = clamp(gapRatio * 0.5, 0, 0.6)
+      if (Math.random() < chance) {
+        G.meetingQueue.push({ id: Math.random().toString(36).slice(2), shinobiId: vet.id, type: 'wage_tension', month: G.month, year: G.year })
+        vet.meetingCooldown = 3
+        aL(sn(vet) + ' learned a new signing earns more than they do — requesting a meeting.', 'warn')
+        ntf('Wage tension: ' + sn(vet))
+      }
+    })
+  }
 
   // ── Dressing room harmony ──────────────────────────────────────────────────
   const harmony = computeHarmony()
@@ -1168,9 +1301,28 @@ export function adv() {
     G.transferMarket.windowMonthsLeft = Math.max(0, G.transferMarket.windowMonthsLeft - 1)
     G.transferMarket.pool.forEach(p => { p.monthsAvailable = Math.max(0, (p.monthsAvailable || 1) - 1) })
     G.transferMarket.pool = G.transferMarket.pool.filter(p => p.monthsAvailable > 0)
+    // Deadline pressure: final month of the window escalates everything
+    G.transferMarket.deadlinePressure = G.transferMarket.windowMonthsLeft <= 1
+    if (G.transferMarket.deadlinePressure) {
+      G.transferMarket.pool.forEach(p => {
+        if (!p.deadlineInflated) {
+          p.askingFee = Math.round(p.askingFee * (1 + rnd(10, 20) / 100))
+          p.deadlineInflated = true
+        }
+      })
+      // Panic signings: rival villages snap up remaining pool entries, visible in the log
+      if (Math.random() < 0.30 && G.transferMarket.pool.length > 0) {
+        const victim = pk(G.transferMarket.pool)
+        const rivalV = pk(G.villages)
+        G.transferMarket.pool = G.transferMarket.pool.filter(p => p.id !== victim.id)
+        aL('📰 Deadline panic: ' + (rivalV?.n || 'a rival village') + ' signed ' + sn(victim) + ' in a late rush.', 'warn')
+        addNotice('Deadline-day panic signing: ' + sn(victim) + ' has joined ' + (rivalV?.n || 'a rival village') + '.', 'warn')
+      }
+    }
     if (G.transferMarket.windowMonthsLeft <= 0) {
       G.transferMarket.windowOpen = false
       G.transferMarket.windowSeason = null
+      G.transferMarket.deadlinePressure = false
       aL('Transfer window closed. Market resets next season.', 'neutral')
     }
   }

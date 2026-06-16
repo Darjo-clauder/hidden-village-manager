@@ -54,7 +54,28 @@ export function doBl(id) {
   const bm = BLACK_MARKET.find(x => x.id === id); if (!bm) return
   if (G.shinobi.some(s => s.pers.n === 'Honorable')) { aL('Honorable shinobi exposed the deal!', 'bad'); G.reputation = Math.max(0, G.reputation - 10); upUI(); ntf('Deal exposed!'); return }
   G.ryo += bm.ryoGain; G.reputation = Math.max(0, G.reputation - bm.repLoss)
+  // Off-books ledger — separate hidden tracker, accumulates exposure risk over time
+  if (!G.blackLedger) G.blackLedger = { balance: 0, history: [] }
+  G.blackLedger.balance += bm.ryoGain
+  G.blackLedger.history.push({ year: G.year, month: G.month, type: bm.n, amount: bm.ryoGain })
+  if (G.blackLedger.history.length > 30) G.blackLedger.history.shift()
   if (Math.random() < bm.risk) { G.reputation = Math.max(0, G.reputation - bm.repLoss * 2); aL('"' + bm.n + '" exposed! Double penalty.', 'bad'); ntf('Exposed!') }
   else { aL('"' + bm.n + '" completed. +' + fmt(bm.ryoGain) + ' ryo.', 'warn') }
+  upUI()
+}
+
+export function acceptSponsorship() {
+  if (!G.sponsorshipOffer) return
+  G.sponsorship = G.sponsorshipOffer
+  G.sponsorshipOffer = null
+  aL('Sponsorship deal with ' + G.sponsorship.n + ' accepted.', 'good')
+  ntf('Sponsorship accepted: ' + G.sponsorship.n)
+  upUI()
+}
+
+export function declineSponsorship() {
+  if (!G.sponsorshipOffer) return
+  aL('Declined sponsorship offer from ' + G.sponsorshipOffer.n + '.', 'neutral')
+  G.sponsorshipOffer = null
   upUI()
 }

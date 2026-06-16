@@ -1,5 +1,5 @@
 import { G, fmt } from '../state.js'
-import { FINANCE_TIERS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, STAFF_ROLES } from '../constants.js'
+import { FINANCE_TIERS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, STAFF_ROLES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS } from '../constants.js'
 
 function tierColor(name) {
   const t = FINANCE_TIERS.find(x => x.n === name)
@@ -162,7 +162,7 @@ export function rFi() {
 
     <!-- History -->
     ${hist.length > 0 ? `
-    <div style="background:#1a1814;border:1px solid #2e2a22;padding:12px">
+    <div style="background:#1a1814;border:1px solid #2e2a22;padding:12px;margin-bottom:14px">
       <div style="font-size:8px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:6px">Monthly History (last ${hist.length})</div>
       ${hist.map(h => `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #111;font-size:8px">
         <span style="color:#3a3630">Y${h.year}M${h.month}</span>
@@ -172,5 +172,93 @@ export function rFi() {
       </div>`).join('')}
       ${sparkline}
     </div>` : ''}
+
+    <!-- 6-month financial projection -->
+    ${_projectionHtml(hist, netNow)}
+
+    <!-- Daimyo objectives -->
+    ${_daimyoObjectivesHtml()}
+
+    <!-- Sponsorship -->
+    ${_sponsorshipHtml()}
+
+    <!-- Black market ledger -->
+    ${_blackLedgerHtml()}
+
+    <!-- End of year report -->
+    ${_yearEndHtml()}
   `
+}
+
+function _projectionHtml(hist, netNow) {
+  const trend = hist.length >= 2 ? (hist[hist.length-1].net - hist[0].net) / hist.length : 0
+  const months = []
+  for (let i = 1; i <= 6; i++) months.push(Math.round(netNow + trend * i))
+  const finalRyo = months.reduce((a,m) => a + m, G.ryo)
+  return `<div style="background:#1a1814;border:1px solid #2e2a22;padding:12px;margin-bottom:14px">
+    <div style="font-size:8px;letter-spacing:2px;color:#87ceeb;text-transform:uppercase;margin-bottom:8px">6-Month Projection</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+      ${months.map((m,i) => `<div style="flex:1;min-width:60px;background:#111;border-radius:3px;padding:5px;text-align:center">
+        <div style="font-size:7px;color:#555">+${i+1}mo</div>
+        <div style="font-size:9px;color:${m>=0?'#8fbc8f':'#f66'};font-weight:bold">${m>=0?'+':''}${fmt(m)}</div>
+      </div>`).join('')}
+    </div>
+    <div style="font-size:8px;color:#7a7060">Projected treasury in 6 months: <b style="color:#c9a84c">${fmt(finalRyo)}</b> ryo (based on current contracts, salaries, and trade routes; trend-extrapolated).</div>
+  </div>`
+}
+
+function _daimyoObjectivesHtml() {
+  const obj = G.daimyoObjectives
+  if (!obj) return ''
+  const defs = obj.ids.map(id => DAIMYO_OBJECTIVES.find(o => o.id === id)).filter(Boolean)
+  return `<div style="background:#1a1814;border:1px solid #c9a84c44;padding:12px;margin-bottom:14px">
+    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">Daimyo Objectives — Year ${obj.year}</div>
+    ${defs.map(d => `<div style="padding:4px 0;border-bottom:1px solid #111"><div style="font-size:9px;color:#e8e0cc">${d.n}</div><div style="font-size:8px;color:#7a7060">${d.desc}</div></div>`).join('')}
+    <div style="font-size:8px;color:#7a7060;margin-top:8px">Budget multiplier: <b style="color:${(G.daimyoBudgetMult||1)>=1?'#8fbc8f':'#f66'}">${(G.daimyoBudgetMult||1).toFixed(2)}x</b>. Meet all 3 by December for a budget increase — miss any for a cut.</div>
+  </div>`
+}
+
+function _sponsorshipHtml() {
+  const offer = G.sponsorshipOffer
+  const active = G.sponsorship
+  if (!offer && !active) return ''
+  return `<div style="background:#1a1814;border:1px solid #cc7fb844;padding:12px;margin-bottom:14px">
+    <div style="font-size:8px;letter-spacing:2px;color:#cc7fb8;text-transform:uppercase;margin-bottom:8px">Sponsorship</div>
+    ${active ? `<div style="font-size:9px;color:#e8e0cc;margin-bottom:4px">${active.n} — active</div>
+      <div style="font-size:8px;color:#8fbc8f;margin-bottom:4px">+${fmt(active.monthlyRyo)} ryo/month</div>
+      <div style="font-size:8px;color:#7a7060">Obligation: ${active.obligation}</div>` : ''}
+    ${offer ? `<div style="font-size:9px;color:#e8e0cc;margin-bottom:4px">${offer.n} — offer pending</div>
+      <div style="font-size:8px;color:#8fbc8f;margin-bottom:4px">+${fmt(offer.monthlyRyo)} ryo/month</div>
+      <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${offer.desc} Obligation: ${offer.obligation}</div>
+      <div style="display:flex;gap:6px"><button class="gb" onclick="acceptSponsorship()">Accept</button><button class="gb gb-r" onclick="declineSponsorship()">Decline</button></div>` : ''}
+  </div>`
+}
+
+function _blackLedgerHtml() {
+  const ledger = G.blackLedger || { balance: 0, history: [] }
+  if (ledger.balance === 0 && ledger.history.length === 0) return ''
+  return `<div style="background:#1a0d0d;border:1px solid #74444;padding:12px;margin-bottom:14px">
+    <div style="font-size:8px;letter-spacing:2px;color:#f66;text-transform:uppercase;margin-bottom:8px">Black Market Ledger (Off-Books)</div>
+    <div style="font-size:9px;color:#e8e0cc;margin-bottom:6px">Accumulated exposure: <b style="color:#f0a030">${fmt(ledger.balance)}</b></div>
+    <div style="font-size:8px;color:#7a7060;margin-bottom:6px">Higher balances raise the monthly chance rival intel exposes your dealings — a major diplomatic and financial penalty.</div>
+    ${ledger.history.slice(-5).reverse().map(h => `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:8px;color:#7a7060"><span>Y${h.year}M${h.month}</span><span style="color:${h.amount>=0?'#8fbc8f':'#f66'}">${h.amount>=0?'+':''}${fmt(h.amount)}</span></div>`).join('')}
+  </div>`
+}
+
+function _yearEndHtml() {
+  const reports = G.yearEndReports || []
+  if (!reports.length) return ''
+  const r = reports[reports.length - 1]
+  return `<div style="background:#1a1814;border:1px solid #2e2a22;padding:12px;margin-bottom:14px">
+    <div style="font-size:8px;letter-spacing:2px;color:#8fbc8f;text-transform:uppercase;margin-bottom:8px">Year ${r.year} Financial Report</div>
+    <div style="display:flex;gap:14px;margin-bottom:8px">
+      <div><div style="font-size:7px;color:#7a7060">Income</div><div style="font-size:12px;color:#8fbc8f;font-weight:bold">${fmt(r.totalIncome)}</div></div>
+      <div><div style="font-size:7px;color:#7a7060">Expenditure</div><div style="font-size:12px;color:#f66;font-weight:bold">${fmt(r.totalExpend)}</div></div>
+      <div><div style="font-size:7px;color:#7a7060">Net</div><div style="font-size:12px;color:${r.net>=0?'#8fbc8f':'#f66'};font-weight:bold">${r.net>=0?'+':''}${fmt(r.net)}</div></div>
+    </div>
+    <div style="font-size:8px;color:#7a7060;margin-bottom:6px">
+      Trade: ${fmt(r.streams.tradeRoutes)} · Contracts: ${fmt(r.streams.contracts)} · Daimyo: ${fmt(r.streams.daimyoBonus)} · Missions: ${fmt(r.streams.missionCommissions)} · Sponsorship: ${fmt(r.streams.sponsorship)} · Wages: -${fmt(r.streams.wages)} · Maintenance: -${fmt(r.streams.maintenance)}
+    </div>
+    <div style="font-size:9px;color:#c9a84c;font-style:italic">"${r.daimyoReaction}"</div>
+  </div>`
 }

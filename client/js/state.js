@@ -1,7 +1,7 @@
 import {
   CLANS, RANKS, FNAMES, LNAMES, SPECS, PERSONALITIES, BACKSTORIES, ARCHETYPES,
   TAILED_BEASTS, VILLAGES_DEF, MISS_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
-  REGIONS, PM_DESC, REGION_EVENTS, DEV_CURVES,
+  REGIONS, PM_DESC, REGION_EVENTS, DEV_CURVES, AGENT_AGENDAS,
 } from './constants.js'
 
 // ── utilities ──────────────────────────────────────────────────────────────
@@ -63,6 +63,11 @@ export function mS(ri = 0) {
     traits: [],                      // evolved traits: Resilient, Haunted, Confident, Resentful...
     lowCommitMonths: 0,              // consecutive months under commitment threshold (rumor trigger)
     lastReviewYear: null,            // year of last annual review
+    transferListed: false,           // requested to leave but not yet sold — harmony fallout while lingering
+    transferListedMonths: 0,
+    sellOnClause: null,              // { percent, village } — paid out automatically on future sale
+    homegrown: false,                // true for academy graduates promoted to active roster
+    pursuedByVillages: [],           // village names that previously made (and lost) a bid — affects future negotiation tone
   }
 }
 
@@ -186,6 +191,14 @@ export function initState() {
     noticeboard: [],            // { year, month, text, type }
     serviceAwardQueue: [],      // { id, shinobiId, years, year, month }
     reviewQueue: [],            // { id, shinobiId, outcome, year }
+    // Finance & transfer market depth
+    daimyoObjectives: null,     // { ids:[], year, startRel } — set each January, evaluated each December
+    daimyoObjectiveHistory: [], // { year, met:[bool,bool,bool], budgetMult }
+    daimyoBudgetMult: 1,        // multiplies daimyo bonus income; adjusted by objective outcomes
+    sponsorship: null,          // active deal: { id, n, monthlyRyo, obligation, restrictedVillage }
+    sponsorshipOffer: null,     // pending offer awaiting accept/decline
+    blackLedger: { balance: 0, history: [] }, // off-books ryo tracker, separate from G.ryo
+    yearEndReports: [],         // { year, totalIncome, totalExpend, net, streams, daimyoReaction }
   });
   [2, 2, 1, 1, 1, 0, 0, 0].forEach(r => G.shinobi.push(mS(r)))
   rfM(); rfP()
@@ -423,6 +436,9 @@ export function computeHarmony() {
   })
   const lowLoyal = G.shinobi.filter(s => s.pMatrix && s.pMatrix.loyalty < 8).length
   harmony -= lowLoyal * 3
+  // Transfer-listed shinobi linger awkwardly in training — fault line for harmony
+  const listed = G.shinobi.filter(s => s.transferListed).length
+  harmony -= listed * 4
   // Leadership group: top shinobi by loyalty + tenure
   const leaders = getLeadershipGroup()
   const loyalLeaders = leaders.filter(l => (l.pMatrix?.loyalty || 0) >= 14).length
@@ -493,6 +509,39 @@ export function addNotice(text, type = 'neutral') {
   if (G.noticeboard.length > 60) G.noticeboard.shift()
 }
 
+// Assign an agent intermediary to high-rank pool entries (A-rank+/S-rank).
+// Agents take a cut of any signing bonus and push their own agenda in negotiation.
+function assignAgent(s) {
+  if (s.ri < 3) return
+  const agenda = pk(AGENT_AGENDAS)
+  s.agent = {
+    name: pk(FNAMES) + ' ' + pk(LNAMES),
+    agenda: agenda.id,
+    agendaDesc: agenda.desc,
+    feePercent: rnd(5, 15),
+  }
+}
+
+// Market value — current worth, rising with performance/age curve, falling with
+// injury/decline. Computed on demand rather than stored (always reflects current state).
+export function computeMarketValue(s) {
+  const power = Object.values(s.stats).reduce((a, b) => a + b, 0) / Object.keys(s.stats).length
+  let value = Math.round(power * 90 + (s.potential || 50) * 35)
+  // Age curve: rises to late-20s, declines after
+  if (s.age <= 24) value = Math.round(value * (0.85 + (s.age - 12) * 0.012))
+  else if (s.age <= 29) value = Math.round(value * 1.05)
+  else value = Math.round(value * Math.max(0.5, 1.05 - (s.age - 29) * 0.04))
+  // Performance modifiers
+  value += (s.wins || 0) * 60 + (s.winsS || 0) * 400
+  if ((s.streak || 0) >= 3) value = Math.round(value * 1.08)
+  if (s.legendStatus) value = Math.round(value * 1.15)
+  // Decline modifiers
+  if (s.status === 'injured') value = Math.round(value * 0.85)
+  if (s.traumaStatus) value = Math.round(value * 0.9)
+  if ((s.traumaCount || 0) >= 2) value = Math.round(value * 0.85)
+  return Math.max(500, value)
+}
+
 // Generate transfer market pool for a window
 export function genTransferPool() {
   const pool = []
@@ -500,20 +549,23 @@ export function genTransferPool() {
   for (let i = 0; i < rnd(2, 3); i++) {
     const s = mS(rnd(0, 2))
     s.transferCategory = 'free_agent'; s.askingFee = 2000 + s.ri * 1500
-    s.originVillage = null; s.monthsAvailable = rnd(2, 4); pool.push(s)
+    s.originVillage = null; s.monthsAvailable = rnd(2, 4); assignAgent(s); pool.push(s)
   }
   // Village-listed: 2-4
   for (let i = 0; i < rnd(2, 4); i++) {
     const s = mS(rnd(1, 3))
     s.transferCategory = 'village_listed'; s.askingFee = 5000 + s.ri * 3000
-    s.originVillage = pk(VILLAGES_DEF).n; s.monthsAvailable = rnd(1, 2); pool.push(s)
+    s.originVillage = pk(VILLAGES_DEF).n; s.monthsAvailable = rnd(1, 2)
+    // Origin village sometimes negotiates a sell-on clause as part of the deal
+    if (Math.random() < 0.4) s.sellOnClause = { percent: rnd(5, 20), village: s.originVillage }
+    assignAgent(s); pool.push(s)
   }
   // Missing-nin: 1-2
   for (let i = 0; i < rnd(1, 2); i++) {
     const s = mS(rnd(2, 4))
     s.transferCategory = 'missing_nin'
     s.pMatrix = { loyalty: rnd(1, 7), ambition: rnd(12, 20), professionalism: rnd(2, 10), temperament: rnd(2, 10), adaptability: rnd(8, 18) }
-    s.askingFee = 3000 + s.ri * 2000; s.originVillage = null; s.monthsAvailable = rnd(1, 3); pool.push(s)
+    s.askingFee = 3000 + s.ri * 2000; s.originVillage = null; s.monthsAvailable = rnd(1, 3); assignAgent(s); pool.push(s)
   }
   // Retired return: 0-1
   if (Math.random() < 0.5) {
@@ -528,7 +580,7 @@ export function genTransferPool() {
     const specialStat = pk(Object.keys(s.stats))
     s.stats[specialStat] = clamp(s.stats[specialStat] + rnd(20, 35), 0, 99)
     s.transferCategory = 'foreign_specialist'; s.askingFee = 4000 + s.ri * 2500
-    s.originVillage = pk(VILLAGES_DEF).n; s.monthsAvailable = rnd(1, 2); pool.push(s)
+    s.originVillage = pk(VILLAGES_DEF).n; s.monthsAvailable = rnd(1, 2); assignAgent(s); pool.push(s)
   }
   return pool
 }

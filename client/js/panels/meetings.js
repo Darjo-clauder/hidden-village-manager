@@ -288,11 +288,19 @@ export function doMeeting(meetingId, responseId) {
     }
   }
   if (eff.transfer) {
-    // Will leave in 1-2 months if nothing changes
+    // Will leave in 1-2 months if nothing changes; lingers as transfer-listed in the meantime
     s.commitment = clamp((s.commitment || 0) - 20, 0, 100)
+    s.transferListed = true
+    s.transferListedMonths = 0
   }
   if (eff.legend) {
     G.legend = (G.legend || 0) + eff.legend
+  }
+  // Wage tension: raising salary actually closes the gap to the highest recent signing
+  if (mtg.type === 'wage_tension' && responseId === 'raise') {
+    const topNewSalary = Math.max(s.salary, ...G.shinobi.filter(x => (x.months || 0) <= 2).map(x => x.salary))
+    s.salary = topNewSalary
+    aL(sn(s) + '\'s salary raised to ' + fmt(topNewSalary) + ' ryo to close the wage gap.', 'good')
   }
 
   // Remove from queue

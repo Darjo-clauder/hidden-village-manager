@@ -7,7 +7,7 @@ import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev } from './pan
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice } from './panels/missions.js'
 import { rUp, buyUp } from './panels/upgrades.js'
 import { rAc, rec, oScout, doScout, oSensei, doSensei } from './panels/academy.js'
-import { eTab, tgTr, tgCo, doBl } from './panels/economy.js'
+import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship } from './panels/economy.js'
 import { rBe, lCap } from './panels/beasts.js'
 import { rKa, resKE, sGift, propAl, rattle } from './panels/kage.js'
 import { rEx, tEC, startEx, runRound } from './panels/exam.js'
@@ -44,7 +44,7 @@ Object.assign(window, {
   // academy
   rec, oScout, doScout, oSensei, doSensei,
   // economy
-  eTab, tgTr, tgCo, doBl,
+  eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship,
   // beasts
   lCap,
   // kage

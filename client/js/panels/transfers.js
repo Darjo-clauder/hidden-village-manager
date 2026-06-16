@@ -1,4 +1,4 @@
-import { G, sn, sPow, clamp, fmt, rnd, pk, pDesc, personalityJudge, genTransferPool } from '../state.js'
+import { G, sn, sPow, clamp, fmt, rnd, pk, pDesc, personalityJudge, genTransferPool, computeMarketValue } from '../state.js'
 import { TRANSFER_CATS, TRANSFER_WINDOWS, BINGO_TIERS, RANKS, VILLAGES_DEF } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
 
@@ -34,6 +34,7 @@ export function rTr() {
         ? `<button onclick="refreshTransferPool()" style="background:#2a2a1a;border:1px solid #554;color:#c9a84c;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.75rem">Refresh Pool</button>`
         : ''}
     </div>
+    ${tm.deadlinePressure ? `<div style="background:#2e1500;border:1px solid #a64;border-radius:6px;padding:8px 14px;margin-bottom:14px;font-size:.78rem;color:#f0a030">⏰ Deadline pressure — final stretch of the window. Prices have inflated 10–20% and rival villages are making panic signings.</div>` : ''}
 
     <!-- Tabs -->
     <div style="display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap">
@@ -82,6 +83,8 @@ function marketCard(p, judgeLevel) {
     return `<span style="font-size:.68rem;color:${p.pMatrix[k] >= 13 ? '#8fbc8f' : p.pMatrix[k] >= 8 ? '#aaa' : '#f99'}">${k.slice(0,3).toUpperCase()}: ${d}</span>`
   }).join('  ') : ''
 
+  const marketVal = computeMarketValue(p)
+  const valueDelta = marketVal - p.askingFee
   return `<div style="background:#1a1a1a;border:1px solid ${catDef.color}33;border-radius:6px;padding:12px;border-top:2px solid ${catDef.color}">
     <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:6px">
       <div>
@@ -96,6 +99,10 @@ function marketCard(p, judgeLevel) {
       Power: <strong>${sPow(p)}</strong> · Pot: <strong>${p.potential}</strong>
       · Avail: <span style="color:${(p.monthsAvailable||1)<=1?'#f66':'#aaa'}">${p.monthsAvailable||1}mo</span>
     </div>
+    <div style="font-size:.72rem;color:#777;margin-bottom:6px">Market value: <span style="color:${valueDelta>=0?'#8fbc8f':'#f0a030'}">${fmt(marketVal)} ryo</span> ${valueDelta>=0?'(bargain at asking price)':'(asking above value)'}</div>
+    ${p.agent ? `<div style="font-size:.71rem;color:#cc7fb8;margin-bottom:6px">🤝 Agent: ${p.agent.name} (${p.agent.feePercent}% of signing bonus) — ${p.agent.agendaDesc}</div>` : ''}
+    ${p.sellOnClause ? `<div style="font-size:.7rem;color:#f0a030;margin-bottom:6px">📜 Sell-on clause: ${p.sellOnClause.percent}% of any future sale owed to ${p.sellOnClause.village}</div>` : ''}
+    ${(p.pursuedByVillages||[]).length ? `<div style="font-size:.7rem;color:#777;margin-bottom:6px">Previously pursued by: ${p.pursuedByVillages.join(', ')}</div>` : ''}
     ${showMatrix ? `<div style="margin-bottom:8px;line-height:1.8">${matTraits}</div>` : judgeLevel < 6 ? `<div style="font-size:.7rem;color:#444;margin-bottom:8px">Staff personality judgment too low to read character.</div>` : ''}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
       <span style="font-size:.8rem;color:#c9a84c;font-weight:bold">${fmt(p.askingFee)} ryo</span>
@@ -291,11 +298,22 @@ export function submitOffer() {
   const village = (G.villages || []).find(v => v.n === p.originVillage)
   const relScore = village?.rel ?? 50
 
+  // Agent agenda shifts the effective threshold; previous pursuit colors the mood
+  let acceptThresh = 0.88, counterThresh = 0.60
+  if (p.agent?.agenda === 'ryo') { acceptThresh -= 0.04 } // purely money-motivated, slightly easier to satisfy with a strong offer
+  if (p.agent?.agenda === 'prestige' && ['A','S'].includes(G.prestigeTier)) { acceptThresh -= 0.06 }
+  const wasPreviouslyPursued = (p.pursuedByVillages || []).includes(G.vName)
+  if (wasPreviouslyPursued) {
+    // Professional types respect persistence; volatile/ambitious types resent being approached again
+    if ((p.pMatrix?.professionalism || 10) >= 13) acceptThresh -= 0.03
+    else if ((p.pMatrix?.temperament || 10) < 8 || (p.pMatrix?.ambition || 10) >= 15) acceptThresh += 0.05
+  }
+
   let status, counter = 0
-  if (amount >= p.askingFee * 0.88 && relScore >= 25) {
+  if (amount >= p.askingFee * acceptThresh && relScore >= 25) {
     status = 'accepted'
     _negFee = amount
-  } else if (amount >= p.askingFee * 0.60 && relScore >= 15) {
+  } else if (amount >= p.askingFee * counterThresh && relScore >= 15) {
     status = 'countered'
     counter = p.askingFee
     _negFee = counter
@@ -323,6 +341,11 @@ export function submitOffer() {
     resultEl.textContent = `Rejected.${relScore < 25 ? ' Diplomatic standing too low.' : ' Offer too low.'}`
     resultEl.style.color = '#f66'
     document.getElementById('neg-confirm').style.display = 'none'
+    // Failed pursuit fallout: small prestige hit, target remembers the approach
+    G.reputation = clamp(G.reputation - 1, 0, 999)
+    if (!p.pursuedByVillages) p.pursuedByVillages = []
+    if (!p.pursuedByVillages.includes(G.vName)) p.pursuedByVillages.push(G.vName)
+    rTr()
   }
 }
 
@@ -337,7 +360,7 @@ export function openPersonalTerms(poolId) {
   if (!p) return
   _termTarget = p
   document.getElementById('pt-title').textContent = p.fn + ' ' + p.ln + ' — Personal Terms'
-  document.getElementById('pt-fee').textContent = fmt(_negFee || p.askingFee) + ' ryo'
+  document.getElementById('pt-fee').textContent = fmt(_negFee || p.askingFee) + ' ryo' + (p.agent ? ' (+ agent fee on any signing bonus)' : '')
   document.getElementById('pt-rank-info').textContent = 'Currently: ' + RANKS[p.ri]
   document.getElementById('ov-personalterms').classList.add('open')
 }
@@ -345,15 +368,20 @@ export function openPersonalTerms(poolId) {
 export function confirmTransfer() {
   const p = _termTarget
   if (!p) return
+  if (G.sponsorship?.restrictedVillage && p.originVillage === G.sponsorship.restrictedVillage) {
+    ntf('Sponsorship terms forbid trading with ' + G.sponsorship.restrictedVillage + '.'); return
+  }
   const fee = _negFee || p.askingFee
   if (G.ryo < fee) { ntf('Not enough ryo for transfer fee!'); return }
   const roleGuar = document.getElementById('pt-role-guar')?.checked || false
   const rankTL = parseInt(document.getElementById('pt-rank-tl')?.value || '0', 10)
   const sigBonus = parseInt(document.getElementById('pt-sig-bonus')?.value || '0', 10)
-  const totalCost = fee + sigBonus
-  if (G.ryo < totalCost) { ntf('Not enough ryo including signing bonus!'); return }
+  const agentFee = p.agent ? Math.round(sigBonus * (p.agent.feePercent / 100)) : 0
+  const totalCost = fee + sigBonus + agentFee
+  if (G.ryo < totalCost) { ntf('Not enough ryo including signing bonus and agent fee!'); return }
 
   G.ryo -= totalCost
+  if (agentFee > 0) aL(p.agent.name + ' (agent) took ' + fmt(agentFee) + ' ryo as a fee.', 'neutral')
   const catDef = TRANSFER_CATS.find(c => c.id === p.transferCategory)
   p.commitment = clamp(50 + (catDef?.loyaltyBonus || 0) * 4 + (roleGuar ? 10 : 0) + Math.floor(sigBonus / 500), 0, 100)
   p.roleGuarantee = roleGuar
@@ -388,6 +416,9 @@ export function confirmTransfer() {
 export function poachAttempt(poolId) {
   const p = (G.transferMarket?.pool || []).find(x => x.id === poolId)
   if (!p) return
+  if (G.sponsorship?.restrictedVillage && p.originVillage === G.sponsorship.restrictedVillage) {
+    ntf('Sponsorship terms forbid trading with ' + G.sponsorship.restrictedVillage + '.'); return
+  }
   const poachFee = Math.round(p.askingFee * 0.70)
   if (G.ryo < poachFee) { ntf('Not enough ryo to poach (' + fmt(poachFee) + ' needed).'); return }
   const loyLow = (p.pMatrix?.loyalty || 10) < 10
@@ -412,6 +443,10 @@ export function poachAttempt(poolId) {
     } else {
       aL('Poaching attempt on ' + p.fn + ' ' + p.ln + ' failed.', 'bad')
     }
+    // Failed pursuit fallout: small prestige hit, target remembers the approach
+    G.reputation = clamp(G.reputation - 1, 0, 999)
+    if (!p.pursuedByVillages) p.pursuedByVillages = []
+    if (!p.pursuedByVillages.includes(G.vName)) p.pursuedByVillages.push(G.vName)
     ntf('Poach failed!')
     rTr()
   }
@@ -438,6 +473,12 @@ export function sellPressureAccept(shinobiId) {
   G.sellPressure = (G.sellPressure || []).filter(x => x.shinobiId !== shinobiId)
   aL((s ? sn(s) : 'Shinobi') + ' sold to ' + sp.villageName + ' for ' + fmt(sp.offerRyo) + ' ryo.', 'neutral')
   if (s) {
+    // Sell-on clause: a cut of this sale is owed to whoever sold them to us originally
+    if (s.sellOnClause) {
+      const cut = Math.round(sp.offerRyo * (s.sellOnClause.percent / 100))
+      G.ryo -= cut
+      aL('Sell-on clause triggered: ' + cut + ' ryo (' + s.sellOnClause.percent + '%) paid to ' + s.sellOnClause.village + '.', 'warn')
+    }
     G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, year: G.year, month: G.month, wins: s.wins, lastWords: 'Transferred to ' + sp.villageName + '.', transfer: true })
     G.shinobi = G.shinobi.filter(x => x.id !== shinobiId)
   }

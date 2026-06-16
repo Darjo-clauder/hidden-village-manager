@@ -99,6 +99,13 @@ export function rec(id) {
     aL(sn(recruited) + ' revealed hidden ' + mc.n + ' heritage on graduation! Trait: ' + mc.t + '.', 'good')
   }
 
+  // Homegrown tag — Academy graduates get a loyalty floor and lower salary demands
+  if (recruited.academyOrigin) {
+    recruited.homegrown = true
+    if (recruited.pMatrix) recruited.pMatrix.loyalty = Math.max(recruited.pMatrix.loyalty, 12)
+    recruited.salary = Math.round(recruited.salary * 0.85)
+  }
+
   G.shinobi.push(recruited)
   G.prospects = G.prospects.filter(x => x.id !== id)
   // Cancel any in-progress scout for this prospect
