@@ -278,6 +278,57 @@ export const HARMONY_EVENTS = [
   { id:'faction',   n:'Faction Forming',       harmonyThresh:15, morale:-12, indMorale:-8,  desc:'Cliques are forming — the locker room is divided.' },
 ]
 
+// ── Village prestige tiers (D→S by legend score) ─────────────────────────────
+export const PRESTIGE_TIERS = [
+  { id:'D', min:0,   n:'D — Village Unknown',   color:'#777',    staffTier:0, scoutSlots:1, examHostEligible:false },
+  { id:'C', min:50,  n:'C — Rising Village',    color:'#8fbc8f', staffTier:1, scoutSlots:2, examHostEligible:true  },
+  { id:'B', min:150, n:'B — Established Power', color:'#c9a84c', staffTier:2, scoutSlots:3, examHostEligible:true  },
+  { id:'A', min:300, n:'A — Regional Power',    color:'#f0a030', staffTier:3, scoutSlots:5, examHostEligible:true  },
+  { id:'S', min:500, n:'S — Legendary Village', color:'#f66',    staffTier:4, scoutSlots:5, examHostEligible:true  },
+]
+
+// ── ANBU operation types ──────────────────────────────────────────────────────
+export const ANBU_OPS = [
+  { id:'recon',      n:'Recon',           icon:'👁',  minDur:1, maxDur:2, cost:3000,  catchRisk:0.12, desc:'Reveals roster size and economy level of target village.' },
+  { id:'deep_cover', n:'Deep Cover',      icon:'🕵',  minDur:2, maxDur:3, cost:6000,  catchRisk:0.22, desc:'Reveals defenses and active squad composition.' },
+  { id:'assn_intel', n:'Assassination Intel', icon:'💀', minDur:3, maxDur:4, cost:10000, catchRisk:0.32, desc:'Reveals Kage stats, active jutsu, and strategic weaknesses.' },
+]
+
+// ── Five Kage Summit agenda items ─────────────────────────────────────────────
+export const SUMMIT_AGENDA = [
+  { id:'trade_pact',    n:'Regional Trade Pact',    minVotes:3, desc:'All villages gain +1,500 ryo/month for 3 months.', effect:'ryo_bonus' },
+  { id:'war_ban',       n:'War Moratorium',          minVotes:4, desc:'All active conflicts paused for 2 months.',        effect:'peace' },
+  { id:'missing_bounty',n:'Missing-Nin Bounties',    minVotes:2, desc:'+8,000 ryo bonus for active missing-nin capture.', effect:'bounty' },
+  { id:'beast_protocol',n:'Tailed Beast Protocol',   minVotes:3, desc:'Tailed beast weaponization banned for 3 months.',  effect:'beast_truce' },
+  { id:'exam_expand',   n:'Expand Chunin Exam',      minVotes:3, desc:'Next exam accepts 8 nominees per village.',         effect:'exam_expand' },
+]
+
+// ── S-rank competitive bid contracts ─────────────────────────────────────────
+export const SRANK_CONTRACTS = [
+  { id:'escort_kage',  n:'Escort the Five Kage',     baseRyo:35000, rep:50, prestige:15, risk:0.45, sq:true,  desc:'Guard all five Kage at a covert summit. Highest honor for any force.', complication:'Spy embedded in delegation. Rep −20.' },
+  { id:'seal_bijuu',   n:'Seal a Rampaging Beast',   baseRyo:40000, rep:60, prestige:20, risk:0.50, sq:true,  desc:'Hunt and seal a tailed beast threatening the region.', complication:null },
+  { id:'fortress',     n:'Destroy Enemy Fortress',   baseRyo:28000, rep:40, prestige:10, risk:0.40, sq:true,  desc:'Raze a fortified stronghold. No survivors, no witnesses.', complication:'Civilian casualties reported. Rep −15, morale −8.' },
+  { id:'assn_warlord', n:'Assassinate a Warlord',    baseRyo:32000, rep:45, prestige:12, risk:0.48, sq:false, desc:'Eliminate a warlord threatening regional stability.', complication:'Succession war followed. Allied village rel −10.' },
+  { id:'rescue_dipl',  n:'Rescue Captured Diplomat', baseRyo:25000, rep:35, prestige:8,  risk:0.35, sq:false, desc:'Extract a captured diplomat from enemy territory.', complication:null },
+]
+
+// ── Hall of Legends requirements ──────────────────────────────────────────────
+export const HALL_REQS = { minMonths:120, minWins:100, minRi:3 }
+
+// ── War arc phases ────────────────────────────────────────────────────────────
+export const WAR_PHASES = [
+  { id:'mobilization', n:'Mobilization',  months:1, desc:'Forces massing on both sides.' },
+  { id:'conflict',     n:'Active Conflict',months:3, desc:'Monthly combat exchanges and raids.' },
+  { id:'ceasefire',    n:'Ceasefire',     months:1, desc:'Negotiations underway — combat paused.' },
+  { id:'reparations',  n:'Reparations',   months:6, desc:'Losing village pays monthly tribute.' },
+]
+
+// ── Dynasty grade thresholds ──────────────────────────────────────────────────
+export const DYNASTY_GRADES = [
+  { grade:'S', min:85 }, { grade:'A', min:70 }, { grade:'B', min:55 },
+  { grade:'C', min:40 }, { grade:'D', min:0  },
+]
+
 // ── Mission commission income (village's cut from client payments)
 export const MISSION_COMMISSION = { D:50, C:150, B:400, A:1000, S:3000 }
 // Building maintenance cost per upgrade level (per building, per level)

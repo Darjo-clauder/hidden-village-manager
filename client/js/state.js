@@ -152,6 +152,25 @@ export function initState() {
       windowMonthsLeft: 0,
     },
     sellPressure: [],
+    // Reputation & Legacy
+    kageRep: 1,               // 1–5 stars
+    prestigeTier: 'D',
+    hallOfLegends: [],        // enshrined shinobi records
+    dynastyRecords: {
+      examWins: 0, beastCaptures: [], longestRaidStreak: 0,
+      peakLegend: 0, enshrined: 0,
+    },
+    summitHistory: [],        // past summit votes
+    generationalSummary: null,
+    // S-rank bidding
+    sRankContracts: [],       // active seasonal S-rank bids
+    // ANBU & Intel
+    anbuOps: [],              // active ops { type, agentId, monthsLeft, targetVillageId }
+    caughtAnbu: [],           // { id, targetVillageId, month, status:'imprisoned'|'executed' }
+    intelReports: [],         // { villageId, type, data:{}, expiresMonth }
+    counterIntelRating: 2,    // passive 1–20, vs rival ANBU catch chance
+    // War state
+    warState: null,           // null or { villageId, phase, monthsLeft, warHistory:[] }
   });
   [2, 2, 1, 1, 1, 0, 0, 0].forEach(r => G.shinobi.push(mS(r)))
   rfM(); rfP()

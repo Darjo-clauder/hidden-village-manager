@@ -1041,6 +1041,182 @@ export function adv() {
   if (G.tempDef > 0) G.tempDef = Math.max(0, G.tempDef - 5)
   if (G.examSched && G.month === G.examMonth) { aL('Chunin Exam is now! Go to Exam panel.', 'ev'); ntf('Chunin Exam!') }
 
+  // ── Prestige tier tick ──────────────────────────────────────────────────────
+  const PTIERS = [{ id:'D', min:0 }, { id:'C', min:50 }, { id:'B', min:150 }, { id:'A', min:300 }, { id:'S', min:500 }]
+  const newPTier = [...PTIERS].reverse().find(t => (G.legend || 0) >= t.min)?.id || 'D'
+  if (newPTier !== G.prestigeTier) {
+    const was = G.prestigeTier; G.prestigeTier = newPTier
+    addChronicle('Prestige Milestone', `${G.vName} has risen to Prestige Tier ${newPTier} (from ${was}). Legend: ${G.legend}.`, 'milestone')
+    aL('Village prestige: Tier ' + newPTier + '!', 'good')
+  }
+  if (G.dynastyRecords) G.dynastyRecords.peakLegend = Math.max(G.dynastyRecords.peakLegend || 0, G.legend || 0)
+
+  // ── Kage reputation tick ────────────────────────────────────────────────────
+  if (!G.kageRep) G.kageRep = 1
+  const repScore = (G.reputation || 0)
+  const targetRep = repScore >= 250 ? 5 : repScore >= 150 ? 4 : repScore >= 80 ? 3 : repScore >= 30 ? 2 : 1
+  if (G.kageRep < targetRep && Math.random() < 0.3) G.kageRep = Math.min(5, G.kageRep + 1)
+  if (G.kageRep > targetRep && Math.random() < 0.15) G.kageRep = Math.max(1, G.kageRep - 1)
+
+  // ── Hall of Legends — check retiring shinobi ────────────────────────────────
+  if (!G.hallOfLegends) G.hallOfLegends = []
+  G.shinobi.filter(s => s.status === 'retired' && !s.enshrined).forEach(s => {
+    if ((s.months || 0) >= 120 && (s.wins || 0) >= 100 && (s.ri || 0) >= 3) {
+      G.hallOfLegends.push({
+        id: s.id, name: sn(s), ri: s.ri, months: s.months,
+        wins: s.wins, winsS: s.winsS, monthEnshrined: (G.year - 1) * 12 + G.month,
+      })
+      s.enshrined = true
+      if (G.dynastyRecords) G.dynastyRecords.enshrined = G.hallOfLegends.length
+      const passiveBonus = Math.min(G.hallOfLegends.length * 200, 2000)
+      G.ryo += passiveBonus
+      addChronicle('Hall of Legends', `${sn(s)} has been enshrined in the Hall of Legends. ${G.hallOfLegends.length} legends total. (+${passiveBonus} ryo legacy bonus)`, 'milestone')
+      aL(sn(s) + ' enshrined in Hall of Legends!', 'good')
+    }
+  })
+
+  // ── Generational legacy summary (every 10 years) ────────────────────────────
+  if (G.year >= 10 && G.month === 1 && G.year % 10 === 0) {
+    const devScore = clamp(Math.floor(((G.upgrades?.academy || 0) + (G.upgrades?.hospital || 0) + (G.upgrades?.training || 0)) / 9 * 100), 0, 100)
+    const dipScore = clamp(Math.floor(G.villages.filter(v => v.allied).length / G.villages.length * 100 + G.reputation / 10), 0, 100)
+    const milScore = clamp(Math.floor(((G.dynastyRecords?.examWins || 0) * 10) + G.shinobi.filter(s => s.ri >= 4).length * 5), 0, 100)
+    const legScore = clamp(Math.floor((G.hallOfLegends?.length || 0) * 10 + (G.legend || 0) / 10), 0, 100)
+    const overall = Math.round((devScore + dipScore + milScore + legScore) / 4)
+    const grade = overall >= 85 ? 'S' : overall >= 70 ? 'A' : overall >= 55 ? 'B' : overall >= 40 ? 'C' : 'D'
+    G.generationalSummary = { year: G.year, grade, devScore, dipScore, milScore, legScore, overall }
+    addChronicle('Generational Legacy — Year ' + G.year,
+      `[${grade}] Development:${devScore} Diplomacy:${dipScore} Military:${milScore} Legacy:${legScore} — Overall:${overall}/100`,
+      'milestone')
+    aL('Year ' + G.year + ' generational report: Grade ' + grade, 'good')
+  }
+
+  // ── Intel report expiry ─────────────────────────────────────────────────────
+  if (G.intelReports) {
+    const now = (G.year - 1) * 12 + G.month
+    G.intelReports = G.intelReports.filter(r => r.expiresMonth > now)
+  }
+
+  // ── ANBU ops tick ───────────────────────────────────────────────────────────
+  if (!G.anbuOps) G.anbuOps = []
+  G.anbuOps = G.anbuOps.filter(op => {
+    op.monthsLeft = (op.monthsLeft || 1) - 1
+    if (op.monthsLeft > 0) return true
+    // Op complete
+    const anbuCmd = (G.staff || []).find(st => st.role === 'anbu_commander')
+    const cmdRating = anbuCmd ? (anbuCmd.stats?.stealth || 8) : 5
+    const targetV = (G.villages || []).find(v => v.id === op.targetVillageId)
+    const targetCi = targetV?.counterIntel || 5
+    const catchChance = clamp((targetCi - cmdRating) * 0.04 + op.catchRisk, 0.05, 0.80)
+    if (Math.random() < catchChance) {
+      // Caught!
+      const status = Math.random() < 0.4 ? 'KIA' : 'imprisoned'
+      G.caughtAnbu = G.caughtAnbu || []
+      G.caughtAnbu.push({ id: op.id, targetVillageId: op.targetVillageId, month: (G.year - 1) * 12 + G.month, status })
+      if (targetV) targetV.rel = clamp((targetV.rel || 50) - 12, 0, 100)
+      aL(`ANBU agent caught by ${targetV?.n || 'enemy'} — ${status}.`, 'bad')
+      addChronicle('ANBU Incident', `Our ${op.type} operative was ${status} by ${targetV?.n || 'enemy forces'}.`, 'bad')
+    } else {
+      // Success — generate intel report
+      const now2 = (G.year - 1) * 12 + G.month
+      const reportData = {}
+      if (op.type === 'recon') {
+        reportData.rosterSize = rnd(5, 20); reportData.economyLevel = rnd(1, 5)
+      } else if (op.type === 'deep_cover') {
+        reportData.defenseRating = rnd(1, 20); reportData.activeSquads = rnd(1, 5)
+      } else if (op.type === 'assn_intel') {
+        reportData.kageRating = rnd(1, 20); reportData.weaknesses = pk(['chakra overuse', 'defensive gaps', 'low morale'])
+      }
+      G.intelReports = G.intelReports || []
+      G.intelReports.push({ villageId: op.targetVillageId, type: op.type, data: reportData, expiresMonth: now2 + 3 })
+      aL(`ANBU ${op.type} on ${targetV?.n || 'target'} complete.`, 'good')
+    }
+    return false
+  })
+
+  // ── War arc tick ────────────────────────────────────────────────────────────
+  if (G.warState) {
+    G.warState.monthsLeft = (G.warState.monthsLeft || 1) - 1
+    const warV = (G.villages || []).find(v => v.id === G.warState.villageId)
+    if (G.warState.phase === 'mobilization') {
+      aL('War mobilization with ' + (warV?.n || 'enemy') + ' continues.', 'warn')
+      if (G.warState.monthsLeft <= 0) { G.warState.phase = 'conflict'; G.warState.monthsLeft = 3 }
+    } else if (G.warState.phase === 'conflict') {
+      // Monthly combat exchange
+      const myStr = G.shinobi.filter(s => s.status === 'available').length * 5 + (G.upgrades?.wall || 0) * 10
+      const theirStr = rnd(20, 60)
+      if (myStr >= theirStr) {
+        G.reputation = clamp(G.reputation + 3, 0, 999); addLegend(2)
+        aL('Combat exchange victory vs ' + (warV?.n || 'enemy') + '.', 'good')
+      } else {
+        G.morale = clamp(G.morale - 5, 0, 100)
+        aL('Combat exchange loss vs ' + (warV?.n || 'enemy') + '.', 'bad')
+      }
+      if (G.warState.monthsLeft <= 0) { G.warState.phase = 'ceasefire'; G.warState.monthsLeft = 1 }
+    } else if (G.warState.phase === 'ceasefire') {
+      aL('Ceasefire negotiations with ' + (warV?.n || 'enemy') + '.', 'neutral')
+      if (G.warState.monthsLeft <= 0) { G.warState.phase = 'reparations'; G.warState.monthsLeft = 6 }
+    } else if (G.warState.phase === 'reparations') {
+      const tribute = rnd(1500, 4000)
+      if (warV && (warV.rel || 0) < 40) {
+        G.ryo += tribute
+        aL((warV?.n || 'enemy') + ' pays reparations: +' + fmt(tribute) + ' ryo.', 'good')
+      }
+      if (G.warState.monthsLeft <= 0) {
+        addChronicle('War Ends', `Conflict with ${warV?.n || 'enemy'} resolved. Reparations phase complete.`, 'event')
+        G.warState.warHistory = G.warState.warHistory || []
+        G.warState.warHistory.push({ villageId: G.warState.villageId, year: G.year })
+        G.warState = null
+      }
+    }
+  }
+
+  // ── Five Kage Summit tick (month 6 each year) ───────────────────────────────
+  if (G.month === 6) {
+    const prestige = G.prestigeTier || 'D'
+    const presOrd = { D:0, C:1, B:2, A:3, S:4 }
+    const myOrd = presOrd[prestige] || 0
+    // Pick 3 random agenda items
+    const SUMMIT_AGENDA = [
+      { id:'trade_pact', n:'Regional Trade Pact', minVotes:3, effect:'ryo_bonus' },
+      { id:'war_ban', n:'War Moratorium', minVotes:4, effect:'peace' },
+      { id:'missing_bounty', n:'Missing-Nin Bounties', minVotes:2, effect:'bounty' },
+      { id:'beast_protocol', n:'Tailed Beast Protocol', minVotes:3, effect:'beast_truce' },
+      { id:'exam_expand', n:'Expand Chunin Exam', minVotes:3, effect:'exam_expand' },
+    ]
+    const items = [...SUMMIT_AGENDA].sort(() => Math.random() - 0.5).slice(0, 3)
+    const results = []
+    items.forEach(item => {
+      const myVote = myOrd >= 2 ? 1 : (Math.random() < 0.5 ? 1 : 0)
+      const npcVotes = rnd(0, 4)
+      const total = myVote + npcVotes
+      const passed = total >= item.minVotes
+      if (passed) {
+        if (item.effect === 'ryo_bonus') { G.ryo += 1500; aL('Summit: Trade Pact passed — +1,500 ryo/mo bonus.', 'good') }
+        if (item.effect === 'bounty') { G.worldFlags.missingNinBounty = ((G.year - 1) * 12 + G.month) + 3 }
+        if (item.effect === 'exam_expand') { G.worldFlags.examExpanded = true }
+      }
+      results.push({ item: item.n, passed, myVote })
+    })
+    G.summitHistory = G.summitHistory || []
+    G.summitHistory.push({ year: G.year, results })
+    addChronicle('Five Kage Summit Y' + G.year, results.map(r => `${r.item}: ${r.passed ? 'PASSED' : 'FAILED'}`).join('; '), 'event')
+    aL('Five Kage Summit completed. Check chronicles for results.', 'neutral')
+  }
+
+  // ── S-rank contract rotation (month 1, 4, 7, 10) ───────────────────────────
+  if ([1, 4, 7, 10].includes(G.month)) {
+    const SCONTRACTS = [
+      { id:'escort_kage', n:'Escort the Five Kage', baseRyo:35000, rep:50, prestige:15, risk:0.45 },
+      { id:'seal_bijuu', n:'Seal a Rampaging Beast', baseRyo:40000, rep:60, prestige:20, risk:0.50 },
+      { id:'fortress', n:'Destroy Enemy Fortress', baseRyo:28000, rep:40, prestige:10, risk:0.40 },
+      { id:'assn_warlord', n:'Assassinate a Warlord', baseRyo:32000, rep:45, prestige:12, risk:0.48 },
+      { id:'rescue_dipl', n:'Rescue Captured Diplomat', baseRyo:25000, rep:35, prestige:8, risk:0.35 },
+    ]
+    G.sRankContracts = [...SCONTRACTS].sort(() => Math.random() - 0.5).slice(0, 2).map(c => ({
+      ...c, bids: [], deadline: (G.year - 1) * 12 + G.month + 3,
+    }))
+  }
+
   syncToServer(); rfM(); rfP()
   G.month++; if (G.month > 12) { G.month = 1; G.year++; addChronicle('New Year', 'Year ' + G.year + ' begins. Legend: ' + G.legend + '. Shinobi: ' + G.shinobi.length + '.', 'event') }
   upUI(); ntf('Month advanced → Y' + G.year + ' M' + G.month)

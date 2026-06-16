@@ -19,6 +19,9 @@ import { rSco, assignScout } from './panels/scouting.js'
 import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining } from './panels/youthacademy.js'
 import { rMeet, doMeeting } from './panels/meetings.js'
 import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms, confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide, sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter } from './panels/transfers.js'
+import { rLeg, legTab } from './panels/legacy.js'
+import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu } from './panels/intel.js'
+import { exTab, sabotageSquad, bidSrank } from './panels/exam.js'
 
 // defender shorthand helpers used from inline HTML
 function G_defShSet(id) { G.defSh = id; rDef() }
@@ -65,4 +68,10 @@ Object.assign(window, {
   trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms,
   confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide,
   sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter,
+  // legacy
+  legTab,
+  // intel
+  intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu,
+  // exam tabs
+  exTab, sabotageSquad, bidSrank,
 })
