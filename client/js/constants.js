@@ -168,6 +168,21 @@ export const INTENSITY_LEVELS = [
   { id:'high',   n:'High',   mult:1.5, burnoutRisk:5, desc:'Accelerated growth. Significant burnout risk.' },
 ]
 
+// ── Regional meta shift events (affect scouting yield quality per region) ────
+export const REGION_EVENTS = [
+  { id:'drought',  n:'Drought',         icon:'☀',  qualityMod:-0.18, desc:'Resources are scarce — fewer prospects, lower confidence.' },
+  { id:'war',      n:'Border Conflict', icon:'⚔',  qualityMod:-0.25, desc:'Active fighting disrupts scouting routes.' },
+  { id:'festival', n:'Regional Festival', icon:'🎉', qualityMod:0.22, desc:'Talent gathers publicly — prospects easier to assess.' },
+  { id:'trade',    n:'Trade Boom',      icon:'💰', qualityMod:0.12, desc:'Prosperity draws ambitious youth to attention.' },
+]
+
+// ── Hidden development curve archetypes (youth academy) ──────────────────────
+export const DEV_CURVES = [
+  { id:'early',    n:'Early Developer', peakAge:20, desc:'Matures fast — strong early, may plateau sooner.' },
+  { id:'standard', n:'Standard',        peakAge:25, desc:'Conventional growth arc, peaks in prime years.' },
+  { id:'late',     n:'Late Bloomer',    peakAge:29, desc:'Slow start, but grows well past typical peak age.' },
+]
+
 // ── Personality Matrix descriptors ────────────────────────────────────────────
 export const PM_DESC = {
   loyalty: [

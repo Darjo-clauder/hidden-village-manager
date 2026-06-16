@@ -1,5 +1,5 @@
-import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc } from './state.js'
-import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS } from './constants.js'
+import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve } from './state.js'
+import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
 import { syncToServer } from './socket.js'
 import { pickNarrative, pickSquadNarrative, pickRankUpNarrative, DARK_MOMENT_POOL, LAST_WORDS_POOL } from './narratives.js'
@@ -680,10 +680,30 @@ export function adv() {
     ntf('World Event requires response!')
   }
 
+  // ── Regional meta shift tick ────────────────────────────────────────────────
+  if (!G.regionalMeta) G.regionalMeta = {}
+  REGIONS.forEach(r => {
+    const active = G.regionalMeta[r.id]
+    if (active) {
+      active.monthsLeft--
+      if (active.monthsLeft <= 0) { delete G.regionalMeta[r.id]; aL((REGION_EVENTS.find(e=>e.id===active.eventId)?.n||'Event') + ' in ' + r.n + ' has ended.', 'neutral') }
+    } else if (Math.random() < 0.06) {
+      const ev = pk(REGION_EVENTS)
+      G.regionalMeta[r.id] = { eventId: ev.id, monthsLeft: rnd(2, 4) }
+      aL(ev.icon + ' ' + ev.n + ' has begun in the ' + r.n + '. ' + ev.desc, ev.qualityMod < 0 ? 'warn' : 'good')
+    }
+  })
+
   // ── Scout network tick ────────────────────────────────────────────────────
   if (!G.scoutReports) G.scoutReports = []
+  if (!G.scoutWatchlist) G.scoutWatchlist = []
+  if (!G.scoutBudget) G.scoutBudget = { domestic: 40, foreign: 30, shadow: 30 }
   const scouts = (G.staff || []).filter(st => st.role === 'scout_jonin' || st.role === 'head_scout')
   const headScout = (G.staff || []).find(st => st.role === 'head_scout')
+  // Budget split modifiers — domestic boosts report frequency, foreign boosts contact growth, shadow boosts head-scout shadow intel chance
+  const budgetDomestic = (G.scoutBudget.domestic || 40) / 40   // 1.0 at baseline 40%
+  const budgetForeign  = (G.scoutBudget.foreign  || 30) / 30
+  const budgetShadow   = (G.scoutBudget.shadow   || 30) / 30
   scouts.forEach(scout => {
     if (!scout.contacts) scout.contacts = {}
     if (scout.fatigue === undefined) scout.fatigue = 0
@@ -691,42 +711,71 @@ export function adv() {
     if (!region) return
     // Fatigue accumulation
     scout.fatigue = Math.min(100, scout.fatigue + rnd(5, 12))
-    // Grow regional contacts over time
-    scout.contacts[region] = Math.min(20, (scout.contacts[region] || 0) + (Math.random() < 0.3 ? 1 : 0))
+    // Grow regional contacts over time (scaled by foreign budget allocation)
+    scout.contacts[region] = Math.min(20, (scout.contacts[region] || 0) + (Math.random() < 0.3 * budgetForeign ? 1 : 0))
     const contactBonus = scout.contacts[region] || 0
-    const adaptability = scout.stats.ninjutsu || 8
+    const regionEvent = G.regionalMeta[region] ? REGION_EVENTS.find(e => e.id === G.regionalMeta[region].eventId) : null
+    const metaMod = regionEvent ? regionEvent.qualityMod : 0
     // Generate a report
     const reportRoll = Math.random()
-    const reportQuality = clamp(((scout.stats.perception || 8) + contactBonus + (headScout ? 2 : 0)) / 22, 0.1, 1.0)
-    if (reportRoll < 0.55 + reportQuality * 0.3) {
-      const prospect = genRegionProspect(region, scout)
-      G.prospects.push(prospect)
+    const reportQuality = clamp((((scout.stats.perception || 8) + contactBonus + (headScout ? 2 : 0)) / 22) + metaMod, 0.05, 1.0)
+    if (reportRoll < (0.55 + reportQuality * 0.3) * budgetDomestic) {
+      // Conflicting reports: if another scout already covers this region, occasionally both file independent reads of the same prospect
+      const existingForRegion = G.prospects.filter(p => p.fromRegion === region && p.urgencyMonths > 0)
+      const otherScoutHere = scouts.find(s => s.id !== scout.id && s.regionAssigned === region)
+      let prospect, isSecondOpinion = false
+      if (otherScoutHere && existingForRegion.length && Math.random() < 0.4) {
+        prospect = pk(existingForRegion)
+        isSecondOpinion = true
+        // Re-derive this scout's own stat ranges for the same prospect (independent judgment)
+        const judgeAbility = scout.stats.perception || 8
+        const effectiveJudge = Math.min(20, judgeAbility + contactBonus)
+        const errorMargin = Math.max(1, Math.round(15 - effectiveJudge * 0.65))
+        const altRanges = {}
+        Object.keys(prospect.stats).forEach(k => {
+          const driftedTrue = clamp(prospect.stats[k] + rnd(-3, 3), 1, 99)
+          altRanges[k] = { lo: Math.max(1, driftedTrue - errorMargin), hi: Math.min(99, driftedTrue + errorMargin), exact: effectiveJudge >= 16 }
+        })
+        prospect.conflictingRanges = prospect.conflictingRanges || []
+        prospect.conflictingRanges.push({ scoutId: scout.id, scoutName: sn(scout), ranges: altRanges, confidence: clamp(Math.round(40 + effectiveJudge * 2.6), 40, 95) })
+      } else {
+        prospect = genRegionProspect(region, scout)
+        G.prospects.push(prospect)
+      }
+      const quality = reportQuality > 0.75 ? 'Detailed' : reportQuality > 0.45 ? 'General' : 'Vague'
+      const narrative = genScoutNarrative(scout, prospect, quality)
+      prospect.scoutHistory = prospect.scoutHistory || []
+      prospect.scoutHistory.push({ year: G.year, month: G.month, scoutName: sn(scout), quality, confidence: prospect.scoutConfidence || 60 })
       G.scoutReports.push({
         id: Math.random().toString(36).slice(2),
         year: G.year, month: G.month,
-        scoutId: scout.id, scoutName: scout.fn + ' ' + scout.ln,
+        scoutId: scout.id, scoutName: sn(scout),
         region, prospectId: prospect.id,
         prospectName: prospect.fn + ' ' + prospect.ln,
-        quality: reportQuality > 0.75 ? 'Detailed' : reportQuality > 0.45 ? 'General' : 'Vague',
-        rivalInterest: prospect.rivalInterest > 0,
+        quality, rivalInterest: prospect.rivalInterest > 0,
+        confidence: prospect.scoutConfidence || clamp(Math.round(40 + reportQuality * 55), 40, 95),
+        narrative, isSecondOpinion,
+        personalityRevealed: !!prospect.personalityRevealed,
       })
       if (G.scoutReports.length > 30) G.scoutReports.shift()
-      aL(scout.fn + ' ' + scout.ln + ' filed a scout report from the ' + (REGIONS.find(r => r.id === region)?.n || region) + '.', 'neutral')
+      aL(sn(scout) + ' filed a scout report from the ' + (REGIONS.find(r => r.id === region)?.n || region) + '.', 'neutral')
+      // Watchlist auto-refresh notice
+      if (G.scoutWatchlist.includes(prospect.id)) ntf('Watchlist update: new report on ' + prospect.fn + ' ' + prospect.ln)
     }
-    // Shadow scouting intel (head scout unlocks)
-    if (scout.role === 'head_scout' && Math.random() < 0.25) {
+    // Shadow scouting intel (head scout unlocks, scaled by shadow budget allocation)
+    if (scout.role === 'head_scout' && Math.random() < 0.25 * budgetShadow) {
       const targetV = pk(G.villages || [])
       if (targetV) {
         if (!targetV.scoutIntel) targetV.scoutIntel = {}
         targetV.scoutIntel.squadDepth = rnd(3, 15)
         targetV.scoutIntel.avgPower = rnd(100, 500)
         targetV.scoutIntel.updatedY = G.year; targetV.scoutIntel.updatedM = G.month
-        aL(scout.fn + ' ' + scout.ln + ' gathered shadow intel on ' + targetV.n + '.', 'neutral')
+        aL(sn(scout) + ' gathered shadow intel on ' + targetV.n + '.', 'neutral')
       }
     }
     // Fatigue resignation risk
     if (scout.fatigue >= 90 && Math.random() < 0.12) {
-      aL(scout.fn + ' ' + scout.ln + ' resigned due to scout fatigue!', 'bad')
+      aL(sn(scout) + ' resigned due to scout fatigue!', 'bad')
       G.staff = G.staff.filter(st => st.id !== scout.id)
     }
     // Monthly fatigue recovery if resting (no region)
@@ -766,26 +815,44 @@ export function adv() {
 
   // ── Youth academy development tick ────────────────────────────────────────
   if (!G.intakeClass) G.intakeClass = []
+  if (!G.academyRecords) G.academyRecords = {}
+  if (!G.gradTracking) G.gradTracking = []
   const graduates = []
+  // Peer influence: identify prodigy and low-professionalism students in the class
+  const prodigyIds = G.intakeClass.filter(s => s.trait === 'Prodigy').map(s => s.id)
+  const lowProfIds = G.intakeClass.filter(s => (s.pMatrix?.professionalism || 10) < 7).map(s => s.id)
   G.intakeClass.forEach(student => {
     student.monthsInClass = (student.monthsInClass || 0) + 1
     const track = DEV_TRACKS.find(t => t.id === (student.devTrack || 'balanced')) || DEV_TRACKS[0]
     const intensity = INTENSITY_LEVELS.find(i => i.id === (student.intensity || 'medium')) || INTENSITY_LEVELS[1]
     const sensei = (G.staff || []).find(st => st.id === student.sensei)
     const sensMult = sensei ? (1 + (sensei.stats.pedagogy || 8) / 40) : 1.0
+    // Peer influence multiplier: prodigy in class +10%, low-professionalism classmates -5% (stacking, excludes self)
+    let peerMult = 1.0
+    if (prodigyIds.some(id => id !== student.id)) peerMult += 0.10
+    const dragCount = lowProfIds.filter(id => id !== student.id).length
+    peerMult -= dragCount * 0.05
+    peerMult = clamp(peerMult, 0.6, 1.3)
+    let statGain = 0
     // Growth
     if (!student.burnout) {
-      const growAmount = Math.round(intensity.mult * sensMult)
+      const growAmount = Math.round(intensity.mult * sensMult * peerMult)
       // Bonus stats from track
       Object.entries(track.growBonus).forEach(([k, v]) => {
-        if (student.stats[k] !== undefined) student.stats[k] = clamp(student.stats[k] + Math.round(v * intensity.mult * sensMult * 0.5), 0, 99)
+        if (student.stats[k] !== undefined) {
+          const inc = Math.round(v * intensity.mult * sensMult * peerMult * 0.5)
+          student.stats[k] = clamp(student.stats[k] + inc, 0, 99)
+          statGain += inc
+        }
       })
       // Random growth
       if (track.growRandom > 0) {
         const statKeys = Object.keys(student.stats)
         for (let i = 0; i < track.growRandom; i++) {
           const k = pk(statKeys)
-          student.stats[k] = clamp(student.stats[k] + Math.round(Math.random() * growAmount), 0, 99)
+          const inc = Math.round(Math.random() * growAmount)
+          student.stats[k] = clamp(student.stats[k] + inc, 0, 99)
+          statGain += inc
         }
       }
     } else {
@@ -797,7 +864,7 @@ export function adv() {
       }
       if (student.burnoutMonths >= 3) {
         student.burnout = false; student.burnoutMonths = 0
-        aL(student.fn + ' ' + student.ln + ' has recovered from burnout.', 'neutral')
+        aL(sn(student) + ' has recovered from burnout.', 'neutral')
       }
     }
     // Burnout risk from high intensity
@@ -806,20 +873,47 @@ export function adv() {
       student.burnoutTrait = pk(['Withdrawn', 'Anxious'])
       if (!student.traits) student.traits = []
       if (!student.traits.includes(student.burnoutTrait)) student.traits.push(student.burnoutTrait)
-      aL(student.fn + ' ' + student.ln + ' is burned out from intense training!', 'warn')
+      aL(sn(student) + ' is burned out from intense training!', 'warn')
     }
-    // Sensei trait pass-down (once, at 6 months)
+    // Sensei style shapes personality during academy years
+    if (sensei && student.pMatrix) {
+      const style = senseiStyle(sensei)
+      if (style === 'harsh' && Math.random() < 0.10) {
+        const t = pk(['Resilient', 'Withdrawn'])
+        student.pMatrix.temperament = clamp(student.pMatrix.temperament + (t === 'Resilient' ? 1 : -1), 1, 20)
+        if (!student.traits) student.traits = []
+        if (!student.traits.includes(t)) { student.traits.push(t); aL(sn(student) + ' grew ' + t + ' under a harsh training regimen.', t === 'Resilient' ? 'good' : 'warn') }
+      } else if (style === 'nurturing' && Math.random() < 0.10) {
+        const t = pk(['Loyal', 'Composed'])
+        student.pMatrix.loyalty = clamp(student.pMatrix.loyalty + 1, 1, 20)
+        if (!student.traits) student.traits = []
+        if (!student.traits.includes(t)) { student.traits.push(t); aL(sn(student) + ' became ' + t + ' under a nurturing sensei.', 'good') }
+      }
+    }
+    // Sensei trait pass-down (once, at 6 months) — legacy honor traits
     if (student.monthsInClass === 6 && sensei && sensei.stats.empathy >= 12 && Math.random() < 0.35) {
       const senseiTraits = ['Honorable', 'Determined', 'Analytical']
       const t = pk(senseiTraits)
       if (!student.traits) student.traits = []
-      if (!student.traits.includes(t)) { student.traits.push(t); aL(student.fn + ' ' + student.ln + ' adopted a ' + t + ' disposition from their sensei.', 'good') }
+      if (!student.traits.includes(t)) { student.traits.push(t); aL(sn(student) + ' adopted a ' + t + ' disposition from their sensei.', 'good') }
     }
+    // Dev curve reveal — experienced sensei (pedagogy>=14) or elite head_scout judgment
+    const headScoutForReveal = (G.staff || []).find(st => st.role === 'head_scout')
+    const judgeRating = Math.max(sensei?.stats?.pedagogy || 0, headScoutForReveal?.stats?.perception || 0)
+    if (revealDevCurve(student, judgeRating)) {
+      const curve = DEV_CURVES.find(c => c.id === student.devCurve)
+      aL(sn(student) + '\'s development curve was assessed: ' + (curve?.n || 'Standard') + '.', 'neutral')
+    }
+    // Monthly individual training report narrative
+    const growthNote = statGain > 2 ? 'Strong gains this month.' : statGain > 0 ? 'Modest progress.' : student.burnout ? 'Struggling through burnout.' : 'A quiet month, little change.'
+    student.trainingReports = student.trainingReports || []
+    student.trainingReports.push({ year: G.year, month: G.month, text: genTrainingReport(student, sensei, growthNote) })
+    if (student.trainingReports.length > 12) student.trainingReports.shift()
     // Milestones at months 3, 6, 9
     if ([3, 6, 9].includes(student.monthsInClass) && !student.milestones?.includes(student.monthsInClass)) {
       if (!student.milestones) student.milestones = []
       student.milestones.push(student.monthsInClass)
-      aL(student.fn + ' ' + student.ln + ' reached ' + student.monthsInClass + '-month Academy milestone.', 'neutral')
+      aL(sn(student) + ' reached ' + student.monthsInClass + '-month Academy milestone.', 'neutral')
     }
     // Kage personal sparring (once per year, if G.kageTrainingUsedYear < G.year and student is flagged)
     if (student.kageTraining && (G.kageTrainingUsedYear || 0) < G.year) {
@@ -828,7 +922,7 @@ export function adv() {
       const gainKey = pk(['ninjutsu','taijutsu','speed','chakra'])
       student.stats[gainKey] = clamp(student.stats[gainKey] + rnd(3, 6), 0, 99)
       student.potential = Math.min(99, student.potential + rnd(2, 5))
-      aL('The Kage personally sparred with ' + student.fn + ' ' + student.ln + ' — exceptional growth!', 'good')
+      aL('The Kage personally sparred with ' + sn(student) + ' — exceptional growth!', 'good')
       addLegend(2)
     }
     // Graduation at 12 months
@@ -838,18 +932,44 @@ export function adv() {
   })
   // Graduate students into prospects pool
   if (graduates.length > 0) {
+    // Determine class ranking by potential for clan expectation resolution
+    const classByPotential = [...G.intakeClass].sort((a, b) => b.potential - a.potential)
     graduates.forEach(student => {
+      // Clan/parent expectations for clan heirs
+      if (student.clan) {
+        const rank = classByPotential.findIndex(s => s.id === student.id)
+        const topOfClass = rank >= 0 && rank < Math.max(1, Math.ceil(classByPotential.length * 0.2))
+        const bottomOfClass = rank >= 0 && rank >= classByPotential.length - Math.max(1, Math.ceil(classByPotential.length * 0.2))
+        if (topOfClass) {
+          const statKey = pk(Object.keys(student.stats))
+          student.stats[statKey] = clamp(student.stats[statKey] + rnd(3, 6), 0, 99)
+          if (student.pMatrix) student.pMatrix.loyalty = clamp(student.pMatrix.loyalty + 3, 1, 20)
+          aL(student.clan + ' clan elders honor ' + sn(student) + ' for graduating top of class — clan support granted.', 'good')
+        } else if (bottomOfClass) {
+          if (student.pMatrix) student.pMatrix.loyalty = clamp(student.pMatrix.loyalty - 3, 1, 20)
+          aL(student.clan + ' clan elders express disappointment in ' + sn(student) + '\'s graduation standing — support withdrawn.', 'bad')
+        }
+      }
+      // Academy records check — highest graduating stat per category
+      Object.entries(student.stats).forEach(([k, v]) => {
+        const cur = G.academyRecords[k]
+        if (!cur || v > cur.value) {
+          G.academyRecords[k] = { value: v, name: sn(student), year: G.year }
+          addChronicle('Academy Record', sn(student) + ' set a new academy record in ' + k + ' (' + v + ').', 'milestone')
+          aL('NEW RECORD: ' + sn(student) + ' — ' + k + ' ' + v, 'good')
+        }
+      })
+      // Post-graduation tracking entry
+      G.gradTracking.push({ id: student.id, name: sn(student), gradYear: G.year, gradMonth: G.month, clan: student.clan || null })
       // Convert to proper prospect/shinobi entry
       student.status = 'prospect'
       G.prospects.push(student)
       G.intakeClass = G.intakeClass.filter(s => s.id !== student.id)
-      aL(student.fn + ' ' + student.ln + ' graduated from the Academy!', 'good')
+      aL(sn(student) + ' graduated from the Academy!', 'good')
     })
-    if (graduates.length > 0) {
-      addChronicle('Academy Graduation', graduates.length + ' students graduated: ' + graduates.map(s => s.fn + ' ' + s.ln).join(', ') + '.', 'event')
-      ntf(graduates.length + ' students graduated from the Academy!')
-      addLegend(graduates.length * 2)
-    }
+    addChronicle('Academy Graduation', graduates.length + ' students graduated: ' + graduates.map(s => sn(s)).join(', ') + '.', 'event')
+    ntf(graduates.length + ' students graduated from the Academy!')
+    addLegend(graduates.length * 2)
   }
 
   // ── Individual morale, commitment & people management tick ────────────────

@@ -1,7 +1,7 @@
 import {
   CLANS, RANKS, FNAMES, LNAMES, SPECS, PERSONALITIES, BACKSTORIES, ARCHETYPES,
   TAILED_BEASTS, VILLAGES_DEF, MISS_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
-  REGIONS, PM_DESC,
+  REGIONS, PM_DESC, REGION_EVENTS, DEV_CURVES,
 } from './constants.js'
 
 // ── utilities ──────────────────────────────────────────────────────────────
@@ -171,6 +171,13 @@ export function initState() {
     counterIntelRating: 2,    // passive 1–20, vs rival ANBU catch chance
     // War state
     warState: null,           // null or { villageId, phase, monthsLeft, warHistory:[] }
+    // Scouting depth
+    scoutWatchlist: [],        // array of prospect ids the player is tracking
+    scoutBudget: { domestic: 40, foreign: 30, shadow: 30 },  // % split, sums to 100
+    regionalMeta: {},          // regionId -> { eventId, monthsLeft }
+    // Youth academy depth
+    academyRecords: {},        // statKey -> { value, name, year }
+    gradTracking: [],          // { id, name, gradYear, gradMonth, clan }
   });
   [2, 2, 1, 1, 1, 0, 0, 0].forEach(r => G.shinobi.push(mS(r)))
   rfM(); rfP()
@@ -251,9 +258,39 @@ export function genRegionProspect(regionId, scout) {
       hi: Math.min(99, p.potential + potError),
       exact: effectivePotJudge >= 16,
     }
+    // Confidence % — how much the scout trusts this read (40-95)
+    p.scoutConfidence = clamp(Math.round(40 + effectiveJudge * 2.6), 40, 95)
+    // Personality scouting — requires high judging ability (perception) + intelligence proxy
+    const persJudge = Math.round((judgeAbility + (scout.stats.intelligence || judgeAbility * 0.6)) / 2)
+    p.personalityRevealed = persJudge >= 14
+    p.personalityJudgeLevel = persJudge
   }
 
   return p
+}
+
+// Narrative flavor text for a scout report, written from the scout's POV
+export function genScoutNarrative(scout, prospect, quality) {
+  const openers = {
+    Detailed: ['I watched closely over several days.', 'Got a clean, thorough read on this one.', 'Spent real time confirming what I saw.'],
+    General:  ['Caught a few sessions, enough to form an opinion.', 'A decent look, though I wasn\'t able to confirm everything.', 'Saw enough to be reasonably confident.'],
+    Vague:    ['Only a brief glimpse — take this with caution.', 'Limited access, this is mostly secondhand.', 'Couldn\'t get close. This is a rough guess at best.'],
+  }
+  const bodies = [
+    `${prospect.fn} shows real promise in the field — worth tracking.`,
+    `There's raw talent here, but discipline is still unproven.`,
+    `Clan blood runs strong in this one.` ,
+    `Quiet, watchful type. Hard to read intentions.`,
+    `Energetic and eager — the kind that either rises fast or burns out.`,
+    `Reminds me of shinobi who went on to do great things.`,
+  ]
+  const closers = [
+    'Recommend continued observation.',
+    'Rival villages may already be circling.',
+    'Worth the ryo to bring in for a trial.',
+    'No rush — this one isn\'t going anywhere yet.',
+  ]
+  return `${pk(openers[quality] || openers.General)} ${pk(bodies)} ${pk(closers)}`
 }
 
 // Generate an intake class student (more structured than a prospect)
@@ -278,6 +315,11 @@ export function genStudent(academyLevel, headSenseiRating) {
   base.milestones = []
   base.kageTraining = false
   base.startStats = { ...base.stats }  // snapshot at entry for progress tracking
+  // Hidden development curve — revealed by experienced sensei or elite scout
+  base.devCurve = pk(DEV_CURVES).id
+  base.devCurveRevealed = false
+  base.trainingReports = []  // monthly narrative log from sensei
+  base.academyOrigin = true
   delete base.missId
   delete base.squadId
   delete base.salary
@@ -298,6 +340,37 @@ export function genStudent(academyLevel, headSenseiRating) {
   delete base.jutsu
   delete base.bonds
   return base
+}
+
+// Determine a sensei's training style from their stat profile
+export function senseiStyle(sensei) {
+  if (!sensei) return 'neutral'
+  const discipline = sensei.stats.discipline || 8
+  const empathy = sensei.stats.empathy || 8
+  if (discipline > empathy + 3) return 'harsh'
+  if (empathy > discipline + 3) return 'nurturing'
+  return 'neutral'
+}
+
+// Generate a short monthly training-report narrative from a sensei's perspective
+export function genTrainingReport(student, sensei, growthNote) {
+  const style = senseiStyle(sensei)
+  const senseiName = sensei ? sensei.fn + ' ' + sensei.ln : 'the instructors'
+  const observations = {
+    harsh: [`${student.fn} needs to toughen up — pushed them hard this month.`, `Discipline is improving, but ${student.fn} still flinches under pressure.`, `No excuses accepted. ${student.fn} is learning that the hard way.`],
+    nurturing: [`${student.fn} is coming along nicely — encouraged them through some rough patches.`, `Made sure ${student.fn} felt supported this month. Confidence is growing.`, `${student.fn} responds well to patience. Proud of the progress.`],
+    neutral: [`Standard progress from ${student.fn} this month.`, `${student.fn} is keeping pace with the rest of the class.`, `Nothing remarkable to report on ${student.fn} this month.`],
+  }
+  return `${pk(observations[style] || observations.neutral)} ${growthNote || ''} — ${senseiName}`.trim()
+}
+
+// Reveal a student's hidden development curve if sensei/scout judgment is high enough
+export function revealDevCurve(student, judgeRating) {
+  if (!student.devCurveRevealed && (judgeRating || 0) >= 14) {
+    student.devCurveRevealed = true
+    return true
+  }
+  return false
 }
 
 // Personality descriptor — returns text based on staff judgment level

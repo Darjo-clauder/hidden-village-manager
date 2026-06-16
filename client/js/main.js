@@ -15,8 +15,8 @@ import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchR
 import { resolveChoiceEvent } from './adv.js'
 import { rFi } from './panels/finances.js'
 import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff } from './panels/staff.js'
-import { rSco, assignScout } from './panels/scouting.js'
-import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining } from './panels/youthacademy.js'
+import { rSco, assignScout, setScoutBudget, toggleWatchlist } from './panels/scouting.js'
+import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab } from './panels/youthacademy.js'
 import { rMeet, doMeeting } from './panels/meetings.js'
 import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms, confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide, sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter } from './panels/transfers.js'
 import { rLeg, legTab } from './panels/legacy.js'
@@ -59,9 +59,9 @@ Object.assign(window, {
   // staff
   openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff,
   // scouting
-  assignScout,
+  assignScout, setScoutBudget, toggleWatchlist,
   // youth academy
-  yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining,
+  yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab,
   // people management
   doMeeting,
   // transfer market
