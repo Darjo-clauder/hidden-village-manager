@@ -1,5 +1,5 @@
-import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend } from './state.js'
-import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS } from './constants.js'
+import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent } from './state.js'
+import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
 import { syncToServer } from './socket.js'
 import { pickNarrative, pickSquadNarrative, pickRankUpNarrative, DARK_MOMENT_POOL, LAST_WORDS_POOL } from './narratives.js'
@@ -568,7 +568,7 @@ export function adv() {
     // Development — +1 rating over time
     if (st.monthsServed > 0 && st.monthsServed % 6 === 0 && Math.random() < 0.30 && st.rating < 20) {
       st.rating++
-      const role = (G._STAFF_ROLES_REF || []).find(r => r.id === st.role)
+      const role = STAFF_ROLES.find(r => r.id === st.role)
       if (role) {
         const k = pk(role.stats)
         st.stats[k] = clamp(st.stats[k] + 1, 1, 20)
@@ -678,6 +678,178 @@ export function adv() {
     if (ev.effects?.worldFlag) G.worldFlags[ev.effects.worldFlag] = rnd(3, 6)
     aL('World Event: "' + ev.n + '" — check Missions panel for response options!', 'ev')
     ntf('World Event requires response!')
+  }
+
+  // ── Scout network tick ────────────────────────────────────────────────────
+  if (!G.scoutReports) G.scoutReports = []
+  const scouts = (G.staff || []).filter(st => st.role === 'scout_jonin' || st.role === 'head_scout')
+  const headScout = (G.staff || []).find(st => st.role === 'head_scout')
+  scouts.forEach(scout => {
+    if (!scout.contacts) scout.contacts = {}
+    if (scout.fatigue === undefined) scout.fatigue = 0
+    const region = scout.regionAssigned
+    if (!region) return
+    // Fatigue accumulation
+    scout.fatigue = Math.min(100, scout.fatigue + rnd(5, 12))
+    // Grow regional contacts over time
+    scout.contacts[region] = Math.min(20, (scout.contacts[region] || 0) + (Math.random() < 0.3 ? 1 : 0))
+    const contactBonus = scout.contacts[region] || 0
+    const adaptability = scout.stats.ninjutsu || 8
+    // Generate a report
+    const reportRoll = Math.random()
+    const reportQuality = clamp(((scout.stats.perception || 8) + contactBonus + (headScout ? 2 : 0)) / 22, 0.1, 1.0)
+    if (reportRoll < 0.55 + reportQuality * 0.3) {
+      const prospect = genRegionProspect(region, scout)
+      G.prospects.push(prospect)
+      G.scoutReports.push({
+        id: Math.random().toString(36).slice(2),
+        year: G.year, month: G.month,
+        scoutId: scout.id, scoutName: scout.fn + ' ' + scout.ln,
+        region, prospectId: prospect.id,
+        prospectName: prospect.fn + ' ' + prospect.ln,
+        quality: reportQuality > 0.75 ? 'Detailed' : reportQuality > 0.45 ? 'General' : 'Vague',
+        rivalInterest: prospect.rivalInterest > 0,
+      })
+      if (G.scoutReports.length > 30) G.scoutReports.shift()
+      aL(scout.fn + ' ' + scout.ln + ' filed a scout report from the ' + (REGIONS.find(r => r.id === region)?.n || region) + '.', 'neutral')
+    }
+    // Shadow scouting intel (head scout unlocks)
+    if (scout.role === 'head_scout' && Math.random() < 0.25) {
+      const targetV = pk(G.villages || [])
+      if (targetV) {
+        if (!targetV.scoutIntel) targetV.scoutIntel = {}
+        targetV.scoutIntel.squadDepth = rnd(3, 15)
+        targetV.scoutIntel.avgPower = rnd(100, 500)
+        targetV.scoutIntel.updatedY = G.year; targetV.scoutIntel.updatedM = G.month
+        aL(scout.fn + ' ' + scout.ln + ' gathered shadow intel on ' + targetV.n + '.', 'neutral')
+      }
+    }
+    // Fatigue resignation risk
+    if (scout.fatigue >= 90 && Math.random() < 0.12) {
+      aL(scout.fn + ' ' + scout.ln + ' resigned due to scout fatigue!', 'bad')
+      G.staff = G.staff.filter(st => st.id !== scout.id)
+    }
+    // Monthly fatigue recovery if resting (no region)
+  })
+  // Recover fatigue for scouts not assigned
+  ;(G.staff || []).filter(st => (st.role === 'scout_jonin' || st.role === 'head_scout') && !st.regionAssigned).forEach(scout => {
+    scout.fatigue = Math.max(0, (scout.fatigue || 0) - 20)
+  })
+  // Tick down urgency on scout-sourced prospects
+  G.prospects.forEach(p => {
+    if (p.urgencyMonths > 0) p.urgencyMonths--
+  })
+
+  // ── Annual intake (April = month 4) ───────────────────────────────────────
+  if (G.month === 4 && (G.lastIntakeYear || 0) < G.year) {
+    G.lastIntakeYear = G.year
+    if (!G.intakeClass) G.intakeClass = []
+    const acLv = G.upgrades.academy || 0
+    const headSensei = (G.staff || []).find(st => st.role === 'head_sensei')
+    const hsRating = headSensei?.rating || 0
+    const classSize = rnd(8, 12) + Math.floor(acLv * 1.5)
+    const prodigyIdx = Math.random() < 0.01 * classSize ? rnd(0, classSize - 1) : -1
+    for (let i = 0; i < classSize; i++) {
+      const student = genStudent(acLv, hsRating)
+      if (i === prodigyIdx) {
+        student.potential = Math.min(99, student.potential + rnd(15, 25))
+        student.trait = 'Prodigy'
+        aL('A prodigy has entered the Academy this intake!', 'good')
+        addChronicle('Prodigy Intake', student.fn + ' ' + student.ln + ' shows extraordinary talent.', 'shinobi')
+        addLegend(5)
+      }
+      G.intakeClass.push(student)
+    }
+    aL('Annual intake: ' + classSize + ' students joined the Academy (Year ' + G.year + ').', 'good')
+    ntf('New Academy intake — ' + classSize + ' students!')
+  }
+
+  // ── Youth academy development tick ────────────────────────────────────────
+  if (!G.intakeClass) G.intakeClass = []
+  const graduates = []
+  G.intakeClass.forEach(student => {
+    student.monthsInClass = (student.monthsInClass || 0) + 1
+    const track = DEV_TRACKS.find(t => t.id === (student.devTrack || 'balanced')) || DEV_TRACKS[0]
+    const intensity = INTENSITY_LEVELS.find(i => i.id === (student.intensity || 'medium')) || INTENSITY_LEVELS[1]
+    const sensei = (G.staff || []).find(st => st.id === student.sensei)
+    const sensMult = sensei ? (1 + (sensei.stats.pedagogy || 8) / 40) : 1.0
+    // Growth
+    if (!student.burnout) {
+      const growAmount = Math.round(intensity.mult * sensMult)
+      // Bonus stats from track
+      Object.entries(track.growBonus).forEach(([k, v]) => {
+        if (student.stats[k] !== undefined) student.stats[k] = clamp(student.stats[k] + Math.round(v * intensity.mult * sensMult * 0.5), 0, 99)
+      })
+      // Random growth
+      if (track.growRandom > 0) {
+        const statKeys = Object.keys(student.stats)
+        for (let i = 0; i < track.growRandom; i++) {
+          const k = pk(statKeys)
+          student.stats[k] = clamp(student.stats[k] + Math.round(Math.random() * growAmount), 0, 99)
+        }
+      }
+    } else {
+      // Burnout: stat regression
+      student.burnoutMonths = (student.burnoutMonths || 0) + 1
+      if (Math.random() < 0.3) {
+        const k = pk(Object.keys(student.stats))
+        student.stats[k] = Math.max(1, student.stats[k] - 1)
+      }
+      if (student.burnoutMonths >= 3) {
+        student.burnout = false; student.burnoutMonths = 0
+        aL(student.fn + ' ' + student.ln + ' has recovered from burnout.', 'neutral')
+      }
+    }
+    // Burnout risk from high intensity
+    if (!student.burnout && intensity.burnoutRisk > 0 && Math.random() < intensity.burnoutRisk / 100) {
+      student.burnout = true
+      student.burnoutTrait = pk(['Withdrawn', 'Anxious'])
+      if (!student.traits) student.traits = []
+      if (!student.traits.includes(student.burnoutTrait)) student.traits.push(student.burnoutTrait)
+      aL(student.fn + ' ' + student.ln + ' is burned out from intense training!', 'warn')
+    }
+    // Sensei trait pass-down (once, at 6 months)
+    if (student.monthsInClass === 6 && sensei && sensei.stats.empathy >= 12 && Math.random() < 0.35) {
+      const senseiTraits = ['Honorable', 'Determined', 'Analytical']
+      const t = pk(senseiTraits)
+      if (!student.traits) student.traits = []
+      if (!student.traits.includes(t)) { student.traits.push(t); aL(student.fn + ' ' + student.ln + ' adopted a ' + t + ' disposition from their sensei.', 'good') }
+    }
+    // Milestones at months 3, 6, 9
+    if ([3, 6, 9].includes(student.monthsInClass) && !student.milestones?.includes(student.monthsInClass)) {
+      if (!student.milestones) student.milestones = []
+      student.milestones.push(student.monthsInClass)
+      aL(student.fn + ' ' + student.ln + ' reached ' + student.monthsInClass + '-month Academy milestone.', 'neutral')
+    }
+    // Kage personal sparring (once per year, if G.kageTrainingUsedYear < G.year and student is flagged)
+    if (student.kageTraining && (G.kageTrainingUsedYear || 0) < G.year) {
+      G.kageTrainingUsedYear = G.year
+      student.kageTraining = false
+      const gainKey = pk(['ninjutsu','taijutsu','speed','chakra'])
+      student.stats[gainKey] = clamp(student.stats[gainKey] + rnd(3, 6), 0, 99)
+      student.potential = Math.min(99, student.potential + rnd(2, 5))
+      aL('The Kage personally sparred with ' + student.fn + ' ' + student.ln + ' — exceptional growth!', 'good')
+      addLegend(2)
+    }
+    // Graduation at 12 months
+    if (student.monthsInClass >= 12) {
+      graduates.push(student)
+    }
+  })
+  // Graduate students into prospects pool
+  if (graduates.length > 0) {
+    graduates.forEach(student => {
+      // Convert to proper prospect/shinobi entry
+      student.status = 'prospect'
+      G.prospects.push(student)
+      G.intakeClass = G.intakeClass.filter(s => s.id !== student.id)
+      aL(student.fn + ' ' + student.ln + ' graduated from the Academy!', 'good')
+    })
+    if (graduates.length > 0) {
+      addChronicle('Academy Graduation', graduates.length + ' students graduated: ' + graduates.map(s => s.fn + ' ' + s.ln).join(', ') + '.', 'event')
+      ntf(graduates.length + ' students graduated from the Academy!')
+      addLegend(graduates.length * 2)
+    }
   }
 
   // ── Prodigy event (1% per month in rfP) — handled in rfP ────────────────

@@ -15,6 +15,8 @@ import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchR
 import { resolveChoiceEvent } from './adv.js'
 import { rFi } from './panels/finances.js'
 import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff } from './panels/staff.js'
+import { rSco, assignScout } from './panels/scouting.js'
+import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining } from './panels/youthacademy.js'
 
 // defender shorthand helpers used from inline HTML
 function G_defShSet(id) { G.defSh = id; rDef() }
@@ -51,4 +53,8 @@ Object.assign(window, {
   resolveChoiceEvent, openWorldChoice,
   // staff
   openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff,
+  // scouting
+  assignScout,
+  // youth academy
+  yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining,
 })

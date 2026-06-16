@@ -34,7 +34,11 @@ export function rAc() {
 
     const currentSensei = p.mentor ? G.shinobi.find(s => s.id === p.mentor) : null
     const familySib = p.familyId ? G.prospects.filter(x => x.id !== p.id && x.familyId === p.familyId) : []
-    return `<div class="card" style="${waited >= 6 ? 'border-color:#f66' : p.prodigy ? 'border-color:#c9a84c;box-shadow:0 0 8px rgba(201,168,76,0.2)' : ''}">
+    const isScoutSourced = !!p.fromRegion
+    const urgencyBorder = isScoutSourced && p.urgencyMonths <= 2 && p.rivalInterest ? 'border-color:#f66' : p.prodigy ? 'border-color:#c9a84c;box-shadow:0 0 8px rgba(201,168,76,0.2)' : waited >= 6 ? 'border-color:#f66' : ''
+    return `<div class="card" style="${urgencyBorder}">
+      ${isScoutSourced && p.rivalInterest && p.urgencyMonths > 0 ? `<div style="background:#3a0000;border-radius:3px;padding:2px 6px;font-size:7px;color:#f99;margin-bottom:5px">⚠ Rival village interest — ${p.urgencyMonths}m urgency window</div>` : ''}
+      ${isScoutSourced ? `<div style="font-size:7px;color:#9b7fbf;margin-bottom:4px">🗺 Scouted by ${p.scoutName||'unknown'} · ${p.origin}</div>` : ''}
       <div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:7px">
         <div style="flex:1">
           <div style="font-size:11px;color:${p.prodigy ? '#c9a84c' : '#e8e0cc'};font-weight:bold">${sn(p)}${p.prodigy ? ' <span style="font-size:8px;color:#c9a84c">✦ PRODIGY</span>' : ''}</div>
@@ -53,8 +57,8 @@ export function rAc() {
         <div style="font-size:8px">
           Pwr <span style="color:#e8e0cc">${sPow(p)}</span>
           &nbsp;·&nbsp;
-          Pot <span style="color:${potColor}">${potText}</span>
-          ${p.scouted ? '' : '<span style="color:#3a3630;font-size:7px"> (unverified)</span>'}
+          Pot <span style="color:${potColor}">${isScoutSourced && p.potRange && !p.potRange.exact ? p.potRange.lo + '–' + p.potRange.hi + '?' : potText}</span>
+          ${p.scouted ? '' : isScoutSourced ? '' : '<span style="color:#3a3630;font-size:7px"> (unverified)</span>'}
         </div>
       </div>
       <div style="margin-top:6px">

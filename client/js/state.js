@@ -1,6 +1,7 @@
 import {
   CLANS, RANKS, FNAMES, LNAMES, SPECS, PERSONALITIES, BACKSTORIES, ARCHETYPES,
   TAILED_BEASTS, VILLAGES_DEF, MISS_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
+  REGIONS,
 } from './constants.js'
 
 // ── utilities ──────────────────────────────────────────────────────────────
@@ -93,7 +94,6 @@ export function initState() {
     contracts: JSON.parse(JSON.stringify(CONTRACTS)),
     keQ: [...KAGE_EVENTS].sort(() => Math.random() - 0.5), keCD: 0,
     memorial: [], chronicles: [], legend: 0, worldFlags: {}, pendingChoiceEvent: null,
-    // Finance system
     staff: [],
     finances: {
       history: [],        // last 12 monthly snapshots
@@ -106,6 +106,12 @@ export function initState() {
       loanFees: 0,
       scoutCostThisMonth: 0,
     },
+    // Scouting Network
+    scoutReports: [],
+    // Youth Academy
+    intakeClass: [],
+    lastIntakeYear: null,
+    kageTrainingUsedYear: 0,
   });
   [2, 2, 1, 1, 1, 0, 0, 0].forEach(r => G.shinobi.push(mS(r)))
   rfM(); rfP()
@@ -135,6 +141,104 @@ export function mStaff(roleId, ratingOverride) {
 // Generate staff candidates for hiring modal
 export function genStaffCandidates(roleId, count = 3) {
   return Array.from({ length: count }, () => mStaff(roleId))
+}
+
+// Generate a prospect from a specific region, with stat ranges based on scout quality
+export function genRegionProspect(regionId, scout) {
+  const region = REGIONS.find(r => r.id === regionId)
+  const p = mS(0)
+  p.origin = region?.n || regionId
+  p.fromRegion = regionId
+  p.scoutId = scout?.id || null
+  p.scoutName = scout ? scout.fn + ' ' + scout.ln : null
+  p.rivalInterest = rnd(0, 2)
+  p.urgencyMonths = rnd(4, 8)
+
+  // Apply regional stat bonuses
+  if (region?.statBonus) {
+    Object.entries(region.statBonus).forEach(([k, v]) => {
+      if (p.stats[k] !== undefined) p.stats[k] = clamp(p.stats[k] + v, 0, 99)
+    })
+  }
+
+  // Apply clan affinity (higher chance of region's clans)
+  if (!p.clan && region?.clanAffinity?.length && Math.random() < 0.45) {
+    const clanName = pk(region.clanAffinity)
+    const clan = CLANS.find(c => c.n === clanName)
+    if (clan) {
+      p.clan = clan.n; p.trait = clan.t
+      Object.keys(clan.b).forEach(k => { p.stats[k] = clamp(p.stats[k] + clan.b[k], 0, 99) })
+    }
+  }
+
+  // Compute stat ranges based on scout's perception (Judging Ability)
+  if (scout) {
+    const judgeAbility = scout.stats.perception || 8
+    const contactBonus = scout.contacts?.[regionId] ? Math.floor(scout.contacts[regionId] / 2) : 0
+    const effectiveJudge = Math.min(20, judgeAbility + contactBonus)
+    const errorMargin = Math.max(1, Math.round(15 - effectiveJudge * 0.65))
+    p.statRanges = {}
+    Object.keys(p.stats).forEach(k => {
+      const lo = Math.max(1, p.stats[k] - errorMargin)
+      const hi = Math.min(99, p.stats[k] + errorMargin)
+      p.statRanges[k] = { lo, hi, exact: effectiveJudge >= 16 }
+    })
+    // Potential range from Judging Potential (endurance stat)
+    const judgePot = scout.stats.endurance || scout.stats.perception || 8
+    const effectivePotJudge = Math.min(20, judgePot + contactBonus)
+    const potError = Math.max(3, Math.round(25 - effectivePotJudge))
+    p.potRange = {
+      lo: Math.max(10, p.potential - potError),
+      hi: Math.min(99, p.potential + potError),
+      exact: effectivePotJudge >= 16,
+    }
+  }
+
+  return p
+}
+
+// Generate an intake class student (more structured than a prospect)
+export function genStudent(academyLevel, headSenseiRating) {
+  const base = mS(0)
+  // Academy quality boost
+  const qualityBonus = academyLevel * 6 + Math.floor((headSenseiRating || 0) / 3)
+  Object.keys(base.stats).forEach(k => {
+    base.stats[k] = clamp(base.stats[k] + rnd(0, qualityBonus), 0, 99)
+  })
+  // Potential boosted by prestige
+  base.potential = clamp(base.potential + rnd(0, qualityBonus * 2), 20, 99)
+  // Students enter as blank slates development-wise
+  base.devTrack = 'balanced'
+  base.intensity = 'medium'
+  base.sensei = null
+  base.monthsInClass = 0
+  base.burnout = false
+  base.burnoutRisk = 0
+  base.burnoutMonths = 0
+  base.burnoutTrait = null
+  base.milestones = []
+  base.kageTraining = false
+  base.startStats = { ...base.stats }  // snapshot at entry for progress tracking
+  delete base.missId
+  delete base.squadId
+  delete base.salary
+  delete base.months
+  delete base.wins
+  delete base.winsB
+  delete base.winsS
+  delete base.streak
+  delete base.injDays
+  delete base.injuryType
+  delete base.workload
+  delete base.consecutiveMissions
+  delete base.traumaStatus
+  delete base.traumaCount
+  delete base.returningForm
+  delete base.jk
+  delete base.darkMoment
+  delete base.jutsu
+  delete base.bonds
+  return base
 }
 
 export function addChronicle(title, body, type = 'event') {
