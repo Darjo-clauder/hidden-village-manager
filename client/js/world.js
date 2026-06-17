@@ -1,5 +1,6 @@
 import { G, WS, clamp, fmt, setDipCb, _dipCb } from './state.js'
 import { aL, ntf, upUI, cm, setOnline } from './ui.js'
+import { shiftKageRel, kageToneDialogue, getKageTier, ensureKageRels } from './rivalKage.js'
 
 export function rWo() { rWorldCanvas(); rWorldList() }
 
@@ -59,8 +60,15 @@ export function rWorldCanvas() {
 
 export function rWorldList() {
   const el = document.getElementById('wvl')
-  const others = WS.villages.filter(v => v.id !== WS.myId)
   let html = ''
+
+  // ── World reputation flavor ─────────────────────────────────────────────
+  if (G.worldReputationFlavor) {
+    html += `<div style="background:var(--surface-2,#1a1e2c);border-left:3px solid var(--gold,#c9a84c);padding:9px 12px;margin-bottom:14px;font-size:9px;color:var(--text-mid,#909bb8);line-height:1.6;font-style:italic">${G.worldReputationFlavor}</div>`
+  }
+
+  // ── Multiplayer village list ──────────────────────────────────────────────
+  const others = WS.villages.filter(v => v.id !== WS.myId)
 
   if (WS.pendingAlliances.length) {
     html += '<div class="ally-pending"><div class="ally-pending-title">Pending Alliance Proposals</div>'
@@ -70,20 +78,46 @@ export function rWorldList() {
     html += '</div>'
   }
 
-  if (!others.length) {
+  if (others.length) {
+    html += others.map(v => {
+      const rel = WS.myVillage?.relations?.[v.id] || { status: 'neutral', rel: 50 }
+      const isA = rel.status === 'allied', isW = rel.status === 'war'
+      const cls = isA ? 'wv-card wv-card-ally' : isW ? 'wv-card wv-card-war' : 'wv-card'
+      const sc = isA ? '#8fbc8f' : isW ? '#f66' : '#fa0'
+      const sl = isA ? 'Allied' : isW ? 'At War' : 'Neutral'
+      const noG = G.ryo < 5000
+      return `<div class="${cls}"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="font-size:22px">${v.icon}</div><div style="flex:1"><div style="font-size:11px;color:#e8e0cc;font-weight:bold">${v.name}</div><div style="font-size:8px;color:#7a7060">Kage: ${v.kageName}</div></div><span style="font-size:8px;padding:2px 7px;border:1px solid ${sc};color:${sc}">${sl}</span></div><div style="display:flex;flex-wrap:wrap;margin-bottom:10px"><span class="wv-stat">Power <b>${v.power}</b></span><span class="wv-stat">Rep <b>${v.reputation}</b></span><span class="wv-stat">Shinobi <b>${v.shinobiCount}</b></span>${v.sealedBeasts?.length ? `<span class="wv-stat">Beasts <b style="color:#c9a84c">${v.sealedBeasts.join(', ')}</b></span>` : ''}</div><div class="wv-actions"><button class="gb" onclick="sendGiftMP('${v.id}')" ${noG ? 'disabled' : ''}>Send Gifts (5k)</button>${!isA && !isW ? `<button class="gb gb-g" onclick="propAllianceMP('${v.id}')">Propose Alliance</button>` : ''}${!isA && !isW ? `<button class="gb gb-r" onclick="declareWarMP('${v.id}')">Declare War</button>` : ''}${isA ? `<button class="gb gb-r" onclick="breakAllianceMP('${v.id}')">Break Alliance</button>` : ''}${isW ? `<button class="gb gb-r" onclick="launchRaidMP('${v.id}')">⚔ Launch Raid</button>` : ''}</div></div>`
+    }).join('')
+  } else {
     html += '<div style="color:#7a7060;font-size:9px;padding:10px 0">No other villages online. Share this server\'s URL with friends to play together.</div>'
-    el.innerHTML = html; return
   }
 
-  html += others.map(v => {
-    const rel = WS.myVillage?.relations?.[v.id] || { status: 'neutral', rel: 50 }
-    const isA = rel.status === 'allied', isW = rel.status === 'war'
-    const cls = isA ? 'wv-card wv-card-ally' : isW ? 'wv-card wv-card-war' : 'wv-card'
-    const sc = isA ? '#8fbc8f' : isW ? '#f66' : '#fa0'
-    const sl = isA ? 'Allied' : isW ? 'At War' : 'Neutral'
-    const noG = G.ryo < 5000
-    return `<div class="${cls}"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="font-size:22px">${v.icon}</div><div style="flex:1"><div style="font-size:11px;color:#e8e0cc;font-weight:bold">${v.name}</div><div style="font-size:8px;color:#7a7060">Kage: ${v.kageName}</div></div><span style="font-size:8px;padding:2px 7px;border:1px solid ${sc};color:${sc}">${sl}</span></div><div style="display:flex;flex-wrap:wrap;margin-bottom:10px"><span class="wv-stat">Power <b>${v.power}</b></span><span class="wv-stat">Rep <b>${v.reputation}</b></span><span class="wv-stat">Shinobi <b>${v.shinobiCount}</b></span>${v.sealedBeasts?.length ? `<span class="wv-stat">Beasts <b style="color:#c9a84c">${v.sealedBeasts.join(', ')}</b></span>` : ''}</div><div class="wv-actions"><button class="gb" onclick="sendGiftMP('${v.id}')" ${noG ? 'disabled' : ''}>Send Gifts (5k)</button>${!isA && !isW ? `<button class="gb gb-g" onclick="propAllianceMP('${v.id}')">Propose Alliance</button>` : ''}${!isA && !isW ? `<button class="gb gb-r" onclick="declareWarMP('${v.id}')">Declare War</button>` : ''}${isA ? `<button class="gb gb-r" onclick="breakAllianceMP('${v.id}')">Break Alliance</button>` : ''}${isW ? `<button class="gb gb-r" onclick="launchRaidMP('${v.id}')">⚔ Launch Raid</button>` : ''}</div></div>`
-  }).join('')
+  // ── NPC Rival Kage personal relationships ────────────────────────────────
+  ensureKageRels(G)
+  html += `<div style="margin-top:20px">
+    <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim,#58607a);margin-bottom:10px">Rival Kage Personal Relations</div>
+    ${(G.villages || []).map(v => {
+      const pr = v.kagePersonalRel ?? 50
+      const tier = getKageTier(pr)
+      const lastEvent = v.kageHistory?.slice(-1)[0]
+      return `
+        <div style="background:var(--surface,#131620);border:1px solid var(--border,#252b3a);padding:10px 12px;margin-bottom:7px;display:flex;align-items:center;gap:12px">
+          <div style="font-size:20px">${v.ico || '🌐'}</div>
+          <div style="flex:1">
+            <div style="font-size:10px;color:var(--text-hi,#e8e0d0)">${v.kage || v.n} <span style="font-size:8px;color:var(--text-dim,#58607a)">(${v.kageRank || 'Kage'}, ${v.n})</span></div>
+            <div style="font-size:8px;color:${tier.color};margin-top:2px">${tier.label}</div>
+            ${lastEvent ? `<div style="font-size:7px;color:var(--text-dim);margin-top:2px;font-style:italic">Last: ${lastEvent.reason} (Y${lastEvent.year})</div>` : ''}
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;color:${tier.color};font-weight:bold">${pr}</div>
+            <div style="font-size:7px;color:var(--text-dim)">/100</div>
+          </div>
+        </div>
+      `
+    }).join('')}
+    <div style="font-size:8px;color:var(--text-dim);margin-top:6px;line-height:1.6">Personal relationships affect negotiation tone and success rates independently of village diplomatic standing. Drift toward neutral (50) each month. Shift via gifts (+6), war declaration (−25), and summit conduct.</div>
+  </div>`
+
   el.innerHTML = html
 }
 
@@ -95,6 +129,9 @@ export function declareWarMP(id) {
   const v = WS.villages.find(x => x.id === id); if (!v || !_socket) return
   _socket.emit('declare_war', { targetId: id })
   setRelLocal(id, 'war')
+  // War declaration tanks personal Kage relationship
+  const npcV = G.villages?.find(x => x.n === v.name)
+  if (npcV) shiftKageRel(npcV, -25, 'War declared', G)
   aL('War declared on ' + v.icon + ' ' + v.name + '!', 'warn'); ntf('War declared on ' + v.name + '!'); rWo()
 }
 
@@ -129,6 +166,9 @@ export function sendGiftMP(id) {
   if (G.ryo < 5000) { ntf('Need 5,000 ryo!'); return }
   const v = WS.villages.find(x => x.id === id)
   G.ryo -= 5000; _socket.emit('send_gift', { targetId: id })
+  // Gifts improve Kage personal relationship too
+  const npcV = G.villages?.find(x => x.n === v?.name)
+  if (npcV) shiftKageRel(npcV, 6, 'Diplomatic gift received', G)
   aL('Diplomatic gifts sent to ' + (v?.name || 'unknown') + '.', 'good'); upUI()
 }
 

@@ -8,7 +8,7 @@ import { mTab, oA, doA, pickSq, rDef, openWorldChoice } from './panels/missions.
 import { rUp, buyUp } from './panels/upgrades.js'
 import { rAc, rec, oScout, doScout, oSensei, doSensei } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship } from './panels/economy.js'
-import { rBe, lCap } from './panels/beasts.js'
+import { rBe, lCap, beastTab, releaseJinchuriki } from './panels/beasts.js'
 import { rKa, resKE, sGift, propAl, rattle } from './panels/kage.js'
 import { rEx, tEC, startEx, runRound } from './panels/exam.js'
 import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP, dipAccept, dipDecline } from './world.js'
@@ -26,6 +26,7 @@ import { showLobby, createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode } 
 import { endTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose, setTimeout_, setMaxPlayers, voteAdvance, setAdvFn } from './room.js'
 import { copyInvite } from './panels/lobby.js'
 import { inboxTab, inboxFilter } from './panels/inbox.js'
+import { chrFilter, chrSearch } from './panels/chronicles.js'
 
 // Inject adv into room.js to break circular dep
 setAdvFn(adv)
@@ -52,6 +53,8 @@ Object.assign(window, {
   sp, cm, adv, toggleNav,
   // inbox
   inboxTab, inboxFilter,
+  // chronicles
+  chrFilter, chrSearch,
   // roster
   oDos, mkJK, treatTrauma,
   // squads
@@ -65,7 +68,7 @@ Object.assign(window, {
   // economy
   eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship,
   // beasts
-  lCap,
+  lCap, beastTab, releaseJinchuriki,
   // kage
   resKE, sGift, propAl, rattle,
   // exam

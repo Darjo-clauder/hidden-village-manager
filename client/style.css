@@ -437,6 +437,18 @@ body{
 .squad-mb{font-size:8px;padding:2px 7px;border:1px solid var(--border);color:var(--text-dim);display:inline-block;margin:2px}
 .dossier{background:var(--bg);border:1px solid var(--border);padding:10px;margin-top:8px;font-size:9px;color:var(--text-dim);line-height:1.7;font-style:italic}
 
+/* ── Beast sync bars ── */
+.sync-bar-wrap{height:6px;background:var(--surface-3);border-radius:2px;overflow:hidden;margin:4px 0}
+.sync-bar-fill{height:100%;border-radius:2px;transition:width .3s}
+.sync-bar-fill.stage-1{background:var(--red)}
+.sync-bar-fill.stage-2{background:var(--orange)}
+.sync-bar-fill.stage-3{background:var(--gold)}
+.sync-bar-fill.stage-4{background:var(--green)}
+.sync-bar-fill.stage-5{background:var(--blue)}
+/* Beast morale-fill colors */
+.tb-morale-fill.low{background:var(--red)!important}
+.tb-morale-fill.warn{background:var(--orange)!important}
+
 /* ── World map panel ── */
 #wmap{display:block;width:100%;cursor:default;margin-bottom:14px;image-rendering:pixelated}
 .wmap-wrap{position:relative;border:1px solid var(--border);margin-bottom:14px;background:#080810}

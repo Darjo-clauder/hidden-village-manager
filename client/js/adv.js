@@ -1,6 +1,8 @@
 import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice, computeMarketValue, mS } from './state.js'
 import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS, EXAM_FORMATS, LEGACY_DECISIONS, PRESTIGE_TIERS } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
+import { tickBeast, applyBeastPairEffects, getBeastPassives } from './beastEngine.js'
+import { tickKageRels, getWorldReputationFlavor, shiftKageRel, ensureKageRels } from './rivalKage.js'
 import { syncToServer } from './socket.js'
 import { pickNarrative, pickSquadNarrative, pickRankUpNarrative, DARK_MOMENT_POOL, LAST_WORDS_POOL } from './narratives.js'
 import { sqSynergy, SQUAD_IDENTITIES } from './synergy.js'
@@ -560,7 +562,8 @@ export function adv() {
       const pw = sPow(s), rM = s.pers.effect.riskMod || 0, sM = pw < m.mp ? (s.pers.effect.sucMod || 0) : 0, sB = s.pers.effect.soloBonus || 0
       const soloFormMod = ((s.returningForm || 100) < 100) ? ((s.returningForm - 100) / 500) : 0
       const soloAnbuBon = (m.rk === 'S' || m.rk === 'A') ? sb.anbuMissionBonus : 0
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod, 0.08, 0.97)
+      const beastLuck = G._beastMissionLuck || 0
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck, 0.08, 0.97)
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)
@@ -845,7 +848,9 @@ export function adv() {
   // ── Economy & Finance snapshot ────────────────────────────────────────────
   const trI = Math.round(G.tradeRoutes.filter(r => r.active).reduce((a, r) => a + r.income, 0) * sb.tradeIncomeMultiplier)
   const coI = Math.round(G.contracts.filter(c => c.active).reduce((a, c) => a + c.income, 0) * sb.tradeIncomeMultiplier)
+  const beastPassives = getBeastPassives(G)
   const jkI = G.beasts.filter(b => b.sealed && b.n === 'Matatabi' && b.jk).length * 3000
+    + (G._kuramagyukiBonus ? 5000 : 0) // Kurama+Gyuki trade bonus
   const daimyoB = Math.round(computeDaimyoBonus() * (G.daimyoBudgetMult || 1))
   const maintenance = computeMaintenance()
   const shinobiSal = G.shinobi.reduce((a, s) => a + s.salary, 0)
@@ -1870,6 +1875,24 @@ export function adv() {
       aL('Your designated successor has left the village. Appoint a new one in the Legacy panel.', 'warn')
     }
   }
+
+  // ── Rival Kage relationship tick ──────────────────────────────────────────
+  ensureKageRels(G)
+  tickKageRels(G)
+  G.worldReputationFlavor = getWorldReputationFlavor(G)
+
+  // ── Tailed Beast monthly tick ─────────────────────────────────────────────
+  applyBeastPairEffects(G)
+  G.beasts.forEach(b => {
+    const beastEvents = tickBeast(b, G)
+    beastEvents.forEach(ev => {
+      aL(ev.title + ': ' + ev.body.slice(0, 120) + (ev.body.length > 120 ? '…' : ''), ev.type === 'legend' ? 'good' : ev.type === 'lore' ? 'good' : ev.type === 'bad' || ev.type === 'critical' ? 'bad' : ev.type === 'warn' ? 'warn' : 'neutral')
+      if (ev.type === 'legend') { addChronicle(ev.title, ev.body, 'legend'); addLegend(10) }
+      if (ev.type === 'lore')   addChronicle(ev.title, ev.body, 'lore')
+    })
+  })
+  // Apply mission luck passive from beasts (Chomei, etc.)
+  if (beastPassives.missionLuck > 0) G._beastMissionLuck = beastPassives.missionLuck
 
   syncToServer(); rfM(); rfP()
   G.month++; if (G.month > 12) { G.month = 1; G.year++; addChronicle('New Year', 'Year ' + G.year + ' begins. Legend: ' + G.legend + '. Shinobi: ' + G.shinobi.length + '.', 'event') }

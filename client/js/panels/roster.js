@@ -199,10 +199,17 @@ export function specialistTreatment(sId, villageName) {
 export function mkJK(sId, bN) {
   const s = G.shinobi.find(x => x.id === sId), b = G.beasts.find(x => x.n === bN)
   if (!s || !b) return
+  // Clear any previous jinchuriki
+  if (b.jk && b.jk !== sId) {
+    const prev = G.shinobi.find(x => x.id === b.jk)
+    if (prev) prev.jk = null
+  }
   s.jk = bN; b.jk = sId
-  const bst = { ninjutsu: 8, taijutsu: 8, chakra: 15, speed: 8 }
-  Object.keys(bst).forEach(k => { s.stats[k] = clamp(s.stats[k] + bst[k], 0, 99) })
-  if (bN === 'Kurama') G.reputation = clamp(G.reputation + 30, 0, 999)
-  aL(sn(s) + ' becomes Jinchuriki of ' + bN + '!', 'good')
-  cm('dossier'); upUI(); ntf(s.fn + '\'s jinchuriki is now ' + bN + '!')
+  // Initialize sync progression — stats applied monthly by beastEngine
+  b.syncMonths = b.syncMonths || 0
+  b.loreUnlocked = b.loreUnlocked || []
+  b.loreBonusActive = b.loreBonusActive || false
+  b.escapeHistory = b.escapeHistory || []
+  aL(`${sn(s)} chosen as Jinchuriki of ${bN}. Stage 1: Rejection begins.`, 'warn')
+  cm('dossier'); upUI(); ntf(`${s.fn} is now Jinchuriki of ${bN} — Stage 1 begins.`)
 }
