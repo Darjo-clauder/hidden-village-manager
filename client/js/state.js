@@ -68,6 +68,10 @@ export function mS(ri = 0) {
     sellOnClause: null,              // { percent, village } — paid out automatically on future sale
     homegrown: false,                // true for academy graduates promoted to active roster
     pursuedByVillages: [],           // village names that previously made (and lost) a bid — affects future negotiation tone
+    injuryCount: 0,                  // career total injuries
+    injuryHistory: [],               // [{ year, month, type, duration, treatment }]
+    secondOpinionUsed: false,        // reset each new injury
+    specialistTreated: false,        // reset each new injury
   }
 }
 
@@ -191,6 +195,14 @@ export function initState() {
     noticeboard: [],            // { year, month, text, type }
     serviceAwardQueue: [],      // { id, shinobiId, years, year, month }
     reviewQueue: [],            // { id, shinobiId, outcome, year }
+    // Staff depth
+    staffHallOfFame: [],             // [{ fn, ln, role, yearsServed, rating, year }]
+    asstKageLog: [],                 // [{ year, month, text }] — log of AK autonomous decisions
+    staffConflict: null,             // { headSenseiId, teamSenseiId, year, month } — active conflict
+    staffPoachOffer: null,           // { staffId, staffName, village, matchCost, expiresYear, expiresMonth }
+    // Injury system depth
+    emergencyRecruitWindow: false,   // true after squad injury crisis (4+ injured simultaneously)
+    emergencyWindowEnd: null,        // { year, month } when emergency window closes
     // Finance & transfer market depth
     daimyoObjectives: null,     // { ids:[], year, startRel } — set each January, evaluated each December
     daimyoObjectiveHistory: [], // { year, met:[bool,bool,bool], budgetMult }
@@ -222,6 +234,13 @@ export function mStaff(roleId, ratingOverride) {
     monthsServed: 0,
     institutional: 0,
     fromShinobi: null,
+    ambition: rnd(3, 18),            // how aggressively they seek career advancement
+    careerPathMonths: 0,             // months tracked since last career move / hire
+    asstKage: false,                 // designated Assistant Kage
+    hiddenFlaw: Math.random() < 0.25
+      ? pk(['Low Professionalism', 'Fragile Under Pressure', 'High Conflict Tendency', 'Overestimates Own Abilities'])
+      : null,
+    flawRevealed: false,
   }
 }
 
@@ -539,6 +558,8 @@ export function computeMarketValue(s) {
   if (s.status === 'injured') value = Math.round(value * 0.85)
   if (s.traumaStatus) value = Math.round(value * 0.9)
   if ((s.traumaCount || 0) >= 2) value = Math.round(value * 0.85)
+  if ((s.traits || []).includes('InjuryProne')) value = Math.round(value * 0.80)
+  if ((s.traits || []).includes('Fragile')) value = Math.round(value * 0.90)
   return Math.max(500, value)
 }
 

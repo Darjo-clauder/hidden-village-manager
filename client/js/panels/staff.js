@@ -1,22 +1,72 @@
 import { G, fmt, sn, rnd, pk, clamp, mStaff, genStaffCandidates } from '../state.js'
-import { STAFF_ROLES, RANKS, RKC, FNAMES, LNAMES } from '../constants.js'
+import { STAFF_ROLES, RANKS, FNAMES, LNAMES, STAFF_CONFLICT_RESPONSES } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 
 let _hireRoleId = null
 let _hireCandidates = []
+let _scoutedIdx = null  // index of candidate being previewed after scouting
+
+window._staffTab = 'roster'
+
+export function staffTab(t) { window._staffTab = t; rSt() }
 
 export function rSt() {
   const el = document.getElementById('stfl')
   if (!el) return
 
+  const tabs = ['roster', 'legacy']
+  const tabLabels = { roster: 'Staff Roster', legacy: 'Hall of Fame' }
+  const conflictBadge = G.staffConflict ? 1 : 0
+  const poachBadge = G.staffPoachOffer ? 1 : 0
+  const badge = conflictBadge + poachBadge
+
+  let html = `<div style="display:flex;gap:6px;margin-bottom:14px">
+    ${tabs.map(t => `<button onclick="staffTab('${t}')" style="background:${window._staffTab===t?'#2a2210':'#1a1a1a'};border:1px solid ${window._staffTab===t?'#c9a84c':'#333'};color:${window._staffTab===t?'#c9a84c':'#999'};border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.78rem">${tabLabels[t]}${t==='roster'&&badge>0?' ('+badge+')':''}</button>`).join('')}
+  </div>
+  ${window._staffTab === 'roster' ? _rosterTab() : _legacyTab()}`
+
+  el.innerHTML = html
+}
+
+function _rosterTab() {
+  let html = ''
+
+  // ── Active alerts ─────────────────────────────────────────────────────────
+  if (G.staffConflict) {
+    const hs = (G.staff||[]).find(x => x.id === G.staffConflict.headSenseiId)
+    const ts = (G.staff||[]).find(x => x.id === G.staffConflict.teamSenseiId)
+    if (hs && ts) {
+      html += `<div style="border:1px solid #f44;background:#1a0a0a;padding:10px;margin-bottom:14px">
+        <div style="font-size:9px;color:#f44;font-weight:bold;margin-bottom:4px">⚠ STAFF CONFLICT — Mediation Required</div>
+        <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${hs.fn} ${hs.ln} (Head Sensei) and ${ts.fn} ${ts.ln} (Team Sensei) have reached a breaking point.</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${STAFF_CONFLICT_RESPONSES.map(r => `<button class="gb" style="font-size:7px;border-color:${r.id==='back_head'?'#87ceeb':r.id==='back_team'?'#c9a84c':'#8fbc8f'};color:${r.id==='back_head'?'#87ceeb':r.id==='back_team'?'#c9a84c':'#8fbc8f'}" onclick="resolveStaffConflict('${r.id}')">${r.n} ▸</button>`).join('')}
+        </div>
+      </div>`
+    }
+  }
+
+  if (G.staffPoachOffer) {
+    const offer = G.staffPoachOffer
+    html += `<div style="border:1px solid #f0a030;background:#1a1205;padding:10px;margin-bottom:14px">
+      <div style="font-size:9px;color:#f0a030;font-weight:bold;margin-bottom:4px">⚠ RIVAL RECRUITMENT OFFER — Expires Month ${offer.expiresMonth}</div>
+      <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${offer.village} is offering ${offer.staffName} a position. Respond before they accept.</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="gb gb-g" onclick="matchPoachOffer()" style="font-size:7px">Match Offer (${fmt(offer.matchCost)} ryo retention bonus) ▸</button>
+        <button class="gb" onclick="dismissPoachOffer('let')" style="font-size:7px;border-color:#8fbc8f;color:#8fbc8f">Let Them Go ▸</button>
+        <button class="gb gb-r" onclick="dismissPoachOffer('block')" style="font-size:7px">Block (−10 rel with ${offer.village}) ▸</button>
+      </div>
+    </div>`
+  }
+
+  // ── Staff by section ─────────────────────────────────────────────────────
   const staffBySec = [
     { sec: 'Command', roles: ['head_sensei','anbu_cmdr','council','treasurer','strategist'] },
     { sec: 'Field', roles: ['head_scout','team_sensei','scout_jonin','medical'] },
   ]
 
-  let html = ''
   staffBySec.forEach(({ sec, roles }) => {
-    html += `<div class="pt" style="margin-top:${html?'14px':'0'}">${sec}</div>`
+    html += `<div class="pt" style="margin-top:${html.includes('div class="pt"')?'14px':'0'}">${sec}</div>`
     roles.forEach(roleId => {
       const roleDef = STAFF_ROLES.find(r => r.id === roleId)
       if (!roleDef) return
@@ -39,15 +89,26 @@ export function rSt() {
       } else {
         current.forEach(st => {
           const statEntries = Object.entries(st.stats)
+          const ambColor = (st.ambition||0) >= 14 ? '#f0a030' : (st.ambition||0) >= 10 ? '#c9a84c' : '#7a7060'
+          const ambLabel = (st.ambition||0) >= 14 ? '▲ High Ambition' : (st.ambition||0) >= 10 ? 'Moderate Ambition' : 'Low Ambition'
+          const isAsstKage = st.asstKage
+          const yearsServed = Math.floor((st.monthsServed || 0) / 12)
+          const canBeAK = (st.monthsServed || 0) >= 12 && !isAsstKage && !(G.staff||[]).some(x => x.asstKage)
+
           html += `<div style="border:1px solid #2e2820;padding:8px;margin-top:6px;background:#111">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
               <div>
-                <div style="font-size:10px;color:#e8e0cc;font-weight:bold">${st.fn} ${st.ln}</div>
-                <div style="font-size:8px;color:#7a7060">Rating: <span style="color:#c9a84c;font-weight:bold">${st.rating}</span> · Tenure: ${st.monthsServed}mo · Salary: ${fmt(st.salary)}/mo</div>
+                <div style="font-size:10px;color:#e8e0cc;font-weight:bold">${st.fn} ${st.ln}${isAsstKage ? ' <span style="color:#87ceeb;font-size:8px">★ Asst. Kage</span>' : ''}</div>
+                <div style="font-size:8px;color:#7a7060">Rating: <span style="color:#c9a84c;font-weight:bold">${st.rating}</span> · ${yearsServed > 0 ? yearsServed + 'yr ' : ''}${st.monthsServed}mo · ${fmt(st.salary)}/mo</div>
+                <div style="font-size:7px;color:${ambColor};margin-top:2px">${ambLabel}${(st.ambition||0)>=14&&roleId==='team_sensei'?' — watching for head sensei opening':''}${st.hiddenFlaw&&st.flawRevealed?' · ⚠ '+st.hiddenFlaw:''}</div>
                 ${st.institutional > 0 ? `<div style="font-size:8px;color:#cc7fb8">Legacy bonus: +${st.institutional} to next hire</div>` : ''}
                 ${st.fromShinobi ? `<div style="font-size:8px;color:#c9a84c">↳ Transitioned from active duty</div>` : ''}
               </div>
-              <button class="gb gb-r" onclick="releaseStaff('${st.id}')" style="font-size:7px;padding:3px 7px">Release</button>
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+                <button class="gb gb-r" onclick="releaseStaff('${st.id}')" style="font-size:7px;padding:3px 7px">Release</button>
+                ${canBeAK ? `<button class="gb" onclick="designateAsstKage('${st.id}')" style="font-size:7px;padding:3px 7px;border-color:#87ceeb;color:#87ceeb">Designate AK</button>` : ''}
+                ${isAsstKage ? `<button class="gb" onclick="designateAsstKage(null)" style="font-size:7px;padding:3px 7px;border-color:#555;color:#555">Remove AK</button>` : ''}
+              </div>
             </div>
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px">
               ${statEntries.map(([k, v]) => `<div style="text-align:center;background:#0d0d0d;padding:3px">
@@ -62,10 +123,9 @@ export function rSt() {
     })
   })
 
-  // Transition from retired shinobi (show eligible retired shinobis)
+  // ── Retire to Staff ───────────────────────────────────────────────────────
   html += `<div class="pt" style="margin-top:14px">Retire to Staff</div>
-    <div style="font-size:9px;color:#7a7060;margin-bottom:8px">Shinobi with 20+ wins can transition to a staff role upon retirement. Their career stats inform their rating.</div>`
-
+    <div style="font-size:9px;color:#7a7060;margin-bottom:8px">Shinobi with 20+ wins can transition to a staff role upon retirement.</div>`
   const eligible = G.shinobi.filter(s => s.wins >= 20 && s.ri >= 2)
   if (eligible.length === 0) {
     html += `<div style="font-size:8px;color:#3a3630;font-style:italic">No eligible shinobi — requires Jonin+ with 20+ wins.</div>`
@@ -76,18 +136,49 @@ export function rSt() {
           <div style="font-size:10px;color:#e8e0cc">${sn(s)}</div>
           <div style="font-size:8px;color:#7a7060">${RANKS[s.ri]} · ${s.wins} wins · Power ${Math.round(Object.values(s.stats).reduce((a,b)=>a+b,0)/6)}</div>
         </div>
-        <div style="display:flex;gap:5px">
-          <button class="gb gb-g" onclick="openRetireToStaff('${s.id}')" style="font-size:7px;padding:3px 7px">Retire ▸</button>
-        </div>
+        <button class="gb gb-g" onclick="openRetireToStaff('${s.id}')" style="font-size:7px;padding:3px 7px">Retire ▸</button>
       </div>`
     })
   }
 
-  el.innerHTML = html
+  // ── Assistant Kage log ────────────────────────────────────────────────────
+  const akLog = G.asstKageLog || []
+  if (akLog.length > 0) {
+    html += `<div class="pt" style="margin-top:14px">Assistant Kage Decisions</div>
+      <div style="font-size:9px;color:#7a7060;margin-bottom:6px">Autonomous decisions made on minor meetings.</div>`
+    html += akLog.slice(0, 8).map(entry =>
+      `<div style="font-size:8px;color:#7a7060;border-left:2px solid #2e2820;padding:4px 8px;margin-bottom:4px"><span style="color:#3a3630">Yr${entry.year}·M${entry.month}</span> ${entry.text}</div>`
+    ).join('')
+  }
+
+  return html
+}
+
+function _legacyTab() {
+  const hof = G.staffHallOfFame || []
+  if (hof.length === 0) {
+    return `<div style="color:#555;text-align:center;padding:40px;font-size:.85rem">No inductees yet. Staff who serve 8+ years before retiring earn a permanent legacy entry.</div>`
+  }
+  let html = `<div style="font-size:9px;color:#7a7060;margin-bottom:10px">Staff who served 8+ years are enshrined here permanently. Their legacy endures.</div>`
+  html += hof.map(entry => {
+    const roleDef = STAFF_ROLES.find(r => r.id === entry.role)
+    return `<div style="border:1px solid #2e2a22;background:#1a1814;padding:11px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:11px;color:#c9a84c;font-weight:bold">${entry.fn} ${entry.ln}</div>
+          <div style="font-size:9px;color:#7a7060;margin-top:2px">${roleDef?.n || entry.role} · ${entry.yearsServed} years of service · Peak Rating ${entry.peakRating}</div>
+          <div style="font-size:8px;color:#3a3630;margin-top:2px">Inducted Year ${entry.year}${entry.fromShinobi ? ' · Transitioned from active duty' : ''}</div>
+        </div>
+        <div style="font-size:14px;color:#c9a84c">⭐</div>
+      </div>
+    </div>`
+  }).join('')
+  return html
 }
 
 export function openStaffHire(roleId) {
   _hireRoleId = roleId
+  _scoutedIdx = null
   const legacy = (G.staff || []).filter(st => st.role === roleId && st.institutional > 0)
   const legacyBoost = legacy.reduce((a, st) => a + st.institutional, 0)
   _hireCandidates = genStaffCandidates(roleId, 3).map(c => {
@@ -101,23 +192,54 @@ export function openStaffHire(roleId) {
   const roleDef = STAFF_ROLES.find(r => r.id === roleId)
   document.getElementById('sh-title').textContent = 'Hire ' + roleDef?.n
   document.getElementById('sh-desc').textContent = roleDef?.desc + (legacyBoost > 0 ? ' (Legacy bonus: +' + legacyBoost + ' to all stats)' : '')
+  _renderHireCandidates()
+  document.getElementById('ov-staffhire').classList.add('open')
+}
+
+function _renderHireCandidates() {
   const list = document.getElementById('sh-candidates')
+  if (!list) return
   list.innerHTML = _hireCandidates.map((c, i) => {
     const statEntries = Object.entries(c.stats)
-    return `<div class="pi" onclick="doStaffHire(${i})" style="flex-direction:column;align-items:flex-start;padding:10px">
-      <div style="display:flex;justify-content:space-between;width:100%;margin-bottom:5px">
+    const scouted = c.flawRevealed
+    return `<div style="border:1px solid ${scouted?'#87ceeb':'#2e2820'};background:#0d0d0d;padding:10px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
         <span style="font-size:10px;color:#e8e0cc;font-weight:bold">${c.fn} ${c.ln}</span>
         <span style="font-size:9px;color:#c9a84c">Rating ${c.rating} · ${fmt(c.salary)}/mo</span>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;width:100%">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-bottom:7px">
         ${statEntries.map(([k,v]) => `<div style="text-align:center;background:#111;padding:3px">
           <div style="font-size:7px;color:#3a3630;text-transform:uppercase">${k.slice(0,5)}</div>
           <div style="font-size:10px;color:${v>=15?'#c9a84c':v>=10?'#8fbc8f':'#7a7060'};font-weight:bold">${v}</div>
         </div>`).join('')}
       </div>
+      ${scouted && c.hiddenFlaw ? `<div style="font-size:8px;color:#f99;margin-bottom:6px;padding:4px 6px;border:1px solid #8b1a1a;background:#0d0505">⚠ Scout Report: Hidden flaw detected — "${c.hiddenFlaw}"</div>` : ''}
+      ${scouted && !c.hiddenFlaw ? `<div style="font-size:8px;color:#8fbc8f;margin-bottom:6px;padding:4px 6px;border:1px solid #1a3a1a;background:#050d05">✓ Scout Report: No concerns — well-regarded by former colleagues.</div>` : ''}
+      <div style="display:flex;gap:6px">
+        <button class="gb gb-g" onclick="doStaffHire(${i})" style="font-size:7px">Hire ▸</button>
+        ${!scouted ? `<button class="gb" onclick="scoutStaffCandidate(${i})" style="font-size:7px;border-color:#87ceeb;color:#87ceeb">Scout (2,000 ryo) ▸</button>` : ''}
+      </div>
     </div>`
   }).join('')
-  document.getElementById('ov-staffhire').classList.add('open')
+}
+
+export function scoutStaffCandidate(idx) {
+  if (G.ryo < 2000) { ntf('Not enough ryo (2,000 needed)'); return }
+  const c = _hireCandidates[idx]
+  if (!c || c.flawRevealed) return
+  G.ryo -= 2000
+  c.flawRevealed = true  // mark as scouted — flaw (or lack thereof) is now visible
+  if (c.hiddenFlaw && Math.random() > 0.70) {
+    // 30% chance to miss the flaw even with a scout
+    c.hiddenFlaw = null
+    aL('Scouting complete — no concerns found about ' + c.fn + ' ' + c.ln + '. (Note: scout may have missed something.)', 'neutral')
+  } else if (c.hiddenFlaw) {
+    aL('Scout Report: ' + c.fn + ' ' + c.ln + ' has a hidden issue — ' + c.hiddenFlaw + '.', 'warn')
+  } else {
+    aL('Scout Report: ' + c.fn + ' ' + c.ln + ' has a clean record. No concerns.', 'good')
+  }
+  upUI()
+  _renderHireCandidates()
 }
 
 export function doStaffHire(idx) {
@@ -131,7 +253,6 @@ export function doStaffHire(idx) {
     cm('staffhire')
     return
   }
-  // Clear any institutional bonus that was used
   G.staff.filter(st => st.role === _hireRoleId).forEach(st => { st.institutional = 0 })
   G.staff.push(candidate)
   aL(candidate.fn + ' ' + candidate.ln + ' hired as ' + roleDef?.n + ' (Rating ' + candidate.rating + ').', 'good')
@@ -146,7 +267,92 @@ export function releaseStaff(staffId) {
   if (!st) return
   G.staff = G.staff.filter(x => x.id !== staffId)
   aL(st.fn + ' ' + st.ln + ' was released from their position.', 'neutral')
-  upUI()
+  upUI(); rSt()
+}
+
+export function designateAsstKage(staffId) {
+  if (!G.staff) return
+  // Clear existing AK
+  G.staff.forEach(st => { st.asstKage = false })
+  if (staffId) {
+    const st = G.staff.find(x => x.id === staffId)
+    if (st) {
+      st.asstKage = true
+      aL(st.fn + ' ' + st.ln + ' designated as Assistant Kage. They will handle minor meetings autonomously.', 'good')
+      ntf(st.fn + ' is now Assistant Kage.')
+    }
+  } else {
+    aL('Assistant Kage designation removed.', 'neutral')
+  }
+  upUI(); rSt()
+}
+
+export function resolveStaffConflict(choice) {
+  if (!G.staffConflict) return
+  const hs = (G.staff||[]).find(x => x.id === G.staffConflict.headSenseiId)
+  const ts = (G.staff||[]).find(x => x.id === G.staffConflict.teamSenseiId)
+
+  if (choice === 'back_head') {
+    if (ts) {
+      // Team sensei leaves
+      G.staff = G.staff.filter(x => x.id !== ts.id)
+      aL('You backed the Head Sensei. ' + ts.fn + ' ' + ts.ln + ' resigned in response.', 'warn')
+      ntf(ts.fn + ' resigned.')
+      addChronicle('Staff Conflict Resolution', 'Backed Head Sensei — ' + ts.fn + ' ' + ts.ln + ' resigned.', 'staff')
+    }
+  } else if (choice === 'back_team') {
+    if (hs) {
+      hs.stats && Object.keys(hs.stats).forEach(k => { hs.stats[k] = Math.max(1, hs.stats[k] - 1) })
+      hs.rating = Math.max(1, hs.rating - 1)
+      aL('You sided with the Team Sensei. ' + hs.fn + ' ' + hs.ln + '\'s loyalty and performance have fallen.', 'warn')
+      addChronicle('Staff Conflict Resolution', 'Backed Team Sensei — Head Sensei ' + hs.fn + ' ' + hs.ln + ' demotivated.', 'staff')
+    }
+  } else if (choice === 'restructure') {
+    if (G.ryo < 5000) { ntf('Not enough ryo (5,000 needed for restructuring).'); return }
+    G.ryo -= 5000
+    // Both stay, slight harmony boost, mild stats loss
+    if (hs) hs.stats && Object.keys(hs.stats).forEach(k => { hs.stats[k] = clamp(hs.stats[k] - 1, 1, 20) })
+    G.harmonyScore = clamp((G.harmonyScore || 70) - 5, 0, 100)
+    aL('Roles restructured. Both staff members remain but there is lingering tension. 5,000 ryo spent.', 'neutral')
+    addChronicle('Staff Conflict Resolution', 'Roles restructured — both staff remain. Tension lingers.', 'staff')
+  }
+
+  G.staffConflict = null
+  upUI(); rSt()
+}
+
+export function matchPoachOffer() {
+  if (!G.staffPoachOffer) return
+  const offer = G.staffPoachOffer
+  if (G.ryo < offer.matchCost) { ntf('Not enough ryo (' + fmt(offer.matchCost) + ' needed).'); return }
+  G.ryo -= offer.matchCost
+  const st = (G.staff||[]).find(x => x.id === offer.staffId)
+  if (st) {
+    st.salary = Math.round(st.salary * 1.10)  // small permanent salary bump
+    aL('Matched ' + offer.village + '\'s offer. ' + offer.staffName + ' stays — salary adjusted. ' + fmt(offer.matchCost) + ' ryo paid.', 'good')
+    ntf(offer.staffName + ' retained!')
+  }
+  G.staffPoachOffer = null
+  upUI(); rSt()
+}
+
+export function dismissPoachOffer(mode) {
+  if (!G.staffPoachOffer) return
+  const offer = G.staffPoachOffer
+  if (mode === 'let') {
+    const st = (G.staff||[]).find(x => x.id === offer.staffId)
+    if (st) {
+      aL(offer.staffName + ' was let go to ' + offer.village + '. They leave on good terms.', 'neutral')
+      addChronicle('Staff Departure', offer.staffName + ' left for ' + offer.village + ' amicably.', 'staff')
+      G.staff = G.staff.filter(x => x.id !== offer.staffId)
+    }
+  } else if (mode === 'block') {
+    const v = G.villages.find(x => x.n === offer.village)
+    if (v) v.rel = clamp(v.rel - 10, 0, 100)
+    aL('Blocked ' + offer.village + '\'s recruitment attempt. −10 relations with ' + offer.village + '.', 'warn')
+  }
+  G.staffPoachOffer = null
+  upUI(); rSt()
 }
 
 export function openRetireToStaff(shinobiId) {
@@ -192,7 +398,7 @@ export function doRetireToStaff(shinobiId, roleId) {
   G.staff.push(staffMember)
   G.shinobi = G.shinobi.filter(x => x.id !== shinobiId)
   aL(sn(s) + ' retired from active duty and joined the staff as ' + roleDef?.n + ' (Rating ' + derivedRating + ').', 'good')
-  addChronicle?.('Staff Transition', sn(s) + ' transitioned to ' + roleDef?.n + ' after ' + s.wins + ' missions.', 'shinobi')
+  addChronicle('Staff Transition', sn(s) + ' transitioned to ' + roleDef?.n + ' after ' + s.wins + ' missions.', 'shinobi')
   cm('retiretostaff')
   upUI()
 }

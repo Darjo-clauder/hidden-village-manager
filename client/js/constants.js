@@ -342,7 +342,17 @@ export const EVOLVED_TRAITS = {
   Haunted:   'Carries something that never fully faded, even after the wounds healed.',
   Confident: 'Riding a wave of consistent success — walks taller than they used to.',
   Resentful: 'Feels passed over and undervalued. Trust has quietly eroded.',
+  Careful:   'A serious injury changed them. They calculate before striking — recklessness is gone.',
+  Fragile:   'Repeated injuries have taken a toll. A persistent fragility lingers beneath the surface.',
+  InjuryProne: 'Body has broken down too many times. Recruitment value is diminished; risk is real.',
 }
+
+// ── Staff conflict mediation responses ────────────────────────────────────────
+export const STAFF_CONFLICT_RESPONSES = [
+  { id:'back_head', n:'Side with Head Sensei',   desc:'You support the Head Sensei\'s authority. The Team Sensei will feel undermined and may resign.' },
+  { id:'back_team', n:'Side with Team Sensei',   desc:'You validate the Team Sensei\'s complaint. The Head Sensei\'s loyalty takes a hit.' },
+  { id:'restructure',n:'Restructure Roles',      desc:'You mediate a compromise — both keep their roles but duties are formally divided. Costs 5,000 ryo for restructuring.' },
+]
 
 // ── Long-service award milestones ─────────────────────────────────────────────
 export const SERVICE_AWARDS = [

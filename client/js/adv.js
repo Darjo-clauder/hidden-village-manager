@@ -1,4 +1,4 @@
-import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice, computeMarketValue } from './state.js'
+import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice, computeMarketValue, mS } from './state.js'
 import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
 import { syncToServer } from './socket.js'
@@ -22,11 +22,46 @@ function applyInjury(s, injType, hL) {
   s.injuryType = injType.id
   s.status = 'injured'
   s.missId = null
+  s.secondOpinionUsed = false
+  s.specialistTreated = false
+
+  // Track career injury count and history
+  s.injuryCount = (s.injuryCount || 0) + 1
+  if (!s.injuryHistory) s.injuryHistory = []
+  s.injuryHistory.push({ year: G.year, month: G.month, type: injType.id, typeName: injType.n, duration: dur, treatment: 'standard' })
+
+  // Injury-prone trait after 3+ career injuries
+  if (s.injuryCount >= 3 && addTrait(s, 'InjuryProne')) {
+    aL(sn(s) + ' has now been injured ' + s.injuryCount + ' times — officially injury-prone.', 'warn')
+    addNotice(sn(s) + '\'s repeated injuries are becoming a pattern — scouts will take note.', 'warn')
+  }
+
   if (injType.id === 'severe' && injType.statLoss && Math.random() < 0.3) {
     const k = pk(['ninjutsu','taijutsu','speed','chakra'])
     s.stats[k] = Math.max(5, s.stats[k] - rnd(1, 3))
     aL(sn(s) + ' suffered permanent stat loss from their severe wound.', 'bad')
   }
+  // Career-threatening injury personality evolution (severe, 3+ months)
+  if (injType.id === 'severe' && dur >= 3) {
+    if (s.pers?.n === 'Reckless' && Math.random() < 0.40) {
+      s.pers = { n:'Careful', cat:'pos', desc:'A serious injury changed everything. They now calculate before acting.', effect:{ riskMod:-0.10 } }
+      aL(sn(s) + '\'s recklessness burned out in the hospital bed — they returned Careful.', 'warn')
+      addNotice(sn(s) + ' is a changed shinobi after their injury.', 'neutral')
+    } else {
+      const roll = Math.random()
+      if (roll < 0.30) {
+        if (addTrait(s, 'Resilient')) aL(sn(s) + ' drew something from the hardship — emerged Resilient.', 'good')
+      } else if (roll < 0.50) {
+        if (addTrait(s, 'Fragile')) {
+          // Fragile: minor permanent stat reduction
+          const k = pk(['ninjutsu','taijutsu','speed'])
+          s.stats[k] = Math.max(5, s.stats[k] - 2)
+          aL(sn(s) + ' carries lasting damage — gained the Fragile trait.', 'bad')
+        }
+      }
+    }
+  }
+
   if (injType.trauma) {
     applyTrauma(s)
   }
@@ -333,6 +368,31 @@ export function adv() {
   })
   G.shinobi = G.shinobi.filter(s => s.status !== 'retired')
 
+  // ── Squad injury crisis check ──────────────────────────────────────────────
+  const injuredCount = G.shinobi.filter(s => s.status === 'injured').length
+  if (injuredCount >= 4 && !G.emergencyRecruitWindow) {
+    G.emergencyRecruitWindow = true
+    const closeMonth = G.month + 2 > 12 ? G.month - 10 : G.month + 2
+    const closeYear = G.month + 2 > 12 ? G.year + 1 : G.year
+    G.emergencyWindowEnd = { year: closeYear, month: closeMonth }
+    G.morale = clamp(G.morale - 10, 0, 100)
+    // Emergency pool: 3 extra free-agent prospects for 2 months
+    for (let i = 0; i < 3; i++) G.prospects.push(mS(rnd(0, 1)))
+    aL('⚠ INJURY CRISIS — ' + injuredCount + ' shinobi sidelined simultaneously. Emergency recruitment window open for 2 months. Daimyo has been notified. Morale −10.', 'bad')
+    addChronicle('Injury Crisis', injuredCount + ' shinobi injured at the same time. Emergency recruitment authorised by the Daimyo.', 'event')
+    addNotice('CRISIS: ' + injuredCount + ' shinobi are injured. Emergency recruitment window is open.', 'bad')
+    ntf('Injury Crisis! Emergency window open — check Academy.')
+  }
+  // Close emergency window when time expires or injuries drop
+  if (G.emergencyRecruitWindow && G.emergencyWindowEnd) {
+    const expired = G.year > G.emergencyWindowEnd.year || (G.year === G.emergencyWindowEnd.year && G.month >= G.emergencyWindowEnd.month)
+    if (expired || injuredCount < 2) {
+      G.emergencyRecruitWindow = false
+      G.emergencyWindowEnd = null
+      aL('Emergency recruitment window has closed.', 'neutral')
+    }
+  }
+
   // ── Squad monthly tick (monthsActive, anniversary) ───────────────────────
   G.squads.forEach(sq => {
     sq.monthsActive = (sq.monthsActive || 0) + 1
@@ -588,9 +648,124 @@ export function adv() {
     if (st.monthsServed >= 60 && Math.random() < 0.05) {
       aL(st.fn + ' ' + st.ln + ' retired after ' + st.monthsServed + ' months. They leave behind institutional knowledge.', 'neutral')
       st.institutional = Math.floor(st.rating / 4)
+      // Staff Hall of Fame — 8+ years (96 months) earns a legacy entry
+      if (st.monthsServed >= 96) {
+        if (!G.staffHallOfFame) G.staffHallOfFame = []
+        G.staffHallOfFame.push({
+          fn: st.fn, ln: st.ln, role: st.role,
+          yearsServed: Math.floor(st.monthsServed / 12),
+          peakRating: st.rating, year: G.year,
+          fromShinobi: st.fromShinobi || null,
+        })
+        aL(st.fn + ' ' + st.ln + ' is inducted into the Staff Hall of Fame after ' + Math.floor(st.monthsServed / 12) + ' years of service.', 'good')
+        addChronicle('Staff Hall of Fame', st.fn + ' ' + st.ln + ' inducted — ' + Math.floor(st.monthsServed / 12) + ' years, peak rating ' + st.rating + '.', 'milestone')
+        addLegend(5)
+      }
       G.staff = G.staff.filter(x => x.id !== st.id)
     }
   })
+
+  // ── Staff depth tick ──────────────────────────────────────────────────────
+  if (!G.staffHallOfFame) G.staffHallOfFame = []
+  if (!G.asstKageLog) G.asstKageLog = []
+
+  // Career path: Team Sensei with high ambition wants Head Sensei promotion
+  const teamSenseis = (G.staff || []).filter(st => st.role === 'team_sensei')
+  const headSensei = (G.staff || []).find(st => st.role === 'head_sensei')
+  teamSenseis.forEach(ts => {
+    ts.careerPathMonths = (ts.careerPathMonths || 0) + 1
+    if (!ts.ambition) ts.ambition = rnd(8, 14)
+    // High-ambition sensei: after 18 months push for head sensei slot
+    if (ts.ambition >= 14 && ts.careerPathMonths >= 18) {
+      if (!headSensei) {
+        // Slot open — surface a meeting request
+        if (!(G.meetingQueue || []).find(m => m.staffId === ts.id && m.type === 'staff_promo_request')) {
+          if (!G.meetingQueue) G.meetingQueue = []
+          G.meetingQueue.push({ id: Math.random().toString(36).slice(2), staffId: ts.id, type: 'staff_promo_request', month: G.month, year: G.year, n: ts.fn + ' ' + ts.ln, role: ts.role })
+          aL(ts.fn + ' ' + ts.ln + ' is ready for a Head Sensei role — check People Management.', 'warn')
+          ntf(ts.fn + ' wants a promotion!')
+        }
+      } else if (Math.random() < 0.04) {
+        // Slot taken and ambition unmet — they look elsewhere
+        aL(ts.fn + ' ' + ts.ln + ' resigned — their ambition could not be satisfied here.', 'bad')
+        addChronicle('Staff Resignation', ts.fn + ' ' + ts.ln + ' (Team Sensei) left to seek advancement at another village.', 'staff')
+        addNotice(ts.fn + ' ' + ts.ln + ' has resigned in search of a head sensei position elsewhere.', 'bad')
+        G.staff = G.staff.filter(x => x.id !== ts.id)
+      }
+    }
+  })
+
+  // Staff conflict: Head Sensei vs Team Sensei clash after 6+ months
+  if (!G.staffConflict && headSensei && teamSenseis.length > 0) {
+    const clashCandidate = teamSenseis.find(ts => {
+      const hsDisc = headSensei.stats?.discipline || 0
+      const tsEmp = ts.stats?.empathy || 0
+      const bothLong = (ts.monthsServed || 0) >= 6 && (headSensei.monthsServed || 0) >= 6
+      return bothLong && hsDisc >= 14 && tsEmp >= 14 && Math.random() < 0.03
+    }) || (teamSenseis.some(ts => (ts.monthsServed || 0) >= 6) && Math.random() < 0.01
+      ? teamSenseis.find(ts => (ts.monthsServed || 0) >= 6) : null)
+    if (clashCandidate) {
+      G.staffConflict = { headSenseiId: headSensei.id, teamSenseiId: clashCandidate.id, month: G.month, year: G.year }
+      aL('⚠ Staff Conflict: ' + headSensei.fn + ' ' + headSensei.ln + ' and ' + clashCandidate.fn + ' ' + clashCandidate.ln + ' are clashing. Mediate in Staff panel.', 'warn')
+      ntf('Staff conflict — mediation required!')
+      addNotice('A conflict between your Head Sensei and a Team Sensei has escalated. Mediation needed.', 'warn')
+    }
+  }
+
+  // Staff poaching by rival villages
+  if (!G.staffPoachOffer) {
+    const poachTargets = (G.staff || []).filter(st => st.rating >= 14 && !st.asstKage)
+    if (poachTargets.length > 0 && Math.random() < 0.04) {
+      const target = poachTargets.sort((a, b) => b.rating - a.rating)[0]
+      const poachVillage = pk(['Sunagakure', 'Kirigakure', 'Iwagakure', 'Kumogakure'])
+      const matchCost = Math.round(target.salary * rnd(12, 18))
+      const expMonth = G.month === 12 ? 1 : G.month + 1
+      const expYear = G.month === 12 ? G.year + 1 : G.year
+      G.staffPoachOffer = { staffId: target.id, staffName: target.fn + ' ' + target.ln, village: poachVillage, matchCost, expiresMonth: expMonth, expiresYear: expYear }
+      aL('⚠ ' + poachVillage + ' is trying to recruit ' + target.fn + ' ' + target.ln + '. Respond in the Staff panel within 1 month.', 'warn')
+      ntf('Rival village targeting your staff!')
+      addNotice(target.fn + ' ' + target.ln + ' has received an offer from ' + poachVillage + '. Your response is required.', 'warn')
+    }
+  }
+  // Expire poach offer
+  if (G.staffPoachOffer) {
+    const offer = G.staffPoachOffer
+    const expired = G.year > offer.expiresYear || (G.year === offer.expiresYear && G.month >= offer.expiresMonth)
+    if (expired) {
+      // Staff leaves automatically when offer expires with no response
+      const st = (G.staff || []).find(x => x.id === offer.staffId)
+      if (st) {
+        aL(offer.staffName + ' accepted ' + offer.village + '\'s offer — they are gone.', 'bad')
+        G.staff = G.staff.filter(x => x.id !== offer.staffId)
+        addChronicle('Staff Poached', offer.staffName + ' was recruited away by ' + offer.village + '.', 'staff')
+      }
+      G.staffPoachOffer = null
+    }
+  }
+
+  // Assistant Kage autonomous meeting handling
+  const asstKage = (G.staff || []).find(st => st.asstKage)
+  if (asstKage && Math.random() < 0.18) {
+    const minorMtg = (G.meetingQueue || []).find(m => {
+      const def = MEETING_TYPES.find(t => t.id === m.type)
+      return def && def.urgency === 'low' && !m.staffId  // not a staff request
+    })
+    if (minorMtg) {
+      const s = G.shinobi.find(x => x.id === minorMtg.shinobiId)
+      if (s) {
+        const discipline = asstKage.stats?.discipline || 0
+        const empathy = asstKage.stats?.empathy || 0
+        const isFirm = discipline > empathy
+        s.indMorale = clamp((s.indMorale || 70) + (isFirm ? -2 : 5), 0, 100)
+        s.commitment = clamp((s.commitment || 70) + (isFirm ? -1 : 3), 0, 100)
+        G.meetingQueue = G.meetingQueue.filter(m => m.id !== minorMtg.id)
+        const logText = asstKage.fn + ' ' + asstKage.ln + ' handled ' + sn(s) + '\'s request ' + (isFirm ? 'firmly — direct and uncompromising.' : 'supportively — warmth and reassurance.')
+        G.asstKageLog.unshift({ year: G.year, month: G.month, text: logText, shinobiName: sn(s) })
+        if (G.asstKageLog.length > 25) G.asstKageLog.pop()
+        aL('[AK] ' + logText, 'neutral')
+      }
+    }
+  }
 
   // ── Daimyo seasonal objectives (set January, evaluated December) ───────────
   if (!G.daimyoObjectives && G.month !== 1) {

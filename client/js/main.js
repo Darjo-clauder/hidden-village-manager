@@ -2,7 +2,7 @@ import { G } from './state.js'
 import { sp, cm, upUI, schEx } from './ui.js'
 import { showSetup, selIcon, beginGame } from './setup.js'
 import { adv } from './adv.js'
-import { rRo, oDos, mkJK, treatTrauma } from './panels/roster.js'
+import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice } from './panels/missions.js'
 import { rUp, buyUp } from './panels/upgrades.js'
@@ -14,7 +14,7 @@ import { rEx, tEC, startEx, runRound } from './panels/exam.js'
 import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP, dipAccept, dipDecline } from './world.js'
 import { resolveChoiceEvent } from './adv.js'
 import { rFi } from './panels/finances.js'
-import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff } from './panels/staff.js'
+import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff, staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer } from './panels/staff.js'
 import { rSco, assignScout, setScoutBudget, toggleWatchlist } from './panels/scouting.js'
 import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab } from './panels/youthacademy.js'
 import { rMeet, doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction } from './panels/meetings.js'
@@ -58,6 +58,9 @@ Object.assign(window, {
   resolveChoiceEvent, openWorldChoice,
   // staff
   openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff,
+  staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer,
+  // roster injury actions
+  secondOpinion, specialistTreatment,
   // scouting
   assignScout, setScoutBudget, toggleWatchlist,
   // youth academy

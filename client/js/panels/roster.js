@@ -1,4 +1,4 @@
-import { G, sPow, clamp, sn, fmt, pDesc, personalityJudge, computeMarketValue } from '../state.js'
+import { G, sPow, clamp, rnd, sn, fmt, pDesc, personalityJudge, computeMarketValue } from '../state.js'
 import { RANKS, RKC, JUTSU_LIST, INJURY_TYPES, EVOLVED_TRAITS } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 
@@ -46,14 +46,25 @@ export function oDos(id) {
   const workload = s.workload || 0
   const wColor = workload >= 80 ? '#f44' : workload >= 60 ? '#f99' : workload >= 40 ? '#fa0' : '#8fbc8f'
   const workloadBar = `<div style="background:#222;height:5px;border-radius:2px;overflow:hidden"><div style="width:${workload}%;height:100%;background:${wColor};transition:width .3s"></div></div>`
+  // Second opinion & specialist treatment options
+  const hasMedical = (G.staff||[]).some(st => st.role === 'medical')
+  const alliedVillages = G.villages.filter(v => v.rel >= 50)
+  const bestAlly = alliedVillages.sort((a,b) => b.rel - a.rel)[0]
+  const canSecondOpinion = s.status === 'injured' && s.injDays >= 2 && hasMedical && !s.secondOpinionUsed
+  const canSpecialist = s.status === 'injured' && s.injDays >= 3 && bestAlly && !s.specialistTreated
+
   const injuryHtml = `<div style="margin-bottom:10px">
     <div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Availability & Workload</div>
     ${s.status === 'injured' && injTypeDef
       ? `<div style="padding:7px 9px;border:1px solid ${injTypeDef.color};background:rgba(0,0,0,.3);margin-bottom:6px">
            <div style="font-size:9px;color:${injTypeDef.color};font-weight:bold">${injTypeDef.n}</div>
            <div style="font-size:8px;color:#7a7060;margin-top:2px">${injTypeDef.desc}</div>
-           <div style="font-size:8px;color:#7a7060;margin-top:4px">Expected return: <b style="color:#e8e0cc">${s.injDays} month${s.injDays!==1?'s':''}</b></div>
+           <div style="font-size:8px;color:#7a7060;margin-top:4px">Expected return: <b style="color:#e8e0cc">${s.injDays} month${s.injDays!==1?'s':''}</b>${s.secondOpinionUsed ? ' <span style="color:#87ceeb">(reviewed)</span>' : ''}</div>
            ${(s.returningForm||100) < 100 ? `<div style="font-size:8px;color:#fa0;margin-top:2px">Post-recovery form: ${s.returningForm}% (builds over 2–3 missions)</div>` : ''}
+           <div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap">
+             ${canSecondOpinion ? `<button class="gb" style="font-size:7px;border-color:#87ceeb;color:#87ceeb" onclick="secondOpinion('${s.id}')">Second Opinion (3,000 ryo) ▸</button>` : ''}
+             ${canSpecialist ? `<button class="gb gb-g" style="font-size:7px" onclick="specialistTreatment('${s.id}','${bestAlly.n}')">Specialist Treatment via ${bestAlly.n} (12,000 ryo) ▸</button>` : ''}
+           </div>
          </div>`
       : s.status === 'injured'
       ? `<div style="font-size:8px;color:#f44">Injured — ${s.injDays} month${s.injDays!==1?'s':''} remaining</div>`
@@ -62,7 +73,7 @@ export function oDos(id) {
     ${s.traumaStatus ? `<div style="padding:5px 7px;border:1px solid #cc7fb8;margin-bottom:6px">
       <div style="font-size:8px;color:#cc7fb8">⚠ Psychological Trauma: <b>${s.traumaStatus}</b> (${s.traumaMonths||0} months remaining)</div>
       <div style="font-size:8px;color:#7a7060;margin-top:2px">Stat penalty active. ${s.traumaCount >= 2 ? '<b style="color:#f66">High defection risk</b>' : 'Assign medical ninja for faster recovery.'}</div>
-      ${(G.staff||[]).some(st=>st.role==='medical') ? `<button class="gb gb-g" style="margin-top:5px;font-size:7px" onclick="treatTrauma('${s.id}')">Treat Trauma (5,000 ryo) ▸</button>` : ''}
+      ${hasMedical ? `<button class="gb gb-g" style="margin-top:5px;font-size:7px" onclick="treatTrauma('${s.id}')">Treat Trauma (5,000 ryo) ▸</button>` : ''}
     </div>` : ''}
     <div style="display:flex;align-items:center;gap:8px;margin-top:5px">
       <div style="font-size:7px;color:#7a7060;text-transform:uppercase;width:60px">Workload</div>
@@ -71,7 +82,20 @@ export function oDos(id) {
     </div>
     <div style="font-size:7px;color:#3a3630;margin-top:2px">High workload (60%+) increases injury risk.</div>
     ${(s.consecutiveMissions||0) >= 2 ? `<div style="font-size:7px;color:#fa0;margin-top:2px">⚠ ${s.consecutiveMissions} consecutive missions — overuse risk +10%</div>` : ''}
-  </div>`
+  </div>
+  ${(s.injuryHistory||[]).length > 0 ? `<div style="margin-bottom:10px">
+    <div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Injury History (${s.injuryHistory.length})</div>
+    ${s.injuryHistory.slice().reverse().slice(0,6).map(h => {
+      const tDef = INJURY_TYPES.find(t => t.id === h.type)
+      return `<div style="display:flex;gap:6px;font-size:8px;margin-bottom:3px;align-items:baseline">
+        <span style="color:#3a3630;min-width:50px">Yr${h.year}·M${h.month}</span>
+        <span style="color:${tDef?.color||'#f99'}">${h.typeName||h.type}</span>
+        <span style="color:#7a7060">${h.duration}mo</span>
+        ${h.treatment !== 'standard' ? `<span style="color:#87ceeb;font-size:7px">[${h.treatment}]</span>` : ''}
+      </div>`
+    }).join('')}
+    ${s.injuryHistory.length > 6 ? `<div style="font-size:7px;color:#3a3630">+${s.injuryHistory.length-6} earlier entries</div>` : ''}
+  </div>` : ''}`
   // Personality matrix section
   const judgeLevel = personalityJudge()
   const pm = s.pMatrix || {}
@@ -130,6 +154,46 @@ export function treatTrauma(sId) {
   s.traumaMonths = 0
   aL(sn(s) + '\'s psychological trauma has been treated. 5,000 ryo spent on medical care.', 'good')
   cm('dossier'); upUI()
+}
+
+export function secondOpinion(sId) {
+  const s = G.shinobi.find(x => x.id === sId)
+  if (!s || s.status !== 'injured') return
+  if (G.ryo < 3000) { ntf('Not enough ryo (3,000 needed)'); return }
+  if (s.secondOpinionUsed) { ntf('Second opinion already obtained.'); return }
+  G.ryo -= 3000
+  s.secondOpinionUsed = true
+  if (Math.random() < 0.25) {
+    const change = Math.random() < 0.5 ? -rnd(1, 2) : rnd(1, 2)
+    const old = s.injDays
+    s.injDays = Math.max(1, s.injDays + change)
+    // Update history entry treatment note
+    const last = (s.injuryHistory || []).slice(-1)[0]
+    if (last) last.treatment = 'second-opinion'
+    aL('Second opinion for ' + sn(s) + ': revised estimate ' + s.injDays + ' months (was ' + old + ').', change < 0 ? 'good' : 'warn')
+  } else {
+    aL('Second opinion confirms original estimate — ' + sn(s) + ' needs ' + s.injDays + ' more month' + (s.injDays !== 1 ? 's' : '') + '.', 'neutral')
+  }
+  upUI(); cm('dossier'); oDos(sId)
+}
+
+export function specialistTreatment(sId, villageName) {
+  const s = G.shinobi.find(x => x.id === sId)
+  if (!s || s.status !== 'injured') return
+  const v = G.villages.find(x => x.n === villageName)
+  if (!v || v.rel < 50) { ntf('Requires positive diplomatic relations (50+).'); return }
+  if (G.ryo < 12000) { ntf('Not enough ryo (12,000 needed)'); return }
+  if (s.specialistTreated) { ntf('Already sent for specialist treatment.'); return }
+  G.ryo -= 12000
+  v.rel = clamp(v.rel - 5, 0, 100)  // diplomatic favor used
+  s.specialistTreated = true
+  const reductionPct = rnd(30, 40)
+  const reduction = Math.max(1, Math.round(s.injDays * reductionPct / 100))
+  s.injDays = Math.max(1, s.injDays - reduction)
+  const last = (s.injuryHistory || []).slice(-1)[0]
+  if (last) last.treatment = 'specialist-' + villageName
+  aL(sn(s) + ' sent to ' + villageName + ' for specialist care — ' + reduction + ' month(s) cut from recovery. 12,000 ryo, −5 relations with ' + villageName + '.', 'good')
+  upUI(); cm('dossier'); oDos(sId)
 }
 
 export function mkJK(sId, bN) {
