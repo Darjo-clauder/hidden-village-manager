@@ -48,3 +48,13 @@ export function aggregateReports(prospect) {
 }
 
 export const REGION_POOL_CAP = 12
+
+/**
+ * Returns the specialist confidence bonus for a scout in a given region.
+ * @param {object} scout
+ * @param {string} regionId
+ * @returns {number} 0.15 if specialist, else 0
+ */
+export function specialistBonus(scout, regionId) {
+  return scout.expertise?.[regionId] === 'specialist' ? 0.15 : 0
+}

@@ -132,6 +132,24 @@ function buildItems() {
     })
   })
 
+  // ── Scout poach offers ────────────────────────────────────────────────
+  ;(G.staff || []).filter(s => s.poachOffer).forEach(s => {
+    const offer = s.poachOffer
+    items.push({
+      id:       'poach_' + s.id,
+      priority: 'urgent',
+      cat:      'Staff',
+      icon:     '🕵',
+      title:    `${s.fn} ${s.ln} — Poach Attempt`,
+      desc:     `${offer.village} is trying to recruit your scout. Pay ${offer.retentionCost.toLocaleString()} ryo retention bonus or lose them. Expires Y${offer.expiresYear}·M${offer.expiresMonth}.`,
+      actions:  [
+        { label: `Retain — ${offer.retentionCost.toLocaleString()} ryo`, fn: `retainScout('${s.id}')` },
+        { label: 'Let go', fn: `dismissScout('${s.id}')` },
+      ],
+      archived: false,
+    })
+  })
+
   // ── Active rival signing offers ───────────────────────────────────────
   ;(G.prospects || []).filter(p => p.rivalOffer).forEach(p => {
     const offer = p.rivalOffer

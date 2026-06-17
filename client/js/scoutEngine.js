@@ -4,9 +4,9 @@ import { aL, ntf } from './ui.js'
 import { isEnabled } from '../../config/features.js'
 import { calcConfidence, confidenceToQuality, createScoutReport } from '../../shared/types/ScoutReport.js'
 import { HIDDEN_ATTRIBUTE_KEYS } from '../../shared/constants/prospect.js'
-import { aggregateReports, REGION_POOL_CAP } from '../../shared/utils/scoutAggregation.js'
+import { aggregateReports, REGION_POOL_CAP, specialistBonus } from '../../shared/utils/scoutAggregation.js'
 
-export { aggregateReports }
+export { aggregateReports, specialistBonus }
 
 // ── Helpers for the new Scout entity shape (knowledge/judgement direct fields) ─
 function scoutJudgement(scout) {
@@ -73,6 +73,63 @@ function getMemory(scout, regionId) {
   return scout.regionMemory[regionId]
 }
 
+// ── Scout career arc helpers ─────────────────────────────────────────────────
+
+// Marks a region as specialist-level when contactLevel reaches 15
+function updateExpertise(scout, regionId, contactLevel) {
+  if (contactLevel < 15) return
+  if (!scout.expertise) scout.expertise = {}
+  if (scout.expertise[regionId] === 'specialist') return
+  scout.expertise[regionId] = 'specialist'
+  const region = REGIONS.find(r => r.id === regionId)
+  aL(`${scout.fn} ${scout.ln} has become a specialist in ${region?.n || regionId} — +15% confidence bonus active.`, 'good')
+}
+
+// Tracks consecutive high-fatigue months and triggers burnout/resignation
+function tickBurnout(scout, G) {
+  if ((scout.fatigue || 0) >= 80) {
+    scout.burnoutMonths = (scout.burnoutMonths || 0) + 1
+  } else {
+    scout.burnoutMonths = 0
+  }
+
+  if ((scout.burnoutMonths || 0) >= 3) {
+    aL(`⚠ ${scout.fn} ${scout.ln} has burned out after sustained exhaustion and resigned.`, 'bad')
+    G.staff = (G.staff || []).filter(s => s.id !== scout.id)
+    return true  // resigned
+  }
+  return false
+}
+
+// Rival villages attempt to poach high-rated scouts (rating >= 16)
+function maybePoach(scout, G) {
+  if (scout.poachOffer) return
+  const rating = scout.rating ?? Math.round(((scout.stats?.judgement ?? 8) + (scout.stats?.perception ?? 8)) / 2)
+  if (rating < 16) return
+  if (Math.random() > 0.06) return  // 6% monthly chance
+
+  const RIVALS = ['Kumogakure', 'Sunagakure', 'Kirigakure', 'Iwagakure']
+  const village = RIVALS[Math.floor(Math.random() * RIVALS.length)]
+  const retentionCost = rating * 800
+
+  scout.poachOffer = { village, retentionCost, expiresMonth: G.month + 2, expiresYear: G.month >= 11 ? G.year + 1 : G.year }
+  aL(`${village} is trying to poach ${scout.fn} ${scout.ln} — retention bonus of ${retentionCost.toLocaleString()} ryo required.`, 'warn')
+}
+
+// Graceful retirement after 48+ months active
+function maybeRetire(scout, G) {
+  const totalMonths = Object.values(scout.regionMemory || {}).reduce((s, m) => s + (m.monthsWorked || 0), 0)
+  if (totalMonths < 48) return
+  if (Math.random() > 0.04) return  // 4% monthly chance once eligible
+
+  const specialisms = Object.entries(scout.expertise || {}).filter(([, v]) => v === 'specialist').map(([k]) => k)
+  const summary = specialisms.length
+    ? `Retired a specialist in ${specialisms.join(', ')}.`
+    : 'Retired after years of service.'
+  aL(`${scout.fn} ${scout.ln} has retired from field work. ${summary}`, 'neutral')
+  G.staff = (G.staff || []).filter(s => s.id !== scout.id)
+}
+
 // ── Monthly scout tick (called from adv.js) ───────────────────────────────────
 export function tickScouts(G) {
   replenishPools(G)
@@ -92,6 +149,7 @@ export function tickScouts(G) {
     // Build regional familiarity
     mem.monthsWorked++
     mem.contactLevel = Math.min(20, mem.contactLevel + 1)
+    updateExpertise(scout, regionId, mem.contactLevel)
 
     // Fatigue accumulates while active
     const adaptability = scout.stats.adaptability ?? scout.stats.ninjutsu ?? 8
@@ -102,6 +160,11 @@ export function tickScouts(G) {
     if ((scout.fatigue || 0) >= 90) {
       aL(`${scout.fn} ${scout.ln} is exhausted — scouting effectiveness critically reduced.`, 'warn')
     }
+
+    // Career arc: burnout check (may remove scout from G.staff)
+    if (tickBurnout(scout, G)) return
+    maybePoach(scout, G)
+    maybeRetire(scout, G)
 
     // Regional meta modifier
     const meta = G.regionalMeta?.[regionId]
@@ -154,7 +217,13 @@ function _generateReport(scout, regionId, region, mem, qualityMod) {
     const monthsActive = scoutMonthsInRegion(scout, regionId)
     // Build a normalised scout shim for calcConfidence (supports both entity shapes)
     const scoutShim = { judgement: scoutJudgement(scout) }
-    const conf01 = clamp(calcConfidence(scoutShim, monthsActive) + qualityMod * 0.15 - fatigueReduction / 100, 0, 0.98)
+    const conf01 = clamp(
+      calcConfidence(scoutShim, monthsActive)
+        + qualityMod * 0.15
+        + specialistBonus(scout, regionId)
+        - fatigueReduction / 100,
+      0, 0.98
+    )
     confidence = Math.round(conf01 * 100)
   } else {
     const perception = scout.stats?.perception || 8
@@ -230,6 +299,28 @@ function _checkBiasPattern() {
       aL(`⚠ Pattern detected in ${scout.fn} ${scout.ln}'s reports — possible scouting bias. Check their assessments carefully.`, 'warn')
     }
   })
+}
+
+// ── Scout retention / dismissal (called from inbox action buttons) ────────────
+export function retainScout(scoutId) {
+  const scout = (G.staff || []).find(s => s.id === scoutId)
+  if (!scout?.poachOffer) { ntf('No active poach offer for this scout.'); return }
+  const cost = scout.poachOffer.retentionCost
+  if (G.ryo < cost) { ntf(`Need ${cost.toLocaleString()} ryo to retain ${scout.fn} ${scout.ln}.`); return }
+  G.ryo -= cost
+  const village = scout.poachOffer.village
+  scout.poachOffer = null
+  // Loyalty boost for being retained
+  if (scout.stats) scout.stats.loyalty = Math.min(20, (scout.stats.loyalty || 8) + 2)
+  aL(`${scout.fn} ${scout.ln} retained — turned down ${village}'s offer. Loyalty increased.`, 'good')
+}
+
+export function dismissScout(scoutId) {
+  const scout = (G.staff || []).find(s => s.id === scoutId)
+  if (!scout) return
+  const village = scout.poachOffer?.village || 'another village'
+  aL(`${scout.fn} ${scout.ln} departed for ${village}.`, 'neutral')
+  G.staff = (G.staff || []).filter(s => s.id !== scoutId)
 }
 
 // ── Trial Day (player-triggered) ──────────────────────────────────────────────
