@@ -24,6 +24,7 @@ import { rYA } from './panels/youthacademy.js'
 import { rMeet } from './panels/meetings.js'
 import { rTr } from './panels/transfers.js'
 import { rLeg } from './panels/legacy.js'
+import { rLob } from './panels/lobby.js'
 import { rWo } from './world.js'
 
 export { schEx }
@@ -58,7 +59,7 @@ export function sp(id) {
 }
 
 export function rP(id) {
-  const map = { roster: rRo, squads: rSq, missions: rMi, upgrades: rUp, academy: rAc, economy: rEc, village: rVi, beasts: rBe, kage: rKa, exam: rEx, intel: rIn, log: rLo, chronicles: rCh, memorial: rMem, finances: rFi, staff: rSt, scouting: rSco, youthacademy: rYA, meetings: rMeet, transfers: rTr, legacy: rLeg, world: rWo }
+  const map = { roster: rRo, squads: rSq, missions: rMi, upgrades: rUp, academy: rAc, economy: rEc, village: rVi, beasts: rBe, kage: rKa, exam: rEx, intel: rIn, log: rLo, chronicles: rCh, memorial: rMem, finances: rFi, staff: rSt, scouting: rSco, youthacademy: rYA, meetings: rMeet, transfers: rTr, legacy: rLeg, lobby: rLob, world: rWo }
   map[id]?.()
 }
 

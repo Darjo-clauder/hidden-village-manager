@@ -1,5 +1,9 @@
 import { villages } from './state.js'
 
+// Per-room state is stored on room.eventState (see rooms.js).
+// Module-level globals are kept as fallback for non-room calls.
+
+
 const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a
 const pk = a => a[Math.floor(Math.random() * a.length)]
 
@@ -190,47 +194,65 @@ function resolveText(text) {
   return text.replace(/\{village\}/g, villageName).replace(/\{rival\}/g, rivalName)
 }
 
-function fireEvent(io, ev) {
+function fireEvent(io, ev, emitTarget, state, room) {
   const text = resolveText(ev.text)
-  recentEventTexts.push(text.toLowerCase())
-  if (recentEventTexts.length > 8) recentEventTexts.shift()
-  io.emit('world_event', { text, ts: Date.now(), effect: ev.effect || null })
-  if (ev.chain) pendingChains.push({ event: ev.chain, ticksLeft: rnd(2, 4) })
+  state.recentEventTexts.push(text.toLowerCase())
+  if (state.recentEventTexts.length > 8) state.recentEventTexts.shift()
+  const payload = { text, ts: Date.now(), effect: ev.effect || null }
+  emitTarget.emit('world_event', payload)
+  // Queue for turn_resolved summary
+  if (room) room.pendingWorldEvents.push(payload)
+  if (ev.chain) state.pendingChains.push({ event: ev.chain, ticksLeft: rnd(2, 4) })
 }
 
-export function rollWorldEvent(io) {
+/**
+ * Roll a world event.
+ * @param {Object} io  — Socket.io server instance
+ * @param {Object|null} room — Room object (null = global broadcast, legacy)
+ */
+export function rollWorldEvent(io, room) {
+  // Choose emit target and state
+  const emitTarget = room ? io.to(room.code) : io
+  const state      = room ? room.eventState   : { lastEventAt, serverMonth, recentEventTexts, pendingChains }
+
+  // Update module-level globals if not room-scoped (backward compat)
+  if (!room) {
+    // use module globals (below)
+  }
+
   // Tick down and fire any pending chains
-  for (let i = pendingChains.length - 1; i >= 0; i--) {
-    pendingChains[i].ticksLeft--
-    if (pendingChains[i].ticksLeft <= 0) {
-      const chain = pendingChains.splice(i, 1)[0]
-      fireEvent(io, chain.event)
+  for (let i = state.pendingChains.length - 1; i >= 0; i--) {
+    state.pendingChains[i].ticksLeft--
+    if (state.pendingChains[i].ticksLeft <= 0) {
+      const chain = state.pendingChains.splice(i, 1)[0]
+      fireEvent(io, chain.event, emitTarget, state, room)
     }
   }
 
   const now = Date.now()
-  if (now - lastEventAt < EVENT_COOLDOWN_MS) return
+  if (now - state.lastEventAt < EVENT_COOLDOWN_MS) return
   if (Math.random() > 0.22) return
 
-  lastEventAt = now
-  serverMonth = (serverMonth % 12) + 1
+  state.lastEventAt = now
+  if (!room) lastEventAt = now   // keep module-level in sync
 
-  // 25% chance to use a seasonal event
-  const season = currentSeasonFromMonth(serverMonth)
+  state.serverMonth = (state.serverMonth % 12) + 1
+  if (!room) serverMonth = state.serverMonth
+
+  const season = currentSeasonFromMonth(state.serverMonth)
   if (Math.random() < 0.25 && SEASONAL_EVENTS[season]) {
-    fireEvent(io, pk(SEASONAL_EVENTS[season]))
+    fireEvent(io, pk(SEASONAL_EVENTS[season]), emitTarget, state, room)
     return
   }
 
-  // 10% chance to use an event memory callback if applicable
-  if (recentEventTexts.length >= 2 && Math.random() < 0.10) {
+  if (state.recentEventTexts.length >= 2 && Math.random() < 0.10) {
     for (const cb of EVENT_MEMORY_CALLBACKS) {
-      if (cb.check(recentEventTexts)) {
-        fireEvent(io, cb)
+      if (cb.check(state.recentEventTexts)) {
+        fireEvent(io, cb, emitTarget, state, room)
         return
       }
     }
   }
 
-  fireEvent(io, WORLD_EVENTS[Math.floor(Math.random() * WORLD_EVENTS.length)])
+  fireEvent(io, WORLD_EVENTS[Math.floor(Math.random() * WORLD_EVENTS.length)], emitTarget, state, room)
 }

@@ -347,3 +347,42 @@ async function _syncEntityTables(playerId, G) {
     else if (r.value?.error)     console.error(`[DB] entity table op[${i}] error:`, r.value.error.message)
   })
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROOMS — persist / restore
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Upsert a room's persistent metadata to Supabase. */
+export async function saveRoom(room) {
+  if (!supabase || !room?.code) return
+  const { error } = await supabase.from('rooms').upsert({
+    code:               room.code,
+    host_player_id:     room.hostPlayerId || null,
+    is_private:         room.isPrivate,
+    max_players:        room.maxPlayers,
+    auto_ready_timeout: room.autoReadyTimeout,
+    player_ids:         [...room.players.values()].map(p => p.playerId).filter(Boolean),
+    turn_number:        room.turnNumber,
+    status:             room.status,
+    settings:           room.settings || {},
+    updated_at:         new Date().toISOString(),
+  }, { onConflict: 'code' })
+  if (error) console.error('[DB] saveRoom error:', error.message)
+}
+
+/** Load all rooms from Supabase (called on startup). Returns raw rows. */
+export async function loadRooms() {
+  if (!supabase) return []
+  const { data, error } = await supabase.from('rooms')
+    .select('*')
+    .neq('status', 'closed')
+  if (error) { console.error('[DB] loadRooms error:', error.message); return [] }
+  return data || []
+}
+
+/** Delete a room row. Called when a room empties. */
+export async function deleteRoom(code) {
+  if (!supabase || !code) return
+  const { error } = await supabase.from('rooms').delete().eq('code', code)
+  if (error) console.error('[DB] deleteRoom error:', error.message)
+}

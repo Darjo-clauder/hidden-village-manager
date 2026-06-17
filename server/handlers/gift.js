@@ -1,4 +1,5 @@
 import { villages, getRelStatus, setRel } from '../state.js'
+import { socketToRoom } from '../rooms.js'
 
 export function registerGift(io, socket) {
   socket.on('send_gift', ({ targetId }) => {
@@ -17,7 +18,9 @@ export function registerGift(io, socket) {
 
     if (getRelStatus(from, targetId) === 'war') {
       setRel(from, target, 'neutral', +20)
-      io.emit('relations_update', { a: socket.id, b: targetId, status: 'neutral' })
+      const rc = socketToRoom.get(socket.id)
+      if (rc) io.to(rc).emit('relations_update', { a: socket.id, b: targetId, status: 'neutral' })
+      else    io.emit('relations_update', { a: socket.id, b: targetId, status: 'neutral' })
     } else {
       setRel(from, target, getRelStatus(from, targetId), +10)
     }

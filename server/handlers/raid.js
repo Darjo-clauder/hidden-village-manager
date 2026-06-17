@@ -1,4 +1,5 @@
 import { villages, getRelStatus, setRel } from '../state.js'
+import { socketToRoom } from '../rooms.js'
 import { resolveRaid } from '../combat.js'
 
 export function registerRaid(io, socket) {
@@ -21,7 +22,9 @@ export function registerRaid(io, socket) {
 
     if (getRelStatus(attacker, targetId) !== 'war') {
       setRel(attacker, defender, 'war', -25)
-      io.emit('relations_update', { a: socket.id, b: targetId, status: 'war' })
+      const rc = socketToRoom.get(socket.id)
+      if (rc) io.to(rc).emit('relations_update', { a: socket.id, b: targetId, status: 'war' })
+      else    io.emit('relations_update', { a: socket.id, b: targetId, status: 'war' })
     }
 
     socket.emit('raid_result', {

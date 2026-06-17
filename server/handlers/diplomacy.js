@@ -1,5 +1,12 @@
 import { villages, getRelStatus, setRel } from '../state.js'
+import { socketToRoom } from '../rooms.js'
 import db from '../db.js'
+
+function roomEmit(io, socket, event, data) {
+  const rc = socketToRoom.get(socket.id)
+  if (rc) io.to(rc).emit(event, data)
+  else    io.emit(event, data)
+}
 
 function saveRelations(v) {
   if (db && v.playerId) {
@@ -34,7 +41,7 @@ export function registerDiplomacy(io, socket) {
       saveRelations(proposer)
       const pSocket = io.sockets.sockets.get(fromId)
       if (pSocket) pSocket.emit('alliance_accepted', { fromId: socket.id, fromName: responder.name, fromIcon: responder.icon })
-      io.emit('relations_update', { a: socket.id, b: fromId, status: 'allied' })
+      roomEmit(io, socket, 'relations_update', { a: socket.id, b: fromId, status: 'allied' })
     } else {
       const pSocket = io.sockets.sockets.get(fromId)
       if (pSocket) pSocket.emit('alliance_declined', { fromId: socket.id, fromName: responder.name })
@@ -50,7 +57,7 @@ export function registerDiplomacy(io, socket) {
     saveRelations(target)
     const tSocket = io.sockets.sockets.get(targetId)
     if (tSocket) tSocket.emit('alliance_broken', { fromId: socket.id, fromName: from.name, fromIcon: from.icon })
-    io.emit('relations_update', { a: socket.id, b: targetId, status: 'neutral' })
+    roomEmit(io, socket, 'relations_update', { a: socket.id, b: targetId, status: 'neutral' })
     socket.emit('sv_notification', `Alliance with ${target.name} dissolved.`)
   })
 
@@ -63,7 +70,7 @@ export function registerDiplomacy(io, socket) {
     saveRelations(target)
     const tSocket = io.sockets.sockets.get(targetId)
     if (tSocket) tSocket.emit('war_declared', { fromId: socket.id, fromName: from.name, fromIcon: from.icon })
-    io.emit('relations_update', { a: socket.id, b: targetId, status: 'war' })
+    roomEmit(io, socket, 'relations_update', { a: socket.id, b: targetId, status: 'war' })
     console.log(`  WAR: ${from.name} → ${target.name}`)
   })
 }

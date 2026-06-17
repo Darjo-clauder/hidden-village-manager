@@ -11,6 +11,7 @@ import { registerDiplomacy } from './server/handlers/diplomacy.js'
 import { registerRaid } from './server/handlers/raid.js'
 import { registerGift } from './server/handlers/gift.js'
 import { registerDisconnect } from './server/handlers/disconnect.js'
+import { registerRooms } from './server/handlers/rooms.js'
 import { runStartupChecks } from './server/startup.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -28,7 +29,8 @@ if (process.env.NODE_ENV !== 'development') {
 
 io.on('connection', (socket) => {
   console.log('+ connected:', socket.id)
-  registerJoin(io, socket)
+  registerRooms(io, socket)
+  registerJoin(io, socket)    // legacy join event (kept for backward compat)
   registerSync(io, socket)
   registerDiplomacy(io, socket)
   registerRaid(io, socket)

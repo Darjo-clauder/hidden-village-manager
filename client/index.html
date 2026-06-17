@@ -10,8 +10,65 @@
     <div class="tm">Hidden Village</div>
     <div class="tk">忍の里</div>
     <div class="ts">Shinobi Management Simulation — Multiplayer</div>
-    <button class="bstart" onclick="showSetup()">Begin as Kage ↗</button>
+    <button class="bstart" onclick="showLobby()">Play Online ↗</button>
+    <button class="bstart" style="margin-top:8px;background:transparent;border:1px solid #2e2820;color:#7a7060;font-size:10px" onclick="showSetup()">Solo / New Village</button>
     <div style="margin-top:12px;font-size:8px;color:#2e2820;letter-spacing:3px">BEASTS · ECONOMY · DIPLOMACY · ONLINE</div>
+  </div>
+</div>
+
+<!-- ══ LOBBY SCREEN ══ -->
+<div id="sl" class="screen">
+  <div class="sp-box" style="max-width:520px;width:100%">
+    <div class="tm" style="margin-bottom:4px">Lobby</div>
+    <div class="ts" style="margin-bottom:20px">Create or join a room to play</div>
+
+    <!-- Create Room -->
+    <div style="border:1px solid #2e2820;padding:12px;margin-bottom:12px">
+      <div style="font-size:9px;color:#c9a84c;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Create Room</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px">
+        <label style="display:flex;align-items:center;gap:4px;font-size:9px;color:#e8e0cc">
+          <input type="checkbox" id="sl-create-private" checked> Private
+        </label>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-size:8px;color:#7a7060">Max players:</span>
+          <select id="sl-create-max" style="background:#0d0a04;border:1px solid #2e2820;color:#e8e0cc;font-size:9px;padding:2px">
+            <option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-size:8px;color:#7a7060">Auto-ready:</span>
+          <select id="sl-create-timeout" style="background:#0d0a04;border:1px solid #2e2820;color:#e8e0cc;font-size:9px;padding:2px">
+            <option value="5">5 min</option><option value="10">10 min</option><option value="15" selected>15 min</option><option value="30">30 min</option>
+          </select>
+        </div>
+      </div>
+      <button class="bstart" style="width:100%;font-size:11px" onclick="createRoomFlow()">Create Room ↗</button>
+    </div>
+
+    <!-- Join by Code -->
+    <div style="border:1px solid #2e2820;padding:12px;margin-bottom:12px">
+      <div style="font-size:9px;color:#c9a84c;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Join by Code</div>
+      <div style="display:flex;gap:6px">
+        <input id="sl-join-code" class="sp-input" placeholder="LEAF42" maxlength="6" style="flex:1;text-transform:uppercase;font-family:monospace;letter-spacing:4px">
+        <button class="gb" onclick="joinRoomFlow()">Join ▸</button>
+      </div>
+      <div id="lob-join-error" style="font-size:8px;color:#f66;margin-top:4px"></div>
+    </div>
+
+    <!-- Server Browser -->
+    <div style="border:1px solid #2e2820;padding:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:9px;color:#c9a84c;text-transform:uppercase;letter-spacing:1px">Public Rooms</div>
+        <button class="gb" style="font-size:8px" onclick="browseRooms()">Refresh ↺</button>
+      </div>
+      <div id="sl-browser-list">
+        <div style="color:#7a7060;font-size:9px">Click Refresh to load public rooms.</div>
+      </div>
+    </div>
+
+    <div style="margin-top:10px;text-align:center">
+      <button style="background:none;border:none;color:#7a7060;font-size:8px;cursor:pointer;letter-spacing:1px" onclick="showSetup()">New village (solo) ▸</button>
+    </div>
   </div>
 </div>
 
@@ -75,6 +132,7 @@
       <button class="nb" onclick="sp('chronicles')" id="nv-chronicles">▸ Chronicles</button>
       <button class="nb" onclick="sp('memorial')" id="nv-memorial">▸ Memorial</button>
       <div class="nsec">Multiplayer</div>
+      <button class="nb" onclick="sp('lobby')" id="nv-lobby">▸ Lobby <span class="nb-badge" id="lob-room-code" style="color:#c9a84c;font-family:monospace;font-size:8px"></span></button>
       <button class="nb" onclick="sp('world')" id="nv-world">▸ World Map <span class="nb-badge" id="wp-badge" style="display:none">!</span></button>
     </nav>
     <div class="sb-online">
@@ -98,9 +156,12 @@
       <div class="ts2"><span id="tinc">+0</span>Income/mo</div>
       <div class="ts2"><span id="tlegend">0</span>Legend</div>
       <div class="ts2"><span id="tdate">Y1 M1</span>Month</div>
-      <button class="ab" onclick="adv()">Advance Month ▸</button>
+      <button class="ab" onclick="endTurn()" id="btn-end-turn">End Turn ▸</button>
     </div>
     <div class="pc">
+
+      <!-- lobby -->
+      <div id="p-lobby" style="display:none"></div>
 
       <!-- roster -->
       <div id="p-roster"><div class="pt">Shinobi Force</div><div id="rl"></div></div>
@@ -260,6 +321,14 @@
 </div><!-- /#sg -->
 
 <!-- ══ MODALS ══ -->
+
+<div class="ov" id="ov-turn-resolve">
+  <div class="mo" style="max-width:460px">
+    <div class="mot">Turn Resolution</div>
+    <div id="ov-tr-body" style="max-height:360px;overflow-y:auto"></div>
+    <div class="mbc"><button class="bc" onclick="cm('turn-resolve')">Close ✓</button></div>
+  </div>
+</div>
 
 <div class="ov" id="ov-assign">
   <div class="mo">

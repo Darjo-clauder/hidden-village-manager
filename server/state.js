@@ -14,6 +14,10 @@ export function worldSnapshot() {
   return Array.from(villages.values())
 }
 
+export function worldSnapshotForRoom(roomCode) {
+  return Array.from(villages.values()).filter(v => v.roomCode === roomCode)
+}
+
 export function getRelStatus(v, otherId) {
   return v.relations?.[otherId]?.status || 'neutral'
 }

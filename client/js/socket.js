@@ -2,6 +2,8 @@ import { G, WS, clamp, fmt } from './state.js'
 import { aL, ntf, upUI, setOnline } from './ui.js'
 import { rWo, setWorldSocket, setRelLocal, showDip, respondAlliance } from './world.js'
 import { addNewsItem } from './news.js'
+import { RS } from './room.js'
+import { rLob } from './panels/lobby.js'
 
 export let socket = null
 
@@ -53,8 +55,20 @@ export function initSocket(name, kageName, icon) {
   setWorldSocket(socket)
 
   socket.on('connect', () => {
-    WS.myId = socket.id
-    socket.emit('join', { name, kageName, icon, playerId })
+    WS.myId     = socket.id
+    RS.mySocketId = socket.id
+
+    if (RS.mode === 'join' && RS.pendingCode) {
+      socket.emit('join_room', { code: RS.pendingCode, name, kageName, icon, playerId })
+    } else {
+      // Default: create a private solo room (or public if RS.pendingIsPrivate is false)
+      socket.emit('create_room', {
+        name, kageName, icon, playerId,
+        isPrivate:        RS.pendingIsPrivate ?? true,
+        maxPlayers:       RS.pendingMaxPlayers || 4,
+        autoReadyTimeout: RS.pendingAutoReadyTimeout || 15,
+      })
+    }
   })
 
   socket.on('disconnect', () => setOnline(false))
@@ -217,6 +231,133 @@ export function initSocket(name, kageName, icon) {
     }
   })
 
+  // ── Room events ───────────────────────────────────────────────────────────
+
+  socket.on('room_created', ({ roomCode, snapshot }) => {
+    RS.roomCode = roomCode
+    RS.snapshot = snapshot
+    RS.isHost   = true
+    RS.mode     = null
+    _updateRoomBadge(roomCode)
+    rLob()
+    ntf('Room ' + roomCode + ' created — share the code to invite others!')
+    console.log('[Room] Created:', roomCode)
+  })
+
+  socket.on('room_joined', ({ roomCode, snapshot }) => {
+    RS.roomCode = roomCode
+    RS.snapshot = snapshot
+    RS.isHost   = snapshot.hostSocketId === socket.id
+    RS.mode     = null
+    _updateRoomBadge(roomCode)
+    rLob()
+    ntf('Joined room ' + roomCode)
+    console.log('[Room] Joined:', roomCode)
+  })
+
+  socket.on('room_state_update', (snapshot) => {
+    RS.snapshot = snapshot
+    RS.isHost   = snapshot.hostSocketId === socket.id
+    _updateRoomBadge(snapshot.code)
+    rLob()
+    // Merge ready/online status into existing WS.villages (preserve pos for world map)
+    snapshot.players.forEach(p => {
+      const v = WS.villages.find(v => v.id === p.socketId)
+      if (v) { v.ready = p.ready; v.online = p.online }
+    })
+    rWo()
+  })
+
+  socket.on('room_list', (list) => {
+    _renderServerBrowser(list)
+  })
+
+  socket.on('join_error', ({ reason }) => {
+    ntf('Cannot join: ' + reason)
+    const errEl = document.getElementById('lob-join-error')
+    if (errEl) errEl.textContent = reason
+  })
+
+  socket.on('host_transferred', ({ newHostSocketId, newHostName }) => {
+    if (newHostSocketId === socket.id) {
+      RS.isHost = true
+      ntf('You are now the room host.')
+    } else {
+      ntf(newHostName + ' is now the room host.')
+    }
+    rLob()
+  })
+
+  socket.on('player_kicked', ({ reason }) => {
+    ntf('You were removed from the room: ' + (reason || ''))
+    RS.roomCode = null
+    RS.snapshot = null
+    RS.isHost   = false
+    // Return to lobby screen
+    const lobScreen = document.getElementById('sl')
+    if (lobScreen) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'))
+      lobScreen.classList.add('active')
+    }
+  })
+
+  socket.on('room_paused',  () => { ntf('Room paused by host.'); rLob() })
+  socket.on('room_resumed', () => { ntf('Room resumed.'); rLob() })
+
+  socket.on('turn_resolved', ({ turnNumber, worldEvents }) => {
+    _showTurnResolution(turnNumber, worldEvents)
+  })
+
   // ── Save on tab close ─────────────────────────────────────────────────────
   window.addEventListener('beforeunload', () => syncToServer())
+}
+
+// ── Helper: update room code badge in nav ────────────────────────────────────
+
+function _updateRoomBadge(code) {
+  const badge = document.getElementById('lob-room-code')
+  if (badge) badge.textContent = code || ''
+}
+
+// ── Server browser renderer ───────────────────────────────────────────────────
+
+function _renderServerBrowser(list) {
+  const el = document.getElementById('sl-browser-list')
+  if (!el) return
+
+  if (!list.length) {
+    el.innerHTML = '<div style="color:#7a7060;font-size:9px;padding:10px">No public rooms found.</div>'
+    return
+  }
+
+  el.innerHTML = list.map(r => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1a150a">
+      <span style="font-size:18px">${r.hostIcon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:10px;color:#e8e0cc">${r.hostName}</div>
+        <div style="font-size:8px;color:#7a7060">${r.playerCount}/${r.maxPlayers} players · Turn ${r.turnNumber} · Auto-ready: ${r.autoReadyTimeout}m</div>
+      </div>
+      <div style="font-size:8px;color:#c9a84c;font-family:monospace">${r.code}</div>
+      <button class="gb" style="font-size:9px" onclick="joinRoomByCode('${r.code}')">Join ▸</button>
+    </div>
+  `).join('')
+}
+
+// ── Turn Resolution modal ─────────────────────────────────────────────────────
+
+function _showTurnResolution(turnNumber, worldEvents) {
+  const ov = document.getElementById('ov-turn-resolve')
+  if (!ov) return
+
+  const evHtml = (worldEvents || []).map(e =>
+    `<div style="padding:4px 0;border-bottom:1px solid #1a150a;font-size:9px;color:#e8e0cc">${e.text}</div>`
+  ).join('') || '<div style="font-size:9px;color:#7a7060">No world events this turn.</div>'
+
+  const body = ov.querySelector('#ov-tr-body')
+  if (body) body.innerHTML = `
+    <div style="font-size:10px;color:#c9a84c;margin-bottom:8px">Turn ${turnNumber - 1} Complete</div>
+    <div style="font-size:9px;color:#7a7060;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">World Events</div>
+    ${evHtml}
+  `
+  ov.classList.add('open')
 }

@@ -1,4 +1,5 @@
 import { villages } from '../state.js'
+import { socketToRoom, rooms } from '../rooms.js'
 import { rollWorldEvent } from '../worldEvents.js'
 import db, { saveGameState, setTickInProgress, upsertVillageSummary } from '../db.js'
 
@@ -7,18 +8,20 @@ export function registerSync(io, socket) {
     const v = villages.get(socket.id)
     if (!v) return
 
-    // ── Update in-memory world-map summary ────────────────────────────────
     v.power        = power        ?? v.power
     v.reputation   = reputation   ?? v.reputation
     v.shinobiCount = shinobiCount ?? v.shinobiCount
     v.sealedBeasts = sealedBeasts ?? v.sealedBeasts
     v.ryo          = ryo          ?? v.ryo
 
-    // Sync prestige tier from full state if available
     if (fullState?.prestigeTier) v.prestigeTier = fullState.prestigeTier
 
-    // ── Broadcast summary update to all clients (map refresh) ─────────────
-    io.emit('village_update', {
+    const roomCode = socketToRoom.get(socket.id)
+    const room     = rooms.get(roomCode)
+
+    // ── Broadcast summary update scoped to this room ──────────────────────
+    const target = roomCode ? io.to(roomCode) : io
+    target.emit('village_update', {
       id:           socket.id,
       power:        v.power,
       reputation:   v.reputation,
@@ -27,31 +30,22 @@ export function registerSync(io, socket) {
       prestigeTier: v.prestigeTier || 'D',
     })
 
-    // ── Roll world events ─────────────────────────────────────────────────
-    rollWorldEvent(io)
+    // ── Roll world events (per-room) ──────────────────────────────────────
+    if (room) rollWorldEvent(io, room)
+    else      rollWorldEvent(io, null)   // fallback: broadcast globally (no-room mode)
 
-    // ── Persist to Supabase ───────────────────────────────────────────────
+    // ── Persist ───────────────────────────────────────────────────────────
     if (db && v.playerId) {
-      // 1. Update the lightweight world-map row
       upsertVillageSummary(v.playerId, {
-        name:          v.name,
-        kage_name:     v.kageName,
-        icon:          v.icon,
-        power:         v.power,
-        reputation:    v.reputation,
-        shinobi_count: v.shinobiCount,
-        sealed_beasts: v.sealedBeasts,
-        ryo:           v.ryo,
-        prestige_tier: v.prestigeTier || 'D',
-        online:        true,
+        name: v.name, kage_name: v.kageName, icon: v.icon,
+        power: v.power, reputation: v.reputation, shinobi_count: v.shinobiCount,
+        sealed_beasts: v.sealedBeasts, ryo: v.ryo, prestige_tier: v.prestigeTier || 'D',
+        online: true,
       })
 
-      // 2. Persist full game state if provided
       if (fullState && typeof fullState === 'object') {
-        // Mark tick as in-progress so a crash here is detectable on restart
         await setTickInProgress(v.playerId, true)
         await saveGameState(v.playerId, fullState)
-        // saveGameState clears tick_in_progress = false on success
       }
     }
   })

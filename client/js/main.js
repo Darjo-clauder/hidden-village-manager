@@ -22,6 +22,12 @@ import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfi
 import { rLeg, legTab, designateSuccessor, resolveLegacyDecision } from './panels/legacy.js'
 import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu } from './panels/intel.js'
 import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc } from './panels/exam.js'
+import { showLobby, createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode } from './setup.js'
+import { endTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose, setTimeout_, setMaxPlayers, voteAdvance, setAdvFn } from './room.js'
+import { copyInvite } from './panels/lobby.js'
+
+// Inject adv into room.js to break circular dep
+setAdvFn(adv)
 
 // defender shorthand helpers used from inline HTML
 function G_defShSet(id) { G.defSh = id; rDef() }
@@ -30,7 +36,11 @@ function G_defShClear() { G.defSh = null; rDef() }
 // Expose all functions that are called from inline onclick handlers in the HTML
 Object.assign(window, {
   // screens
-  showSetup, selIcon, beginGame, restoreGame,
+  showSetup, showLobby, selIcon, beginGame, restoreGame,
+  // room / lobby
+  createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode,
+  endTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose,
+  setTimeout_, setMaxPlayers, voteAdvance, copyInvite,
   // navigation & modals
   sp, cm, adv,
   // roster

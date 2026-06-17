@@ -1,7 +1,19 @@
 import { G, spIcon, setSpIcon, initState, schEx } from './state.js'
 import { VILLAGE_ICONS } from './constants.js'
 import { upUI, sp, aL } from './ui.js'
-import { initSocket } from './socket.js'
+import { initSocket, socket } from './socket.js'
+import { RS, parseInviteCode } from './room.js'
+
+export function showLobby() {
+  document.getElementById('st').classList.remove('active')
+  document.getElementById('sl').classList.add('active')
+  // Pre-fill join code from URL invite link
+  const code = parseInviteCode()
+  const joinInput = document.getElementById('sl-join-code')
+  if (joinInput && code) joinInput.value = code
+  // Refresh browser list
+  if (socket?.connected) socket.emit('list_rooms')
+}
 
 export function showSetup() {
   document.getElementById('st').classList.remove('active')
@@ -57,9 +69,7 @@ export function restoreGame() {
 function _startGame(vname, kname, icon) {
   document.getElementById('sb-icon').textContent  = icon
   document.getElementById('sb-vname').textContent = vname
-  // initState() sets defaults; load_state from server will overwrite with saved data
   initState()
-  // Stamp identity on G so syncToServer has it available immediately
   G.vName = vname
   G.kName = kname
   G.vIcon = icon
@@ -68,6 +78,69 @@ function _startGame(vname, kname, icon) {
   sp('roster')
   upUI()
   initSocket(vname, kname, icon)
-  document.getElementById('sp').classList.remove('active')
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'))
   document.getElementById('sg').classList.add('active')
+}
+
+// ── Lobby screen flows ────────────────────────────────────────────────────────
+
+/** From the lobby screen: create a new room. Opens setup form if no saved village. */
+export function createRoomFlow() {
+  const vname = localStorage.getItem('vName')
+  const isPrivate  = document.getElementById('sl-create-private')?.checked ?? true
+  const maxPlayers = Number(document.getElementById('sl-create-max')?.value) || 4
+  const timeout    = Number(document.getElementById('sl-create-timeout')?.value) || 15
+
+  RS.mode                    = 'create'
+  RS.pendingIsPrivate        = isPrivate
+  RS.pendingMaxPlayers       = maxPlayers
+  RS.pendingAutoReadyTimeout = timeout
+
+  if (vname && localStorage.getItem('villageId')) {
+    restoreGame()
+  } else {
+    document.getElementById('sl').classList.remove('active')
+    document.getElementById('sp').classList.add('active')
+  }
+}
+
+/** From the lobby screen: join a room by code. */
+export function joinRoomFlow() {
+  const code = (document.getElementById('sl-join-code')?.value || '').trim().toUpperCase()
+  if (!code || code.length !== 6) {
+    const errEl = document.getElementById('lob-join-error')
+    if (errEl) errEl.textContent = 'Enter a 6-character room code.'
+    return
+  }
+
+  RS.mode        = 'join'
+  RS.pendingCode = code
+
+  const vname = localStorage.getItem('vName')
+  if (vname && localStorage.getItem('villageId')) {
+    restoreGame()
+  } else {
+    document.getElementById('sl').classList.remove('active')
+    document.getElementById('sp').classList.add('active')
+  }
+}
+
+/** Refresh the public room browser. */
+export function browseRooms() {
+  if (socket?.connected) socket.emit('list_rooms')
+  else ntfGlobal('Connect first to browse rooms.')
+}
+
+function ntfGlobal(msg) {
+  const n = document.getElementById('nf')
+  if (!n) return
+  n.textContent = msg; n.classList.add('show')
+  setTimeout(() => n.classList.remove('show'), 2600)
+}
+
+/** Join a specific room from the browser list. */
+export function joinRoomByCode(code) {
+  const codeInput = document.getElementById('sl-join-code')
+  if (codeInput) codeInput.value = code
+  joinRoomFlow()
 }
