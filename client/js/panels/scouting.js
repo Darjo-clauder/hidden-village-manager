@@ -113,6 +113,12 @@ export function rSco() {
                 ? `<span style="color:${dblCover?'#c9a84c':'#8fbc8f'}">${dblCover?'◉◉ Double':'◉ Active'}</span><br>
                    <span style="color:#999">${assigned.map(s=>s.fn).join(', ')}</span>`
                 : '<span style="color:#555">◯ No Coverage</span>'}
+              ${(() => {
+                const pool = G.regionPool?.[r.id] ?? 12
+                const pct = Math.round((pool / 12) * 100)
+                const poolColor = pool >= 8 ? '#8fbc8f' : pool >= 4 ? '#fa0' : '#f66'
+                return `<div style="margin-top:4px;font-size:.68rem;color:${poolColor}" title="Talent pool: ${pool}/12 undiscovered prospects remaining">Pool ${pool}/12</div>`
+              })()}
             </div>
           </div>`
         }).join('')}
@@ -303,10 +309,17 @@ function prospectCard(p, inWatchlist) {
         ✦ Sign — ${cost.toLocaleString()} ryo${urgPrem>0?' (rival premium)':''}
       </button>`
     })()}
+    ${(() => {
+      const bias = p.aggBiasSeverity
+      if (!bias || bias === 'none') return ''
+      const biasColors = { low: '#fa0', medium: '#f90', high: '#f55' }
+      const biasLabels = { low: '⚠ Possible bias in reports', medium: '⚠ Scout bias likely — cross-check readings', high: '⛔ Strong bias detected — get a second scout' }
+      return `<div style="font-size:.7rem;color:${biasColors[bias]};border-top:1px solid #332;padding-top:4px;margin-top:4px">${biasLabels[bias]}</div>`
+    })()}
     ${conflicts.length ? `<div style="font-size:.7rem;color:#daa;border-top:1px solid #332;padding-top:4px;margin-top:4px">
       ⚠ Conflicting reports: ${conflicts.map(c => c.scoutName + ' (' + c.confidence + '%)').join(', ')} disagree with the primary read.
     </div>` : ''}
-    ${history.length > 1 ? `<div style="font-size:.68rem;color:#666;margin-top:4px">📋 ${history.length} reports — picture sharpening.</div>` : ''}
+    ${history.length > 1 ? `<div style="font-size:.68rem;color:#666;margin-top:4px">📋 ${history.length} reports · avg ${p.aggConfidence ?? Math.round(history.reduce((s,r)=>s+r.confidence,0)/history.length)}% confidence.</div>` : ''}
   </div>`
 }
 

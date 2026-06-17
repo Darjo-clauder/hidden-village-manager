@@ -4,6 +4,9 @@ import { aL, ntf } from './ui.js'
 import { isEnabled } from '../../config/features.js'
 import { calcConfidence, confidenceToQuality, createScoutReport } from '../../shared/types/ScoutReport.js'
 import { HIDDEN_ATTRIBUTE_KEYS } from '../../shared/constants/prospect.js'
+import { aggregateReports, REGION_POOL_CAP } from '../../shared/utils/scoutAggregation.js'
+
+export { aggregateReports }
 
 // ── Helpers for the new Scout entity shape (knowledge/judgement direct fields) ─
 function scoutJudgement(scout) {
@@ -37,6 +40,30 @@ function maybeRevealAttributes(prospect, scout, confidence) {
   })
 }
 
+// ── Regional discovery pool ───────────────────────────────────────────────────
+export function ensureRegionPool(G) {
+  if (!G.regionPool) G.regionPool = {}
+  for (const r of REGIONS) {
+    if (G.regionPool[r.id] == null) G.regionPool[r.id] = REGION_POOL_CAP
+  }
+}
+
+function replenishPools(G) {
+  ensureRegionPool(G)
+  for (const id of Object.keys(G.regionPool)) {
+    G.regionPool[id] = Math.min(REGION_POOL_CAP, G.regionPool[id] + 1)
+  }
+}
+
+function consumePoolSlot(G, regionId) {
+  ensureRegionPool(G)
+  if (G.regionPool[regionId] > 0) {
+    G.regionPool[regionId]--
+    return true
+  }
+  return false  // pool depleted — no new discovery this tick
+}
+
 // ── Regional memory helpers ───────────────────────────────────────────────────
 function getMemory(scout, regionId) {
   if (!scout.regionMemory) scout.regionMemory = {}
@@ -48,6 +75,7 @@ function getMemory(scout, regionId) {
 
 // ── Monthly scout tick (called from adv.js) ───────────────────────────────────
 export function tickScouts(G) {
+  replenishPools(G)
   const scouts = (G.staff || []).filter(s => s.role === 'scout_jonin' || s.role === 'head_scout')
 
   scouts.forEach(scout => {
@@ -95,11 +123,23 @@ export function tickScouts(G) {
 }
 
 function _generateReport(scout, regionId, region, mem, qualityMod) {
-  // Pick an existing unresolved prospect from the pool first, or generate a new one
-  let prospect = pk(G.prospects.filter(p => !p.fromRegion && !p.scoutHistory?.find(r => r.scoutId === scout.id)))
+  // Try to re-report on an existing unresolved prospect first
+  const existingPool = G.prospects.filter(
+    p => p.fromRegion === regionId && !p.scoutHistory?.find(r => r.scoutId === scout.id)
+  )
+  let prospect = existingPool.length ? pk(existingPool) : null
+
+  // Discover a new prospect only if the regional pool has capacity
   if (!prospect || Math.random() < 0.4) {
-    prospect = genRegionProspect(regionId, scout)
-    G.prospects.push(prospect)
+    if (!consumePoolSlot(G, regionId)) {
+      // Pool depleted — file a follow-up on an existing known prospect instead
+      const known = G.prospects.filter(p => p.fromRegion === regionId)
+      if (!known.length) return  // nothing to report on
+      prospect = pk(known)
+    } else {
+      prospect = genRegionProspect(regionId, scout)
+      G.prospects.push(prospect)
+    }
   }
 
   // Ensure Phase 1 hidden attributes exist on this prospect
@@ -161,6 +201,13 @@ function _generateReport(scout, regionId, region, mem, qualityMod) {
   if (!prospect.scoutHistory) prospect.scoutHistory = []
   prospect.scoutHistory.push(report)
   prospect.bestConfidence = Math.max(prospect.bestConfidence || 0, confidence)
+
+  // Keep aggregated view fresh so UI panels can read it without recomputing
+  const agg = aggregateReports(prospect)
+  if (agg) {
+    prospect.aggConfidence = agg.avgConfidence
+    prospect.aggBiasSeverity = agg.biasSeverity
+  }
 
   if (!G.scoutReports) G.scoutReports = []
   G.scoutReports.push(report)
