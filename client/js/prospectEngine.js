@@ -133,15 +133,59 @@ export function applyGraduationBias(prospect) {
   }
 }
 
+// ── Rival village names for offer generation ─────────────────────────────────
+const RIVAL_VILLAGES = ['Kumogakure', 'Sunagakure', 'Kirigakure', 'Iwagakure', 'Otogakure']
+
+// ── Rival offer generation ────────────────────────────────────────────────────
+function maybeGenerateRivalOffer(p) {
+  if (p.rivalOffer) return                      // already has an active offer
+  if ((p.potential ?? 0) < 70) return           // not attractive enough
+  if ((p.monthsWaiting ?? 0) < 2) return        // too new to attract rivals
+  if (Math.random() > 0.15) return              // 15% monthly chance
+
+  const village = RIVAL_VILLAGES[Math.floor(Math.random() * RIVAL_VILLAGES.length)]
+  const potTier = p.potential >= 90 ? 4 : p.potential >= 80 ? 3 : p.potential >= 70 ? 2 : 1
+  const baseOffer = 4000 + potTier * 2500
+  const offerRyo = Math.round(baseOffer * (0.9 + Math.random() * 0.4))  // ±20% variance
+
+  p.rivalOffer = {
+    village,
+    offerRyo,
+    expiresMonth: G.month + 2,
+    expiresYear: G.month >= 11 ? G.year + 1 : G.year,
+    createdYear: G.year,
+    createdMonth: G.month,
+  }
+  p.rivalInterest = true
+
+  aL(`${village} has made an offer for ${p.fn} ${p.ln} — ${offerRyo.toLocaleString()} ryo. Respond within 2 months.`, 'warn')
+}
+
+// ── Rival offer expiry ────────────────────────────────────────────────────────
+function tickRivalOffers(G) {
+  ;(G.prospects || []).forEach(p => {
+    if (!p.rivalOffer) return
+    const offer = p.rivalOffer
+    const expired = G.year > offer.expiresYear ||
+      (G.year === offer.expiresYear && G.month > offer.expiresMonth)
+    if (expired) {
+      aL(`${offer.village}'s offer for ${p.fn} ${p.ln} expired — they signed elsewhere.`, 'bad')
+      G.prospects = G.prospects.filter(x => x.id !== p.id)
+    }
+  })
+}
+
 // ── Monthly tick (called from adv.js) ────────────────────────────────────────
 export function tickProspects(G) {
   if (!isEnabled('ACADEMY')) return
+  tickRivalOffers(G)
   ;(G.prospects || []).forEach(p => {
     growProspect(p)
     maybeRevealCurve(p)
+    maybeGenerateRivalOffer(p)
     // Increment monthsWaiting (used for patience bar)
     p.monthsWaiting = (p.monthsWaiting ?? 0) + 1
     // Decline urgency window
-    if (p.urgencyMonths > 0) p.urgencyMonths--
+    if ((p.urgencyMonths ?? 0) > 0) p.urgencyMonths--
   })
 }

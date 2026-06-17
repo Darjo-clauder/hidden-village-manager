@@ -6,7 +6,7 @@ import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTa
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate } from './panels/missions.js'
 import { rUp, buyUp } from './panels/upgrades.js'
-import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan } from './panels/academy.js'
+import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship } from './panels/economy.js'
 import { rBe, lCap, beastTab, releaseJinchuriki, resolveEscape } from './panels/beasts.js'
 import { rKa, resKE, sGift, propAl, rattle } from './panels/kage.js'
@@ -70,6 +70,7 @@ Object.assign(window, {
   buyUp,
   // academy
   rec, oScout, doScout, oSensei, doSensei, setTrainingPlan,
+  matchRivalOffer, exceedRivalOffer, declineRivalOffer,
   // economy
   eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship,
   // beasts

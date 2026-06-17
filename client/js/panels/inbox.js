@@ -100,21 +100,69 @@ function buildItems() {
   })
 
   // ── Injured shinobi ───────────────────────────────────────────────────
-  ;(G.shinobi || []).filter(s => s.status === 'injured' && s.injuryMonths > 2).forEach(s => {
+  ;(G.shinobi || []).filter(s => s.status === 'injured' && (s.injDays || 0) > 60).forEach(s => {
+    const months = Math.ceil((s.injDays || 0) / 30)
     items.push({
       id:       'injury_' + s.id,
       priority: 'standard',
       cat:      'Injuries',
       icon:     '🏥',
       title:    `${s.fn} ${s.ln} — Long-term Injury`,
-      desc:     `Expected return: ${s.injuryMonths} month${s.injuryMonths !== 1 ? 's' : ''} remaining.`,
-      actions:  [{ label: 'View Roster', fn: `sp('roster')` }],
+      desc:     `Expected return: ~${months} month${months !== 1 ? 's' : ''} remaining.`,
+      actions:  [{ label: 'View Dossier', fn: `oDos('${s.id}')` }],
+      archived: false,
+    })
+  })
+
+  // ── Retirement eligible ───────────────────────────────────────────────
+  ;(G.shinobi || []).filter(s => s.retirementOffered).forEach(s => {
+    items.push({
+      id:       'retire_' + s.id,
+      priority: 'standard',
+      cat:      'People',
+      icon:     '🎖',
+      title:    `${s.fn} ${s.ln} — Retirement Decision`,
+      desc:     `Age ${s.age}, ${s.phase} phase. Decline penalty: ${Math.round((s.declineMod || 0) * 100)}%. Decide their next chapter.`,
+      actions:  [
+        { label: 'View Dossier', fn: `oDos('${s.id}')` },
+        { label: 'Retire Honourably', fn: `retireShinobi('${s.id}')` },
+        { label: 'Move to Staff', fn: `retireToCoach('${s.id}')` },
+      ],
+      archived: false,
+    })
+  })
+
+  // ── Active rival signing offers ───────────────────────────────────────
+  ;(G.prospects || []).filter(p => p.rivalOffer).forEach(p => {
+    const offer = p.rivalOffer
+    items.push({
+      id:       'rival_offer_' + p.id,
+      priority: 'urgent',
+      cat:      'Academy',
+      icon:     '⚔',
+      title:    `${p.fn} ${p.ln} — ${offer.village} Offer`,
+      desc:     `${offer.village} is offering ${offer.offerRyo.toLocaleString()} ryo. Expires Y${offer.expiresYear}·M${offer.expiresMonth}. Match, exceed, or let them go.`,
+      actions:  [{ label: 'View Academy', fn: `sp('academy')` }],
+      archived: false,
+    })
+  })
+
+  // ── Scout-sourced prospects expiring soon ─────────────────────────────
+  ;(G.prospects || []).filter(p => p.fromRegion && (p.urgencyMonths || 0) > 0 && (p.urgencyMonths || 0) <= 2).forEach(p => {
+    items.push({
+      id:       'urgprospect_' + p.id,
+      priority: 'urgent',
+      cat:      'Scouting',
+      icon:     '🌑',
+      title:    `${p.fn} ${p.ln} — Rival Interest Closing`,
+      desc:     `Scout-sourced prospect from ${p.fromRegion || 'unknown region'}. Only ${p.urgencyMonths}m before a rival village moves. Confidence: ${p.scoutConfidence || '?'}%.`,
+      actions:  [{ label: 'View Scouting', fn: `sp('scouting')` }],
       archived: false,
     })
   })
 
   // ── Prospect aging out ────────────────────────────────────────────────
-  ;(G.prospects || []).filter(p => (p.age || 0) >= 16).forEach(p => {
+  ;(G.prospects || []).filter(p => !p.fromRegion && (p.age || 0) >= 16).forEach(p => {
     items.push({
       id:       'age_' + p.id,
       priority: 'urgent',
@@ -127,16 +175,35 @@ function buildItems() {
     })
   })
 
+  // ── Career milestones ─────────────────────────────────────────────────
+  ;(G.shinobi || []).filter(s => s._milestoneNotice).forEach(s => {
+    items.push({
+      id:       'milestone_' + s.id + '_' + s.wins,
+      priority: 'info',
+      cat:      'People',
+      icon:     '🏆',
+      title:    `${s.fn} ${s.ln} — ${s.wins} Mission${s.wins !== 1 ? 's' : ''} Completed`,
+      desc:     s._milestoneNotice,
+      actions:  [{ label: 'View Dossier', fn: `oDos('${s.id}')` }],
+      archived: false,
+    })
+  })
+
   // ── Noticeboard items ─────────────────────────────────────────────────
   ;(G.noticeboard || []).filter(n => !n.dismissed).forEach(n => {
+    const retireActions = n.type === 'retirement' && n.shinobiId ? [
+      { label: 'View Dossier',   fn: `oDos('${n.shinobiId}')` },
+      { label: 'Retire',         fn: `retireShinobi('${n.shinobiId}')` },
+      { label: 'Move to Staff',  fn: `retireToCoach('${n.shinobiId}')` },
+    ] : []
     items.push({
-      id:       'notice_' + (n.id || Math.random()),
-      priority: n.priority || 'info',
-      cat:      n.cat || 'Info',
-      icon:     n.icon || 'ℹ',
-      title:    n.title || 'Notice',
+      id:       'notice_' + (n.id || n.shinobiId || Math.random()),
+      priority: n.type === 'retirement' ? 'standard' : (n.priority || 'info'),
+      cat:      n.type === 'retirement' ? 'People' : (n.cat || 'Info'),
+      icon:     n.type === 'retirement' ? '🎖' : (n.icon || 'ℹ'),
+      title:    n.title || (n.type === 'retirement' ? 'Retirement Notice' : 'Notice'),
       desc:     n.body || n.text || '',
-      actions:  [],
+      actions:  retireActions,
       archived: false,
     })
   })

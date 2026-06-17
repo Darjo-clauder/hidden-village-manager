@@ -106,6 +106,27 @@ function _scoutHistoryHtml(p) {
   </div>`
 }
 
+function _rivalOfferHtml(p) {
+  const offer = p.rivalOffer
+  if (!offer) return ''
+  const canMatch   = (G.ryo || 0) >= offer.offerRyo
+  const canExceed  = (G.ryo || 0) >= Math.round(offer.offerRyo * 1.2)
+  const matchCost  = offer.offerRyo
+  const exceedCost = Math.round(offer.offerRyo * 1.2)
+  return `<div style="margin-top:7px;padding:7px;background:#1a0a00;border:1px solid #8b3a00;border-radius:3px">
+    <div style="font-size:8px;color:#f90;font-weight:bold;margin-bottom:4px">⚔ ${offer.village} offer — ${offer.offerRyo.toLocaleString()} ryo</div>
+    <div style="font-size:7px;color:#7a5a3a;margin-bottom:6px">Expires Y${offer.expiresYear}·M${offer.expiresMonth}. Match to secure, exceed for loyalty bonus.</div>
+    <div style="display:flex;gap:5px">
+      <button class="gb gb-g" onclick="matchRivalOffer('${p.id}')" ${canMatch ? '' : 'disabled'}
+        style="font-size:7px">Match — ${matchCost.toLocaleString()} ryo</button>
+      <button class="gb" onclick="exceedRivalOffer('${p.id}')" ${canExceed ? '' : 'disabled'}
+        style="font-size:7px;color:#c9a84c;border-color:#c9a84c">Exceed +20% — ${exceedCost.toLocaleString()} ryo</button>
+      <button class="gb gb-r" onclick="declineRivalOffer('${p.id}')"
+        style="font-size:7px">Let go</button>
+    </div>
+  </div>`
+}
+
 function _trainingPlanHtml(p) {
   if (!isEnabled('ACADEMY')) return ''
   const active = PLAN_BY_ID[p.trainingPlanId]
@@ -211,6 +232,7 @@ export function rAc() {
       </div>
       ${_scoutHistoryHtml(p)}
       ${_hiddenAttrsHtml(p)}
+      ${_rivalOfferHtml(p)}
       <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
         <button class="gb gb-g" onclick="rec('${p.id}')" ${canRecruit ? '' : 'disabled'}>Recruit — 2,000 ryo ►</button>
         ${scoutingAm
@@ -331,6 +353,46 @@ export function doScout(shinobiId) {
   aL(sn(s) + ' sent to scout ' + sn(p) + '.', 'neutral')
   ntf('Scouting ' + p.fn + '…')
   cm('scout'); upUI()
+}
+
+export function matchRivalOffer(prospectId) {
+  const p = G.prospects.find(x => x.id === prospectId)
+  if (!p?.rivalOffer) return
+  const cost = p.rivalOffer.offerRyo
+  if (G.ryo < cost) { ntf('Not enough ryo to match!'); return }
+  G.ryo -= cost
+  const village = p.rivalOffer.village
+  p.rivalOffer = null
+  p.rivalInterest = false
+  aL(`Matched ${village}'s offer — ${p.fn} ${p.ln} signs with us for ${cost.toLocaleString()} ryo.`, 'good')
+  ntf(`${p.fn} ${p.ln} secured!`)
+  upUI()
+}
+
+export function exceedRivalOffer(prospectId) {
+  const p = G.prospects.find(x => x.id === prospectId)
+  if (!p?.rivalOffer) return
+  const cost = Math.round(p.rivalOffer.offerRyo * 1.2)
+  if (G.ryo < cost) { ntf('Not enough ryo to exceed!'); return }
+  G.ryo -= cost
+  const village = p.rivalOffer.village
+  p.rivalOffer = null
+  p.rivalInterest = false
+  // Loyalty floor bonus for outbidding a rival
+  if (p.pMatrix) p.pMatrix.loyalty = Math.max((p.pMatrix.loyalty || 0) + 3, 15)
+  p.loyaltyBonus = true
+  aL(`Outbid ${village} — ${p.fn} ${p.ln} joins with loyalty bonus (+3 loyalty floor).`, 'good')
+  ntf(`${p.fn} ${p.ln} committed!`)
+  upUI()
+}
+
+export function declineRivalOffer(prospectId) {
+  const p = G.prospects.find(x => x.id === prospectId)
+  if (!p?.rivalOffer) return
+  const village = p.rivalOffer.village
+  aL(`${village}'s offer for ${p.fn} ${p.ln} declined — they will sign elsewhere shortly.`, 'warn')
+  G.prospects = G.prospects.filter(x => x.id !== prospectId)
+  upUI()
 }
 
 export function setTrainingPlan(prospectId, planId) {
