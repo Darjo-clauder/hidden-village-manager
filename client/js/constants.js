@@ -447,6 +447,39 @@ export const DYNASTY_GRADES = [
   { grade:'C', min:40 }, { grade:'D', min:0  },
 ]
 
+// ── Chunin Exam format variants ───────────────────────────────────────────────
+export const EXAM_FORMATS = [
+  { id:'intelligence', n:'Intelligence Trial',      icon:'📖', bonusStats:['intelligence'],        desc:'Cryptography, field analysis, and tactical theory dominate every round.' },
+  { id:'combat',       n:'Combat Focus',            icon:'⚔',  bonusStats:['taijutsu','speed'],     desc:'Direct combat in every stage — raw power and speed win here.' },
+  { id:'stealth',      n:'Stealth & Infiltration',  icon:'🌑', bonusStats:['speed','genjutsu'],     desc:'Covert movement through hostile territory — the loud are eliminated first.' },
+  { id:'endurance',    n:'Endurance Trial',         icon:'🔥', bonusStats:['chakra','ninjutsu'],    desc:'Extended multi-day missions test chakra reserves and determination.' },
+]
+
+// ── Legacy decisions — periodic dynasty trade-off events ────────────────────
+export const LEGACY_DECISIONS = [
+  { id:'field_youth', n:'Field the Future', icon:'🌱',
+    desc:'A promising young shinobi could replace your veteran in the next exam. Higher risk, but development upside if it pays off.',
+    choices: [
+      { id:'field', n:'Field the youngster', effect:{ morale:5, legend:3, desc:'The gamble pays off in spirit — +5 morale, +3 legend.' } },
+      { id:'safe',  n:'Stick with the veteran', effect:{ desc:'The veteran takes the field. Stable, dependable.' } },
+    ],
+  },
+  { id:'monument', n:'Monument or Treasury', icon:'🏛',
+    desc:'A merchant will fund a permanent village monument in exchange for exclusive escort contracts. Legacy versus flexibility.',
+    choices: [
+      { id:'accept',  n:'Build the monument', effect:{ legend:25, desc:'+25 legend — the monument draws pilgrims and prestige.' } },
+      { id:'decline', n:'Decline',            effect:{ ryo:8000, desc:'+8,000 ryo — trade routes stay open and profitable.' } },
+    ],
+  },
+  { id:'sell_peak', n:'Peak Value Transfer', icon:'💰',
+    desc:'A rival village offers 1.5× market value for your strongest shinobi — right at their prime. Take the ryo or watch the legend unfold.',
+    choices: [
+      { id:'sell', n:'Accept the offer', effect:{ ryo:25000, desc:'+25,000 ryo from the transfer. A legend leaves.' } },
+      { id:'keep', n:'Keep them',        effect:{ legend:10, morale:8, desc:'They stay. The village rallies. +10 legend, +8 morale.' } },
+    ],
+  },
+]
+
 // ── Mission commission income (village's cut from client payments)
 export const MISSION_COMMISSION = { D:50, C:150, B:400, A:1000, S:3000 }
 // Building maintenance cost per upgrade level (per building, per level)

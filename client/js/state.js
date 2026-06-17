@@ -182,7 +182,26 @@ export function initState() {
     intelReports: [],         // { villageId, type, data:{}, expiresMonth }
     counterIntelRating: 2,    // passive 1–20, vs rival ANBU catch chance
     // War state
-    warState: null,           // null or { villageId, phase, monthsLeft, warHistory:[] }
+    warState: null,           // null or { villageId, phase, monthsLeft, playerWins:0, playerLosses:0, warHistory:[] }
+    warConsequences: null,    // { loser:bool, academyDebuffYears:0, reparationVillage } post-war debuffs
+    // Competition depth
+    examFormat: null,             // { id, n, icon, bonusStats, desc } assigned when exam schedules
+    examJudgeBias: null,          // { villageName, biasMod:0.05-0.10 } active during current exam
+    examJudgeProtested: false,
+    examHistoricalRecords: {      // running totals and bests across all exams
+      totalPromotions: 0, bestSingleExam: 0, examWinsByVillage: {}
+    },
+    summitBlocOffer: null,        // { villageName, agendaItem, favorId } pending pre-summit approach
+    pendingSummitFavor: null,     // favor owed after aligning in summit bloc
+    upsetHistory: [],             // [{ year, desc }] recorded upsets
+    // Reputation & legacy depth
+    kageRelations: {},            // { villageName: { rel, grudge, note } } — per-kage personal relationship
+    worldReputationText: '',      // dynamic monthly-updated flavor descriptor
+    legacyDecisionPending: null,  // active LEGACY_DECISIONS entry awaiting player choice
+    legacyDecisionHistory: [],    // [{ id, choice, year }]
+    successorId: null,            // id of designated successor (shinobi or staff)
+    successorType: null,          // 'shinobi' | 'staff'
+    dynastyContinuityScore: 0,    // 0–100, built by developing the successor
     // Scouting depth
     scoutWatchlist: [],        // array of prospect ids the player is tracking
     scoutBudget: { domestic: 40, foreign: 30, shadow: 30 },  // % split, sums to 100

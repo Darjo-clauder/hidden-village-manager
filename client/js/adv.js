@@ -1,5 +1,5 @@
 import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice, computeMarketValue, mS } from './state.js'
-import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS } from './constants.js'
+import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS, EXAM_FORMATS, LEGACY_DECISIONS, PRESTIGE_TIERS } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
 import { syncToServer } from './socket.js'
 import { pickNarrative, pickSquadNarrative, pickRankUpNarrative, DARK_MOMENT_POOL, LAST_WORDS_POOL } from './narratives.js'
@@ -1675,9 +1675,11 @@ export function adv() {
       const theirStr = rnd(20, 60)
       if (myStr >= theirStr) {
         G.reputation = clamp(G.reputation + 3, 0, 999); addLegend(2)
+        G.warState.playerWins = (G.warState.playerWins || 0) + 1
         aL('Combat exchange victory vs ' + (warV?.n || 'enemy') + '.', 'good')
       } else {
         G.morale = clamp(G.morale - 5, 0, 100)
+        G.warState.playerLosses = (G.warState.playerLosses || 0) + 1
         aL('Combat exchange loss vs ' + (warV?.n || 'enemy') + '.', 'bad')
       }
       if (G.warState.monthsLeft <= 0) { G.warState.phase = 'ceasefire'; G.warState.monthsLeft = 1 }
@@ -1691,9 +1693,31 @@ export function adv() {
         aL((warV?.n || 'enemy') + ' pays reparations: +' + fmt(tribute) + ' ryo.', 'good')
       }
       if (G.warState.monthsLeft <= 0) {
-        addChronicle('War Ends', `Conflict with ${warV?.n || 'enemy'} resolved. Reparations phase complete.`, 'event')
+        const playerWins = G.warState.playerWins || 0
+        const playerLosses = G.warState.playerLosses || 0
+        const weWon = playerWins > playerLosses
+        const warEntry = { villageId: G.warState.villageId, year: G.year, weWon }
+        addChronicle('War Ends', `Conflict with ${warV?.n || 'enemy'} resolved. Our record: ${playerWins}W–${playerLosses}L. ${weWon ? 'Victory.' : 'Defeat.'}`, 'event')
         G.warState.warHistory = G.warState.warHistory || []
-        G.warState.warHistory.push({ villageId: G.warState.villageId, year: G.year })
+        G.warState.warHistory.push(warEntry)
+        if (!weWon) {
+          // Loser consequences: prestige drop 2 tiers, shinobi commitment debuff, academy quality penalty
+          const presOrd = ['D','C','B','A','S']
+          const curOrd = presOrd.indexOf(G.prestigeTier || 'D')
+          const newTier = presOrd[Math.max(0, curOrd - 2)]
+          G.warConsequences = { prestigePenaltyMonths: 24, academyDebuffYears: 2, originalTier: G.prestigeTier }
+          G.prestigeTier = newTier
+          // Top 2 ambitious shinobi consider leaving
+          const ambitious = G.shinobi.filter(s => (s.ambition || 0) >= 14 && s.status === 'available').slice(0, 2)
+          ambitious.forEach(s => { s.morale = clamp((s.morale || 50) - 20, 0, 100) })
+          if (ambitious.length) aL(`Defeat in war — ${ambitious.map(s => sn(s)).join(', ')} are questioning their future here.`, 'bad')
+          aL(`Defeat: prestige dropped to ${newTier}. Academy intake quality penalised for 2 years.`, 'bad')
+          addLegend(-15)
+        } else {
+          // Winner bonus
+          addLegend(20); G.reputation = clamp(G.reputation + 30, 0, 999)
+          aL(`War victory vs ${warV?.n || 'enemy'} — prestige and legend boosted.`, 'good')
+        }
         G.warState = null
       }
     }
@@ -1727,8 +1751,16 @@ export function adv() {
       results.push({ item: item.n, passed, myVote })
     })
     G.summitHistory = G.summitHistory || []
-    G.summitHistory.push({ year: G.year, results })
-    addChronicle('Five Kage Summit Y' + G.year, results.map(r => `${r.item}: ${r.passed ? 'PASSED' : 'FAILED'}`).join('; '), 'event')
+    const blocEntry = G.pendingSummitFavor ? G.pendingSummitFavor.villageName : null
+    G.summitHistory.push({ year: G.year, results, blocAligned: blocEntry })
+    if (G.pendingSummitFavor) {
+      // Owe a favor — slight rel penalty with bloc village (can't say no to them easily)
+      const blocV = (G.villages || []).find(v => v.n === G.pendingSummitFavor.villageName)
+      if (blocV) blocV.rel = clamp((blocV.rel || 50) - 5, 0, 100)
+      aL('Favor owed to ' + G.pendingSummitFavor.villageName + ' from summit alignment. Their standing with you has grown complicated.', 'warn')
+      G.pendingSummitFavor = null
+    }
+    addChronicle('Five Kage Summit Y' + G.year, results.map(r => `${r.item}: ${r.passed ? 'PASSED' : 'FAILED'}`).join('; ') + (blocEntry ? ` [Bloc: ${blocEntry}]` : ''), 'event')
     aL('Five Kage Summit completed. Check chronicles for results.', 'neutral')
   }
 
@@ -1744,6 +1776,99 @@ export function adv() {
     G.sRankContracts = [...SCONTRACTS].sort(() => Math.random() - 0.5).slice(0, 2).map(c => ({
       ...c, bids: [], deadline: (G.year - 1) * 12 + G.month + 3,
     }))
+  }
+
+  // ── War arc lasting consequences ──────────────────────────────────────────
+  if (!G.warState && G.warConsequences) {
+    // Tick down war consequence effects
+    if (G.warConsequences.academyDebuffYears > 0) G.warConsequences.academyDebuffYears--
+    if (G.warConsequences.prestigePenaltyMonths > 0) {
+      G.warConsequences.prestigePenaltyMonths--
+      if (G.warConsequences.prestigePenaltyMonths <= 0) {
+        G.warConsequences = null
+        aL('War consequences have faded — prestige penalty lifted.', 'neutral')
+      }
+    }
+  }
+
+  // ── Summit pre-approach (month 5 — bloc offer before summit in month 6) ─────
+  if (G.month === 5 && !G.summitBlocOffer && Math.random() < 0.5) {
+    const SUMMIT_ITEMS = ['Regional Trade Pact','War Moratorium','Missing-Nin Bounties','Expand Chunin Exam']
+    const approachingVillage = pk(G.villages || [])
+    if (approachingVillage) {
+      G.summitBlocOffer = {
+        villageName: approachingVillage.n,
+        agendaItem: pk(SUMMIT_ITEMS),
+      }
+      aL(approachingVillage.n + ' has proposed a summit voting alliance. Check the Exam → Summit tab.', 'warn')
+    }
+  }
+  // Clear stale bloc offer after summit
+  if (G.month === 7) G.summitBlocOffer = null
+
+  // ── Per-Kage relations drift ───────────────────────────────────────────────
+  if (!G.kageRelations) G.kageRelations = {};
+  (G.villages || []).forEach(v => {
+    if (!G.kageRelations[v.id]) G.kageRelations[v.id] = { villageName: v.n, rep: 50, lastEvent: null }
+    const kr = G.kageRelations[v.id]
+    // Drift toward village-level rel slowly
+    const targetRel = v.rel || 50
+    kr.rep = clamp(kr.rep + (targetRel > kr.rep ? 1 : -1), 0, 100)
+  })
+
+  // ── World reputation flavor text (update monthly) ─────────────────────────
+  {
+    const recentExams = (G.examResults || []).slice(-6)
+    const promotions = recentExams.filter(r => r.promoted).length
+    const presOrd = { D:0, C:1, B:2, A:3, S:4 }
+    const tier = presOrd[G.prestigeTier || 'D'] || 0
+    const flavors = tier >= 4 ? [
+      'Feared across every nation — their name alone deters provocation.',
+      'The strongest hidden village in the known world.',
+    ] : tier >= 3 ? [
+      'A dominant force. Other nations negotiate carefully.',
+      'Respected universally. Their shinobi define the era.',
+    ] : tier >= 2 ? [
+      'A rising power. The summits take their seat seriously.',
+      'Capable and growing — rivals watch them cautiously.',
+    ] : promotions >= 2 ? [
+      'Surprising the world with exam results above their prestige.',
+      'Small but scrappy — recent exams have heads turning.',
+    ] : G.morale >= 75 ? [
+      'United internally. Their discipline shows in the field.',
+    ] : [
+      'A modest village navigating a competitive world.',
+      'Finding their footing. Potential remains unrealized.',
+    ]
+    G.worldReputationText = pk(flavors)
+  }
+
+  // ── Legacy decisions (year 5+, every 3 years, random trigger) ────────────
+  if (G.year >= 5 && G.month === 3 && !G.legacyDecisionPending) {
+    const lastLegacyYear = (G.legacyDecisionHistory || []).slice(-1)[0]?.year || 0
+    if (G.year - lastLegacyYear >= 3 && Math.random() < 0.6) {
+      const used = (G.legacyDecisionHistory || []).map(d => d.id)
+      const available = LEGACY_DECISIONS.filter(d => !used.includes(d.id))
+      if (available.length) {
+        G.legacyDecisionPending = pk(available)
+        aL('A legacy moment has arisen. Check the Legacy panel.', 'warn')
+      }
+    }
+  }
+
+  // ── Successor development tracking ────────────────────────────────────────
+  if (G.successorId) {
+    const s = G.shinobi.find(x => x.id === G.successorId) || G.staff?.find(x => x.id === G.successorId)
+    if (s) {
+      // Each month successor is active, +1 continuity score
+      G.dynastyContinuityScore = (G.dynastyContinuityScore || 0) + 1
+      // If on mission → extra +1
+      if (s.status === 'mission' || s.role) G.dynastyContinuityScore++
+    } else {
+      // Successor retired/gone — auto-clear
+      G.successorId = null; G.successorType = null
+      aL('Your designated successor has left the village. Appoint a new one in the Legacy panel.', 'warn')
+    }
   }
 
   syncToServer(); rfM(); rfP()
