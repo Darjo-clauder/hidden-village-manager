@@ -4,7 +4,7 @@ import { showSetup, selIcon, beginGame, restoreGame } from './setup.js'
 import { adv } from './adv.js'
 import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev } from './panels/squads.js'
-import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate } from './panels/missions.js'
+import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter } from './panels/missions.js'
 import { rUp, buyUp } from './panels/upgrades.js'
 import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship } from './panels/economy.js'
@@ -66,7 +66,7 @@ Object.assign(window, {
   // squads
   oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev,
   // missions
-  mTab, oA, doA, pickSq, G_defShSet, G_defShClear,
+  mTab, oA, doA, pickSq, G_defShSet, G_defShClear, missionLogFilter,
   // upgrades
   buyUp,
   // academy

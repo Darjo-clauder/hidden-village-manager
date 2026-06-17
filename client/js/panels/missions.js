@@ -8,7 +8,7 @@ import { resolveMission } from '../../../shared/types/MissionTemplate.js'
 
 export function mTab(t) {
   ui.MT = t
-  ;['solo', 'squad', 'def', 'chains', 'templates'].forEach(x => {
+  ;['solo', 'squad', 'def', 'chains', 'templates', 'log'].forEach(x => {
     const el = document.getElementById('ms-' + x)
     if (el) el.style.display = x === t ? '' : 'none'
     const btn = document.getElementById('mt-' + x)
@@ -16,7 +16,7 @@ export function mTab(t) {
   })
 }
 
-export function rMi() { rRB(); rWCE(); rTacticalPrep(); rSoloM(); rSqM(); rDef(); rChains(); rMissionReport(); rTemplates() }
+export function rMi() { rRB(); rWCE(); rTacticalPrep(); rSoloM(); rSqM(); rDef(); rChains(); rMissionReport(); rTemplates(); rMissionLog() }
 
 export function rTacticalPrep() {
   const el = document.getElementById('ms-prep')
@@ -311,6 +311,67 @@ export function rTemplates() {
       }).join('')}
     </div>
   `
+}
+
+export function rMissionLog() {
+  const el = document.getElementById('ms-log')
+  if (!el) return
+  const log = (G.missionLog || []).slice().reverse()
+  const filter = G._missionLogFilter || 'all'
+
+  const filters = [
+    { id: 'all', label: 'All' },
+    { id: 'chains', label: '⛓ Chains' },
+    { id: 'injuries', label: '🩸 Injuries' },
+    { id: 's-rank', label: '★ S-Rank' },
+  ]
+
+  const visible = log.filter(e => {
+    if (filter === 'chains') return !!e.chainName
+    if (filter === 'injuries') return !!e.injuryName
+    if (filter === 's-rank') return e.rank === 'S'
+    return true
+  })
+
+  el.innerHTML = `
+    <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap">
+      ${filters.map(f => `
+        <button onclick="missionLogFilter('${f.id}')"
+          style="font-size:8px;padding:3px 8px;border:1px solid ${filter===f.id?'var(--gold)':'var(--border)'};
+          background:${filter===f.id?'rgba(201,168,76,.15)':'transparent'};color:${filter===f.id?'var(--gold)':'var(--text-dim)'};cursor:pointer">
+          ${f.label}
+        </button>`).join('')}
+    </div>
+    ${visible.length === 0 ? '<div style="color:var(--text-dim);font-size:9px">No missions logged yet.</div>' : ''}
+    ${visible.map(e => {
+      const statusColor = e.success ? 'var(--green)' : 'var(--red)'
+      const rankColor = e.rank === 'S' ? '#c9a84c' : e.rank === 'A' ? '#87ceeb' : e.rank === 'B' ? '#8fbc8f' : '#888'
+      return `
+        <div style="border:1px solid var(--border);padding:8px;margin-bottom:6px;background:var(--surface)">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+            <div>
+              <span style="font-size:8px;color:${rankColor};font-weight:bold">${e.rank}-rank</span>
+              <span style="font-size:9px;color:var(--text-hi);margin-left:6px">${e.missionName}</span>
+              ${e.chainName ? `<span style="font-size:7px;color:var(--gold);margin-left:5px">⛓ ${e.chainName}</span>` : ''}
+            </div>
+            <div style="font-size:7px;color:var(--text-dim)">${e.year} Y${e.month}</div>
+          </div>
+          <div style="display:flex;gap:10px;margin-bottom:3px">
+            <span style="font-size:8px;color:${statusColor}">${e.success ? '✓ Success' : '✗ Failed'}</span>
+            ${e.success ? `<span style="font-size:8px;color:var(--gold)">+${e.ryo.toLocaleString()} ryo</span>` : ''}
+            ${e.success ? `<span style="font-size:8px;color:var(--text-dim)">+${e.rep} rep</span>` : ''}
+          </div>
+          ${e.injuryName ? `<div style="font-size:7px;color:var(--red);margin-bottom:2px">🩸 Injury: ${e.injuryName}</div>` : ''}
+          ${e.chainBonus ? `<div style="font-size:7px;color:var(--gold);margin-bottom:2px">⛓ Chain bonus: +${e.chainBonus.toLocaleString()} ryo</div>` : ''}
+          ${e.narrative ? `<div style="font-size:7px;color:var(--text-dim);font-style:italic">${e.narrative}</div>` : ''}
+        </div>`
+    }).join('')}
+  `
+}
+
+export function missionLogFilter(f) {
+  G._missionLogFilter = f
+  rMissionLog()
 }
 
 export function simTemplate(templateId) {

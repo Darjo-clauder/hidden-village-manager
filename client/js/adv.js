@@ -14,6 +14,13 @@ import { evalDepth, roleBonus } from './depthEngine.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
+// ── Mission log ────────────────────────────────────────────────────────────────
+function pushMissionLog(entry) {
+  if (!G.missionLog) G.missionLog = []
+  G.missionLog.push({ id: Math.random().toString(36).slice(2), ...entry, year: G.year, month: G.month })
+  if (G.missionLog.length > 30) G.missionLog.splice(0, G.missionLog.length - 30)
+}
+
 // ── Beast unique ability helpers ───────────────────────────────────────────────
 function getBeastForJK(shinobiId) {
   return G.beasts?.find(b => b.sealed && b.jk === shinobiId)
@@ -591,7 +598,9 @@ export function adv() {
             }
           }
         }
-        aL(sq.n + ' completed "' + m.n + '" — +' + fmt(m.ryo) + ' ryo. ' + pickSquadNarrative(m.rk, 'success', sq.n), 'good')
+        const _sqSuccessNarr = pickSquadNarrative(m.rk, 'success', sq.n)
+        aL(sq.n + ' completed "' + m.n + '" — +' + fmt(m.ryo) + ' ryo. ' + _sqSuccessNarr, 'good')
+        pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: m.ryo, rep: m.rep, chainName: m.chainId ? (G.activeChains || []).find(c => c.id === m.chainId)?.name : null, narrative: _sqSuccessNarr })
         addLegend(m.rk === 'S' ? 15 : m.rk === 'A' ? 8 : m.rk === 'B' ? 3 : 1)
         // Post-mission contribution scores (Phase 4)
         G.lastMissionReport = _buildMissionReport(sq, m, true)
@@ -641,7 +650,9 @@ export function adv() {
         }
         sq.cohesion = Math.max(0, (sq.cohesion ?? 0) + (hadKIA ? -15 : -4))
         sq.losses++
-        aL('"' + m.n + '" squad mission failed. ' + pickSquadNarrative(m.rk, 'failure', sq.n), 'bad')
+        const _sqFailNarr = pickSquadNarrative(m.rk, 'failure', sq.n)
+        aL('"' + m.n + '" squad mission failed. ' + _sqFailNarr, 'bad')
+        pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, narrative: _sqFailNarr })
         G.morale = clamp(G.morale - 5, 0, 100)
         G.lastMissionReport = _buildMissionReport(sq, m, false)
       }
@@ -669,7 +680,9 @@ export function adv() {
         if (m.rk === 'B' || m.rk === 'C') s.winsB = (s.winsB || 0) + 1
         if (m.rk === 'S') { s.winsS = (s.winsS || 0) + 1 }
         checkJutsu(s)
-        aL(sn(s) + ' completed "' + m.n + '" — +' + fmt(m.ryo) + ' ryo. ' + pickNarrative(m.rk, 'success', sn(s), s.pers.n, { wins: s.wins, streak: s.streak, season }), 'good')
+        const _soloSuccNarr = pickNarrative(m.rk, 'success', sn(s), s.pers.n, { wins: s.wins, streak: s.streak, season })
+        aL(sn(s) + ' completed "' + m.n + '" — +' + fmt(m.ryo) + ' ryo. ' + _soloSuccNarr, 'good')
+        pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: m.ryo, rep: m.rep + rB, chainName: m.chainId ? (G.activeChains || []).find(c => c.id === m.chainId)?.name : null, narrative: _soloSuccNarr })
         addLegend(m.rk === 'S' ? 12 : m.rk === 'A' ? 6 : m.rk === 'B' ? 2 : 1)
         if (m.rk === 'S') addChronicle('S-Rank Completed', sn(s) + ' completed the S-rank mission "' + m.n + '".', 'legend')
         if (m.chainId) advanceChain(G, m.id, true)
@@ -708,6 +721,7 @@ export function adv() {
             aL(sn(s) + ' re-injured themselves — too soon to return to active duty.', 'warn')
           }
         }
+        pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, chainName: m.chainId ? (G.activeChains || []).find(c => c.id === m.chainId)?.name : null })
         G.morale = clamp(G.morale - 3, 0, 100)
         if (m.chainId) advanceChain(G, m.id, false)
       }
