@@ -20,6 +20,7 @@ import { bondMissionBonus, mentorGrowthBonus, kiaRipple, BOND_TYPES } from '../.
 import { BM_MISSION_BY_ID, getUnderworldTier, discoveryChance, UNDERWORLD_TIERS } from '../../shared/constants/blackMarket.js'
 import { getClanPassives, CLANS, CLAN_CHAINS, availableClanChains } from '../../shared/constants/clans.js'
 import { getSafehousePassives, rollProspectLead, SAFEHOUSE_COST, MAX_SAFEHOUSES, SH_LOCATION_BY_ID, DC_OP_BY_ID, SAFEHOUSE_LOCATIONS } from '../../shared/constants/safehouses.js'
+import { getEventForMonth, getUpcomingEvent, resolveWorldEvent, WE_BY_ID } from '../../shared/constants/worldCalendar.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
@@ -401,6 +402,26 @@ export function resolveDeepCoverOp(assignmentId) {
   upUI()
 }
 
+export function resolveWorldEventChoice(choiceId) {
+  const ae = G.worldCalendar?.activeEvent
+  if (!ae) { ntf('No active world event.'); return }
+  const ev = WE_BY_ID[ae.eventId]
+  if (!ev) return
+  const outcome = resolveWorldEvent(ae.eventId, choiceId)
+  G.ryo = clamp((G.ryo || 0) + outcome.ryo, 0, Infinity)
+  G.reputation = clamp((G.reputation || 0) + outcome.rep, 0, 999)
+  G.morale = clamp((G.morale || 50) + outcome.morale, 0, 100)
+  const resultMsg = outcome.success
+    ? `${ev.icon} "${ev.name}" — success! ${outcome.ryo > 0 ? '+' + outcome.ryo.toLocaleString() + ' ryo' : ''} ${outcome.rep !== 0 ? (outcome.rep > 0 ? '+' : '') + outcome.rep + ' rep' : ''}.`
+    : `${ev.icon} "${ev.name}" — setback. The risk played out badly.`
+  aL(resultMsg, outcome.success ? 'good' : 'bad')
+  if (!G.worldCalendar.history) G.worldCalendar.history = []
+  G.worldCalendar.history.push({ ...ae, choiceId, outcome, resolvedYear: G.year, resolvedMonth: G.month })
+  if (G.worldCalendar.history.length > 24) G.worldCalendar.history.splice(0, G.worldCalendar.history.length - 24)
+  delete G.worldCalendar.activeEvent
+  upUI()
+}
+
 export function resolveClanChain(assignmentId) {
   const am = (G.aM || []).find(x => x.id === assignmentId)
   if (!am || !am.isClanChain) return
@@ -551,6 +572,28 @@ export function adv() {
       aL(`🏠 Safehouse network surfaced a prospect: ${lead.name} (from ${lead.source}).`, 'good')
     }
   }
+  // ── World Events Calendar ────────────────────────────────────────────────
+  if (!G.worldCalendar) G.worldCalendar = {}
+  // Advance notice — 1 month before the event fires
+  const upcoming = getUpcomingEvent(G.month)
+  if (upcoming && !G.worldCalendar[`noticed_${G.year}_${upcoming.id}`]) {
+    G.worldCalendar[`noticed_${G.year}_${upcoming.id}`] = true
+    G.worldCalendar.pendingEvent = { eventId: upcoming.id, dueYear: G.year, dueMonth: upcoming.month }
+    aL(`${upcoming.icon} Advance notice: "${upcoming.name}" arrives next month — prepare your response.`, 'warn')
+  }
+  // Fire the event if it's this month and player hasn't resolved it yet
+  const thisEvent = getEventForMonth(G.month)
+  if (thisEvent) {
+    const key = `fired_${G.year}_${thisEvent.id}`
+    if (!G.worldCalendar[key]) {
+      G.worldCalendar[key] = true
+      if (!G.worldCalendar.activeEvent || G.worldCalendar.activeEvent.eventId !== thisEvent.id) {
+        G.worldCalendar.activeEvent = { eventId: thisEvent.id, year: G.year, month: G.month }
+        aL(`${thisEvent.icon} World Event: "${thisEvent.name}" — resolve it in the Calendar tab.`, 'warn')
+      }
+    }
+  }
+
   // Approval drift from game state
   const approvalDrift = (faction, delta) => {
     G.councilApproval[faction] = clamp((G.councilApproval[faction] || 50) + delta, 0, 100)

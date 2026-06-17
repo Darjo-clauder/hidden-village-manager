@@ -31,6 +31,7 @@ import { rDep } from './panels/depthchart.js'
 import { rWo } from './world.js'
 import { rClans } from './panels/clans.js'
 import { rSafehouses } from './panels/safehouses.js'
+import { rWorldCalendar } from './panels/worldcalendar.js'
 
 export { schEx }
 
@@ -125,7 +126,7 @@ export function rP(id) {
     kage: rKa, exam: rEx, intel: rIn, log: rLo,
     chronicles: rCh, memorial: rMem, finances: rFi, staff: rSt,
     scouting: rSco, youthacademy: rYA, meetings: rMeet,
-    transfers: rTr, legacy: rLeg, lobby: rLob, world: rWo, clans: rClans, safehouses: rSafehouses,
+    transfers: rTr, legacy: rLeg, lobby: rLob, world: rWo, clans: rClans, safehouses: rSafehouses, calendar: rWorldCalendar,
   }
   map[id]?.()
 }
