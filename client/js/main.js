@@ -5,7 +5,7 @@ import { adv } from './adv.js'
 import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter } from './panels/missions.js'
-import { rUp, buyUp } from './panels/upgrades.js'
+import { rUp, buyUp, buildDistrict } from './panels/upgrades.js'
 import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship } from './panels/economy.js'
 import { rBe, lCap, beastTab, releaseJinchuriki, resolveEscape } from './panels/beasts.js'
@@ -68,7 +68,7 @@ Object.assign(window, {
   // missions
   mTab, oA, doA, pickSq, G_defShSet, G_defShClear, missionLogFilter,
   // upgrades
-  buyUp,
+  buyUp, buildDistrict,
   // academy
   rec, oScout, doScout, oSensei, doSensei, setTrainingPlan,
   matchRivalOffer, exceedRivalOffer, declineRivalOffer,

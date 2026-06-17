@@ -12,6 +12,7 @@ import { tickCareers, ensureCareerFields } from './careerEngine.js'
 import { refreshMissionBoard, maybeSpawnChain, advanceChain } from './missionGen.js'
 import { evalDepth, roleBonus } from './depthEngine.js'
 import { jutsuLoadoutBonus } from '../../shared/jutsu/loadout.js'
+import { DISTRICTS, getDistrictPassives } from '../../shared/constants/districts.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
@@ -52,11 +53,11 @@ function pickInjuryType(mRk) {
   return INJURY_TYPES.find(t => t.id === pool[Math.floor(Math.random() * pool.length)])
 }
 
-function applyInjury(s, injType, hL) {
+function applyInjury(s, injType, hL, extraReduction = 0) {
   const medNinjaCount = (G.staff || []).filter(st => st.role === 'medical').length
   const medReduction = medNinjaCount * 0.5  // each medical ninja -0.5 months
   let dur = rnd(injType.minMo, injType.maxMo)
-  dur = Math.max(1, Math.round(dur - (s.pers?.effect?.injReduct || 0) - hL - medReduction))
+  dur = Math.max(1, Math.round(dur - (s.pers?.effect?.injReduct || 0) - hL - medReduction - extraReduction))
   s.injDays = dur
   s.injuryType = injType.id
   s.status = 'injured'
@@ -121,7 +122,7 @@ function applyTrauma(s) {
   addChronicle('Psychological Trauma', sn(s) + ' developed a ' + s.traumaStatus + ' personality after traumatic events.', 'shinobi')
 }
 
-function rollInjuryOnSuccess(s, m, hL) {
+function rollInjuryOnSuccess(s, m, hL, injDayReduction = 0) {
   let chance = RANK_INJ_CHANCE[m.rk] || 0.02
   if ((s.age || 0) >= 40) chance += 0.08
   if ((s.consecutiveMissions || 0) >= 2) chance += 0.10
@@ -132,7 +133,7 @@ function rollInjuryOnSuccess(s, m, hL) {
   if (Math.random() < chance) {
     const injType = pickInjuryType(m.rk)
     if (injType) {
-      applyInjury(s, injType, hL)
+      applyInjury(s, injType, hL, injDayReduction)
       aL(sn(s) + ' sustained a ' + injType.n + ' completing "' + m.n + '".', 'warn')
     }
   }
@@ -294,11 +295,28 @@ export function adv() {
   const hL = G.upgrades.hospital
   const sb = staffBonus()
   const season = currentSeason()
+  const dp = getDistrictPassives(G)
   const monthDef = MONTHS[G.month - 1]
 
   // ── Seasonal passive effects ────────────────────────────────────────────
   if (monthDef?.effects?.morale) G.morale = clamp(G.morale + monthDef.effects.morale, 0, 100)
   if (monthDef?.effects?.ryo) G.ryo = Math.max(0, G.ryo + monthDef.effects.ryo)
+
+  // ── District build progress & passive income ────────────────────────────
+  if (!G.districts) G.districts = []
+  G.districts.forEach(d => {
+    if (d.status === 'building') {
+      d.buildMonthsLeft = (d.buildMonthsLeft || 1) - 1
+      if (d.buildMonthsLeft <= 0) {
+        d.status = 'built'
+        const def = DISTRICTS.find(x => x.id === d.id)
+        aL(`${def?.n || d.id} construction complete — passives now active.`, 'good')
+        ntf(`${def?.icon || '🏗'} ${def?.n || d.id} built!`)
+      }
+    }
+  })
+  const dp = getDistrictPassives(G)
+  if (dp.monthlyRyo > 0) G.ryo += dp.monthlyRyo
 
   // ── Persistent world flag tick-down ─────────────────────────────────────
   Object.keys(G.worldFlags || {}).forEach(k => {
@@ -573,7 +591,7 @@ export function adv() {
         const jb = jutsuLoadoutBonus(ms, JUTSU_LIST)
         return acc + jb.successMod * 0.5 + jb.powerMod * 0.25
       }, 0)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod, 0.1, 0.97)
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction, 0.1, 0.97)
 
       if (Math.random() < sc) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3, 0, 100)
@@ -586,7 +604,7 @@ export function adv() {
           addWorkload(s, m.rk)
           s.missId = null; s.wins++; s.streak = (s.streak || 0) + 1
           s.status = 'available'
-          rollInjuryOnSuccess(s, m, hL)  // may flip back to 'injured'
+          rollInjuryOnSuccess(s, m, hL, dp.injDayReduction)  // may flip back to 'injured'
           if (m.rk === 'B' || m.rk === 'C') s.winsB = (s.winsB || 0) + 1
           if (m.rk === 'S') s.winsS = (s.winsS || 0) + 1
           checkJutsu(s)
@@ -626,7 +644,7 @@ export function adv() {
         if (sq.wins >= 5) tryFormBonds(sq)
       } else {
         const hasPr = sq.members.some(id => G.shinobi.find(s => s.id === id)?.pers.n === 'Protective')
-        const kR = hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08
+        const kR = clamp((hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08) + dp.kiaRiskMod, 0.005, 0.15)
         let hadKIA = false
         const survivorIds = []
         sq.members.forEach(id => {
@@ -643,7 +661,7 @@ export function adv() {
             hadKIA = true; sq.kills++
           } else {
             const injType = pickInjuryType(m.rk)
-            if (injType) applyInjury(s, injType, hL)
+            if (injType) applyInjury(s, injType, hL, dp.injDayReduction)
             survivorIds.push(s.id)
           }
         })
@@ -671,7 +689,7 @@ export function adv() {
       ensureCareerFields(s)
       const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
       const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5, 0.08, 0.97)
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction, 0.08, 0.97)
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)
@@ -702,10 +720,10 @@ export function adv() {
         } else {
           s._milestoneNotice = null
         }
-        rollInjuryOnSuccess(s, m, hL)
+        rollInjuryOnSuccess(s, m, hL, dp.injDayReduction)
       } else {
         s.streak = 0
-        const kR = hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08
+        const kR = clamp((hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08) + dp.kiaRiskMod, 0.005, 0.15)
         if (Math.random() < kR && !jkKIAImmune(s)) {
           const lastWords = pk(LAST_WORDS_POOL)
           aL(sn(s) + ' KIA on "' + m.n + '". ' + lastWords, 'bad')
@@ -720,7 +738,7 @@ export function adv() {
           }
           const injType = pickInjuryType(m.rk)
           if (injType) {
-            applyInjury(s, injType, hL)
+            applyInjury(s, injType, hL, dp.injDayReduction)
             aL('"' + m.n + '" failed — ' + sn(s) + ' has a ' + injType.n + ' (' + s.injDays + 'mo). ' + pickNarrative(m.rk, 'failure', sn(s), s.pers.n, { wins: s.wins, streak: s.streak, season }), 'bad')
           }
           // Re-injury risk for those returning from long absence
