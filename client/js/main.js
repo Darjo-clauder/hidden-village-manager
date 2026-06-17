@@ -1,6 +1,6 @@
 import { G } from './state.js'
 import { sp, cm, upUI, schEx } from './ui.js'
-import { showSetup, selIcon, beginGame } from './setup.js'
+import { showSetup, selIcon, beginGame, restoreGame } from './setup.js'
 import { adv } from './adv.js'
 import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev } from './panels/squads.js'
@@ -30,7 +30,7 @@ function G_defShClear() { G.defSh = null; rDef() }
 // Expose all functions that are called from inline onclick handlers in the HTML
 Object.assign(window, {
   // screens
-  showSetup, selIcon, beginGame,
+  showSetup, selIcon, beginGame, restoreGame,
   // navigation & modals
   sp, cm, adv,
   // roster

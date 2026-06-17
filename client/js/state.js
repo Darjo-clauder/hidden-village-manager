@@ -121,6 +121,7 @@ export const KAGE_EVENTS = [
 export function initState() {
   Object.keys(G).forEach(k => delete G[k])
   Object.assign(G, {
+    vName: 'Hidden Village', kName: 'Kage', vIcon: '🍃',
     year: 1, month: 1, ryo: 60000, reputation: 10, morale: 75,
     shinobi: [], squads: [], aM: [], log: [], prospects: [],
     villages: JSON.parse(JSON.stringify(VILLAGES_DEF)),

@@ -11,12 +11,13 @@ import { registerDiplomacy } from './server/handlers/diplomacy.js'
 import { registerRaid } from './server/handlers/raid.js'
 import { registerGift } from './server/handlers/gift.js'
 import { registerDisconnect } from './server/handlers/disconnect.js'
+import { runStartupChecks } from './server/startup.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-const app = express()
+const app    = express()
 const server = createServer(app)
-const io = new Server(server)
+const io     = new Server(server)
 
 // Serve built client in production
 if (process.env.NODE_ENV !== 'development') {
@@ -36,6 +37,7 @@ io.on('connection', (socket) => {
 })
 
 const PORT = process.env.PORT || 3000
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`Hidden Village Manager → http://localhost:${PORT}`)
+  await runStartupChecks()
 })

@@ -1,15 +1,34 @@
-import { spIcon, setSpIcon } from './state.js'
+import { G, spIcon, setSpIcon, initState, schEx } from './state.js'
 import { VILLAGE_ICONS } from './constants.js'
-import { initState, schEx } from './state.js'
 import { upUI, sp, aL } from './ui.js'
 import { initSocket } from './socket.js'
 
 export function showSetup() {
   document.getElementById('st').classList.remove('active')
   document.getElementById('sp').classList.add('active')
+
   document.getElementById('sp-icons').innerHTML = VILLAGE_ICONS.map(ic =>
     `<button class="sp-ico${ic === spIcon ? ' sel' : ''}" onclick="selIcon('${ic}',this)">${ic}</button>`
   ).join('')
+
+  // Show a "Continue" banner if a previous session exists in localStorage
+  const prev = document.getElementById('sp-continue-banner')
+  if (prev) prev.remove()
+  const savedName = localStorage.getItem('vName')
+  const savedIcon = localStorage.getItem('vIcon') || '🍃'
+  if (savedName && localStorage.getItem('villageId')) {
+    const banner = document.createElement('div')
+    banner.id = 'sp-continue-banner'
+    banner.style.cssText = 'padding:10px 12px;border:1px solid #c9a84c;background:#0d0a04;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px'
+    banner.innerHTML = `
+      <div>
+        <div style="font-size:9px;color:#c9a84c;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Saved Session Found</div>
+        <div style="font-size:11px;color:#e8e0cc">${savedIcon} ${savedName}</div>
+      </div>
+      <button class="gb" onclick="restoreGame()" style="font-size:9px;white-space:nowrap">Continue ▸</button>
+    `
+    document.getElementById('sp').insertBefore(banner, document.getElementById('sp').firstChild)
+  }
 }
 
 export function selIcon(ic, el) {
@@ -21,14 +40,34 @@ export function selIcon(ic, el) {
 export function beginGame() {
   const vname = document.getElementById('sp-vname').value.trim() || 'Hidden Village'
   const kname = document.getElementById('sp-kname').value.trim() || 'Kage'
-  document.getElementById('sb-icon').textContent = spIcon
+  _startGame(vname, kname, spIcon)
+}
+
+/**
+ * Re-enter a saved session without going through the setup form.
+ * G state arrives via socket 'load_state' event after the server responds.
+ */
+export function restoreGame() {
+  const vname = localStorage.getItem('vName') || 'Hidden Village'
+  const kname = localStorage.getItem('kName') || 'Kage'
+  const icon  = localStorage.getItem('vIcon') || '🍃'
+  _startGame(vname, kname, icon)
+}
+
+function _startGame(vname, kname, icon) {
+  document.getElementById('sb-icon').textContent  = icon
   document.getElementById('sb-vname').textContent = vname
+  // initState() sets defaults; load_state from server will overwrite with saved data
   initState()
+  // Stamp identity on G so syncToServer has it available immediately
+  G.vName = vname
+  G.kName = kname
+  G.vIcon = icon
   schEx()
   aL('Your tenure as Kage begins.', 'neutral')
   sp('roster')
   upUI()
-  initSocket(vname, kname, spIcon)
+  initSocket(vname, kname, icon)
   document.getElementById('sp').classList.remove('active')
   document.getElementById('sg').classList.add('active')
 }
