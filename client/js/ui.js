@@ -29,6 +29,7 @@ import { rDash } from './panels/dashboard.js'
 import { rInbox, getInboxCount } from './panels/inbox.js'
 import { rDep } from './panels/depthchart.js'
 import { rWo } from './world.js'
+import { rClans } from './panels/clans.js'
 
 export { schEx }
 
@@ -123,7 +124,7 @@ export function rP(id) {
     kage: rKa, exam: rEx, intel: rIn, log: rLo,
     chronicles: rCh, memorial: rMem, finances: rFi, staff: rSt,
     scouting: rSco, youthacademy: rYA, meetings: rMeet,
-    transfers: rTr, legacy: rLeg, lobby: rLob, world: rWo,
+    transfers: rTr, legacy: rLeg, lobby: rLob, world: rWo, clans: rClans,
   }
   map[id]?.()
 }

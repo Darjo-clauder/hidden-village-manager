@@ -18,6 +18,7 @@ import { tickRivalStrength, shouldFireRivalEvent, pickRivalEvent, computePlayerS
 import { DYNASTY_YEARS, computeDynastyGrade } from '../../shared/utils/dynasty.js'
 import { bondMissionBonus, mentorGrowthBonus, kiaRipple, BOND_TYPES } from '../../shared/bonds/bondTypes.js'
 import { BM_MISSION_BY_ID, getUnderworldTier, discoveryChance, UNDERWORLD_TIERS } from '../../shared/constants/blackMarket.js'
+import { getClanPassives, CLANS, CLAN_CHAINS, availableClanChains } from '../../shared/constants/clans.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
@@ -339,6 +340,36 @@ export function resolveBlackMarket(assignmentId) {
   upUI()
 }
 
+export function resolveClanChain(assignmentId) {
+  const am = (G.aM || []).find(x => x.id === assignmentId)
+  if (!am || !am.isClanChain) return
+  const chain = CLAN_CHAINS[am.chainId]
+  const clan = CLANS.find(c => c.id === am.clanId)
+  const members = [].concat(am.assignedTo).map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
+  if (!chain) { G.aM = G.aM.filter(x => x.id !== assignmentId); return }
+
+  const rankBonus = members.reduce((sum, s) => sum + (s.ri || 0) * 0.04, 0)
+  const _clP = getClanPassives(G)
+  const sc = clamp(0.65 + rankBonus + _clP.successMod, 0.25, 0.95)
+
+  members.forEach(s => { s.status = 'available'; s.missId = null })
+
+  if (Math.random() < sc) {
+    G.ryo = (G.ryo || 0) + chain.ryo
+    G.reputation = clamp((G.reputation || 0) + chain.rep, 0, 999)
+    if (!G.clanApproval) G.clanApproval = {}
+    G.clanApproval[am.clanId] = clamp((G.clanApproval[am.clanId] ?? 80) + 3, 0, 100)
+    if (chain.id === 'akimichi_feast') G.morale = clamp((G.morale || 50) + 10, 0, 100)
+    if (chain.id === 'formation_drill') members.forEach(s => { s.monthsActive = (s.monthsActive || 0) + 2 })
+    aL(`${clan?.icon || ''} "${chain.n}" succeeded — +${chain.ryo.toLocaleString()} ryo, +${chain.rep} rep.`, 'good')
+  } else {
+    aL(`${clan?.icon || ''} "${chain.n}" failed. No reward.`, 'bad')
+  }
+
+  G.aM = G.aM.filter(x => x.id !== assignmentId)
+  upUI()
+}
+
 export function resolveCouncilProposal(choice) {
   const prop = G.councilProposal
   if (!prop) return
@@ -391,6 +422,7 @@ export function adv() {
   const season = currentSeason()
   const dp = getDistrictPassives(G)
   const cp = getCouncilPerks(G)
+  const clP = getClanPassives(G)
   const monthDef = MONTHS[G.month - 1]
 
   // ── Seasonal passive effects ────────────────────────────────────────────
@@ -437,6 +469,11 @@ export function adv() {
     am.daysLeft = (am.daysLeft || 1) - 1
     if (am.daysLeft <= 0) resolveBlackMarket(am.id)
   }
+  // Tick clan chain assignments
+  for (const am of (G.aM || []).filter(x => x.isClanChain)) {
+    am.daysLeft = (am.daysLeft || 1) - 1
+    if (am.daysLeft <= 0) resolveClanChain(am.id)
+  }
   // Approval drift from game state
   const approvalDrift = (faction, delta) => {
     G.councilApproval[faction] = clamp((G.councilApproval[faction] || 50) + delta, 0, 100)
@@ -465,6 +502,25 @@ export function adv() {
       G[`_crisisNotice_${f.id}`] = false
     }
   })
+
+  // ── Clan approval drift & chain notifications ───────────────────────────
+  if (!G.clanApproval) G.clanApproval = {}
+  for (const clan of CLANS) {
+    if (G.clanApproval[clan.id] === undefined) G.clanApproval[clan.id] = 80
+    // Approval drifts toward 60 naturally (±1/mo)
+    const cur = G.clanApproval[clan.id]
+    G.clanApproval[clan.id] = clamp(cur + (cur < 60 ? 1 : cur > 60 ? -1 : 0), 0, 100)
+    // Notify of available clan chains (once per 6 months)
+    if (!G._clanChainNotice) G._clanChainNotice = {}
+    const chains = availableClanChains(clan.id, G)
+    const runnable = chains.filter(c => c.canRun)
+    if (runnable.length && G.month % 6 === 0) {
+      if (!G._clanChainNotice[clan.id] || G._clanChainNotice[clan.id] < G.year * 12 + G.month - 5) {
+        G._clanChainNotice[clan.id] = G.year * 12 + G.month
+        aL(`${clan.icon} ${clan.name} clan has ${runnable.length} mission chain(s) available.`, 'warn')
+      }
+    }
+  }
 
   // ── Shinobi monthly tick ─────────────────────────────────────────────────
   G.shinobi.forEach(s => {
@@ -734,7 +790,7 @@ export function adv() {
         const ms = G.shinobi.find(x => x.id === id); if (!ms) return acc
         return acc + bondMissionBonus(ms, G.shinobi).successMod * 0.5
       }, 0)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod, 0.1, 0.97)
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod, 0.1, 0.97)
 
       if (Math.random() < sc) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3, 0, 100)
@@ -833,7 +889,7 @@ export function adv() {
       const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
       const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
       const bMB = bondMissionBonus(s, G.shinobi)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod, 0.08, 0.97)
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod, 0.08, 0.97)
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)
