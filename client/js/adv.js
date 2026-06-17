@@ -13,6 +13,7 @@ import { refreshMissionBoard, maybeSpawnChain, advanceChain } from './missionGen
 import { evalDepth, roleBonus } from './depthEngine.js'
 import { jutsuLoadoutBonus } from '../../shared/jutsu/loadout.js'
 import { DISTRICTS, getDistrictPassives } from '../../shared/constants/districts.js'
+import { COUNCIL_FACTIONS, COUNCIL_PROPOSALS, getCouncilPerks } from '../../shared/constants/council.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
@@ -267,6 +268,28 @@ export function resolveChoiceEvent(fnKey) {
   upUI()
 }
 
+export function resolveCouncilProposal(choice) {
+  const prop = G.councilProposal
+  if (!prop) return
+  G.councilProposal = null
+  const faction = COUNCIL_FACTIONS.find(f => f.id === prop.faction)
+  const approvalDelta = choice === 'yes' ? 8 : -5
+  if (!G.councilApproval) G.councilApproval = {}
+  G.councilApproval[prop.faction] = clamp((G.councilApproval[prop.faction] || 50) + approvalDelta, 0, 100)
+  if (choice === 'yes') {
+    if (prop.id === 'war_footing')    { G._warFooting = true; aL('War Footing declared — missions doubled, KIA risk up.', 'warn') }
+    else if (prop.id === 'trade_treaty')  { if (G.ryo >= 8000) { G.ryo -= 8000; if (!G.districts) G.districts = []; G.districts.push({ id: '_trade_route', status: 'built', effect: { monthlyRyo: 1500 } }); aL('Trade route opened — +1,500 ryo/month.', 'good') } else { aL('Not enough ryo for treaty.', 'bad'); G.councilApproval[prop.faction] = clamp(G.councilApproval[prop.faction] - 5, 0, 100) } }
+    else if (prop.id === 'exam_funding')  { if (G.ryo >= 5000) { G.ryo -= 5000; G._examFundingBonus = true; aL('Exam funding approved — graduation rates up this cycle.', 'good') } else { aL('Not enough ryo.', 'bad') } }
+    else if (prop.id === 'curfew')        { G.morale = clamp(G.morale - 5, 0, 100); G.reputation = clamp(G.reputation + 8, 0, 999); aL('Curfew imposed — morale down, reputation up.', 'neutral') }
+    else if (prop.id === 'arms_stockpile'){ if (G.ryo >= 12000) { G.ryo -= 12000; G.tempDef = (G.tempDef || 0) + 10; aL('Arms stockpile complete — +10 defense.', 'good') } else { aL('Not enough ryo.', 'bad') } }
+    else if (prop.id === 'market_day')    { G.ryo += 3000; G.morale = clamp(G.morale + 5, 0, 100); aL('Grand Market Day held — +3,000 ryo, +5 morale.', 'good') }
+    aL(`${faction?.n || ''} proposal approved.`, 'good')
+  } else {
+    aL(`${faction?.n || ''} proposal declined. Approval −5.`, 'neutral')
+  }
+  upUI()
+}
+
 // Compute staff-derived modifiers (called from adv and panels)
 export function staffBonus() {
   const staff = G.staff || []
@@ -296,6 +319,7 @@ export function adv() {
   const sb = staffBonus()
   const season = currentSeason()
   const dp = getDistrictPassives(G)
+  const cp = getCouncilPerks(G)
   const monthDef = MONTHS[G.month - 1]
 
   // ── Seasonal passive effects ────────────────────────────────────────────
@@ -325,6 +349,41 @@ export function adv() {
     else {
       if (k === 'drought') { G.ryo -= 1000; G.morale = clamp(G.morale - 1, 0, 100) }
       if (k === 'plague')  { G.morale = clamp(G.morale - 2, 0, 100); G.reputation = clamp(G.reputation - 1, 0, 999) }
+    }
+  })
+
+  // ── Council approval passives & monthly proposal ────────────────────────
+  if (!G.councilApproval) G.councilApproval = {}
+  COUNCIL_FACTIONS.forEach(f => { if (G.councilApproval[f.id] === undefined) G.councilApproval[f.id] = 50 })
+  // Apply perks
+  if (cp.monthlyRyo > 0) G.ryo += cp.monthlyRyo
+  if (cp.monthlyRep > 0) G.reputation = clamp(G.reputation + cp.monthlyRep, 0, 999)
+  // Approval drift from game state
+  const approvalDrift = (faction, delta) => {
+    G.councilApproval[faction] = clamp((G.councilApproval[faction] || 50) + delta, 0, 100)
+  }
+  if (G.reputation >= 70) { approvalDrift('elder', 1); approvalDrift('merchant', 1) }
+  if (G.morale < 40) { approvalDrift('elder', -1); approvalDrift('academy', -1) }
+  if (G.ryo < 5000) { approvalDrift('merchant', -2) }
+  // Spawn monthly proposal (1-in-3 chance, only 1 pending at a time)
+  if (!G.councilProposal && Math.random() < 0.33) {
+    const available = COUNCIL_PROPOSALS.filter(p => p.id !== G._lastCouncilProposal)
+    if (available.length) {
+      const prop = available[Math.floor(Math.random() * available.length)]
+      G.councilProposal = { ...prop }
+      G._lastCouncilProposal = prop.id
+      const f = COUNCIL_FACTIONS.find(x => x.id === prop.faction)
+      aL(`${f?.icon || ''} ${f?.n || ''} proposes: "${prop.n}" — see Inbox to respond.`, 'warn')
+    }
+  }
+  // Low-approval crisis at < 20
+  COUNCIL_FACTIONS.forEach(f => {
+    const ap = G.councilApproval[f.id] ?? 50
+    if (ap < 20 && !G[`_crisisNotice_${f.id}`]) {
+      G[`_crisisNotice_${f.id}`] = true
+      aL(`Crisis: ${f.n} approval critically low (${ap}). Perks suspended.`, 'bad')
+    } else if (ap >= 25) {
+      G[`_crisisNotice_${f.id}`] = false
     }
   })
 
@@ -591,7 +650,7 @@ export function adv() {
         const jb = jutsuLoadoutBonus(ms, JUTSU_LIST)
         return acc + jb.successMod * 0.5 + jb.powerMod * 0.25
       }, 0)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction, 0.1, 0.97)
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod, 0.1, 0.97)
 
       if (Math.random() < sc) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3, 0, 100)
@@ -689,7 +748,7 @@ export function adv() {
       ensureCareerFields(s)
       const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
       const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction, 0.08, 0.97)
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod, 0.08, 0.97)
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)

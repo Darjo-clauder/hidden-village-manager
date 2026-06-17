@@ -240,6 +240,24 @@ function buildItems() {
     })
   })
 
+  // ── Council proposals ─────────────────────────────────────────────────
+  if (G.councilProposal) {
+    const prop = G.councilProposal
+    items.push({
+      id: 'council_' + prop.id,
+      priority: 'urgent',
+      cat: 'Council',
+      icon: '🏛',
+      title: `Council Proposal: ${prop.n}`,
+      desc: prop.desc,
+      actions: [
+        { label: '✓ Approve', fn: `resolveCouncilProposal('yes')` },
+        { label: '✗ Decline', fn: `resolveCouncilProposal('no')` },
+      ],
+      archived: false,
+    })
+  }
+
   // Sort by priority
   items.sort((a, b) => PRIORITY[a.priority] - PRIORITY[b.priority])
   return items
