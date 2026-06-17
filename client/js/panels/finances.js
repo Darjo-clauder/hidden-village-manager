@@ -185,6 +185,9 @@ export function rFi() {
     <!-- Black market ledger -->
     ${_blackLedgerHtml()}
 
+    <!-- Analytics snapshot -->
+    ${_analyticsHtml()}
+
     <!-- End of year report -->
     ${_yearEndHtml()}
   `
@@ -204,6 +207,51 @@ function _projectionHtml(hist, netNow) {
       </div>`).join('')}
     </div>
     <div style="font-size:8px;color:#7a7060">Projected treasury in 6 months: <b style="color:#c9a84c">${fmt(finalRyo)}</b> ryo (based on current contracts, salaries, and trade routes; trend-extrapolated).</div>
+  </div>`
+}
+
+function _analyticsHtml() {
+  const hist = G.analyticsHistory || []
+  if (hist.length < 2) return ''
+  const last = hist.slice(-12)
+
+  function sparkBar(values, color, maxOverride) {
+    const max = maxOverride || Math.max(1, ...values)
+    return `<div style="display:flex;align-items:flex-end;gap:2px;height:28px">
+      ${values.map((v, i) => {
+        const h = Math.max(2, Math.round((v / max) * 26))
+        return `<div style="flex:1;background:${color};height:${h}px;opacity:${0.5 + 0.5*(i/values.length)}" title="${Math.round(v)}"></div>`
+      }).join('')}
+    </div>`
+  }
+
+  const ryoVals = last.map(s => s.ryo || 0)
+  const repVals = last.map(s => s.rep || 0)
+  const powVals = last.map(s => s.avgPow || 0)
+  const morVals = last.map(s => s.morale || 0)
+  const legVals = last.map(s => s.legend || 0)
+
+  const statBlock = (label, color, vals) => `
+    <div style="background:#111;border:1px solid #222;border-radius:4px;padding:8px">
+      <div style="font-size:7px;color:${color};text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">${label}</div>
+      ${sparkBar(vals, color)}
+      <div style="display:flex;justify-content:space-between;font-size:7px;color:#555;margin-top:3px">
+        <span>${Math.round(Math.min(...vals))}</span>
+        <span style="color:${color}">${Math.round(vals[vals.length-1])}</span>
+        <span>${Math.round(Math.max(...vals))}</span>
+      </div>
+    </div>`
+
+  return `<div style="background:#1a1814;border:1px solid #2e2a22;padding:12px;margin-bottom:14px">
+    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:10px">📊 Analytics Snapshot (last ${last.length} months)</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px">
+      ${statBlock('Treasury', '#c9a84c', ryoVals)}
+      ${statBlock('Reputation', '#87ceeb', repVals)}
+      ${statBlock('Avg Power', '#9cf', powVals)}
+      ${statBlock('Morale', '#8fbc8f', morVals)}
+      ${statBlock('Legend', '#f0a030', legVals)}
+    </div>
+    <div style="font-size:7px;color:#444;margin-top:6px">Min / Current / Max over period. Updates each month.</div>
   </div>`
 }
 

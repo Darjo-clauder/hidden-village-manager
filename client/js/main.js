@@ -2,31 +2,36 @@ import { G } from './state.js'
 import { sp, cm, upUI, schEx } from './ui.js'
 import { showSetup, selIcon, beginGame, restoreGame } from './setup.js'
 import { adv } from './adv.js'
-import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment } from './panels/roster.js'
+import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev } from './panels/squads.js'
-import { mTab, oA, doA, pickSq, rDef, openWorldChoice } from './panels/missions.js'
+import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate } from './panels/missions.js'
 import { rUp, buyUp } from './panels/upgrades.js'
 import { rAc, rec, oScout, doScout, oSensei, doSensei } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship } from './panels/economy.js'
-import { rBe, lCap, beastTab, releaseJinchuriki } from './panels/beasts.js'
+import { rBe, lCap, beastTab, releaseJinchuriki, resolveEscape } from './panels/beasts.js'
 import { rKa, resKE, sGift, propAl, rattle } from './panels/kage.js'
 import { rEx, tEC, startEx, runRound } from './panels/exam.js'
 import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP, dipAccept, dipDecline } from './world.js'
 import { resolveChoiceEvent } from './adv.js'
 import { rFi } from './panels/finances.js'
-import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff, staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer } from './panels/staff.js'
-import { rSco, assignScout, setScoutBudget, toggleWatchlist } from './panels/scouting.js'
+import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff, staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting } from './panels/staff.js'
+import { rSco, assignScout, setScoutBudget, toggleWatchlist, trialDay, signProspect, draftSort } from './panels/scouting.js'
+import { setDepthSlot, clearDepthSlot, emergencyCallUp } from './panels/depthchart.js'
 import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab } from './panels/youthacademy.js'
-import { rMeet, doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction } from './panels/meetings.js'
+import { rMeet, doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction, consultSeniorGroup } from './panels/meetings.js'
 import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms, confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide, sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter } from './panels/transfers.js'
 import { rLeg, legTab, designateSuccessor, resolveLegacyDecision } from './panels/legacy.js'
-import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu } from './panels/intel.js'
+import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel } from './panels/intel.js'
 import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc } from './panels/exam.js'
 import { showLobby, createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode } from './setup.js'
 import { endTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose, setTimeout_, setMaxPlayers, voteAdvance, setAdvFn } from './room.js'
 import { copyInvite } from './panels/lobby.js'
 import { inboxTab, inboxFilter } from './panels/inbox.js'
 import { chrFilter, chrSearch } from './panels/chronicles.js'
+import { roleBonus } from './depthEngine.js'
+
+// Expose roleBonus for inline use in squads overlay
+window._depthEngine = { roleBonus }
 
 // Inject adv into room.js to break circular dep
 setAdvFn(adv)
@@ -56,7 +61,7 @@ Object.assign(window, {
   // chronicles
   chrFilter, chrSearch,
   // roster
-  oDos, mkJK, treatTrauma,
+  oDos, mkJK, treatTrauma, dosTab,
   // squads
   oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev,
   // missions
@@ -68,7 +73,7 @@ Object.assign(window, {
   // economy
   eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship,
   // beasts
-  lCap, beastTab, releaseJinchuriki,
+  lCap, beastTab, releaseJinchuriki, resolveEscape,
   // kage
   resKE, sGift, propAl, rattle,
   // exam
@@ -80,15 +85,21 @@ Object.assign(window, {
   resolveChoiceEvent, openWorldChoice,
   // staff
   openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff,
-  staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer,
+  staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting,
   // roster injury actions
   secondOpinion, specialistTreatment,
+  retireShinobi, retireToCoach, extendCareer,
+  setTrainingFocus, toggleRestMonth, openContractRenewal,
+  // missions
+  setMissionPrep, simTemplate,
   // scouting
-  assignScout, setScoutBudget, toggleWatchlist,
+  assignScout, setScoutBudget, toggleWatchlist, trialDay, signProspect, draftSort,
+  // depth chart
+  setDepthSlot, clearDepthSlot, emergencyCallUp,
   // youth academy
   yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab,
   // people management
-  doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction,
+  doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction, consultSeniorGroup,
   // transfer market
   trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms,
   confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide,
@@ -96,7 +107,7 @@ Object.assign(window, {
   // legacy
   legTab, designateSuccessor, resolveLegacyDecision,
   // intel
-  intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu,
+  intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel,
   // exam tabs
   exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc,
 })

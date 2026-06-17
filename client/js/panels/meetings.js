@@ -65,6 +65,38 @@ function _overviewTab() {
       </div>
     </div>
 
+    <!-- Senior Group -->
+    ${(() => {
+      const sg = G.seniorGroup || []
+      const sgMorale = G.seniorGroupMorale ?? 75
+      const sgColor = sgMorale >= 65 ? '#8fbc8f' : sgMorale >= 40 ? '#f0a030' : '#f66'
+      return `<div style="background:#1a1a1a;border:1px solid #444;border-radius:6px;padding:12px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-size:.8rem;color:#aaa;text-transform:uppercase;letter-spacing:.08em">⭐ Senior Group</div>
+          <div style="font-size:.78rem">Group Morale: <span style="color:${sgColor};font-weight:bold">${sgMorale}</span></div>
+        </div>
+        ${sg.length === 0
+          ? '<div style="color:#555;font-size:.8rem">No senior members yet. The top 3 shinobi by wins + commitment (with 12+ months service) form the senior group.</div>'
+          : `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+              ${sg.map((s, i) => {
+                const medals = ['🥇','🥈','🥉']
+                return `<div style="background:#0f0f0f;border:1px solid #333;border-radius:5px;padding:8px 12px;flex:1;min-width:120px">
+                  <div style="font-size:.9rem;margin-bottom:2px">${medals[i] || '·'} <span style="color:#e8d5a3">${sn(s)}</span></div>
+                  <div style="font-size:.72rem;color:#888">${RANKS[s.ri] ?? 'Ninja'} · ${s.wins||0}W · Commit ${s.commitment||0}</div>
+                </div>`
+              }).join('')}
+            </div>
+            <div style="background:#111;border-radius:3px;height:5px;overflow:hidden;margin-bottom:8px">
+              <div style="background:${sgColor};width:${sgMorale}%;height:100%;transition:width .3s"></div>
+            </div>
+            <div style="font-size:.72rem;color:#666">
+              ${sgMorale >= 65 ? '✓ Senior group content — morale bleed minimal' : sgMorale >= 40 ? '⚠ Senior group restless — morale drain active' : '✗ Senior group in crisis — village morale bleeding each month'}
+            </div>
+            <button onclick="consultSeniorGroup()" style="margin-top:8px;background:#1a1a2e;border:1px solid #4a4a8a;color:#9cf;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:.77rem">🗣 Consult Group</button>`
+        }
+      </div>`
+    })()}
+
     <!-- Pending Meetings -->
     <div style="font-size:.85rem;color:#aaa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">
       Pending Meetings (${queue.length})
@@ -367,5 +399,22 @@ export function rumorAction(rumorId, action) {
     }
   }
   r.resolved = true
+  rMeet(); upUI()
+}
+
+export function consultSeniorGroup() {
+  const sg = G.seniorGroup || []
+  if (sg.length === 0) { ntf('No senior group members yet.'); return }
+  const morale = G.seniorGroupMorale ?? 75
+  const reaction = morale >= 65 ? 'supportive' : morale >= 40 ? 'neutral' : 'skeptical'
+  const msgs = {
+    supportive: 'The senior group backs your direction. Village confidence rises.',
+    neutral: 'The senior group has mixed views. No strong endorsement.',
+    skeptical: 'The senior group pushes back. Their concerns are noted.'
+  }
+  const moraleGain = morale >= 65 ? 3 : morale >= 40 ? 0 : -2
+  G.morale = Math.max(0, Math.min(100, (G.morale || 70) + moraleGain))
+  aL('Senior consultation (' + reaction + '): ' + msgs[reaction], moraleGain >= 0 ? 'good' : 'warn')
+  ntf('Senior group consulted.')
   rMeet(); upUI()
 }
