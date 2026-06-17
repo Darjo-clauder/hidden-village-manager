@@ -205,7 +205,7 @@ export function rChains() {
               const active = i === chain.currentStep
               const rkC    = RK_COLORS[step.rk] || '#999'
               return `<div style="flex:1;padding:4px;border:1px solid ${done?'#4a9a4a':failed?'#8b1a1a':active?rkC:'#333'};background:${done?'#0a1a0a':failed?'#1a0505':active?'rgba(0,0,0,.4)':'transparent'};text-align:center">
-                <div style="font-size:6px;color:${done?'#8fbc8f':failed?'#f66':active?rkC:'#555'};text-transform:uppercase">${done?'✓':failed?'✗':active?'NOW':'${i+1}'}</div>
+                <div style="font-size:6px;color:${done?'#8fbc8f':failed?'#f66':active?rkC:'#555'};text-transform:uppercase">${done?'✓':failed?'✗':active?'NOW':String(i+1)}</div>
                 <div style="font-size:7px;color:${active?rkC:'#555'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${step.rk}-Rank</div>
               </div>`
             }).join('')}
@@ -216,16 +216,26 @@ export function rChains() {
               ${activeM ? `⟳ In progress` : '📋 On mission board'}
             </span>` : ' · <span style="color:#7a7060">Generating…</span>'}
           </div>` : ''}
+          ${chain.state && (chain.state.ryoAccumulated > 0 || chain.state.injuryEscalation > 0) ? `
+          <div style="display:flex;gap:12px;font-size:7px;color:#7a7060;margin-top:5px;padding-top:5px;border-top:1px solid #1a2a1a">
+            ${chain.state.ryoAccumulated > 0 ? `<span>Banked: <span style="color:#c9a84c">+${fmt(Math.round(chain.state.ryoAccumulated*0.5))} ryo</span> on completion</span>` : ''}
+            ${chain.state.injuryEscalation > 0 ? `<span>Risk escalation: <span style="color:#f99">+${Math.round(chain.state.injuryEscalation*100)}%</span></span>` : ''}
+          </div>` : ''}
         </div>`
       }).join('')
 
   const completedHtml = completed.length === 0
     ? '<div style="font-size:9px;color:#3a3630">No completed chains yet.</div>'
-    : completed.map(chain => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-left:2px solid #4a9a4a;margin-bottom:4px">
-          <div style="font-size:8px;color:#8fbc8f">✓ ${chain.n}</div>
-          <div style="font-size:7px;color:#3a3630">Y${chain.completedYear}</div>
-        </div>`).join('')
+    : completed.map(chain => {
+        const bonusRyo = chain.state ? Math.round(chain.state.ryoAccumulated * 0.5) : 0
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-left:2px solid #4a9a4a;margin-bottom:4px">
+          <div>
+            <div style="font-size:8px;color:#8fbc8f">✓ ${chain.n}</div>
+            ${bonusRyo > 0 ? `<div style="font-size:7px;color:#c9a84c">${fmt(bonusRyo)} ryo chain bonus paid</div>` : ''}
+          </div>
+          <div style="font-size:7px;color:#3a3630">Y${chain.completedYear}·M${chain.completedMonth||'?'}</div>
+        </div>`
+      }).join('')
 
   el.innerHTML = `
     <div style="font-size:7px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Active Chains</div>
