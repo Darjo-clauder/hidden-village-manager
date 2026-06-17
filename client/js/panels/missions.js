@@ -5,10 +5,11 @@ import { pCl } from './roster.js'
 import { oSqA } from './squads.js'
 import { isEnabled } from '../../../config/features.js'
 import { resolveMission } from '../../../shared/types/MissionTemplate.js'
+import { BLACK_MARKET_MISSIONS, BM_MISSION_BY_ID, getUnderworldTier, UNDERWORLD_TIERS } from '../../../shared/constants/blackMarket.js'
 
 export function mTab(t) {
   ui.MT = t
-  ;['solo', 'squad', 'def', 'chains', 'templates', 'log'].forEach(x => {
+  ;['solo', 'squad', 'def', 'chains', 'templates', 'log', 'underground'].forEach(x => {
     const el = document.getElementById('ms-' + x)
     if (el) el.style.display = x === t ? '' : 'none'
     const btn = document.getElementById('mt-' + x)
@@ -16,7 +17,7 @@ export function mTab(t) {
   })
 }
 
-export function rMi() { rRB(); rWCE(); rTacticalPrep(); rSoloM(); rSqM(); rDef(); rChains(); rMissionReport(); rTemplates(); rMissionLog() }
+export function rMi() { rRB(); rWCE(); rTacticalPrep(); rSoloM(); rSqM(); rDef(); rChains(); rMissionReport(); rTemplates(); rMissionLog(); rUnderground() }
 
 export function rTacticalPrep() {
   const el = document.getElementById('ms-prep')
@@ -388,4 +389,62 @@ export function simTemplate(templateId) {
   el.textContent = result.success
     ? `✓ Success — est. ${fmt(result.ryo)} ryo, +${result.repGain} rep`
     : `✗ Fail — 0 ryo, ${result.repGain} rep`
+}
+
+export function rUnderground() {
+  const el = document.getElementById('ms-underground')
+  if (!el) return
+  const bmRep = G.blackMarketRep || 0
+  const tier = getUnderworldTier(bmRep)
+  const nextTier = UNDERWORLD_TIERS.find(t => t.minRep > bmRep)
+  const available = G.shinobi.filter(s => s.status === 'available')
+  const activeBM = (G.aM || []).filter(a => a.isBM)
+
+  el.innerHTML = `
+    <div style="background:#0a0802;border:1px solid #3a2800;padding:10px;margin-bottom:12px">
+      <div style="font-size:7px;letter-spacing:2px;color:#7a5030;text-transform:uppercase;margin-bottom:6px">Underworld Standing</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-size:13px;color:#c9a84c;font-weight:bold">${tier.label}</div>
+        <div style="font-size:8px;color:#7a5030">Rep: ${bmRep}${nextTier ? ` / ${nextTier.minRep} → ${nextTier.label}` : ' (MAX)'}</div>
+        ${tier.passiveRyo ? `<div style="font-size:8px;color:#8fbc8f">+${tier.passiveRyo.toLocaleString()} ryo/mo passive</div>` : ''}
+      </div>
+    </div>
+    ${activeBM.length ? `<div style="font-size:8px;color:#7a5030;margin-bottom:8px">Active contracts: ${activeBM.map(a => `<span style="color:#c9a84c">${BM_MISSION_BY_ID?.[a.bmId]?.n || a.bmId}</span>`).join(', ')}</div>` : ''}
+    <div style="display:grid;gap:8px">
+    ${BLACK_MARKET_MISSIONS.map(bm => {
+      const locked = tier.id === 'unknown' && bm.id !== 'bm_sabotage' && bm.id !== 'bm_theft'
+        ? false  // unlock all once contacted
+        : bm.id === 'bm_bounty' && !tier.unlocksBounty
+      const canAssign = available.filter(s => (s.ri || 0) >= bm.reqRi && (!bm.reqAnbu || s.ri >= 3))
+      const RKC2 = { S:'#ff6b6b', A:'#c9a84c', B:'#8fbc8f', C:'#aaa' }
+      return `
+        <div style="background:#0d0a06;border:1px solid ${locked?'#222':'#3a2800'};padding:10px;opacity:${locked?0.4:1}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+            <div>
+              <span style="font-size:9px;color:#e8e0cc">${bm.icon} ${bm.n}</span>
+              <span style="font-size:8px;color:${RKC2[bm.rk]||'#aaa'};margin-left:6px">[${bm.rk}-Rank]</span>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:9px;color:#8fbc8f">+${bm.ryo.toLocaleString()} ryo</div>
+              ${bm.repLoss ? `<div style="font-size:7px;color:#f66">Discovery: −${bm.repLoss} rep</div>` : ''}
+            </div>
+          </div>
+          <div style="font-size:7px;color:#7a5030;margin-bottom:8px">${bm.desc}</div>
+          ${locked ? '<div style="font-size:7px;color:#555">Requires higher underworld standing.</div>' :
+            canAssign.length === 0 ? '<div style="font-size:7px;color:#555">No eligible shinobi available.</div>' : `
+            <select id="bm-sel-${bm.id}" style="font-size:8px;padding:3px;background:#111;color:#e8e0cc;border:1px solid #3a2800;margin-right:6px">
+              <option value="">— assign shinobi —</option>
+              ${canAssign.map(s => `<option value="${s.id}">${sn(s)} [${['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri]}]</option>`).join('')}
+            </select>
+            <button onclick="assignBM('${bm.id}')" style="font-size:8px;padding:3px 8px;background:#3a2800;color:#c9a84c;border:1px solid #5a4010;cursor:pointer">Send</button>
+          `}
+        </div>`
+    }).join('')}
+    </div>`
+}
+
+export function assignBM(missionId) {
+  const sel = document.getElementById('bm-sel-' + missionId)
+  if (!sel?.value) { ntf('Select a shinobi first.'); return }
+  window.assignBlackMarket(missionId, sel.value)
 }

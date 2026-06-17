@@ -17,6 +17,7 @@ import { COUNCIL_FACTIONS, COUNCIL_PROPOSALS, getCouncilPerks } from '../../shar
 import { tickRivalStrength, shouldFireRivalEvent, pickRivalEvent, computePlayerStrength } from '../../shared/utils/rivalSim.js'
 import { DYNASTY_YEARS, computeDynastyGrade } from '../../shared/utils/dynasty.js'
 import { bondMissionBonus, mentorGrowthBonus, kiaRipple, BOND_TYPES } from '../../shared/bonds/bondTypes.js'
+import { BM_MISSION_BY_ID, getUnderworldTier, discoveryChance, UNDERWORLD_TIERS } from '../../shared/constants/blackMarket.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
@@ -272,6 +273,72 @@ export function resolveChoiceEvent(fnKey) {
   upUI()
 }
 
+export function assignBlackMarket(missionId, shinobiId) {
+  const bm = BM_MISSION_BY_ID[missionId]
+  if (!bm) return
+  const s = G.shinobi.find(x => x.id === shinobiId)
+  if (!s) return
+  if (s.status !== 'available') { ntf('Shinobi must be available.'); return }
+  if ((s.ri || 0) < bm.reqRi) { ntf(`Requires ${['Genin','Chunin','Jonin','ANBU','S-Rank'][bm.reqRi]} or higher.`); return }
+  if (bm.reqAnbu && s.ri < 3) { ntf('ANBU required for this contract.'); return }
+  s.status = 'mission'
+  s.missId = 'bm_' + missionId
+  if (!G.aM) G.aM = []
+  G.aM.push({ id: 'bm_' + Date.now(), missionId: 'bm_' + missionId, assignedTo: shinobiId, isBM: true, bmId: missionId, daysLeft: 1 })
+  aL(`${sn(s)} assigned to black market: ${bm.n}.`, 'warn')
+  upUI()
+}
+
+export function resolveBlackMarket(assignmentId) {
+  const am = (G.aM || []).find(x => x.id === assignmentId)
+  if (!am || !am.isBM) return
+  const bm = BM_MISSION_BY_ID[am.bmId]
+  const s = G.shinobi.find(x => x.id === am.assignedTo)
+  if (!s || !bm) { G.aM = G.aM.filter(x => x.id !== assignmentId); return }
+
+  const bmRep = G.blackMarketRep || 0
+  const tier = getUnderworldTier(bmRep)
+  const sc = clamp(0.60 + tier.bonus - bm.kiaBonus * 2, 0.20, 0.92)
+
+  if (Math.random() < sc) {
+    G.ryo += bm.ryo
+    G.blackMarketRep = (G.blackMarketRep || 0) + 5
+    s.status = 'available'; s.missId = null
+    aL(`${sn(s)} completed "${bm.n}" — +${bm.ryo.toLocaleString()} ryo.`, 'good')
+    if (bm.rewardJutsu) {
+      if (!s.jutsu) s.jutsu = []
+      const rare = JUTSU_LIST.filter(j => j.tier === 'rare' && !s.jutsu.includes(j.id))
+      if (rare.length) { const j = pk(rare); s.jutsu.push(j.id); aL(`${sn(s)} seized the scroll — learned ${j.n}!`, 'good') }
+    }
+    if (bm.rewardIntel) {
+      const v = pk(G.villages || [])
+      if (v) aL(`Intel from ${v.n}: ${Math.round(v.strength || 50)} strength, ${v.rel > 60 ? 'Allied' : v.rel > 30 ? 'Neutral' : 'Hostile'} disposition.`, 'good')
+    }
+    pushMissionLog({ missionName: bm.n, rank: bm.rk, success: true, ryo: bm.ryo, rep: 0, narrative: 'Underground contract completed.' })
+  } else {
+    const kR = clamp(bm.kiaBonus, 0.01, 0.15)
+    if (Math.random() < kR && !jkKIAImmune(s)) {
+      aL(`${sn(s)} KIA on underground contract "${bm.n}".`, 'bad')
+      G.memorial.push({ name: sn(s), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri], clan: s.clan, mission: bm.n, year: G.year, month: G.month, wins: s.wins, lastWords: '"No witnesses."' })
+      G.shinobi = G.shinobi.filter(x => x.id !== s.id)
+    } else {
+      s.status = 'available'; s.missId = null
+      aL(`${sn(s)} failed "${bm.n}" and returned empty-handed.`, 'bad')
+    }
+    pushMissionLog({ missionName: bm.n, rank: bm.rk, success: false, ryo: 0, rep: 0 })
+  }
+
+  // Discovery check
+  if (Math.random() < discoveryChance(bm, G.blackMarketRep || 0)) {
+    G.reputation = clamp(G.reputation - bm.repLoss, 0, 999)
+    G.councilApproval && (G.councilApproval.elder = clamp((G.councilApproval.elder || 50) - 8, 0, 100))
+    aL(`The "${bm.n}" contract was discovered! −${bm.repLoss} reputation.`, 'bad')
+  }
+
+  G.aM = G.aM.filter(x => x.id !== assignmentId)
+  upUI()
+}
+
 export function resolveCouncilProposal(choice) {
   const prop = G.councilProposal
   if (!prop) return
@@ -362,6 +429,14 @@ export function adv() {
   // Apply perks
   if (cp.monthlyRyo > 0) G.ryo += cp.monthlyRyo
   if (cp.monthlyRep > 0) G.reputation = clamp(G.reputation + cp.monthlyRep, 0, 999)
+  // Underworld passive income (Phantom tier)
+  const uwTier = getUnderworldTier(G.blackMarketRep || 0)
+  if (uwTier.passiveRyo) G.ryo += uwTier.passiveRyo
+  // Tick BM assignments
+  for (const am of (G.aM || []).filter(x => x.isBM)) {
+    am.daysLeft = (am.daysLeft || 1) - 1
+    if (am.daysLeft <= 0) resolveBlackMarket(am.id)
+  }
   // Approval drift from game state
   const approvalDrift = (faction, delta) => {
     G.councilApproval[faction] = clamp((G.councilApproval[faction] || 50) + delta, 0, 100)

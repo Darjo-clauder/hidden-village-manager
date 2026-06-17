@@ -4,7 +4,7 @@ import { showSetup, selIcon, beginGame, restoreGame } from './setup.js'
 import { adv } from './adv.js'
 import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev } from './panels/squads.js'
-import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter } from './panels/missions.js'
+import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM } from './panels/missions.js'
 import { rUp, buyUp, buildDistrict } from './panels/upgrades.js'
 import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship } from './panels/economy.js'
@@ -12,7 +12,7 @@ import { rBe, lCap, beastTab, releaseJinchuriki, resolveEscape } from './panels/
 import { rKa, resKE, sGift, propAl, rattle } from './panels/kage.js'
 import { rEx, tEC, startEx, runRound } from './panels/exam.js'
 import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP, dipAccept, dipDecline } from './world.js'
-import { resolveChoiceEvent, resolveCouncilProposal } from './adv.js'
+import { resolveChoiceEvent, resolveCouncilProposal, assignBlackMarket } from './adv.js'
 import { rFi } from './panels/finances.js'
 import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff, staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting } from './panels/staff.js'
 import { rSco, assignScout, setScoutBudget, toggleWatchlist, trialDay, signProspect, draftSort } from './panels/scouting.js'
@@ -66,7 +66,7 @@ Object.assign(window, {
   // squads
   oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev,
   // missions
-  mTab, oA, doA, pickSq, G_defShSet, G_defShClear, missionLogFilter,
+  mTab, oA, doA, pickSq, G_defShSet, G_defShClear, missionLogFilter, assignBM,
   // upgrades
   buyUp, buildDistrict,
   // academy
@@ -84,7 +84,7 @@ Object.assign(window, {
   declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP,
   dipAccept, dipDecline,
   // world choice events
-  resolveChoiceEvent, openWorldChoice, resolveCouncilProposal,
+  resolveChoiceEvent, openWorldChoice, resolveCouncilProposal, assignBlackMarket,
   // staff
   openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff,
   staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting,
