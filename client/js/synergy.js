@@ -175,6 +175,70 @@ export function sqSynergy(sq, shinobi) {
   }
 }
 
+/**
+ * Calculates a chemistry score (0-100) for a squad based on:
+ * - Positive personality matches: +8 each
+ * - Negative personality matches: -6 each
+ * - Mentor/student bonds between members: +5 each
+ * - Brothers-in-Arms bonds: +4 each
+ * - Months active together (cohesion as proxy): up to +20
+ *
+ * Score is clamped 0-100. Used for UI display only — does not affect
+ * mission outcomes (sqSynergy already handles that).
+ *
+ * @param {object} sq - Squad object with .members[], .cohesion
+ * @param {Array}  shinobiList - Full shinobi array
+ * @returns {{ score: number, tier: string, color: string }}
+ */
+export function calcChemistry(sq, shinobiList) {
+  const members = sq.members.map(id => shinobiList.find(s => s.id === id)).filter(Boolean)
+  if (!members.length) return { score: 0, tier: 'Unknown', color: '#555' }
+
+  let score = 50  // neutral baseline
+
+  const traits = members.map(s => s.pers?.n).filter(Boolean)
+
+  // Positive chemistry rules
+  const POSITIVE_CHEM = [
+    t => t.includes('Loyal') && t.includes('Charismatic'),
+    t => t.includes('Protective') && t.includes('Reckless'),
+    t => t.includes('Stoic') && t.includes('Charismatic'),
+    t => t.filter(x => x === 'Loyal').length >= 2,
+    t => t.includes('Cowardly') && t.includes('Loyal'),
+    t => t.includes('Calm') && t.includes('Hot-headed'),
+    t => t.includes('Ambitious') && t.includes('Charismatic'),
+  ]
+  const NEGATIVE_CHEM = [
+    t => t.includes('Lone Wolf'),
+    t => t.includes('Greedy') && t.includes('Honorable'),
+    t => t.includes('Bookworm') && t.includes('Hot-headed'),
+    t => t.filter(x => x === 'Ambitious').length >= 2,
+  ]
+
+  for (const check of POSITIVE_CHEM) { if (check(traits)) score += 8 }
+  for (const check of NEGATIVE_CHEM) { if (check(traits)) score -= 6 }
+
+  // Bond bonuses
+  members.forEach(m => {
+    (m.bonds || []).forEach(b => {
+      if (!sq.members.includes(b.otherId)) return
+      if (b.type === 'Mentor/Student') score += 5
+      else if (b.type === 'Brothers-in-Arms') score += 4
+      else if (b.type === 'Rivals') score -= 3
+    })
+  })
+
+  // Cohesion proxy: 0-100 cohesion → 0-20 chemistry points
+  score += Math.round((sq.cohesion ?? 0) * 0.2)
+
+  score = Math.max(0, Math.min(100, score))
+
+  const tier  = score >= 80 ? 'Exceptional' : score >= 65 ? 'Strong' : score >= 45 ? 'Stable' : score >= 25 ? 'Tense' : 'Fractured'
+  const color = score >= 80 ? '#c9a84c'     : score >= 65 ? '#8fbc8f' : score >= 45 ? '#87ceeb' : score >= 25 ? '#fa0'   : '#f66'
+
+  return { score, tier, color }
+}
+
 export function cohesionLabel(c) {
   if (c >= 90) return 'Legendary'
   if (c >= 75) return 'Elite'

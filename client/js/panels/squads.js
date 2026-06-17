@@ -1,7 +1,7 @@
 import { G, ui, sPow, sqP, sn, fmt } from '../state.js'
-import { RANKS, RKC } from '../constants.js'
+import { RANKS, RKC, SQUAD_ROLES } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
-import { sqSynergy, cohesionLabel } from '../synergy.js'
+import { sqSynergy, cohesionLabel, calcChemistry } from '../synergy.js'
 
 export function rSq() {
   const el = document.getElementById('sql')
@@ -16,6 +16,7 @@ export function rSq() {
     const aM = G.aM.find(am => am.squadId === sq.id)
     const cohesion = sq.cohesion ?? 0
     const cohesionPct = cohesion + '%'
+    const chem = calcChemistry(sq, G.shinobi)
 
     const synHtml = syn.bonuses.length
       ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${syn.bonuses.map(b =>
@@ -31,13 +32,25 @@ export function rSq() {
       </div>
       ${sq.identity ? `<div style="font-size:8px;color:#7a7060;margin-bottom:3px;font-style:italic">${sq.identity.desc}</div>` : ''}
       <div style="font-size:8px;color:#7a7060;margin-bottom:5px">Leader: ${leader ? sn(leader) : '-'} (${leader ? RANKS[leader.ri] : '-'})</div>
-      <div style="margin-bottom:6px">${mbs.map(s => `<span class="squad-mb">${sn(s)} <span style="color:#c9a84c">${RANKS[s.ri]}</span>${s.jk ? ' 🔮' : ''}</span>`).join('')}</div>
+      <div style="margin-bottom:6px">${mbs.map(s => {
+        const roleDef = SQUAD_ROLES.find(r => r.id === (s.squadRole || 'flex'))
+        const depthEntry = G.depthChart?.[sq.id]
+        const isStarter = depthEntry && Object.values(depthEntry).some(slot => slot.starter === s.id)
+        return `<span class="squad-mb">${sn(s)} <span style="color:#c9a84c">${RANKS[s.ri]}</span>${s.jk ? ' 🔮' : ''}${roleDef ? ` <span title="${roleDef.n}" style="font-size:7px;padding:1px 4px;border:1px solid ${roleDef.color};color:${roleDef.color};margin-left:3px">${roleDef.icon}${isStarter ? ' S' : ''}</span>` : ''}</span>`
+      }).join('')}</div>
       <div style="margin-bottom:6px">
         <div style="display:flex;justify-content:space-between;font-size:8px;color:#7a7060;margin-bottom:3px">
           <span>Cohesion — <span style="color:#e8e0cc">${cohesionLabel(cohesion)}</span></span>
           <span style="color:#c9a84c">${cohesion}/100</span>
         </div>
         <div style="background:#2e2a22;height:3px;border-radius:2px"><div style="background:#c9a84c;height:3px;border-radius:2px;width:${cohesionPct}"></div></div>
+      </div>
+      <div style="margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;font-size:8px;color:#7a7060;margin-bottom:3px">
+          <span>Chemistry — <span style="color:${chem.color}">${chem.tier}</span></span>
+          <span style="color:${chem.color}">${chem.score}/100</span>
+        </div>
+        <div style="background:#2e2a22;height:3px;border-radius:2px"><div style="background:${chem.color};height:3px;border-radius:2px;width:${chem.score}%"></div></div>
       </div>
       ${synHtml}
       <div style="display:flex;gap:10px;font-size:8px;color:#7a7060;margin-top:6px">
@@ -130,11 +143,36 @@ export function oSqA(sqId) {
   ui.sqAT = sqId
   const sq = G.squads.find(q => q.id === sqId)
   const pw = sqP(sq) + (G.shinobi.find(s => s.id === sq.leaderId)?.pers.n === 'Charismatic' ? 5 : 0)
+
+  // Role bonus preview from depth chart
+  const { roleBonus } = window._depthEngine || {}
+  const rB = roleBonus ? roleBonus(sq) : { missionBonus: 0, riskReduction: 0, injReduction: 0 }
+  const bonusLines = []
+  if (rB.missionBonus  > 0) bonusLines.push(`+${Math.round(rB.missionBonus*100)}% success`)
+  if (rB.riskReduction > 0) bonusLines.push(`−${Math.round(rB.riskReduction*100)}% KIA risk`)
+  if (rB.injReduction  > 0) bonusLines.push(`−${Math.round(rB.injReduction*100*0.5)}% injury severity`)
+  const bonusHtml = bonusLines.length
+    ? `<div style="font-size:7px;color:#4a9a4a;margin-top:3px">⚔ Depth chart bonuses: ${bonusLines.join(' · ')}</div>`
+    : `<div style="font-size:7px;color:#3a3630;margin-top:3px">No depth chart bonuses assigned.</div>`
+
   document.getElementById('msa-t').textContent = 'Assign ' + sq.n + ' (power ' + pw + ')'
+  const header = document.getElementById('msa-t')
+  const bonusEl = document.getElementById('msa-bonus')
+  if (bonusEl) bonusEl.innerHTML = bonusHtml
+  else header.insertAdjacentHTML('afterend', `<div id="msa-bonus">${bonusHtml}</div>`)
+
   const sqMs = G.avM.filter(m => m.sq && !G.aM.find(a => a.missionId === m.id))
   document.getElementById('msa-l').innerHTML = sqMs.map(m => {
     const ok = pw >= m.mp, rc = 'mr-' + m.rk.toLowerCase()
-    return `<div class="pi" onclick="${ok ? `doSqA('${m.id}')` : ''}" style="${ok ? '' : 'opacity:0.4;cursor:not-allowed'}"><div><div style="font-size:10px;color:#e8e0cc">${m.n} <span class="mrb ${rc}">${m.rk}</span></div><div style="font-size:8px;color:#7a7060">${fmt(m.ryo)} ryo · ${m.dur}m · Min ${m.mp}${ok ? '' : ` (need ${m.mp - pw} more)`}</div></div><span style="font-size:8px;color:${ok ? '#8fbc8f' : '#f66'}">${ok ? '✓' : '✗'}</span></div>`
+    const effectiveSc = Math.round((1 - m.risk + rB.missionBonus - rB.riskReduction) * 100)
+    return `<div class="pi" onclick="${ok ? `doSqA('${m.id}')` : ''}" style="${ok ? '' : 'opacity:0.4;cursor:not-allowed'}">
+      <div>
+        <div style="font-size:10px;color:#e8e0cc">${m.n} <span class="mrb ${rc}">${m.rk}</span></div>
+        <div style="font-size:8px;color:#7a7060">${fmt(m.ryo)} ryo · ${m.dur}m · Min ${m.mp}${ok ? '' : ` (need ${m.mp - pw} more)`}</div>
+        ${ok && bonusLines.length ? `<div style="font-size:7px;color:#4a9a4a">Est. success: ~${Math.min(97, effectiveSc)}%</div>` : ''}
+      </div>
+      <span style="font-size:8px;color:${ok ? '#8fbc8f' : '#f66'}">${ok ? '✓' : '✗'}</span>
+    </div>`
   }).join('') || '<div style="color:#7a7060;font-size:9px">No squad missions.</div>'
   document.getElementById('ov-sqassign').classList.add('open')
 }
