@@ -2,7 +2,7 @@ import { G } from './state.js'
 import { sp, cm, upUI, schEx } from './ui.js'
 import { showSetup, selIcon, beginGame, restoreGame } from './setup.js'
 import { adv } from './adv.js'
-import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal } from './panels/roster.js'
+import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter } from './panels/missions.js'
 import { rUp, buyUp } from './panels/upgrades.js'
@@ -62,7 +62,7 @@ Object.assign(window, {
   // chronicles
   chrFilter, chrSearch,
   // roster
-  oDos, mkJK, treatTrauma, dosTab,
+  oDos, mkJK, treatTrauma, dosTab, toggleJutsuLoadout,
   // squads
   oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev,
   // missions

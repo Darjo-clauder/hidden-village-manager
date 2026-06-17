@@ -11,6 +11,7 @@ import { tickProspects } from './prospectEngine.js'
 import { tickCareers, ensureCareerFields } from './careerEngine.js'
 import { refreshMissionBoard, maybeSpawnChain, advanceChain } from './missionGen.js'
 import { evalDepth, roleBonus } from './depthEngine.js'
+import { jutsuLoadoutBonus } from '../../shared/jutsu/loadout.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
@@ -567,7 +568,12 @@ export function adv() {
       // Tactical prep modifier (Phase 4)
       const prepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
       const prepRiskMod = G.missionPrepMode === 'aggressive' ? 0.04 : G.missionPrepMode === 'cautious' ? -0.03 : 0
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod, 0.1, 0.97)
+      const sqJutsuMod = sq.members.reduce((acc, id) => {
+        const ms = G.shinobi.find(x => x.id === id); if (!ms) return acc
+        const jb = jutsuLoadoutBonus(ms, JUTSU_LIST)
+        return acc + jb.successMod * 0.5 + jb.powerMod * 0.25
+      }, 0)
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod, 0.1, 0.97)
 
       if (Math.random() < sc) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3, 0, 100)
@@ -664,7 +670,8 @@ export function adv() {
       const beastLuck = G._beastMissionLuck || 0
       ensureCareerFields(s)
       const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod, 0.08, 0.97)
+      const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5, 0.08, 0.97)
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)

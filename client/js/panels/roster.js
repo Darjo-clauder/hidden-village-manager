@@ -1,5 +1,6 @@
 import { G, sPow, clamp, rnd, sn, fmt, pDesc, personalityJudge, computeMarketValue } from '../state.js'
 import { RANKS, RKC, JUTSU_LIST, INJURY_TYPES, EVOLVED_TRAITS } from '../constants.js'
+import { jutsuLoadoutBonus, toggleLoadoutSlot, LOADOUT_MAX } from '../../../shared/jutsu/loadout.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { PHASE_META, ensureCareerFields } from '../careerEngine.js'
 
@@ -29,9 +30,31 @@ export function oDos(id) {
   document.getElementById('dos-t').textContent = sn(s) + ' — Dossier'
   // Build jutsu section
   const knownJutsu = (s.jutsu || []).map(jId => JUTSU_LIST.find(j => j.id === jId)).filter(Boolean)
+  const loadout = s.jutsuLoadout || []
+  const jlb = jutsuLoadoutBonus(s, JUTSU_LIST)
+  const tierColor = t => t === 'rare' ? '#cc7fb8' : t === 'uncommon' ? '#c9a84c' : '#87ceeb'
   const jutsuHtml = knownJutsu.length
-    ? `<div style="margin-bottom:10px"><div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Jutsu</div>
-       ${knownJutsu.map(j => `<div style="margin-bottom:4px"><span style="font-size:9px;color:${j.tier==='rare'?'#cc7fb8':j.tier==='uncommon'?'#c9a84c':'#87ceeb'};font-weight:bold">${j.n}</span> <span style="font-size:7px;color:#3a3630;text-transform:uppercase">[${j.tier}]</span><div style="font-size:8px;color:#7a7060">${j.desc}</div></div>`).join('')}</div>`
+    ? `<div style="margin-bottom:10px">
+        <div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">
+          Jutsu Loadout <span style="color:#444;font-size:7px">(${loadout.length}/${LOADOUT_MAX} active)</span>
+          ${jlb.powerMod > 0 || jlb.successMod > 0 ? `<span style="color:var(--green);font-size:7px;margin-left:6px">+${Math.round((jlb.powerMod*0.5+jlb.successMod)*100)}% mission</span>` : ''}
+        </div>
+        ${knownJutsu.map(j => {
+          const active = loadout.includes(j.id)
+          const canAdd = !active && loadout.length < LOADOUT_MAX
+          const bonusStr = [j.bonus?.powerMod ? `+${Math.round(j.bonus.powerMod*100)}% pow` : '', j.bonus?.successMod ? `+${Math.round(j.bonus.successMod*100)}% sc` : ''].filter(Boolean).join(' ')
+          return `<div style="margin-bottom:4px;padding:4px 6px;border:1px solid ${active?'var(--green)':'var(--border)'};background:${active?'rgba(143,188,143,0.08)':'transparent'}">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:9px;color:${tierColor(j.tier)};font-weight:bold">${j.n}</span>
+              <button onclick="toggleJutsuLoadout('${s.id}','${j.id}')"
+                style="font-size:6px;padding:1px 5px;border:1px solid ${active?'var(--green)':'var(--border)'};background:${active?'rgba(143,188,143,0.15)':'transparent'};color:${active?'var(--green)':canAdd?'var(--text-dim)':'#333'};cursor:${canAdd||active?'pointer':'default'}">
+                ${active ? '✓ Active' : canAdd ? '+ Equip' : '— Full'}
+              </button>
+            </div>
+            <div style="font-size:7px;color:#3a3630;margin-top:1px">${bonusStr} · ${j.desc}</div>
+          </div>`
+        }).join('')}
+      </div>`
     : ''
   // Build bonds section
   const bondsHtml = (s.bonds || []).length
@@ -414,6 +437,13 @@ export function setTrainingFocus(sId, statKey) {
   s.trainingFocus = statKey || null
   if (statKey) aL(`${sn(s)} is now focused on training ${statKey}. Expect steady gains (+workload).`, 'neutral')
   else aL(`${sn(s)} returns to general training rotation.`, 'neutral')
+  upUI(); oDos(sId)
+}
+
+export function toggleJutsuLoadout(sId, jutsuId) {
+  const s = G.shinobi.find(x => x.id === sId); if (!s) return
+  if (!(s.jutsu || []).includes(jutsuId)) return
+  s.jutsuLoadout = toggleLoadoutSlot(s.jutsuLoadout, jutsuId)
   upUI(); oDos(sId)
 }
 
