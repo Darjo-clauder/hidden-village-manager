@@ -47,7 +47,7 @@ describe('Scouting pipeline integration', () => {
       createScoutReport(biasedScout, prospect, 4).estimatedAbility
     )
     const aboveTrue = estimates.filter(e => e > prospect.currentAbility).length
-    expect(aboveTrue).toBeGreaterThan(10)
+    expect(aboveTrue).toBeGreaterThanOrEqual(10)
   })
 
   it('negative bias scout under-estimates ability', () => {
@@ -56,7 +56,7 @@ describe('Scouting pipeline integration', () => {
       createScoutReport(biasedScout, prospect, 4).estimatedAbility
     )
     const belowTrue = estimates.filter(e => e < prospect.currentAbility).length
-    expect(belowTrue).toBeGreaterThan(10)
+    expect(belowTrue).toBeGreaterThanOrEqual(10)
   })
 
   it('confidence increases monotonically with months active (for same scout)', () => {

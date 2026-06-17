@@ -3,6 +3,8 @@ import { RANKS, RKC } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { sBars, pCl } from './roster.js'
 import { isEnabled } from '../../../config/features.js'
+import { TRAINING_PLANS, PLAN_BY_ID } from '../../../shared/constants/trainingPlans.js'
+import { applyGraduationBias } from '../prospectEngine.js'
 
 // ── Hidden attribute display ──────────────────────────────────────────────────
 const ATTR_LABELS = {
@@ -104,6 +106,40 @@ function _scoutHistoryHtml(p) {
   </div>`
 }
 
+function _trainingPlanHtml(p) {
+  if (!isEnabled('ACADEMY')) return ''
+  const active = PLAN_BY_ID[p.trainingPlanId]
+  const coachAttr = (p.hiddenAttributes || []).find(a => a.key === 'coachability')
+  const coachRevealed = coachAttr?.revealed
+
+  const badge = active
+    ? `<span style="font-size:7px;padding:1px 6px;border:1px solid ${active.color};color:${active.color};border-radius:2px">${active.icon} ${active.label}</span>`
+    : `<span style="font-size:7px;color:#555">No plan assigned</span>`
+
+  const coachHint = coachRevealed
+    ? `<span style="font-size:7px;color:#cc7fb8;margin-left:6px" title="Coachability amplifies plan bonus">COA ${coachAttr.value}/20 +${Math.round(coachAttr.value / 20 * 10)}%</span>`
+    : ''
+
+  const opts = TRAINING_PLANS.map(pl =>
+    `<option value="${pl.id}" ${p.trainingPlanId === pl.id ? 'selected' : ''}>${pl.icon} ${pl.label}</option>`
+  ).join('')
+
+  return `<div style="margin-top:7px;padding-top:6px;border-top:1px solid #2e2a22">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div style="display:flex;align-items:center;gap:4px">${badge}${coachHint}</div>
+    </div>
+    <div style="display:flex;gap:5px;align-items:center">
+      <select onchange="setTrainingPlan('${p.id}',this.value)"
+        style="flex:1;background:#1a1a12;border:1px solid #3a3620;color:#c9a84c;font-size:7px;padding:2px 4px;border-radius:2px">
+        <option value="">— Assign plan…</option>
+        ${opts}
+      </select>
+      ${active ? `<span style="font-size:7px;color:#555" title="${active.desc}">?</span>` : ''}
+    </div>
+    ${active ? `<div style="font-size:7px;color:#555;margin-top:3px;font-style:italic">${active.desc}</div>` : ''}
+  </div>`
+}
+
 const MINOR_CLANS = [
   { n: 'Sarutobi', t: 'Fire Sage',   statKey: 'ninjutsu' },
   { n: 'Hatake',   t: 'Copy Wheel',  statKey: 'intelligence' },
@@ -162,6 +198,7 @@ export function rAc() {
           ${p.scouted ? '' : isScoutSourced ? '' : '<span style="color:#3a3630;font-size:7px"> (unverified)</span>'}
         </div>
       </div>
+      ${_trainingPlanHtml(p)}
       ${_developmentHtml(p)}
       <div style="margin-top:6px">
         <div style="display:flex;justify-content:space-between;font-size:7px;color:#7a7060;margin-bottom:2px">
@@ -194,6 +231,9 @@ export function rec(id) {
   G.ryo -= 2000
 
   const recruited = { ...p, status: 'available' }
+
+  // Apply training plan graduation stat bias before any other bonuses
+  applyGraduationBias(recruited)
 
   // 20% chance of minor clan affiliation on graduation (if no existing clan)
   if (!recruited.clan && Math.random() < 0.20) {
@@ -291,4 +331,18 @@ export function doScout(shinobiId) {
   aL(sn(s) + ' sent to scout ' + sn(p) + '.', 'neutral')
   ntf('Scouting ' + p.fn + '…')
   cm('scout'); upUI()
+}
+
+export function setTrainingPlan(prospectId, planId) {
+  const p = G.prospects.find(x => x.id === prospectId)
+  if (!p) return
+  const plan = PLAN_BY_ID[planId]
+  p.trainingPlanId = planId || null
+  if (plan) {
+    aL(`${p.fn} ${p.ln} assigned to ${plan.label} training — ${plan.desc}`, 'neutral')
+    ntf(`${p.fn}: ${plan.label}`)
+  } else {
+    aL(`${p.fn} ${p.ln} removed from training plan.`, 'neutral')
+  }
+  upUI()
 }

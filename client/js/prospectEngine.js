@@ -2,6 +2,7 @@ import { G, rnd, clamp, sn } from './state.js'
 import { aL } from './ui.js'
 import { isEnabled } from '../../config/features.js'
 import { HIDDEN_ATTRIBUTE_KEYS } from '../../shared/constants/prospect.js'
+import { PLAN_BY_ID } from '../../shared/constants/trainingPlans.js'
 
 // ── Growth rate by age ────────────────────────────────────────────────────────
 // Returns base growth points per month at a given age
@@ -33,11 +34,22 @@ function curveMultiplier(curve, age) {
   }
 }
 
+// ── Training plan bonus ───────────────────────────────────────────────────────
+function trainingPlanBonus(prospect) {
+  const plan = PLAN_BY_ID[prospect.trainingPlanId]
+  if (!plan) return 0
+  // Coachability amplifies plan effectiveness when revealed
+  const coachAttr = (prospect.hiddenAttributes || []).find(a => a.key === 'coachability')
+  const coachAmp = coachAttr?.revealed ? (coachAttr.value / 20) * 0.10 : 0
+  return plan.growthBonus + coachAmp
+}
+
 // ── Coachability bonus (from hidden attributes) ───────────────────────────────
 function coachabilityBonus(prospect) {
+  // Base coachability bonus when no plan is assigned — still rewards revealed attribute
+  if (prospect.trainingPlanId) return 0  // plan bonus already subsumes this
   const attr = (prospect.hiddenAttributes || []).find(a => a.key === 'coachability')
   if (!attr || !attr.revealed) return 0
-  // 0-20 value → 0-0.25 bonus multiplier
   return attr.value / 80
 }
 
@@ -63,7 +75,7 @@ function growProspect(p) {
     growth += rnd(-3, 3)
   }
 
-  growth *= (1 + coachabilityBonus(p) + mentorBonus(p))
+  growth *= (1 + coachabilityBonus(p) + mentorBonus(p) + trainingPlanBonus(p))
 
   // Stochastic: apply growth only if random roll passes monthly chance
   // Ensures growth isn't every month for every prospect (more realistic)
@@ -94,6 +106,30 @@ function maybeRevealCurve(p) {
   if (confidence >= 75) {
     p.curveRevealed = true
     aL(`Scout confidence on ${p.fn} ${p.ln} now high enough — development curve identified: ${p.developmentCurve}.`, 'neutral')
+  }
+}
+
+// ── Graduation stat bias (called from academy.js rec()) ──────────────────────
+// Redistributes up to 12 bonus stat points according to the plan's weights.
+export function applyGraduationBias(prospect) {
+  const plan = PLAN_BY_ID[prospect.trainingPlanId]
+  if (!plan || !prospect.stats) return
+
+  const weights = plan.graduationWeights
+  const statKeys = Object.keys(weights)
+  const totalWeight = statKeys.reduce((s, k) => s + Math.max(0, weights[k]), 0)
+  if (totalWeight === 0) return
+
+  const BONUS_POOL = 12  // total extra points to distribute
+  statKeys.forEach(k => {
+    if (!prospect.stats[k] && prospect.stats[k] !== 0) return
+    const w = weights[k]
+    const delta = Math.round((w / totalWeight) * BONUS_POOL)
+    prospect.stats[k] = clamp((prospect.stats[k] || 0) + delta, 0, 99)
+  })
+
+  if (plan.id !== 'balanced') {
+    aL(`${prospect.fn} ${prospect.ln} graduated with ${plan.label} training — stats shaped accordingly.`, 'good')
   }
 }
 
