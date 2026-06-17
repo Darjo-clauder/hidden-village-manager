@@ -15,6 +15,7 @@ import { jutsuLoadoutBonus } from '../../shared/jutsu/loadout.js'
 import { DISTRICTS, getDistrictPassives } from '../../shared/constants/districts.js'
 import { COUNCIL_FACTIONS, COUNCIL_PROPOSALS, getCouncilPerks } from '../../shared/constants/council.js'
 import { tickRivalStrength, shouldFireRivalEvent, pickRivalEvent, computePlayerStrength } from '../../shared/utils/rivalSim.js'
+import { DYNASTY_YEARS, computeDynastyGrade } from '../../shared/utils/dynasty.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
@@ -1813,6 +1814,13 @@ export function adv() {
   if (G.kageRep > targetRep && Math.random() < 0.15) G.kageRep = Math.max(1, G.kageRep - 1)
 
   // ── Hall of Legends — check retiring shinobi ────────────────────────────────
+  // ── Dynasty milestone notifications ────────────────────────────────────────
+  if (G.year === DYNASTY_YEARS && G.month === 1 && !G.dynastyComplete) {
+    const { grade } = computeDynastyGrade(G)
+    aL(`Year ${DYNASTY_YEARS} reached — dynasty clock complete. Grade ${grade}. Go to Legacy → Dynasty to pass the torch.`, 'good')
+    ntf(`Dynasty year ${DYNASTY_YEARS} — pass the torch in Legacy panel!`)
+  }
+
   if (!G.hallOfLegends) G.hallOfLegends = []
   G.shinobi.filter(s => s.status === 'retired' && !s.enshrined).forEach(s => {
     if ((s.months || 0) >= 120 && (s.wins || 0) >= 100 && (s.ri || 0) >= 3) {

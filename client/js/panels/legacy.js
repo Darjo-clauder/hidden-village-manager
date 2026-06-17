@@ -1,6 +1,7 @@
 import { G, sn, fmt, clamp, addChronicle, addLegend, pk } from '../state.js'
 import { PRESTIGE_TIERS, LEGACY_DECISIONS } from '../constants.js'
-import { aL, ntf } from '../ui.js'
+import { aL, ntf, upUI } from '../ui.js'
+import { dynastyProgress, computeDynastyGrade, inheritedBonuses, DYNASTY_YEARS } from '../../../shared/utils/dynasty.js'
 
 window._legTab = 'prestige'
 
@@ -110,23 +111,51 @@ function _hall() {
 // ── Dynasty Records ───────────────────────────────────────────────────────────
 function _dynasty() {
   const dr = G.dynastyRecords || {}
+  const year = G.year || 1
+  const progress = dynastyProgress(year)
+  const { grade, score, breakdown } = computeDynastyGrade(G)
+  const gradeColor = { S: '#c9a84c', A: '#87ceeb', B: '#8fbc8f', C: '#fa0', D: '#888' }[grade] || '#888'
+  const bonuses = inheritedBonuses(grade)
+  const canHandoff = year >= DYNASTY_YEARS && !!G.successorId
   const rows = [
     { label: 'Exam Promotions', value: dr.examWins || 0 },
     { label: 'Tailed Beasts Sealed', value: G.beasts?.filter(b => b.sealed).length || 0 },
     { label: 'Legends Enshrined', value: G.hallOfLegends?.length || 0 },
     { label: 'Peak Legend Score', value: dr.peakLegend || 0 },
     { label: 'Active Allied Villages', value: G.villages?.filter(v => v.allied).length || 0 },
-    { label: 'Years Active', value: G.year || 1 },
-    { label: 'Total Shinobi Graduated', value: G.shinobi?.length || 0 },
+    { label: 'Years Active', value: year },
     { label: 'Village Prestige Tier', value: G.prestigeTier || 'D' },
     { label: 'Dynasty Continuity Score', value: G.dynastyContinuityScore || 0 },
     { label: 'Successor Designated', value: G.successorId ? 'Yes' : 'No' },
-    { label: 'Summits Attended', value: G.summitHistory?.length || 0 },
     { label: 'Wars Fought', value: G.warState?.warHistory?.length || 0 },
   ]
   const upsets = G.upsetHistory || []
   return `<div>
-    <div style="font-size:10px;color:#c9a84c;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">Dynasty Records — ${G.vName}</div>
+    <!-- Dynasty clock -->
+    <div style="border:1px solid ${gradeColor};padding:10px;margin-bottom:12px;background:rgba(0,0,0,.3)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Dynasty Clock — Year ${year} / ${DYNASTY_YEARS}</div>
+        <div style="font-size:14px;font-weight:bold;color:${gradeColor}">Grade ${grade}</div>
+      </div>
+      <div class="bar" style="margin-bottom:8px">
+        <div class="fill" style="width:${Math.round(progress*100)}%;background:${gradeColor}"></div>
+      </div>
+      <div style="font-size:8px;color:var(--text-dim);margin-bottom:6px">
+        Score: ${score}/130 — Legend:${breakdown.legend} Hall:${breakdown.hall} Alliances:${breakdown.alliances} Prestige:${breakdown.prestige} Continuity:${breakdown.continuity} Districts:${breakdown.districts}
+      </div>
+      ${bonuses.length ? `
+        <div style="font-size:7px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Inherited bonuses next dynasty:</div>
+        ${bonuses.map(b => `<div style="font-size:8px;color:${gradeColor}">✦ ${b.desc}: ${typeof b.value === 'number' && b.value > 999 ? fmt(b.value) : b.value}${b.id.includes('ryo') ? ' ryo' : b.id.includes('rep') ? '' : ''}</div>`).join('')}
+      ` : ''}
+      ${canHandoff
+        ? `<div style="margin-top:10px"><button class="gb gb-g" onclick="triggerDynastyHandoff()" style="font-size:9px;padding:6px 14px">⚡ Pass the Torch — Begin New Dynasty</button></div>`
+        : year >= DYNASTY_YEARS
+          ? `<div style="font-size:8px;color:var(--red);margin-top:8px">Dynasty complete — designate a Successor first (Successor tab).</div>`
+          : `<div style="font-size:8px;color:var(--text-dim);margin-top:8px">${DYNASTY_YEARS - year} year${DYNASTY_YEARS - year !== 1 ? 's' : ''} remaining in this dynasty.</div>`
+      }
+    </div>
+
+    <div style="font-size:10px;color:#c9a84c;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Dynasty Records — ${G.vName}</div>
     <div style="display:grid;gap:4px;margin-bottom:14px">
       ${rows.map(r => `<div style="display:flex;justify-content:space-between;padding:5px 8px;background:#0a0a0a;border-radius:3px">
         <span style="font-size:9px;color:#7a7060">${r.label}</span>
@@ -238,6 +267,34 @@ function _legacyReport() {
       </div>`).join('')}
     </div>
   </div>`
+}
+
+export function triggerDynastyHandoff() {
+  if ((G.year || 1) < DYNASTY_YEARS) { ntf(`Dynasty handoff requires year ${DYNASTY_YEARS}+.`); return }
+  if (!G.successorId) { ntf('Designate a successor first.'); return }
+  const { grade, score } = computeDynastyGrade(G)
+  const bonuses = inheritedBonuses(grade)
+  const successor = G.shinobi?.find(x => x.id === G.successorId) || G.staff?.find(x => x.id === G.successorId)
+  const successorName = successor ? sn(successor) : 'your heir'
+
+  G.dynastyHandoffRecord = {
+    year: G.year, grade, score, successorName,
+    bonuses, vName: G.vName, legend: G.legend,
+    hallCount: (G.hallOfLegends || []).length,
+  }
+
+  addChronicle('Dynasty Handoff',
+    `${G.vName} dynasty concluded at Year ${G.year}. Grade ${grade} (${score}/130). ${successorName} takes leadership. Bonuses carry forward.`,
+    'milestone')
+  aL(`The torch is passed to ${successorName}. Dynasty Grade: ${grade}. A new era begins.`, 'good')
+
+  bonuses.forEach(b => {
+    aL(`Inherited: ${b.desc} — ${typeof b.value === 'number' && b.value > 999 ? fmt(b.value) : b.value}${b.id.includes('ryo') ? ' ryo' : ''}`, 'good')
+  })
+
+  G.dynastyComplete = true
+  upUI()
+  rLeg()
 }
 
 export function resolveLegacyDecision(decId, choiceId) {

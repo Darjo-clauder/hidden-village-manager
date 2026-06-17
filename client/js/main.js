@@ -21,7 +21,7 @@ import { setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule } from 
 import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab } from './panels/youthacademy.js'
 import { rMeet, doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction, consultSeniorGroup } from './panels/meetings.js'
 import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms, confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide, sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter } from './panels/transfers.js'
-import { rLeg, legTab, designateSuccessor, resolveLegacyDecision } from './panels/legacy.js'
+import { rLeg, legTab, designateSuccessor, resolveLegacyDecision, triggerDynastyHandoff } from './panels/legacy.js'
 import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel } from './panels/intel.js'
 import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc } from './panels/exam.js'
 import { showLobby, createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode } from './setup.js'
@@ -108,7 +108,7 @@ Object.assign(window, {
   confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide,
   sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter,
   // legacy
-  legTab, designateSuccessor, resolveLegacyDecision,
+  legTab, designateSuccessor, resolveLegacyDecision, triggerDynastyHandoff,
   // intel
   intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel,
   // exam tabs
