@@ -1,0 +1,111 @@
+import { G, rnd, clamp, sn } from './state.js'
+import { aL } from './ui.js'
+import { isEnabled } from '../../config/features.js'
+import { HIDDEN_ATTRIBUTE_KEYS } from '../../shared/constants/prospect.js'
+
+// ── Growth rate by age ────────────────────────────────────────────────────────
+// Returns base growth points per month at a given age
+function baseGrowthRate(age) {
+  if (age <= 14) return 1.2
+  if (age <= 17) return 1.6
+  if (age <= 21) return 1.4
+  if (age <= 25) return 0.8
+  if (age <= 28) return 0.4
+  return 0.1
+}
+
+// ── Curve modifiers ───────────────────────────────────────────────────────────
+// Each curve returns a multiplier applied to baseGrowthRate
+function curveMultiplier(curve, age) {
+  switch (curve) {
+    case 'early_peak':
+      // Fast before 20, hard stop after
+      return age <= 19 ? 1.5 : age <= 22 ? 0.4 : 0.05
+    case 'late_bloomer':
+      // Slow until 21, then accelerates
+      return age <= 18 ? 0.4 : age <= 21 ? 0.8 : age <= 26 ? 1.6 : 0.6
+    case 'volatile':
+      // Random swing each month — caller applies separately
+      return 1.0
+    case 'linear':
+    default:
+      return 1.0
+  }
+}
+
+// ── Coachability bonus (from hidden attributes) ───────────────────────────────
+function coachabilityBonus(prospect) {
+  const attr = (prospect.hiddenAttributes || []).find(a => a.key === 'coachability')
+  if (!attr || !attr.revealed) return 0
+  // 0-20 value → 0-0.25 bonus multiplier
+  return attr.value / 80
+}
+
+// ── Mentor bonus ──────────────────────────────────────────────────────────────
+function mentorBonus(prospect) {
+  if (!prospect.mentor) return 0
+  const mentor = (G.shinobi || []).find(s => s.id === prospect.mentor)
+  if (!mentor) return 0
+  // Mentor rank index → bonus: Genin 0.05, Chunin 0.10, Jonin 0.18, Kage 0.25
+  const bonusByRank = [0.03, 0.05, 0.10, 0.15, 0.18, 0.22, 0.25]
+  return bonusByRank[Math.min(mentor.ri, bonusByRank.length - 1)]
+}
+
+// ── Apply monthly growth to a single prospect ─────────────────────────────────
+function growProspect(p) {
+  const age = p.age ?? 15
+  const curve = p.developmentCurve ?? 'linear'
+
+  let growth = baseGrowthRate(age) * curveMultiplier(curve, age)
+
+  // Volatile: random ±3 swing on top of base
+  if (curve === 'volatile') {
+    growth += rnd(-3, 3)
+  }
+
+  growth *= (1 + coachabilityBonus(p) + mentorBonus(p))
+
+  // Stochastic: apply growth only if random roll passes monthly chance
+  // Ensures growth isn't every month for every prospect (more realistic)
+  const rollThreshold = curve === 'volatile' ? 0.7 : curve === 'early_peak' && age <= 19 ? 0.85 : 0.6
+  if (Math.random() > rollThreshold) return
+
+  growth = Math.max(0, growth)
+
+  const prevAbility = p.currentAbility ?? 0
+  const ceiling = p.potential ?? 99
+  p.currentAbility = clamp(Math.round(prevAbility + growth), prevAbility, ceiling)
+
+  // Track development milestones
+  const breakpoints = [30, 50, 65, 80]
+  for (const bp of breakpoints) {
+    if (prevAbility < bp && p.currentAbility >= bp) {
+      if (!p.milestones) p.milestones = []
+      p.milestones.push({ ability: bp, year: G.year, month: G.month })
+      aL(`${p.fn} ${p.ln} reached ability ${bp} — a genuine talent is emerging.`, 'good')
+    }
+  }
+}
+
+// ── Reveal development curve when confidence is high enough ──────────────────
+function maybeRevealCurve(p) {
+  if (p.curveRevealed) return
+  const confidence = p.bestConfidence ?? 0
+  if (confidence >= 75) {
+    p.curveRevealed = true
+    aL(`Scout confidence on ${p.fn} ${p.ln} now high enough — development curve identified: ${p.developmentCurve}.`, 'neutral')
+  }
+}
+
+// ── Monthly tick (called from adv.js) ────────────────────────────────────────
+export function tickProspects(G) {
+  if (!isEnabled('ACADEMY')) return
+  ;(G.prospects || []).forEach(p => {
+    growProspect(p)
+    maybeRevealCurve(p)
+    // Increment monthsWaiting (used for patience bar)
+    p.monthsWaiting = (p.monthsWaiting ?? 0) + 1
+    // Decline urgency window
+    if (p.urgencyMonths > 0) p.urgencyMonths--
+  })
+}

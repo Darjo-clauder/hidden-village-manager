@@ -44,6 +44,50 @@ function _hiddenAttrsHtml(p) {
   </div>`
 }
 
+const CURVE_META = {
+  linear:       { label: 'Linear',       color: '#87ceeb', desc: 'Steady growth across career' },
+  early_peak:   { label: 'Early Peak',   color: '#c9a84c', desc: 'Fast growth, hard ceiling at 19' },
+  late_bloomer: { label: 'Late Bloomer', color: '#cc7fb8', desc: 'Slow start, accelerates after 21' },
+  volatile:     { label: 'Volatile',     color: '#f0a030', desc: 'Unpredictable swings each month' },
+}
+
+function _developmentHtml(p) {
+  if (!isEnabled('SCOUTING')) return ''
+  const ability = p.currentAbility ?? 0
+  const potential = p.potential ?? null
+  const hasPotential = potential !== null && (p.scouted || (p.potRange && p.potRange.exact))
+  const pct = hasPotential ? Math.round((ability / potential) * 100) : null
+  const milestones = p.milestones || []
+
+  const curveHtml = p.curveRevealed && p.developmentCurve
+    ? (() => {
+        const m = CURVE_META[p.developmentCurve] || { label: p.developmentCurve, color: '#888', desc: '' }
+        return `<span style="color:${m.color};font-size:7px" title="${m.desc}">⬡ ${m.label}</span>`
+      })()
+    : ''
+
+  const progressHtml = hasPotential
+    ? `<div style="margin-top:4px">
+        <div style="display:flex;justify-content:space-between;font-size:7px;color:#555;margin-bottom:2px">
+          <span>Dev progress <span style="color:#e8e0cc">${ability}</span> → pot <span style="color:#c9a84c">${potential}</span></span>
+          <span style="color:#888">${pct}%</span>
+        </div>
+        <div style="background:#2e2a22;height:3px;border-radius:2px">
+          <div style="background:linear-gradient(to right,#4a90a4,#c9a84c);height:3px;border-radius:2px;width:${pct}%"></div>
+        </div>
+      </div>`
+    : ''
+
+  const mileHtml = milestones.length
+    ? `<div style="font-size:7px;color:#8fbc8f;margin-top:3px">✦ ${milestones[milestones.length - 1].ability} reached Y${milestones[milestones.length - 1].year}</div>`
+    : ''
+
+  if (!curveHtml && !progressHtml) return ''
+  return `<div style="margin-top:5px;display:flex;flex-direction:column;gap:1px">
+    ${curveHtml}${progressHtml}${mileHtml}
+  </div>`
+}
+
 function _scoutHistoryHtml(p) {
   if (!isEnabled('SCOUTING')) return ''
   const history = p.scoutHistory
@@ -118,6 +162,7 @@ export function rAc() {
           ${p.scouted ? '' : isScoutSourced ? '' : '<span style="color:#3a3630;font-size:7px"> (unverified)</span>'}
         </div>
       </div>
+      ${_developmentHtml(p)}
       <div style="margin-top:6px">
         <div style="display:flex;justify-content:space-between;font-size:7px;color:#7a7060;margin-bottom:2px">
           <span>Patience — <span style="color:${patienceColor}">${patienceLabel}</span></span>
