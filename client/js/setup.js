@@ -75,7 +75,7 @@ function _startGame(vname, kname, icon) {
   G.vIcon = icon
   schEx()
   aL('Your tenure as Kage begins.', 'neutral')
-  sp('roster')
+  sp('dashboard')
   upUI()
   initSocket(vname, kname, icon)
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'))

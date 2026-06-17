@@ -1,78 +1,73 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Hidden Village Manager</title>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hidden Village Manager</title>
 <link rel="stylesheet" href="./style.css">
 </head><body>
 
-<!-- ══ TITLE SCREEN ══ -->
+<!-- ══ TITLE SCREEN ══════════════════════════════════════════════════════ -->
 <div id="st" class="screen active">
-  <div style="position:absolute;font-size:110px;color:#c9a84c;opacity:.05;font-family:serif;top:10px;letter-spacing:10px;pointer-events:none">忍里</div>
+  <div style="position:absolute;font-size:120px;color:var(--gold);opacity:.04;font-family:serif;top:5vh;letter-spacing:12px;pointer-events:none;user-select:none">忍里</div>
   <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center">
     <div class="tm">Hidden Village</div>
     <div class="tk">忍の里</div>
     <div class="ts">Shinobi Management Simulation — Multiplayer</div>
     <button class="bstart" onclick="showLobby()">Play Online ↗</button>
-    <button class="bstart" style="margin-top:8px;background:transparent;border:1px solid #2e2820;color:#7a7060;font-size:10px" onclick="showSetup()">Solo / New Village</button>
-    <div style="margin-top:12px;font-size:8px;color:#2e2820;letter-spacing:3px">BEASTS · ECONOMY · DIPLOMACY · ONLINE</div>
+    <button class="bstart" style="margin-top:8px;background:transparent;border:1px solid var(--border);color:var(--text-dim);font-size:10px" onclick="showSetup()">Solo / New Village</button>
+    <div style="margin-top:16px;font-size:7px;color:var(--border);letter-spacing:4px">BEASTS · ECONOMY · DIPLOMACY · ONLINE</div>
   </div>
 </div>
 
-<!-- ══ LOBBY SCREEN ══ -->
+<!-- ══ LOBBY SCREEN ═══════════════════════════════════════════════════════ -->
 <div id="sl" class="screen">
   <div class="sp-box" style="max-width:520px;width:100%">
     <div class="tm" style="margin-bottom:4px">Lobby</div>
     <div class="ts" style="margin-bottom:20px">Create or join a room to play</div>
 
-    <!-- Create Room -->
-    <div style="border:1px solid #2e2820;padding:12px;margin-bottom:12px">
-      <div style="font-size:9px;color:#c9a84c;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Create Room</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px">
-        <label style="display:flex;align-items:center;gap:4px;font-size:9px;color:#e8e0cc">
+    <div style="border:1px solid var(--border);padding:14px;margin-bottom:10px">
+      <div style="font-size:8px;color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Create Room</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px">
+        <label style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--text)">
           <input type="checkbox" id="sl-create-private" checked> Private
         </label>
-        <div style="display:flex;align-items:center;gap:4px">
-          <span style="font-size:8px;color:#7a7060">Max players:</span>
-          <select id="sl-create-max" style="background:#0d0a04;border:1px solid #2e2820;color:#e8e0cc;font-size:9px;padding:2px">
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:8px;color:var(--text-dim)">Max players:</span>
+          <select id="sl-create-max" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:9px;padding:3px 5px">
             <option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
           </select>
         </div>
-        <div style="display:flex;align-items:center;gap:4px">
-          <span style="font-size:8px;color:#7a7060">Auto-ready:</span>
-          <select id="sl-create-timeout" style="background:#0d0a04;border:1px solid #2e2820;color:#e8e0cc;font-size:9px;padding:2px">
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:8px;color:var(--text-dim)">Auto-ready:</span>
+          <select id="sl-create-timeout" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:9px;padding:3px 5px">
             <option value="5">5 min</option><option value="10">10 min</option><option value="15" selected>15 min</option><option value="30">30 min</option>
           </select>
         </div>
       </div>
-      <button class="bstart" style="width:100%;font-size:11px" onclick="createRoomFlow()">Create Room ↗</button>
+      <button class="bstart" style="width:100%;font-size:10px" onclick="createRoomFlow()">Create Room ↗</button>
     </div>
 
-    <!-- Join by Code -->
-    <div style="border:1px solid #2e2820;padding:12px;margin-bottom:12px">
-      <div style="font-size:9px;color:#c9a84c;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Join by Code</div>
-      <div style="display:flex;gap:6px">
-        <input id="sl-join-code" class="sp-input" placeholder="LEAF42" maxlength="6" style="flex:1;text-transform:uppercase;font-family:monospace;letter-spacing:4px">
-        <button class="gb" onclick="joinRoomFlow()">Join ▸</button>
+    <div style="border:1px solid var(--border);padding:14px;margin-bottom:10px">
+      <div style="font-size:8px;color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Join by Code</div>
+      <div style="display:flex;gap:7px">
+        <input id="sl-join-code" class="sp-input" placeholder="LEAF42" maxlength="6" style="flex:1;text-transform:uppercase;font-family:monospace;letter-spacing:5px">
+        <button class="gb" style="margin-top:0" onclick="joinRoomFlow()">Join ▸</button>
       </div>
-      <div id="lob-join-error" style="font-size:8px;color:#f66;margin-top:4px"></div>
+      <div id="lob-join-error" style="font-size:8px;color:var(--red);margin-top:5px"></div>
     </div>
 
-    <!-- Server Browser -->
-    <div style="border:1px solid #2e2820;padding:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div style="font-size:9px;color:#c9a84c;text-transform:uppercase;letter-spacing:1px">Public Rooms</div>
-        <button class="gb" style="font-size:8px" onclick="browseRooms()">Refresh ↺</button>
+    <div style="border:1px solid var(--border);padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:8px;color:var(--gold);text-transform:uppercase;letter-spacing:2px">Public Rooms</div>
+        <button class="gb" style="font-size:7px;margin-top:0;padding:3px 8px" onclick="browseRooms()">Refresh ↺</button>
       </div>
-      <div id="sl-browser-list">
-        <div style="color:#7a7060;font-size:9px">Click Refresh to load public rooms.</div>
-      </div>
+      <div id="sl-browser-list"><div style="color:var(--text-dim);font-size:9px">Click Refresh to load public rooms.</div></div>
     </div>
 
-    <div style="margin-top:10px;text-align:center">
-      <button style="background:none;border:none;color:#7a7060;font-size:8px;cursor:pointer;letter-spacing:1px" onclick="showSetup()">New village (solo) ▸</button>
+    <div style="margin-top:12px;text-align:center">
+      <button style="background:none;border:none;color:var(--text-dim);font-size:8px;cursor:pointer;letter-spacing:1px;font-family:'Courier New',monospace" onclick="showSetup()">New village (solo) ▸</button>
     </div>
   </div>
 </div>
 
-<!-- ══ SETUP SCREEN ══ -->
+<!-- ══ SETUP SCREEN ═══════════════════════════════════════════════════════ -->
 <div id="sp" class="screen">
   <div class="sp-box">
     <div class="tm" style="margin-bottom:4px">Establish Your Village</div>
@@ -94,221 +89,389 @@
   </div>
 </div>
 
-<!-- ══ GAME SCREEN ══ -->
+<!-- ══ GAME SCREEN ════════════════════════════════════════════════════════ -->
 <div id="sg" class="screen">
 
-  <!-- CONTENT ROW (sidebar + main) -->
-  <div style="flex:1;display:flex;flex-direction:row;overflow:hidden;min-height:0">
-
-  <!-- SIDEBAR -->
-  <div class="sb">
-    <div class="sbl">
-      <div style="font-size:24px" id="sb-icon">🍃</div>
-      <div class="sbn" id="sb-vname">Your Village</div>
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="tb-village">
+      <div class="tb-icon" id="tb-icon">🍃</div>
+      <div class="tb-identity">
+        <div class="tb-vname" id="tb-vname">Your Village</div>
+        <div class="tb-kname" id="tb-kname">Kage</div>
+      </div>
+      <div class="prestige-badge" id="tb-prestige">D</div>
     </div>
-    <nav style="flex:1;overflow-y:auto;padding:5px 0">
-      <div class="nsec">Operations</div>
-      <button class="nb active" onclick="sp('roster')" id="nv-roster">▸ Roster</button>
-      <button class="nb" onclick="sp('squads')" id="nv-squads">▸ Squads</button>
-      <button class="nb" onclick="sp('missions')" id="nv-missions">▸ Missions</button>
-      <div class="nsec">Village</div>
-      <button class="nb" onclick="sp('upgrades')" id="nv-upgrades">▸ Upgrades</button>
-      <button class="nb" onclick="sp('academy')" id="nv-academy">▸ Academy</button>
-      <button class="nb" onclick="sp('economy')" id="nv-economy">▸ Economy</button>
-      <button class="nb" onclick="sp('finances')" id="nv-finances">▸ Finances</button>
-      <button class="nb" onclick="sp('staff')" id="nv-staff">▸ Staff</button>
-      <button class="nb" onclick="sp('scouting')" id="nv-scouting">▸ Scouting</button>
-      <button class="nb" onclick="sp('youthacademy')" id="nv-youthacademy">▸ Youth Academy</button>
-      <button class="nb" onclick="sp('meetings')" id="nv-meetings">▸ People <span class="nb-badge" id="meet-badge" style="display:none">!</span></button>
-      <button class="nb" onclick="sp('transfers')" id="nv-transfers">▸ Transfer Market</button>
-      <button class="nb" onclick="sp('village')" id="nv-village">▸ Overview</button>
-      <div class="nsec">World</div>
-      <button class="nb" onclick="sp('beasts')" id="nv-beasts">▸ Tailed Beasts</button>
-      <button class="nb" onclick="sp('kage')" id="nv-kage">▸ Kage Council</button>
-      <button class="nb" onclick="sp('exam')" id="nv-exam">▸ Chunin Exam</button>
-      <button class="nb" onclick="sp('intel')" id="nv-intel">▸ Intel</button>
-      <button class="nb" onclick="sp('legacy')" id="nv-legacy">▸ Legacy</button>
-      <button class="nb" onclick="sp('log')" id="nv-log">▸ Log</button>
-      <button class="nb" onclick="sp('chronicles')" id="nv-chronicles">▸ Chronicles</button>
-      <button class="nb" onclick="sp('memorial')" id="nv-memorial">▸ Memorial</button>
-      <div class="nsec">Multiplayer</div>
-      <button class="nb" onclick="sp('lobby')" id="nv-lobby">▸ Lobby <span class="nb-badge" id="lob-room-code" style="color:#c9a84c;font-family:monospace;font-size:8px"></span></button>
-      <button class="nb" onclick="sp('world')" id="nv-world">▸ World Map <span class="nb-badge" id="wp-badge" style="display:none">!</span></button>
-    </nav>
-    <div class="sb-online">
-      <div class="sb-dot" id="sb-dot"></div>
-      <span id="sb-online-txt">Offline</span>
+    <div class="tb-stats">
+      <div class="tb-stat">
+        <span class="tb-stat-v" id="tryo">0</span>
+        <span class="tb-stat-l">Ryo</span>
+      </div>
+      <div class="tb-stat">
+        <span class="tb-stat-v" id="tinc">+0/mo</span>
+        <span class="tb-stat-l">Income</span>
+      </div>
+      <div class="tb-stat">
+        <span class="tb-stat-v" id="trep">0</span>
+        <span class="tb-stat-l">Rep</span>
+      </div>
+      <div class="tb-stat">
+        <span class="tb-stat-v" id="tmiss">0</span>
+        <span class="tb-stat-l">Missions</span>
+      </div>
+      <div class="tb-stat">
+        <span class="tb-stat-v" id="tlegend">0</span>
+        <span class="tb-stat-l">Legend</span>
+      </div>
+      <div class="tb-stat">
+        <span class="tb-stat-v" id="tdate">Y1 M1</span>
+        <span class="tb-stat-l">Date</span>
+      </div>
     </div>
-    <div class="sbst">
-      <div class="sbs"><span class="l">Date</span><span class="v" id="sbdt">Y1M1</span></div>
-      <div class="sbs"><span class="l">Ryo</span><span class="v" id="sbryo">-</span></div>
-      <div class="sbs"><span class="l">Rep</span><span class="v" id="sbrep">-</span></div>
-      <div class="sbs"><span class="l">Force</span><span class="v" id="sbf">-</span></div>
+    <div class="tb-actions">
+      <div class="tb-morale" title="Village Morale">
+        <span class="tb-morale-label">Morale</span>
+        <div class="tb-morale-bar"><div class="tb-morale-fill" id="tb-morale-fill" style="width:75%"></div></div>
+        <span style="font-size:9px;color:var(--text-dim)" id="tb-morale-val">75</span>
+      </div>
+      <div class="tb-morale" style="gap:5px" id="tb-ready-status" title="Room ready status" style="display:none">
+        <span style="font-size:8px;color:var(--text-dim)" id="tb-ready-txt"></span>
+      </div>
+      <button class="ab" onclick="endTurn()" id="btn-end-turn">End Turn ▸</button>
     </div>
   </div>
 
-  <!-- MAIN AREA -->
-  <div class="ma">
-    <div class="tb">
-      <div class="ts2"><span id="tryo">0</span>Ryo</div>
-      <div class="ts2"><span id="trep">0</span>Rep</div>
-      <div class="ts2"><span id="tmiss">0</span>Missions</div>
-      <div class="ts2"><span id="tinc">+0</span>Income/mo</div>
-      <div class="ts2"><span id="tlegend">0</span>Legend</div>
-      <div class="ts2"><span id="tdate">Y1 M1</span>Month</div>
-      <button class="ab" onclick="endTurn()" id="btn-end-turn">End Turn ▸</button>
-    </div>
-    <div class="pc">
+  <!-- CONTENT ROW: sidebar + main -->
+  <div class="sg-body">
 
-      <!-- lobby -->
-      <div id="p-lobby" style="display:none"></div>
-
-      <!-- roster -->
-      <div id="p-roster"><div class="pt">Shinobi Force</div><div id="rl"></div></div>
-
-      <!-- squads -->
-      <div id="p-squads" style="display:none">
-        <div class="pt">Squads</div>
-        <button class="gb" onclick="oCS()" style="margin-bottom:12px">+ Form Squad</button>
-        <div id="sql"></div>
+    <!-- SIDEBAR -->
+    <div class="sb">
+      <div class="sbl">
+        <div style="font-size:26px" id="sb-icon">🍃</div>
+        <div class="sbn" id="sb-vname">Your Village</div>
       </div>
 
-      <!-- missions -->
-      <div id="p-missions" style="display:none">
-        <div class="pt">Missions</div>
-        <div id="wce-banner" style="display:none;background:rgba(135,206,235,0.07);border:1px solid #87ceeb;padding:8px 10px;margin-bottom:10px;cursor:pointer" onclick="openWorldChoice()">
-          <div style="font-size:9px;color:#87ceeb;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px">⚡ World Event — Response Required</div>
-          <div style="font-size:9px;color:#e8e0cc" id="wce-banner-name"></div>
-          <div style="font-size:8px;color:#7a7060;margin-top:2px">Click to respond ▸</div>
+      <nav class="sb-nav">
+
+        <!-- INBOX (special — always expanded, top of nav) -->
+        <button class="nb" onclick="sp('inbox')" id="nv-inbox" style="padding:8px 10px 8px 14px;font-size:9px;border-bottom:1px solid var(--border-dim);margin-bottom:4px">
+          📬 Inbox
+          <span class="nb-badge" id="inbox-badge" style="display:none">0</span>
+        </button>
+        <button class="nb" onclick="sp('dashboard')" id="nv-dashboard" style="padding:6px 10px 6px 14px;margin-bottom:4px">
+          Dashboard
+        </button>
+
+        <!-- VILLAGE -->
+        <div class="nsg" id="nsg-village">
+          <button class="nsg-toggle" onclick="toggleNav('village')">
+            <span class="nsg-label">Village</span>
+            <span class="nsg-chevron" id="nsc-village">▾</span>
+          </button>
+          <div class="nsg-items" id="nsi-village">
+            <button class="nb" onclick="sp('village')" id="nv-village">Overview</button>
+            <button class="nb" onclick="sp('finances')" id="nv-finances">Finances</button>
+            <button class="nb" onclick="sp('upgrades')" id="nv-upgrades">Upgrades</button>
+            <button class="nb" onclick="sp('legacy')" id="nv-legacy">Legacy &amp; Prestige</button>
+            <button class="nb" onclick="sp('chronicles')" id="nv-chronicles">Chronicles</button>
+            <button class="nb" onclick="sp('memorial')" id="nv-memorial">Memorial Wall</button>
+          </div>
         </div>
-        <div class="rb" id="rdb">
-          <div style="font-size:9px;color:#f66;letter-spacing:2px;font-weight:bold;margin-bottom:3px;text-transform:uppercase">⚠ Incoming Threat</div>
-          <div id="rdd" style="font-size:9px;color:#f99"></div>
+
+        <!-- ROSTER -->
+        <div class="nsg" id="nsg-roster">
+          <button class="nsg-toggle" onclick="toggleNav('roster')">
+            <span class="nsg-label">Roster</span>
+            <span class="nsg-chevron" id="nsc-roster">▾</span>
+          </button>
+          <div class="nsg-items" id="nsi-roster">
+            <button class="nb active" onclick="sp('roster')" id="nv-roster">Shinobi</button>
+            <button class="nb" onclick="sp('squads')" id="nv-squads">Squads</button>
+            <button class="nb" onclick="sp('depth')" id="nv-depth">Depth Chart</button>
+            <button class="nb" onclick="sp('missions')" id="nv-missions">Missions</button>
+            <button class="nb" onclick="sp('meetings')" id="nv-meetings">
+              People
+              <span class="nb-badge" id="meet-badge" style="display:none">!</span>
+            </button>
+          </div>
         </div>
-        <div class="tabs">
-          <div class="tab active" onclick="mTab('solo')" id="mt-solo">Solo</div>
-          <div class="tab" onclick="mTab('squad')" id="mt-squad">Squad</div>
-          <div class="tab" onclick="mTab('def')" id="mt-def">Defense</div>
+
+        <!-- DEVELOPMENT -->
+        <div class="nsg" id="nsg-dev">
+          <button class="nsg-toggle" onclick="toggleNav('dev')">
+            <span class="nsg-label">Development</span>
+            <span class="nsg-chevron" id="nsc-dev">▾</span>
+          </button>
+          <div class="nsg-items" id="nsi-dev">
+            <button class="nb" onclick="sp('youthacademy')" id="nv-youthacademy">Youth Academy</button>
+            <button class="nb" onclick="sp('academy')" id="nv-academy">Prospects</button>
+            <button class="nb" onclick="sp('scouting')" id="nv-scouting">Scouting Network</button>
+          </div>
         </div>
-        <div id="ms-solo"></div>
-        <div id="ms-squad" style="display:none"></div>
-        <div id="ms-def" style="display:none"></div>
-      </div>
 
-      <!-- upgrades -->
-      <div id="p-upgrades" style="display:none"><div class="pt">Village Upgrades</div><div id="upl"></div></div>
-
-      <!-- academy -->
-      <div id="p-academy" style="display:none">
-        <div class="pt">Academy Prospects</div>
-        <div style="font-size:9px;color:#7a7060;margin-bottom:10px">2,000 ryo per recruit.</div>
-        <div id="acl"></div>
-      </div>
-
-      <!-- economy -->
-      <div id="p-economy" style="display:none">
-        <div class="pt">Economy</div>
-        <div class="tabs">
-          <div class="tab active" onclick="eTab('trade')" id="et-trade">Trade Routes</div>
-          <div class="tab" onclick="eTab('contracts')" id="et-contracts">Contracts</div>
-          <div class="tab" onclick="eTab('black')" id="et-black">Black Market</div>
+        <!-- STAFF -->
+        <div class="nsg" id="nsg-staff">
+          <button class="nsg-toggle" onclick="toggleNav('staff')">
+            <span class="nsg-label">Staff</span>
+            <span class="nsg-chevron" id="nsc-staff">▾</span>
+          </button>
+          <div class="nsg-items" id="nsi-staff">
+            <button class="nb" onclick="sp('staff')" id="nv-staff">All Staff</button>
+          </div>
         </div>
-        <div id="ec-trade"></div>
-        <div id="ec-contracts" style="display:none"></div>
-        <div id="ec-black" style="display:none"></div>
-      </div>
 
-      <!-- village overview -->
-      <div id="p-village" style="display:none"><div class="pt">Village Overview</div><div class="vg" id="vst"></div></div>
-
-      <!-- tailed beasts -->
-      <div id="p-beasts" style="display:none">
-        <div class="pt">Tailed Beasts</div>
-        <div style="font-size:9px;color:#7a7060;margin-bottom:12px">Capture beasts with ANBU missions. Seal them into a Jinchuriki.</div>
-        <div id="bstl"></div>
-      </div>
-
-      <!-- kage council -->
-      <div id="p-kage" style="display:none"><div class="pt">Kage Council</div><div id="kgl"></div></div>
-
-      <!-- chunin exam -->
-      <div id="p-exam" style="display:none"><div class="pt">Chunin Exam</div><div id="exl"></div></div>
-
-      <!-- intel -->
-      <div id="p-intel" style="display:none"><div class="pt">Intel</div><div id="itl"></div></div>
-
-      <!-- log -->
-      <div id="p-log" style="display:none"><div class="pt">Event Log</div><div id="logl"></div></div>
-
-      <!-- chronicles -->
-      <div id="p-chronicles" style="display:none"><div class="pt">Village Chronicles</div><div style="font-size:9px;color:#7a7060;margin-bottom:10px">Major moments in your village's history, recorded automatically.</div><div id="chl"></div></div>
-
-      <!-- memorial wall -->
-      <div id="p-memorial" style="display:none"><div class="pt">Memorial Wall</div><div style="font-size:9px;color:#7a7060;margin-bottom:10px">Those who gave their lives in service of the village.</div><div id="meml"></div></div>
-
-      <!-- finances -->
-      <div id="p-finances" style="display:none">
-        <div class="pt">Village Finances</div>
-        <div style="font-size:9px;color:#7a7060;margin-bottom:12px">Monthly income vs expenditure breakdown. Advance month to update.</div>
-        <div id="fil"></div>
-      </div>
-
-      <!-- staff -->
-      <div id="p-staff" style="display:none">
-        <div class="pt">Staff Management</div>
-        <div style="font-size:9px;color:#7a7060;margin-bottom:12px">Staff operate separately from your shinobi force and provide passive bonuses. Salaries are deducted monthly.</div>
-        <div id="stfl"></div>
-      </div>
-
-      <!-- scouting network -->
-      <div id="p-scouting" style="display:none">
-        <div class="pt">Scouting Network</div>
-        <div style="font-size:9px;color:#7a7060;margin-bottom:12px">Deploy Scout Jonin to regions to surface prospects and gather intel. Report quality scales with scout stats.</div>
-        <div id="scol"></div>
-      </div>
-
-      <!-- youth academy -->
-      <div id="p-youthacademy" style="display:none">
-        <div class="pt">Youth Academy</div>
-        <div style="font-size:9px;color:#7a7060;margin-bottom:12px">Annual April intake. Set development tracks and intensity for each student. They graduate into the prospect pool after 12 months.</div>
-        <div id="yal"></div>
-      </div>
-
-      <!-- people management / meetings -->
-      <div id="p-meetings" style="display:none">
-        <div class="pt">People Management</div>
-        <div style="font-size:9px;color:#7a7060;margin-bottom:12px">One-on-one meetings, dressing room harmony, and individual morale. Advance month to generate meeting requests.</div>
-        <div id="meetl"></div>
-      </div>
-
-      <!-- transfer market -->
-      <div id="p-transfers" style="display:none">
-        <div class="pt">Transfer Market &amp; Bingo Book</div>
-        <div style="font-size:9px;color:#7a7060;margin-bottom:12px">Sign free agents and negotiate village transfers during windows. Manage loans, respond to sell pressure, and track Bingo Book presence.</div>
-        <div id="trl"></div>
-      </div>
-
-      <!-- legacy -->
-      <div id="p-legacy" style="display:none">
-        <div class="pt">Legacy &amp; Prestige</div>
-        <div id="legl"></div>
-      </div>
-
-      <!-- world map (multiplayer) -->
-      <div id="p-world" style="display:none">
-        <div class="pt">World Map</div>
-        <div class="wmap-wrap">
-          <canvas id="wmap"></canvas>
-          <div class="wmap-empty" id="wmap-empty">Connecting to world...</div>
+        <!-- COMPETITIONS -->
+        <div class="nsg" id="nsg-comp">
+          <button class="nsg-toggle" onclick="toggleNav('comp')">
+            <span class="nsg-label">Competitions</span>
+            <span class="nsg-chevron" id="nsc-comp">▾</span>
+          </button>
+          <div class="nsg-items" id="nsi-comp">
+            <button class="nb" onclick="sp('exam')" id="nv-exam">Chunin Exam</button>
+            <button class="nb" onclick="sp('kage')" id="nv-kage">Five Kage Summit</button>
+            <button class="nb" onclick="sp('log')" id="nv-log">Event Log</button>
+          </div>
         </div>
-        <div class="pt">Active Villages</div>
-        <div id="wvl"></div>
+
+        <!-- DIPLOMACY -->
+        <div class="nsg" id="nsg-dip">
+          <button class="nsg-toggle" onclick="toggleNav('dip')">
+            <span class="nsg-label">Diplomacy</span>
+            <span class="nsg-chevron" id="nsc-dip">▾</span>
+          </button>
+          <div class="nsg-items" id="nsi-dip">
+            <button class="nb" onclick="sp('world')" id="nv-world">
+              Village Relations
+              <span class="nb-badge" id="wp-badge" style="display:none">!</span>
+            </button>
+            <button class="nb" onclick="sp('intel')" id="nv-intel">Intel</button>
+            <button class="nb" onclick="sp('economy')" id="nv-economy">Trade Routes</button>
+          </div>
+        </div>
+
+        <!-- TAILED BEASTS -->
+        <div class="nsg" id="nsg-beasts">
+          <button class="nsg-toggle" onclick="toggleNav('beasts')">
+            <span class="nsg-label">Tailed Beasts</span>
+            <span class="nsg-chevron" id="nsc-beasts">▾</span>
+          </button>
+          <div class="nsg-items" id="nsi-beasts">
+            <button class="nb" onclick="sp('beasts')" id="nv-beasts">Beast Status</button>
+          </div>
+        </div>
+
+        <!-- MARKET -->
+        <div class="nsg" id="nsg-market">
+          <button class="nsg-toggle" onclick="toggleNav('market')">
+            <span class="nsg-label">Market</span>
+            <span class="nsg-chevron" id="nsc-market">▾</span>
+          </button>
+          <div class="nsg-items" id="nsi-market">
+            <button class="nb" onclick="sp('transfers')" id="nv-transfers">Transfer Market</button>
+          </div>
+        </div>
+
+        <!-- WORLD / MULTIPLAYER -->
+        <div class="nsg" id="nsg-mp">
+          <button class="nsg-toggle" onclick="toggleNav('mp')">
+            <span class="nsg-label">World</span>
+            <span class="nsg-chevron" id="nsc-mp">▾</span>
+          </button>
+          <div class="nsg-items" id="nsi-mp">
+            <button class="nb" onclick="sp('world')" id="nv-world-mp">World Map</button>
+            <button class="nb" onclick="sp('lobby')" id="nv-lobby">
+              Room Lobby
+              <span class="nb-badge-gold" id="lob-room-code" style="display:none"></span>
+            </button>
+          </div>
+        </div>
+
+      </nav>
+
+      <div class="sb-status">
+        <div class="sb-online">
+          <div class="sb-dot" id="sb-dot"></div>
+          <span id="sb-online-txt">Offline</span>
+        </div>
+        <div class="sbst">
+          <div class="sbs"><span class="l">Date</span><span class="v" id="sbdt">Y1M1</span></div>
+          <div class="sbs"><span class="l">Ryo</span><span class="v" id="sbryo">-</span></div>
+          <div class="sbs"><span class="l">Rep</span><span class="v" id="sbrep">-</span></div>
+          <div class="sbs"><span class="l">Force</span><span class="v" id="sbf">-</span></div>
+        </div>
       </div>
+    </div><!-- /.sb -->
 
-    </div><!-- /.pc -->
-  </div><!-- /.ma -->
+    <!-- MAIN AREA -->
+    <div class="ma">
+      <div class="pc">
 
-  </div><!-- /.content-row -->
+        <!-- dashboard -->
+        <div id="p-dashboard" style="display:none"></div>
+
+        <!-- inbox -->
+        <div id="p-inbox" style="display:none"></div>
+
+        <!-- depth chart -->
+        <div id="p-depth" style="display:none"></div>
+
+        <!-- lobby -->
+        <div id="p-lobby" style="display:none"></div>
+
+        <!-- roster -->
+        <div id="p-roster"><div class="pt">Shinobi Force</div><div id="rl"></div></div>
+
+        <!-- squads -->
+        <div id="p-squads" style="display:none">
+          <div class="pt">Squads</div>
+          <button class="gb" onclick="oCS()" style="margin-bottom:14px">+ Form Squad</button>
+          <div id="sql"></div>
+        </div>
+
+        <!-- missions -->
+        <div id="p-missions" style="display:none">
+          <div class="pt">Missions</div>
+          <div id="wce-banner" style="display:none;background:var(--blue-bg);border:1px solid var(--blue);padding:9px 11px;margin-bottom:12px;cursor:pointer" onclick="openWorldChoice()">
+            <div style="font-size:8px;color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px">⚡ World Event — Response Required</div>
+            <div style="font-size:9px;color:var(--text)" id="wce-banner-name"></div>
+            <div style="font-size:8px;color:var(--text-dim);margin-top:2px">Click to respond ▸</div>
+          </div>
+          <div class="rb" id="rdb">
+            <div style="font-size:9px;color:var(--red);letter-spacing:2px;font-weight:bold;margin-bottom:3px;text-transform:uppercase">⚠ Incoming Threat</div>
+            <div id="rdd" style="font-size:9px;color:var(--orange)"></div>
+          </div>
+          <div class="tabs">
+            <div class="tab active" onclick="mTab('solo')" id="mt-solo">Solo</div>
+            <div class="tab" onclick="mTab('squad')" id="mt-squad">Squad</div>
+            <div class="tab" onclick="mTab('def')" id="mt-def">Defense</div>
+          </div>
+          <div id="ms-solo"></div>
+          <div id="ms-squad" style="display:none"></div>
+          <div id="ms-def" style="display:none"></div>
+        </div>
+
+        <!-- upgrades -->
+        <div id="p-upgrades" style="display:none"><div class="pt">Village Upgrades</div><div id="upl"></div></div>
+
+        <!-- academy -->
+        <div id="p-academy" style="display:none">
+          <div class="pt">Academy Prospects</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-bottom:12px">2,000 ryo per recruit.</div>
+          <div id="acl"></div>
+        </div>
+
+        <!-- economy -->
+        <div id="p-economy" style="display:none">
+          <div class="pt">Trade Routes &amp; Contracts</div>
+          <div class="tabs">
+            <div class="tab active" onclick="eTab('trade')" id="et-trade">Trade Routes</div>
+            <div class="tab" onclick="eTab('contracts')" id="et-contracts">Contracts</div>
+            <div class="tab" onclick="eTab('black')" id="et-black">Black Market</div>
+          </div>
+          <div id="ec-trade"></div>
+          <div id="ec-contracts" style="display:none"></div>
+          <div id="ec-black" style="display:none"></div>
+        </div>
+
+        <!-- village overview -->
+        <div id="p-village" style="display:none"><div class="pt">Village Overview</div><div class="vg" id="vst"></div></div>
+
+        <!-- tailed beasts -->
+        <div id="p-beasts" style="display:none">
+          <div class="pt">Tailed Beasts</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Capture beasts with ANBU missions. Seal them into a Jinchuriki.</div>
+          <div id="bstl"></div>
+        </div>
+
+        <!-- kage council -->
+        <div id="p-kage" style="display:none"><div class="pt">Five Kage Summit</div><div id="kgl"></div></div>
+
+        <!-- chunin exam -->
+        <div id="p-exam" style="display:none"><div class="pt">Chunin Exam</div><div id="exl"></div></div>
+
+        <!-- intel -->
+        <div id="p-intel" style="display:none"><div class="pt">Intel Operations</div><div id="itl"></div></div>
+
+        <!-- log -->
+        <div id="p-log" style="display:none"><div class="pt">Event Log</div><div id="logl"></div></div>
+
+        <!-- chronicles -->
+        <div id="p-chronicles" style="display:none">
+          <div class="pt">Village Chronicles</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-bottom:12px">Major moments in your village's history, recorded automatically.</div>
+          <div id="chl"></div>
+        </div>
+
+        <!-- memorial wall -->
+        <div id="p-memorial" style="display:none">
+          <div class="pt">Memorial Wall</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-bottom:12px">Those who gave their lives in service of the village.</div>
+          <div id="meml"></div>
+        </div>
+
+        <!-- finances -->
+        <div id="p-finances" style="display:none">
+          <div class="pt">Village Finances</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Monthly income vs expenditure breakdown. Advance month to update.</div>
+          <div id="fil"></div>
+        </div>
+
+        <!-- staff -->
+        <div id="p-staff" style="display:none">
+          <div class="pt">Staff Management</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Staff provide passive bonuses. Salaries are deducted monthly.</div>
+          <div id="stfl"></div>
+        </div>
+
+        <!-- scouting network -->
+        <div id="p-scouting" style="display:none">
+          <div class="pt">Scouting Network</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Deploy Scout Jonin to regions to surface prospects and gather intel.</div>
+          <div id="scol"></div>
+        </div>
+
+        <!-- youth academy -->
+        <div id="p-youthacademy" style="display:none">
+          <div class="pt">Youth Academy</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Annual April intake. Set development tracks and intensity for each student.</div>
+          <div id="yal"></div>
+        </div>
+
+        <!-- people management / meetings -->
+        <div id="p-meetings" style="display:none">
+          <div class="pt">People Management</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">One-on-one meetings, dressing room harmony, and individual morale.</div>
+          <div id="meetl"></div>
+        </div>
+
+        <!-- transfer market -->
+        <div id="p-transfers" style="display:none">
+          <div class="pt">Transfer Market &amp; Bingo Book</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Sign free agents, negotiate village transfers, manage loans and sell pressure.</div>
+          <div id="trl"></div>
+        </div>
+
+        <!-- legacy -->
+        <div id="p-legacy" style="display:none">
+          <div class="pt">Legacy &amp; Prestige</div>
+          <div id="legl"></div>
+        </div>
+
+        <!-- world map (multiplayer) -->
+        <div id="p-world" style="display:none">
+          <div class="pt">World Map</div>
+          <div class="wmap-wrap">
+            <canvas id="wmap"></canvas>
+            <div class="wmap-empty" id="wmap-empty">Connecting to world...</div>
+          </div>
+          <div class="pt" style="margin-top:4px">Active Villages</div>
+          <div id="wvl"></div>
+        </div>
+
+      </div><!-- /.pc -->
+    </div><!-- /.ma -->
+
+  </div><!-- /.sg-body -->
 
   <!-- NEWS TICKER -->
   <div id="news-ticker">
@@ -320,12 +483,12 @@
 
 </div><!-- /#sg -->
 
-<!-- ══ MODALS ══ -->
+<!-- ══ MODALS ════════════════════════════════════════════════════════════ -->
 
 <div class="ov" id="ov-turn-resolve">
-  <div class="mo" style="max-width:460px">
+  <div class="mo" style="max-width:480px">
     <div class="mot">Turn Resolution</div>
-    <div id="ov-tr-body" style="max-height:360px;overflow-y:auto"></div>
+    <div id="ov-tr-body" style="max-height:380px;overflow-y:auto"></div>
     <div class="mbc"><button class="bc" onclick="cm('turn-resolve')">Close ✓</button></div>
   </div>
 </div>
@@ -333,7 +496,7 @@
 <div class="ov" id="ov-assign">
   <div class="mo">
     <div class="mot" id="ma-t">Assign</div>
-    <div style="font-size:9px;color:#7a7060;margin-bottom:10px" id="ma-d"></div>
+    <div style="font-size:9px;color:var(--text-dim);margin-bottom:10px" id="ma-d"></div>
     <div id="ma-l"></div>
     <div class="mbc"><button class="bc" onclick="cm('assign')">Cancel</button></div>
   </div>
@@ -350,12 +513,14 @@
 <div class="ov" id="ov-csquad">
   <div class="mo">
     <div class="mot">Form Squad</div>
-    <div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:7px">Leader (Jonin+)</div>
+    <div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px">Leader (Jonin+)</div>
     <div id="cs-l"></div>
-    <div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin:8px 0 6px">Members (pick 2)</div>
+    <div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin:9px 0 6px">Members (pick 2)</div>
     <div id="cs-m"></div>
     <div id="cs-synergy" style="margin:8px 0;min-height:24px"></div>
-    <div style="margin-top:8px;font-size:9px;color:#7a7060">Name: <input id="sqni" style="background:#111;border:1px solid #2e2a22;color:#e8e0cc;padding:3px 7px;font-family:'Courier New',monospace;font-size:9px;width:160px;margin-left:5px" placeholder="Squad 7"></div>
+    <div style="margin-top:9px;font-size:9px;color:var(--text-dim)">
+      Name: <input id="sqni" style="background:var(--surface-2);border:1px solid var(--border);color:var(--text-hi);padding:3px 8px;font-family:'Courier New',monospace;font-size:9px;width:160px;margin-left:6px" placeholder="Squad 7">
+    </div>
     <div class="mbc">
       <button class="bc" onclick="cm('csquad')">Cancel</button>
       <button class="gb" onclick="doCS()">Form ▸</button>
@@ -374,8 +539,8 @@
 <div class="ov" id="ov-sensei">
   <div class="mo">
     <div class="mot">Assign Sensei</div>
-    <div style="font-size:9px;color:#7a7060;margin-bottom:8px">Prospect: <span id="sensei-prospect-name" style="color:#cc7fb8"></span></div>
-    <div style="font-size:8px;color:#7a7060;margin-bottom:10px">A Jonin+ sensei accelerates this prospect's stat growth each month. The sensei remains available for missions.</div>
+    <div style="font-size:9px;color:var(--text-dim);margin-bottom:8px">Prospect: <span id="sensei-prospect-name" style="color:var(--purple)"></span></div>
+    <div style="font-size:8px;color:var(--text-dim);margin-bottom:12px">A Jonin+ sensei accelerates this prospect's stat growth each month. The sensei remains available for missions.</div>
     <div id="sensei-list"></div>
     <div class="mbc"><button class="bc" onclick="cm('sensei')">Cancel</button></div>
   </div>
@@ -384,7 +549,7 @@
 <div class="ov" id="ov-worldchoice">
   <div class="mo">
     <div class="mot" id="wce-title">World Event</div>
-    <div style="font-size:9px;color:#87ceeb;margin-bottom:8px" id="wce-desc"></div>
+    <div style="font-size:9px;color:var(--blue);margin-bottom:10px" id="wce-desc"></div>
     <div id="wce-choices"></div>
     <div class="mbc"><button class="bc" onclick="cm('worldchoice')">Dismiss</button></div>
   </div>
@@ -393,15 +558,15 @@
 <div class="ov" id="ov-scout">
   <div class="mo">
     <div class="mot">Select Scout</div>
-    <div style="font-size:9px;color:#7a7060;margin-bottom:8px">Prospect: <span id="scout-prospect-name" style="color:#cc7fb8"></span></div>
-    <div style="font-size:8px;color:#7a7060;margin-bottom:10px">Assign a Jonin+ shinobi to spend 1 month verifying this prospect's potential — 3,000 ryo.</div>
+    <div style="font-size:9px;color:var(--text-dim);margin-bottom:8px">Prospect: <span id="scout-prospect-name" style="color:var(--purple)"></span></div>
+    <div style="font-size:8px;color:var(--text-dim);margin-bottom:12px">Assign a Jonin+ shinobi to spend 1 month verifying this prospect's potential — 3,000 ryo.</div>
     <div id="scout-list"></div>
     <div class="mbc"><button class="bc" onclick="cm('scout')">Cancel</button></div>
   </div>
 </div>
 
 <div class="ov" id="ov-dossier">
-  <div class="mo">
+  <div class="mo" style="max-width:560px">
     <div class="mot" id="dos-t">Dossier</div>
     <div id="dos-c"></div>
     <div class="mbc"><button class="bc" onclick="cm('dossier')">Close</button></div>
@@ -423,7 +588,7 @@
 <div class="ov" id="ov-staffhire">
   <div class="mo">
     <div class="mot" id="sh-title">Hire Staff</div>
-    <div style="font-size:9px;color:#7a7060;margin-bottom:10px" id="sh-desc"></div>
+    <div style="font-size:9px;color:var(--text-dim);margin-bottom:10px" id="sh-desc"></div>
     <div id="sh-candidates"></div>
     <div class="mbc"><button class="bc" onclick="cm('staffhire')">Cancel</button></div>
   </div>
@@ -432,20 +597,19 @@
 <div class="ov" id="ov-retiretostaff">
   <div class="mo">
     <div class="mot" id="rts-title">Retire to Staff</div>
-    <div style="font-size:9px;color:#7a7060;margin-bottom:10px">Select a staff role for this shinobi. Their career stats will determine their initial rating.</div>
+    <div style="font-size:9px;color:var(--text-dim);margin-bottom:10px">Select a staff role for this shinobi. Their career stats will determine their initial rating.</div>
     <div id="rts-roles"></div>
     <div class="mbc"><button class="bc" onclick="cm('retiretostaff')">Cancel</button></div>
   </div>
 </div>
 
-<!-- Negotiation modal -->
 <div class="ov" id="ov-negotiate">
   <div class="mo">
     <div class="mot" id="neg-title">Negotiation</div>
-    <div style="font-size:9px;color:#7a7060;margin-bottom:10px">Submit an offer to the shinobi's village. Asking price: <strong id="neg-asking" style="color:#c9a84c"></strong> ryo.</div>
+    <div style="font-size:9px;color:var(--text-dim);margin-bottom:10px">Submit an offer to the shinobi's village. Asking price: <strong id="neg-asking" style="color:var(--gold)"></strong> ryo.</div>
     <div style="margin-bottom:10px">
-      <label style="font-size:9px;color:#7a7060">Your offer (ryo):</label><br>
-      <input id="neg-offer" type="number" style="background:#111;color:#e8d5a3;border:1px solid #555;border-radius:4px;padding:5px 8px;width:100%;margin-top:4px;font-size:12px">
+      <label style="font-size:9px;color:var(--text-dim)">Your offer (ryo):</label><br>
+      <input id="neg-offer" type="number" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:6px 9px;width:100%;margin-top:5px;font-size:11px;font-family:'Courier New',monospace">
     </div>
     <div id="neg-result" style="font-size:10px;margin-bottom:10px;min-height:16px"></div>
     <div class="mbc">
@@ -456,22 +620,21 @@
   </div>
 </div>
 
-<!-- Personal terms modal -->
 <div class="ov" id="ov-personalterms">
   <div class="mo">
     <div class="mot" id="pt-title">Personal Terms</div>
-    <div style="font-size:9px;color:#7a7060;margin-bottom:4px">Transfer fee agreed: <strong id="pt-fee" style="color:#c9a84c"></strong></div>
-    <div style="font-size:9px;color:#7a7060;margin-bottom:12px" id="pt-rank-info"></div>
+    <div style="font-size:9px;color:var(--text-dim);margin-bottom:4px">Transfer fee agreed: <strong id="pt-fee" style="color:var(--gold)"></strong></div>
+    <div style="font-size:9px;color:var(--text-dim);margin-bottom:12px" id="pt-rank-info"></div>
     <div style="margin-bottom:10px">
-      <label style="font-size:9px;color:#e8d5a3;display:flex;align-items:center;gap:8px">
+      <label style="font-size:9px;color:var(--text);display:flex;align-items:center;gap:8px">
         <input id="pt-role-guar" type="checkbox" style="width:14px;height:14px">
         Mission role guarantee (promise regular deployment)
       </label>
-      <div style="font-size:8px;color:#7a7060;margin-top:3px;margin-left:22px">Boosts arrival commitment +10. Breach costs commitment each month unused.</div>
+      <div style="font-size:8px;color:var(--text-dim);margin-top:3px;margin-left:22px">Boosts arrival commitment +10. Breach costs commitment each month unused.</div>
     </div>
     <div style="margin-bottom:10px">
-      <label style="font-size:9px;color:#7a7060">Rank timeline expectation:</label>
-      <select id="pt-rank-tl" style="background:#1a1a1a;color:#e8d5a3;border:1px solid #555;border-radius:4px;padding:4px 8px;width:100%;margin-top:4px;font-size:11px">
+      <label style="font-size:9px;color:var(--text-dim)">Rank timeline expectation:</label>
+      <select id="pt-rank-tl" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:5px 9px;width:100%;margin-top:5px;font-size:10px;font-family:'Courier New',monospace">
         <option value="0">No promise</option>
         <option value="3">Promote within 3 months</option>
         <option value="6">Promote within 6 months</option>
@@ -479,8 +642,8 @@
       </select>
     </div>
     <div style="margin-bottom:10px">
-      <label style="font-size:9px;color:#7a7060">Signing bonus:</label>
-      <select id="pt-sig-bonus" style="background:#1a1a1a;color:#e8d5a3;border:1px solid #555;border-radius:4px;padding:4px 8px;width:100%;margin-top:4px;font-size:11px">
+      <label style="font-size:9px;color:var(--text-dim)">Signing bonus:</label>
+      <select id="pt-sig-bonus" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:5px 9px;width:100%;margin-top:5px;font-size:10px;font-family:'Courier New',monospace">
         <option value="0">None</option>
         <option value="1000">1,000 ryo</option>
         <option value="3000">3,000 ryo</option>
@@ -488,18 +651,27 @@
       </select>
     </div>
     <div style="margin-bottom:10px">
-      <label style="font-size:9px;color:#7a7060">Sign as loan (temporary):</label>
-      <select id="pt-loan-dur" style="background:#1a1a1a;color:#e8d5a3;border:1px solid #555;border-radius:4px;padding:4px 8px;width:100%;margin-top:4px;font-size:11px">
+      <label style="font-size:9px;color:var(--text-dim)">Sign as loan (temporary):</label>
+      <select id="pt-loan-dur" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:5px 9px;width:100%;margin-top:5px;font-size:10px;font-family:'Courier New',monospace">
         <option value="0">Permanent signing</option>
         <option value="3">Loan — 3 months</option>
         <option value="6">Loan — 6 months</option>
       </select>
-      <div style="font-size:8px;color:#7a7060;margin-top:3px">Loan players cannot enter the Chunin Exam.</div>
+      <div style="font-size:8px;color:var(--text-dim);margin-top:3px">Loan players cannot enter the Chunin Exam.</div>
     </div>
     <div class="mbc">
       <button class="bc" onclick="confirmTransfer()">Confirm &amp; Sign ▸</button>
       <button class="bc" onclick="cm('personalterms')">Cancel</button>
     </div>
+  </div>
+</div>
+
+<!-- Shinobi comparison modal -->
+<div class="ov" id="ov-compare">
+  <div class="mo" style="max-width:640px;width:96vw">
+    <div class="mot">Shinobi Comparison</div>
+    <div id="cmp-body"></div>
+    <div class="mbc"><button class="bc" onclick="cm('compare')">Close</button></div>
   </div>
 </div>
 

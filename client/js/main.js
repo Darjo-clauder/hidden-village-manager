@@ -25,9 +25,16 @@ import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, decline
 import { showLobby, createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode } from './setup.js'
 import { endTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose, setTimeout_, setMaxPlayers, voteAdvance, setAdvFn } from './room.js'
 import { copyInvite } from './panels/lobby.js'
+import { inboxTab, inboxFilter } from './panels/inbox.js'
 
 // Inject adv into room.js to break circular dep
 setAdvFn(adv)
+
+// Toggle sidebar nav section collapse
+function toggleNav(section) {
+  const el = document.getElementById('nsg-' + section)
+  if (el) el.classList.toggle('collapsed')
+}
 
 // defender shorthand helpers used from inline HTML
 function G_defShSet(id) { G.defSh = id; rDef() }
@@ -42,7 +49,9 @@ Object.assign(window, {
   endTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose,
   setTimeout_, setMaxPlayers, voteAdvance, copyInvite,
   // navigation & modals
-  sp, cm, adv,
+  sp, cm, adv, toggleNav,
+  // inbox
+  inboxTab, inboxFilter,
   // roster
   oDos, mkJK, treatTrauma,
   // squads
