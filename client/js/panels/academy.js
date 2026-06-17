@@ -2,6 +2,63 @@ import { G, ui, sPow, sn, clamp, fmt } from '../state.js'
 import { RANKS, RKC } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { sBars, pCl } from './roster.js'
+import { isEnabled } from '../../../config/features.js'
+
+// ── Hidden attribute display ──────────────────────────────────────────────────
+const ATTR_LABELS = {
+  resilience:    { short: 'RES', color: '#8fbc8f' },
+  coachability:  { short: 'COA', color: '#87ceeb' },
+  pressure:      { short: 'PRS', color: '#c9a84c' },
+  adaptability:  { short: 'ADP', color: '#cc7fb8' },
+  leadership:    { short: 'LDR', color: '#f0a030' },
+}
+
+function _hiddenAttrsHtml(p) {
+  if (!isEnabled('SCOUTING')) return ''
+  const attrs = p.hiddenAttributes
+  if (!attrs || attrs.length === 0) return ''
+  const revealedCount = attrs.filter(a => a.revealed).length
+  if (revealedCount === 0 && !(p.bestConfidence >= 65)) return ''
+
+  const slots = attrs.map(attr => {
+    const meta = ATTR_LABELS[attr.key] || { short: attr.key.slice(0, 3).toUpperCase(), color: '#888' }
+    if (!attr.revealed) {
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;opacity:.35">
+        <div style="font-size:6px;color:#666">${meta.short}</div>
+        <div style="font-size:9px;color:#555">?</div>
+      </div>`
+    }
+    const pct = Math.round((attr.value / 20) * 100)
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px" title="${attr.key}: ${attr.value}/20">
+      <div style="font-size:6px;color:${meta.color}">${meta.short}</div>
+      <div style="font-size:9px;color:${meta.color};font-weight:bold">${attr.value}</div>
+      <div style="width:18px;height:2px;background:#2e2a22;border-radius:1px">
+        <div style="width:${pct}%;height:100%;background:${meta.color};border-radius:1px"></div>
+      </div>
+    </div>`
+  }).join('')
+
+  return `<div style="margin-top:7px;padding-top:6px;border-top:1px solid #2e2a22">
+    <div style="font-size:7px;color:#555;margin-bottom:4px">Hidden Attributes — ${revealedCount}/5 revealed</div>
+    <div style="display:flex;gap:8px">${slots}</div>
+  </div>`
+}
+
+function _scoutHistoryHtml(p) {
+  if (!isEnabled('SCOUTING')) return ''
+  const history = p.scoutHistory
+  if (!history || history.length === 0) return ''
+  const latest = history[history.length - 1]
+  const best = p.bestConfidence || latest.confidence
+  const qualColor = best >= 80 ? '#c9a84c' : best >= 65 ? '#87ceeb' : best >= 50 ? '#9cf' : '#888'
+  const qualLabel = best >= 80 ? 'Elite' : best >= 65 ? 'Detailed' : best >= 50 ? 'General' : 'Impression'
+  return `<div style="margin-top:4px;font-size:7.5px;color:#555">
+    ${history.length} report${history.length > 1 ? 's' : ''} ·
+    Best: <span style="color:${qualColor}">${qualLabel} (${best}%)</span>
+    ${p.conflictingRanges?.length ? ' · <span style="color:#f99">⚠ conflicting reads</span>' : ''}
+    ${p.trialDayDone ? ' · <span style="color:#8fbc8f">✓ trial day</span>' : ''}
+  </div>`
+}
 
 const MINOR_CLANS = [
   { n: 'Sarutobi', t: 'Fire Sage',   statKey: 'ninjutsu' },
@@ -70,6 +127,8 @@ export function rAc() {
           <div style="background:${patienceColor};height:2px;border-radius:1px;width:${patience}%"></div>
         </div>
       </div>
+      ${_scoutHistoryHtml(p)}
+      ${_hiddenAttrsHtml(p)}
       <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
         <button class="gb gb-g" onclick="rec('${p.id}')" ${canRecruit ? '' : 'disabled'}>Recruit — 2,000 ryo ►</button>
         ${scoutingAm

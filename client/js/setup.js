@@ -3,6 +3,7 @@ import { VILLAGE_ICONS } from './constants.js'
 import { upUI, sp, aL } from './ui.js'
 import { initSocket, socket } from './socket.js'
 import { RS, parseInviteCode } from './room.js'
+import { seedPhase1 } from '../../seeds/phase1.js'
 
 export function showLobby() {
   document.getElementById('st').classList.remove('active')
@@ -73,6 +74,7 @@ function _startGame(vname, kname, icon) {
   G.vName = vname
   G.kName = kname
   G.vIcon = icon
+  seedPhase1(G)
   schEx()
   aL('Your tenure as Kage begins.', 'neutral')
   sp('dashboard')
