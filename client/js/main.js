@@ -17,7 +17,7 @@ import { rFi } from './panels/finances.js'
 import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff, staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting } from './panels/staff.js'
 import { rSco, assignScout, setScoutBudget, toggleWatchlist, trialDay, signProspect, draftSort } from './panels/scouting.js'
 import { retainScout, dismissScout } from './scoutEngine.js'
-import { setDepthSlot, clearDepthSlot, emergencyCallUp } from './panels/depthchart.js'
+import { setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule } from './panels/depthchart.js'
 import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab } from './panels/youthacademy.js'
 import { rMeet, doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction, consultSeniorGroup } from './panels/meetings.js'
 import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms, confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide, sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter } from './panels/transfers.js'
@@ -98,7 +98,7 @@ Object.assign(window, {
   assignScout, setScoutBudget, toggleWatchlist, trialDay, signProspect, draftSort,
   retainScout, dismissScout,
   // depth chart
-  setDepthSlot, clearDepthSlot, emergencyCallUp,
+  setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule,
   // youth academy
   yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab,
   // people management

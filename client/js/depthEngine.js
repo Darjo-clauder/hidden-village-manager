@@ -1,4 +1,4 @@
-import { G, sn } from './state.js'
+import { G, sn, sPow } from './state.js'
 import { SQUAD_ROLES } from './constants.js'
 import { aL, ntf } from './ui.js'
 import { isEnabled } from '../../config/features.js'
@@ -16,14 +16,23 @@ export function resolveActiveShinobi(squadId, roleId) {
   if (!isEnabled('DEPTH_CHART')) return G.depthChart?.[squadId]?.[roleId]?.starter ?? null
   const slot = G.depthChart?.[squadId]?.[roleId]
   if (!slot) return null
-  // Convert legacy slot shape → shared entity shape for the resolver
-  const sharedSlot = {
-    starterId: slot.starter ?? null,
-    backupIds: [slot.backup, slot.emergency].filter(Boolean),
-    promotionRules: slot.locked ? 'manual' : 'auto',
-  }
+
   const shinobiIndex = Object.fromEntries((G.shinobi || []).map(s => [s.id, s]))
-  return resolveActiveStarter(sharedSlot, shinobiIndex)
+  const starter = slot.starter && shinobiIndex[slot.starter]
+  if (starter?.status === 'available') return slot.starter
+  if (slot.locked || slot.promotionRule === 'manual') return null
+
+  const candidates = [slot.backup, slot.emergency].filter(Boolean)
+    .map(id => shinobiIndex[id]).filter(s => s?.status === 'available')
+  if (!candidates.length) return null
+
+  const rule = slot.promotionRule || 'auto'
+  if (rule === 'seniority') {
+    candidates.sort((a, b) => (b.monthsActive || 0) - (a.monthsActive || 0))
+  } else if (rule === 'power') {
+    candidates.sort((a, b) => sPow(b) - sPow(a))
+  }
+  return candidates[0]?.id ?? null
 }
 
 // ── Ensure depth chart entry exists for a squad ───────────────────────────────
