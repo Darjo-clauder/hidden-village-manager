@@ -19,6 +19,7 @@ import { DYNASTY_YEARS, computeDynastyGrade } from '../../shared/utils/dynasty.j
 import { bondMissionBonus, mentorGrowthBonus, kiaRipple, BOND_TYPES } from '../../shared/bonds/bondTypes.js'
 import { BM_MISSION_BY_ID, getUnderworldTier, discoveryChance, UNDERWORLD_TIERS } from '../../shared/constants/blackMarket.js'
 import { getClanPassives, CLANS, CLAN_CHAINS, availableClanChains } from '../../shared/constants/clans.js'
+import { getSafehousePassives, rollProspectLead, SAFEHOUSE_COST, MAX_SAFEHOUSES, SH_LOCATION_BY_ID, DC_OP_BY_ID, SAFEHOUSE_LOCATIONS } from '../../shared/constants/safehouses.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
@@ -340,6 +341,66 @@ export function resolveBlackMarket(assignmentId) {
   upUI()
 }
 
+export function establishSafehouse(locationId) {
+  const loc = SH_LOCATION_BY_ID[locationId]
+  if (!loc) return
+  if ((G.ryo || 0) < SAFEHOUSE_COST) { ntf(`Need ${SAFEHOUSE_COST.toLocaleString()} ryo to establish a safehouse.`); return }
+  if (!G.safehouses) G.safehouses = []
+  if (G.safehouses.filter(s => s.status === 'active').length >= MAX_SAFEHOUSES) { ntf('Maximum 3 safehouses active.'); return }
+  if (G.safehouses.find(s => s.locationId === locationId && s.status === 'active')) { ntf('Safehouse already active there.'); return }
+  G.ryo -= SAFEHOUSE_COST
+  G.safehouses.push({ id: 'sh_' + locationId + '_' + Date.now(), locationId, status: 'active', established: G.year * 12 + G.month })
+  aL(`${loc.icon} ${loc.name} safehouse established.`, 'good')
+  upUI()
+}
+
+export function assignDeepCoverOp(opId, shinobiId, safehouseId) {
+  const op = DC_OP_BY_ID[opId]
+  if (!op) return
+  const s = G.shinobi.find(x => x.id === shinobiId)
+  if (!s || s.status !== 'available') { ntf('Shinobi not available.'); return }
+  if ((s.ri || 0) < op.reqRi) { ntf(`Requires ${['Genin','Chunin','Jonin','ANBU','S-Rank'][op.reqRi]} or higher.`); return }
+  const sh = (G.safehouses || []).find(x => x.id === safehouseId && x.status === 'active')
+  if (!sh) { ntf('Invalid safehouse.'); return }
+  s.status = 'mission'; s.missId = opId
+  if (!G.aM) G.aM = []
+  G.aM.push({ id: 'dc_' + Date.now(), missionId: opId, assignedTo: shinobiId, isDeepCover: true, opId, safehouseId, daysLeft: op.daysActive })
+  aL(`${sn(s)} deployed on ${op.n} from ${SH_LOCATION_BY_ID[sh.locationId]?.name || 'safehouse'}.`, 'warn')
+  upUI()
+}
+
+export function resolveDeepCoverOp(assignmentId) {
+  const am = (G.aM || []).find(x => x.id === assignmentId)
+  if (!am || !am.isDeepCover) return
+  const op = DC_OP_BY_ID[am.opId]
+  const s = G.shinobi.find(x => x.id === am.assignedTo)
+  const sh = (G.safehouses || []).find(x => x.id === am.safehouseId)
+  const shBonus = sh ? (SH_LOCATION_BY_ID[sh.locationId]?.opSuccessBonus || 0) : 0
+
+  if (!op || !s) { G.aM = G.aM.filter(x => x.id !== assignmentId); return }
+
+  const sc = clamp(0.60 + (s.ri || 0) * 0.05 + shBonus, 0.20, 0.95)
+  s.status = 'available'; s.missId = null
+
+  if (Math.random() < sc) {
+    G.ryo = (G.ryo || 0) + op.ryo
+    G.reputation = clamp((G.reputation || 0) + op.rep, 0, 999)
+    if (op.id === 'dc_infiltrate') {
+      const v = pk(G.villages || [])
+      if (v) aL(`Deep cover intel from ${v.n}: strength ${Math.round(v.strength || 50)}.`, 'good')
+    }
+    if (op.id === 'dc_recruit') {
+      aL(`Double agent turned — rival intel network weakened.`, 'good')
+    }
+    aL(`${sn(s)} completed "${op.n}" — +${op.ryo.toLocaleString()} ryo.`, 'good')
+  } else {
+    aL(`${sn(s)} failed "${op.n}" and returned.`, 'bad')
+  }
+
+  G.aM = G.aM.filter(x => x.id !== assignmentId)
+  upUI()
+}
+
 export function resolveClanChain(assignmentId) {
   const am = (G.aM || []).find(x => x.id === assignmentId)
   if (!am || !am.isClanChain) return
@@ -423,6 +484,7 @@ export function adv() {
   const dp = getDistrictPassives(G)
   const cp = getCouncilPerks(G)
   const clP = getClanPassives(G)
+  const shP = getSafehousePassives(G)
   const monthDef = MONTHS[G.month - 1]
 
   // ── Seasonal passive effects ────────────────────────────────────────────
@@ -473,6 +535,21 @@ export function adv() {
   for (const am of (G.aM || []).filter(x => x.isClanChain)) {
     am.daysLeft = (am.daysLeft || 1) - 1
     if (am.daysLeft <= 0) resolveClanChain(am.id)
+  }
+  // Tick deep cover ops
+  for (const am of (G.aM || []).filter(x => x.isDeepCover)) {
+    am.daysLeft = (am.daysLeft || 1) - 1
+    if (am.daysLeft <= 0) resolveDeepCoverOp(am.id)
+  }
+  // Passive prospect leads from safehouse network
+  const lead = rollProspectLead(G)
+  if (lead) {
+    if (!G.draftPool) G.draftPool = []
+    const exists = G.draftPool.some(p => p.name === lead.name)
+    if (!exists) {
+      G.draftPool.push({ ...lead, id: 'sh_' + Date.now(), age: 14, pot: lead.ri + 1, stats: {}, traits: [] })
+      aL(`🏠 Safehouse network surfaced a prospect: ${lead.name} (from ${lead.source}).`, 'good')
+    }
   }
   // Approval drift from game state
   const approvalDrift = (faction, delta) => {
@@ -790,7 +867,7 @@ export function adv() {
         const ms = G.shinobi.find(x => x.id === id); if (!ms) return acc
         return acc + bondMissionBonus(ms, G.shinobi).successMod * 0.5
       }, 0)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod, 0.1, 0.97)
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus, 0.1, 0.97)
 
       if (Math.random() < sc) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3, 0, 100)
@@ -889,7 +966,7 @@ export function adv() {
       const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
       const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
       const bMB = bondMissionBonus(s, G.shinobi)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod, 0.08, 0.97)
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus, 0.08, 0.97)
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)

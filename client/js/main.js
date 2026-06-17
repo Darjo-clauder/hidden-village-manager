@@ -12,7 +12,7 @@ import { rBe, lCap, beastTab, releaseJinchuriki, resolveEscape } from './panels/
 import { rKa, resKE, sGift, propAl, rattle } from './panels/kage.js'
 import { rEx, tEC, startEx, runRound } from './panels/exam.js'
 import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP, dipAccept, dipDecline } from './world.js'
-import { resolveChoiceEvent, resolveCouncilProposal, assignBlackMarket, resolveClanChain } from './adv.js'
+import { resolveChoiceEvent, resolveCouncilProposal, assignBlackMarket, resolveClanChain, establishSafehouse, assignDeepCoverOp } from './adv.js'
 import { rFi } from './panels/finances.js'
 import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff, staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting } from './panels/staff.js'
 import { rSco, assignScout, setScoutBudget, toggleWatchlist, trialDay, signProspect, draftSort } from './panels/scouting.js'
@@ -26,6 +26,7 @@ import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCoun
 import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc } from './panels/exam.js'
 import { showLobby, createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode } from './setup.js'
 import { rClans, clanGift, launchClanChain } from './panels/clans.js'
+import { launchDeepCover } from './panels/safehouses.js'
 import { endTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose, setTimeout_, setMaxPlayers, voteAdvance, setAdvFn } from './room.js'
 import { copyInvite } from './panels/lobby.js'
 import { inboxTab, inboxFilter } from './panels/inbox.js'
@@ -116,4 +117,6 @@ Object.assign(window, {
   exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc,
   // clans
   clanGift, launchClanChain,
+  // safehouses
+  establishSafehouse, assignDeepCoverOp, launchDeepCover,
 })
