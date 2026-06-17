@@ -14,6 +14,7 @@ import { evalDepth, roleBonus } from './depthEngine.js'
 import { jutsuLoadoutBonus } from '../../shared/jutsu/loadout.js'
 import { DISTRICTS, getDistrictPassives } from '../../shared/constants/districts.js'
 import { COUNCIL_FACTIONS, COUNCIL_PROPOSALS, getCouncilPerks } from '../../shared/constants/council.js'
+import { tickRivalStrength, shouldFireRivalEvent, pickRivalEvent, computePlayerStrength } from '../../shared/utils/rivalSim.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
@@ -835,6 +836,21 @@ export function adv() {
       if (v.personality === 'Honorable' && Math.random() < 0.3) v.grudgeTicks = Math.max(0, v.grudgeTicks - 1)
     }
   })
+
+  // ── Rival village strength simulation ─────────────────────────────────────
+  G.villages.forEach(v => {
+    if (!v.strength) v.strength = 50 + Math.round(Math.random() * 40)
+    tickRivalStrength(v)
+    if (shouldFireRivalEvent(v)) {
+      const ev = pickRivalEvent(v)
+      const msg = ev.template.replace('{village}', v.n)
+      if (ev.id === 'border_threat') v.rel = clamp((v.rel || 50) - 5, 0, 100)
+      if (ev.id === 'internal_strife' || ev.id === 'natural_disaster') v.strength = Math.max(10, v.strength - 15)
+      if (ev.id === 'poach_prospect') G.councilApproval && (G.councilApproval.academy = clamp((G.councilApproval.academy || 50) - 3, 0, 100))
+      aL(msg, ev.severity)
+    }
+  })
+  G._playerStrength = computePlayerStrength(G)
 
   // ── Staff tick ────────────────────────────────────────────────────────────
   if (!G.staff) G.staff = [];
