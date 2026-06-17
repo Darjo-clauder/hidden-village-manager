@@ -1,6 +1,7 @@
 import { G, sPow, clamp, rnd, sn, fmt, pDesc, personalityJudge, computeMarketValue } from '../state.js'
 import { RANKS, RKC, JUTSU_LIST, INJURY_TYPES, EVOLVED_TRAITS } from '../constants.js'
 import { jutsuLoadoutBonus, toggleLoadoutSlot, LOADOUT_MAX } from '../../../shared/jutsu/loadout.js'
+import { BOND_TYPES } from '../../../shared/bonds/bondTypes.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { PHASE_META, ensureCareerFields } from '../careerEngine.js'
 
@@ -58,8 +59,19 @@ export function oDos(id) {
     : ''
   // Build bonds section
   const bondsHtml = (s.bonds || []).length
-    ? `<div style="margin-bottom:10px"><div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Bonds</div>
-       ${s.bonds.map(bnd => { const other = G.shinobi.find(x => x.id === bnd.otherId); return other ? `<div style="font-size:9px;color:#c9a84c;margin-bottom:2px">${bnd.type} — ${sn(other)}</div>` : '' }).filter(Boolean).join('')}</div>`
+    ? `<div style="margin-bottom:10px">
+        <div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Bonds</div>
+        ${s.bonds.map(bnd => {
+          const other = G.shinobi.find(x => x.id === bnd.otherId)
+          if (!other) return ''
+          const def = BOND_TYPES[bnd.type]
+          const typeColor = bnd.type === 'Rivals' ? 'var(--red)' : bnd.type === 'Mentor/Student' ? '#87ceeb' : bnd.type === 'Battle-Scarred' ? '#cc7fb8' : '#c9a84c'
+          return `<div style="margin-bottom:5px;padding:4px 6px;border-left:2px solid ${typeColor}">
+            <div style="font-size:9px;color:${typeColor};font-weight:bold">${bnd.type} — ${sn(other)}</div>
+            ${def ? `<div style="font-size:7px;color:var(--text-dim)">${def.desc}</div>` : ''}
+          </div>`
+        }).filter(Boolean).join('')}
+      </div>`
     : ''
   // Dark moment
   const darkHtml = s.darkMoment

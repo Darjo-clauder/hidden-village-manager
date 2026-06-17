@@ -16,6 +16,7 @@ import { DISTRICTS, getDistrictPassives } from '../../shared/constants/districts
 import { COUNCIL_FACTIONS, COUNCIL_PROPOSALS, getCouncilPerks } from '../../shared/constants/council.js'
 import { tickRivalStrength, shouldFireRivalEvent, pickRivalEvent, computePlayerStrength } from '../../shared/utils/rivalSim.js'
 import { DYNASTY_YEARS, computeDynastyGrade } from '../../shared/utils/dynasty.js'
+import { bondMissionBonus, mentorGrowthBonus, kiaRipple, BOND_TYPES } from '../../shared/bonds/bondTypes.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
@@ -227,8 +228,9 @@ function tryFormBonds(sq) {
       if (alreadyBonded) continue
       if (Math.random() > 0.20) continue // 20% chance per qualifying check
       let type = 'Brothers-in-Arms'
-      if (Math.abs(a.ri - b.ri) >= 2) type = a.ri > b.ri ? 'Mentor/Student' : 'Mentor/Student'
-      if (a.rivalId === b.id) type = 'Rivals'
+      if (Math.abs(a.ri - b.ri) >= 2) type = 'Mentor/Student'
+      if (a.rivalId === b.id || b.rivalId === a.id) type = 'Rivals'
+      if (a.darkMoment && b.darkMoment) type = 'Battle-Scarred'
       a.bonds.push({ otherId: b.id, type, formed: { year: G.year, month: G.month } })
       b.bonds.push({ otherId: a.id, type, formed: { year: G.year, month: G.month } })
       aL(sn(a) + ' and ' + sn(b) + ' have formed a bond: ' + type + '.', 'good')
@@ -476,7 +478,8 @@ export function adv() {
       }
 
       // Stat growth
-      if (Math.random() < 0.25 * tgM) {
+      const mentorBoost = 1 + mentorGrowthBonus(s, G.shinobi) + (cp.growthBonus || 0) + (dp.statGrowthBonus || 0)
+      if (Math.random() < 0.25 * tgM * mentorBoost) {
         const k = pk(['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed'])
         const kG = k === 'intelligence' && s.pers.n === 'Bookworm' ? 2 : 1
         if (sPow(s) < s.potential) s.stats[k] = clamp(s.stats[k] + rnd(1, kG * 2), 0, 99)
@@ -652,7 +655,11 @@ export function adv() {
         const jb = jutsuLoadoutBonus(ms, JUTSU_LIST)
         return acc + jb.successMod * 0.5 + jb.powerMod * 0.25
       }, 0)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod, 0.1, 0.97)
+      const sqBondMod = sq.members.reduce((acc, id) => {
+        const ms = G.shinobi.find(x => x.id === id); if (!ms) return acc
+        return acc + bondMissionBonus(ms, G.shinobi).successMod * 0.5
+      }, 0)
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod, 0.1, 0.97)
 
       if (Math.random() < sc) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3, 0, 100)
@@ -750,7 +757,8 @@ export function adv() {
       ensureCareerFields(s)
       const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
       const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod, 0.08, 0.97)
+      const bMB = bondMissionBonus(s, G.shinobi)
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod, 0.08, 0.97)
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)
@@ -790,6 +798,11 @@ export function adv() {
           aL(sn(s) + ' KIA on "' + m.n + '". ' + lastWords, 'bad')
           G.memorial.push({ name: sn(s), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
           if (s.wins >= 50) addChronicle('Fallen Veteran', sn(s) + ' died on "' + m.n + '" after ' + s.wins + ' missions. ' + lastWords, 'shinobi')
+          const ripple = kiaRipple(s.id, G.shinobi.filter(x => x.id !== s.id))
+          ripple.forEach(r => {
+            const affected = G.shinobi.find(x => x.id === r.shinobiId)
+            if (affected) { affected.morale = clamp((affected.morale || 50) + r.delta, 0, 100); aL(`${sn(affected)} is shaken by the loss of ${sn(s)}.`, 'bad') }
+          })
           G.shinobi = G.shinobi.filter(x => x.id !== s.id)
           G.reputation = clamp(G.reputation - 5, 0, 999)
         } else {
