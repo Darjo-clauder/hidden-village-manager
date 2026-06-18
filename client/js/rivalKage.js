@@ -4,6 +4,8 @@
  * independent of village-level diplomatic standing.
  */
 
+import { getSyncStage } from './beastEngine.js'
+
 // Personal relationship descriptors by score bracket
 const REL_TIERS = [
   { min: 80, label: 'Deep Respect',    tone: 'warm',     color: 'var(--green)' },
@@ -130,15 +132,6 @@ export function getWorldReputationFlavor(G) {
   const morale = G.morale || 75
   if (morale < 30) return `Reports from ${vName} speak of a village in quiet crisis. The world doesn't invade — it waits.`
   return `${vName} remains largely unknown. This has advantages — no one is paying attention yet.`
-}
-
-// Import here to avoid circular deps — resolved at runtime
-function getSyncStage(beast) {
-  const m = beast?.syncMonths || 0
-  const thresholds = [0, 3, 6, 12, 18]
-  let stage = 1
-  for (let i = 0; i < thresholds.length; i++) { if (m >= thresholds[i]) stage = i + 1 }
-  return Math.min(stage, 5)
 }
 
 /**

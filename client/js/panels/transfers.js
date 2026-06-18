@@ -38,7 +38,7 @@ export function rTr() {
 
     <!-- Tabs -->
     <div style="display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap">
-      ${[['market','🏪 Market',' ('+((tm.pool||[]).length)+')'],['sellpressure','📨 Approaches',' ('+(G.sellPressure||[]).length+')'],['loans','🔄 Loans',' ('+((tm.loanOut||[]).length + (tm.loanIn||[]).length)+')'],['bingo','📖 Bingo Book'],['offers','📋 Offer History',' ('+(tm.offers||[]).length+')']].map(([tid,tlabel,tbadge]) =>
+      ${[['market','🏪 Market',' ('+((tm.pool||[]).length)+')'],['sellpressure','📨 Approaches',' ('+(G.sellPressure||[]).length+')'],['loans','🔄 Loans',' ('+((tm.loanOut||[]).length + (tm.loanIn||[]).length)+')'],['bingo','📖 Bingo Book'],['offers','📋 Offer History',' ('+(tm.offers||[]).length+')'],['history','📜 History',' ('+((tm.completedDeals||[]).length)+')']].map(([tid,tlabel,tbadge]) =>
         `<button onclick="trTab('${tid}')" style="background:${tabId===tid?'#2a2a1a':'#111'};border:1px solid ${tabId===tid?'#c9a84c':'#333'};color:${tabId===tid?'#c9a84c':'#888'};border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.78rem">${tlabel}${tbadge||''}</button>`
       ).join('')}
     </div>
@@ -48,6 +48,7 @@ export function rTr() {
     ${tabId === 'loans' ? renderLoans(tm) : ''}
     ${tabId === 'bingo' ? renderBingo(judgeLevel) : ''}
     ${tabId === 'offers' ? renderOffers(tm) : ''}
+    ${tabId === 'history' ? renderHistory(tm) : ''}
   `
 }
 
@@ -268,6 +269,21 @@ function renderOffers(tm) {
   </div>`
 }
 
+function renderHistory(tm) {
+  const deals = tm.completedDeals || []
+  if (deals.length === 0) return `<div style="color:#555;text-align:center;padding:30px;font-size:.85rem">No completed transfers yet.</div>`
+  return `<div>${deals.slice().reverse().map(d => {
+    const dirColor = d.direction === 'in' ? '#8fbc8f' : '#f66'
+    const dirLabel = d.direction === 'in' ? '▶ IN' : '◀ OUT'
+    return `<div style="background:#1a1a1a;border:1px solid #333;border-radius:5px;padding:9px 12px;margin-bottom:5px;display:flex;align-items:center;gap:10px;font-size:.8rem">
+      <div style="color:#555;font-size:.72rem;min-width:70px">Yr${d.year}·M${d.month}</div>
+      <div style="flex:1;color:#e8d5a3">${d.name}</div>
+      <div style="color:${dirColor};font-size:.72rem;font-weight:bold">${dirLabel}</div>
+      ${d.fee ? `<div style="color:#c9a84c;font-size:.78rem">${fmt(d.fee)} ryo</div>` : ''}
+    </div>`
+  }).join('')}</div>`
+}
+
 // ── Actions exposed to window ─────────────────────────────────────────────────
 
 export function trTab(id) { window._trTab = id; rTr() }
@@ -406,6 +422,8 @@ export function confirmTransfer() {
   }
   G.shinobi.push(p)
   G.transferMarket.pool = (G.transferMarket.pool || []).filter(x => x.id !== p.id)
+  G.transferMarket.completedDeals = G.transferMarket.completedDeals || []
+  G.transferMarket.completedDeals.push({ name: p.fn + ' ' + p.ln, direction: 'in', fee, year: G.year, month: G.month })
   aL(p.fn + ' ' + p.ln + ' signed! Fee: ' + fmt(fee) + ' ryo' + (sigBonus ? ' + ' + fmt(sigBonus) + ' signing bonus' : '') + '.', 'good')
   ntf(p.fn + ' ' + p.ln + ' signed!')
   document.getElementById('ov-personalterms').classList.remove('open')
@@ -428,6 +446,8 @@ export function poachAttempt(poolId) {
     p.status = 'available'; p.commitment = 45; p.months = 0
     G.shinobi.push(p)
     G.transferMarket.pool = (G.transferMarket.pool || []).filter(x => x.id !== p.id)
+    G.transferMarket.completedDeals = G.transferMarket.completedDeals || []
+    G.transferMarket.completedDeals.push({ name: p.fn + ' ' + p.ln, direction: 'in', fee: poachFee, year: G.year, month: G.month })
     aL(p.fn + ' ' + p.ln + ' approached directly and agreed — signed for ' + fmt(poachFee) + ' ryo!', 'good')
     ntf(p.fn + ' signed via direct approach!')
     rTr(); upUI()
@@ -471,6 +491,9 @@ export function sellPressureAccept(shinobiId) {
   const v = (G.villages || []).find(x => x.n === sp.villageName)
   if (v) v.rel = clamp(v.rel + 5, 0, 100)
   G.sellPressure = (G.sellPressure || []).filter(x => x.shinobiId !== shinobiId)
+  G.transferMarket = G.transferMarket || {}
+  G.transferMarket.completedDeals = G.transferMarket.completedDeals || []
+  G.transferMarket.completedDeals.push({ name: s ? sn(s) : 'Unknown', direction: 'out', fee: sp.offerRyo, year: G.year, month: G.month })
   aL((s ? sn(s) : 'Shinobi') + ' sold to ' + sp.villageName + ' for ' + fmt(sp.offerRyo) + ' ryo.', 'neutral')
   if (s) {
     // Sell-on clause: a cut of this sale is owed to whoever sold them to us originally
@@ -500,6 +523,9 @@ export function sellPressureLetDecide(shinobiId) {
     G.ryo += sp.offerRyo * 0.1  // small compensation
     G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, year: G.year, month: G.month, wins: s.wins, lastWords: 'Chose to transfer to ' + sp.villageName + '.', transfer: true })
     G.shinobi = G.shinobi.filter(x => x.id !== shinobiId)
+    G.transferMarket = G.transferMarket || {}
+    G.transferMarket.completedDeals = G.transferMarket.completedDeals || []
+    G.transferMarket.completedDeals.push({ name: sn(s), direction: 'out', fee: 0, year: G.year, month: G.month })
     aL(sn(s) + ' chose to transfer to ' + sp.villageName + '!', 'bad')
   }
   rTr(); upUI()

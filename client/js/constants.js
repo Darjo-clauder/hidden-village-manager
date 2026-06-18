@@ -120,8 +120,8 @@ export const TRAUMA_TRAITS = ['Withdrawn','Haunted','Vengeful']
 export const STAFF_ROLES = [
   { id:'head_sensei', n:'Head Sensei',       max:1, stats:['pedagogy','discipline','ninjutsu','experience'], salBase:8000,  desc:'Oversees academy education. Boosts all prospect stat growth.',      effectDesc:'+1 prospect growth per 5 rating points.' },
   { id:'team_sensei', n:'Team Sensei',       max:4, stats:['pedagogy','tactics','empathy','ninjutsu'],      salBase:4000,  desc:'Mentors squads. Improves cohesion and mission success rates.',       effectDesc:'+2% squad mission success per team sensei on staff.' },
-  { id:'scout_jonin', n:'Scout Jonin',       max:5, stats:['perception','stealth','endurance','ninjutsu'],  salBase:3500,  desc:'Performs independent scouting of prospects.',                         effectDesc:'Scouting cost −15% per scout jonin (max −60%).' },
-  { id:'head_scout',  n:'Head of Scouting',  max:1, stats:['perception','tactics','intelligence','leadership'], salBase:9000, desc:'Coordinates all scouting ops. Unlocks elite candidates.',        effectDesc:'Unlocks Jonin-rank prospects. −20% scouting cost.' },
+  { id:'scout_jonin', n:'Scout Jonin',       max:5, stats:['perception','judgement','stealth','adaptability'], salBase:3500, desc:'Performs independent scouting of prospects.',                          effectDesc:'Scouting cost −15% per scout jonin (max −60%).' },
+  { id:'head_scout',  n:'Head of Scouting',  max:1, stats:['perception','judgement','intelligence','leadership'], salBase:9000, desc:'Coordinates all scouting ops. Unlocks elite candidates.',       effectDesc:'Unlocks Jonin-rank prospects. −20% scouting cost.' },
   { id:'medical',     n:'Medical Ninja',     max:3, stats:['medical','chakra','precision','empathy'],       salBase:5000,  desc:'Reduces injury risk and recovery time for all shinobi.',             effectDesc:'Injury risk −3% and −0.5mo duration per medical ninja.' },
   { id:'strategist',  n:'Strategist',        max:1, stats:['tactics','intelligence','foresight','diplomacy'], salBase:7000, desc:'Advises on mission selection and risk management.',               effectDesc:'All mission success +5%.' },
   { id:'council',     n:'Council Advisor',   max:1, stats:['diplomacy','charisma','intelligence','experience'], salBase:6000, desc:'Manages village politics and reputation.',                     effectDesc:'Reputation gain +10%. Kage event outcomes improved.' },
@@ -174,6 +174,15 @@ export const REGION_EVENTS = [
   { id:'war',      n:'Border Conflict', icon:'⚔',  qualityMod:-0.25, desc:'Active fighting disrupts scouting routes.' },
   { id:'festival', n:'Regional Festival', icon:'🎉', qualityMod:0.22, desc:'Talent gathers publicly — prospects easier to assess.' },
   { id:'trade',    n:'Trade Boom',      icon:'💰', qualityMod:0.12, desc:'Prosperity draws ambitious youth to attention.' },
+]
+
+// ── Squad role system ─────────────────────────────────────────────────────────
+export const SQUAD_ROLES = [
+  { id:'vanguard', n:'Vanguard',  icon:'⚔',  color:'#f66',       primaryStat:'taijutsu', secondaryStat:'speed',        missionBonus:0.04, desc:'Lead attacker. Boosts physical assault missions.' },
+  { id:'support',  n:'Support',   icon:'🛡',  color:'#4a88c0',    primaryStat:'ninjutsu', secondaryStat:'chakra',       missionBonus:0.04, desc:'Mission anchor. Boosts jutsu-heavy and escort ops.' },
+  { id:'intel',    n:'Intel',     icon:'🌑',  color:'#9cf',       primaryStat:'stealth',  secondaryStat:'intelligence', riskReduction:0.04, desc:'Reduces mission risk. Strong on recon and infiltration.' },
+  { id:'medical',  n:'Medical',   icon:'💊',  color:'#8fbc8f',    primaryStat:'chakra',   secondaryStat:'intelligence', injReduction:0.5,  desc:'Reduces injury rate and duration on mission.' },
+  { id:'flex',     n:'Flex',      icon:'⚖',  color:'#c9a84c',    primaryStat:null,       secondaryStat:null,           desc:'No role bonus. Contributes raw power only.' },
 ]
 
 // ── Hidden development curve archetypes (youth academy) ──────────────────────

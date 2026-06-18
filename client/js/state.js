@@ -72,6 +72,19 @@ export function mS(ri = 0) {
     injuryHistory: [],               // [{ year, month, type, duration, treatment }]
     secondOpinionUsed: false,        // reset each new injury
     specialistTreated: false,        // reset each new injury
+    // Career arc (Phase 1)
+    peakAge:    ri === 0 ? rnd(20, 24) : ri === 1 ? rnd(23, 27) : rnd(24, 30),
+    phase:      age < 18 ? 'developing' : age < 32 ? 'prime' : age < 37 ? 'veteran' : 'declining',
+    declineMod: 0,
+    retirementOffered: false,
+    squadRole: 'flex',               // vanguard|support|intel|medical|flex
+    // Phase 4 additions
+    trainingFocus: null,             // stat name to boost monthly, or null
+    contractEnd: null,               // year contract expires (set on creation)
+    contractRenewing: false,         // true when renewal dialogue is open
+    naturalRoles: ['flex'],          // roles this shinobi is comfortable in (1–3)
+    restMonth: false,                // if true: skip mission deployment, recover workload
+    pairChemistry: {},               // { otherId: missionsTogether } — pair-level chemistry tracker
   }
 }
 
@@ -231,8 +244,25 @@ export function initState() {
     sponsorshipOffer: null,     // pending offer awaiting accept/decline
     blackLedger: { balance: 0, history: [] }, // off-books ryo tracker, separate from G.ryo
     yearEndReports: [],         // { year, totalIncome, totalExpend, net, streams, daimyoReaction }
+    // Phase 1 additions
+    depthChart: {},             // roleId -> { starter, backup, emergency } per squad id
+    missionChains: [],          // active multi-step mission chains
+    completedMissionChains: [], // completed/expired chains (capped 20)
+    depthGaps: [],              // [{ squadId, roleId, severity }] — written by depthEngine
+    // Phase 4 additions
+    missionPrepMode: 'standard',       // 'aggressive'|'standard'|'cautious' — set before each mission
+    lastMissionReport: null,           // { missionId, squadId, scores:[{id,name,grade,detail}] }
+    seniorGroup: [],                   // [shinobiId] — top 3 by wins+commitment, auto-updated monthly
+    seniorGroupMorale: 75,             // 0–100 — separate from village morale
+    contractRenewalQueue: [],          // [{ shinobiId, demandSalary, year }]
+    pairChemistryLog: {},              // global { `${idA}_${idB}`: missionCount }
+    analyticsHistory: [],              // monthly snapshots for analytics dashboard
   });
-  [2, 2, 1, 1, 1, 0, 0, 0].forEach(r => G.shinobi.push(mS(r)))
+  ;[2, 2, 1, 1, 1, 0, 0, 0].forEach(r => {
+    const s = mS(r)
+    s.contractEnd = 1 + Math.floor(Math.random() * 3) + 1  // year 2–4
+    G.shinobi.push(s)
+  })
   rfM(); rfP()
 }
 
@@ -297,33 +327,59 @@ export function genRegionProspect(regionId, scout) {
     }
   }
 
-  // Compute stat ranges based on scout's perception (Judging Ability)
+  // Compute stat ranges based on scout attributes (perception=stat accuracy, judgement=potential/personality)
   if (scout) {
-    const judgeAbility = scout.stats.perception || 8
-    const contactBonus = scout.contacts?.[regionId] ? Math.floor(scout.contacts[regionId] / 2) : 0
-    const effectiveJudge = Math.min(20, judgeAbility + contactBonus)
-    const errorMargin = Math.max(1, Math.round(15 - effectiveJudge * 0.65))
+    const perception  = scout.stats.perception  || 8
+    const judgement   = scout.stats.judgement   ?? scout.stats.endurance ?? 8   // backward compat
+    const adaptability = scout.stats.adaptability ?? scout.stats.ninjutsu ?? 8  // backward compat
+    // Regional memory: contactLevel builds over months worked in this region
+    const mem = scout.regionMemory?.[regionId]
+    const contactLevel = mem?.contactLevel || 0
+    const contactBonus = Math.floor(contactLevel / 3)  // +1 per 3 contact levels (max +6 at lvl 20)
+
+    // Stat accuracy: perception + contact familiarity
+    const effectivePerception = Math.min(20, perception + contactBonus)
+    const errorMargin = Math.max(1, Math.round(14 - effectivePerception * 0.60))
     p.statRanges = {}
     Object.keys(p.stats).forEach(k => {
-      const lo = Math.max(1, p.stats[k] - errorMargin)
-      const hi = Math.min(99, p.stats[k] + errorMargin)
-      p.statRanges[k] = { lo, hi, exact: effectiveJudge >= 16 }
+      p.statRanges[k] = {
+        lo:    Math.max(1, p.stats[k] - errorMargin),
+        hi:    Math.min(99, p.stats[k] + errorMargin),
+        exact: effectivePerception >= 17,
+      }
     })
-    // Potential range from Judging Potential (endurance stat)
-    const judgePot = scout.stats.endurance || scout.stats.perception || 8
-    const effectivePotJudge = Math.min(20, judgePot + contactBonus)
-    const potError = Math.max(3, Math.round(25 - effectivePotJudge))
+
+    // Potential accuracy: judgement stat drives this
+    const effectiveJudgement = Math.min(20, judgement + contactBonus)
+    const potError = Math.max(3, Math.round(24 - effectiveJudgement))
     p.potRange = {
-      lo: Math.max(10, p.potential - potError),
-      hi: Math.min(99, p.potential + potError),
-      exact: effectivePotJudge >= 16,
+      lo:    Math.max(10, p.potential - potError),
+      hi:    Math.min(99, p.potential + potError),
+      exact: effectiveJudgement >= 17,
     }
-    // Confidence % — how much the scout trusts this read (40-95)
-    p.scoutConfidence = clamp(Math.round(40 + effectiveJudge * 2.6), 40, 95)
-    // Personality scouting — requires high judging ability (perception) + intelligence proxy
-    const persJudge = Math.round((judgeAbility + (scout.stats.intelligence || judgeAbility * 0.6)) / 2)
-    p.personalityRevealed = persJudge >= 14
+
+    // Overall confidence: blend of perception, judgement, contact level, adaptability bonus in new regions
+    const regionFamiliarity = contactLevel >= 10 ? 10 : contactLevel >= 5 ? 5 : 0
+    const noveltyPenalty = contactLevel < 3 ? Math.floor((3 - contactLevel) * 2) : 0  // scouts in new regions are less confident
+    p.scoutConfidence = clamp(
+      Math.round(35 + perception * 1.5 + judgement * 1.2 + regionFamiliarity - noveltyPenalty),
+      35, 95
+    )
+
+    // Personality read: requires high judgement
+    const persJudge = Math.round((judgement + (scout.stats.intelligence || judgement * 0.6)) / 2)
+    p.personalityRevealed = persJudge >= 13
     p.personalityJudgeLevel = persJudge
+
+    // Report quality tier (drives UI label)
+    p.reportQuality = p.scoutConfidence >= 80 ? 'Elite' : p.scoutConfidence >= 65 ? 'Detailed' : p.scoutConfidence >= 50 ? 'General' : 'Impression'
+
+    // Scout bias: if scout has hiddenBias and it matches a stat, subtly skew the range
+    if (scout.hiddenBias) {
+      const { overvalues, undervalues, magnitude } = scout.hiddenBias
+      if (p.statRanges[overvalues])  { p.statRanges[overvalues].lo  += magnitude; p.statRanges[overvalues].hi  += magnitude }
+      if (p.statRanges[undervalues]) { p.statRanges[undervalues].lo -= magnitude; p.statRanges[undervalues].hi -= magnitude }
+    }
   }
 
   return p
@@ -626,8 +682,10 @@ export function genTransferPool() {
   return pool
 }
 
-export function addChronicle(title, body, type = 'event') {
-  G.chronicles.push({ year: G.year, month: G.month, title, body, type })
+export function addChronicle(title, body, type = 'event', narrative = null) {
+  const entry = { year: G.year, month: G.month, title, body, type }
+  if (narrative) entry.narrative = narrative
+  G.chronicles.push(entry)
   if (G.chronicles.length > 80) G.chronicles.shift()
 }
 
@@ -645,7 +703,13 @@ export function schEx() {
 export function rfM() {
   const s = MISS_POOL.filter(m => !m.sq).sort(() => Math.random() - 0.5).slice(0, 7)
   const sq = MISS_POOL.filter(m => m.sq).sort(() => Math.random() - 0.5).slice(0, 4)
-  G.avM = [...s, ...sq].map(m => ({ ...m, id: Math.random().toString(36).slice(2) }))
+  const expiryBase = (G.month || 1) + 3
+  G.avM = [...s, ...sq].map(m => ({
+    ...m,
+    id: Math.random().toString(36).slice(2),
+    expiresMonth: expiryBase,   // month number; missions >3 months old are removed
+    addedYear: G.year || 1,
+  }))
 }
 
 export function rfP() {

@@ -407,9 +407,9 @@ export function tickBeast(beast, G) {
 
   // Saiken: injury recovery passive
   if (beast.n === 'Saiken' && newStage >= 3) {
-    G.shinobi.filter(s => s.status === 'injured' && s.injuryMonths > 0).forEach(s => {
+    G.shinobi.filter(s => s.status === 'injured' && s.injDays > 0).forEach(s => {
       if (Math.random() < 0.25) {
-        s.injuryMonths = Math.max(0, s.injuryMonths - 1)
+        s.injDays = Math.max(0, s.injDays - 30)
       }
     })
   }
@@ -449,6 +449,12 @@ export function tickBeast(beast, G) {
         title: `${beast.n} Lore Mastered`,
         body: `All historical records of ${beast.n} have been uncovered. A permanent village bonus is now active: ${data.loreBonus.desc}.`,
         type: 'legend',
+      })
+      events.push({
+        title: `Complete Lore — ${beast.n}`,
+        body: `The complete history of ${beast.n} is now known to your village.`,
+        type: 'lore',
+        narrative: `The complete history of ${beast.n} is now known to your village. The knowledge carries weight — and responsibility.`,
       })
     }
   }

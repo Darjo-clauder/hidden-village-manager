@@ -121,18 +121,38 @@ function _counter() {
   const anbuCmd = (G.staff || []).find(st => st.role === 'anbu_commander')
   const cmdBonus = anbuCmd ? Math.floor((anbuCmd.stats?.stealth || 5) / 4) : 0
   const effective = clamp(rating + intelBld * 2 + cmdBonus, 1, 20)
+  const upgCost = 8000 + rating * 4000
+  const canUpg = G.ryo >= upgCost && rating < 10
   return `<div>
     <div style="font-size:11px;color:#e8e0cc;margin-bottom:12px">Counter-Intelligence</div>
     <div class="ke-card" style="margin-bottom:10px">
-      <div style="font-size:10px;color:#c9a84c;margin-bottom:8px">Passive Rating: ${effective}/20</div>
+      <div style="font-size:10px;color:#c9a84c;margin-bottom:8px">Effective Rating: ${effective}/20</div>
       <div style="font-size:9px;color:#7a7060;margin-bottom:4px">Intel Building: +${intelBld * 2} (Lvl ${intelBld})</div>
       <div style="font-size:9px;color:#7a7060;margin-bottom:4px">ANBU Commander: +${cmdBonus} (${anbuCmd ? sn(anbuCmd) : 'none hired'})</div>
-      <div style="font-size:9px;color:#7a7060">Base: ${rating}</div>
+      <div style="font-size:9px;color:#7a7060;margin-bottom:10px">Base rating: ${rating}/10</div>
+      ${rating < 10 ? `
+        <button class="gb gb-g" onclick="upgradeCounterIntel()" ${canUpg ? '' : 'disabled'}>
+          Train Counter-Intel Network — ${fmt(upgCost)} ryo ►
+        </button>
+        <div style="font-size:8px;color:#7a7060;margin-top:4px">Each rank reduces enemy ANBU success chance by ~5%.</div>
+      ` : `<div style="font-size:9px;color:#8fbc8f">Counter-intel network at maximum base rating.</div>`}
     </div>
     <div style="font-size:9px;color:#7a7060;line-height:1.5">
-      Higher counter-intel rating reduces the chance of enemy ANBU succeeding against your village. Upgrade the Intel building and hire an ANBU Commander to improve this rating.
+      Higher counter-intel rating reduces enemy ANBU success against your village. Upgrade the Intel building and hire an ANBU Commander for additional bonuses.
     </div>
   </div>`
+}
+
+export function upgradeCounterIntel() {
+  const rating = G.counterIntelRating || 2
+  if (rating >= 10) { ntf('Already at maximum base rating.'); return }
+  const cost = 8000 + rating * 4000
+  if (G.ryo < cost) { ntf('Not enough ryo.'); return }
+  G.ryo -= cost
+  G.counterIntelRating = rating + 1
+  aL(`Counter-intel network trained. Base rating now ${G.counterIntelRating}/10.`, 'good')
+  ntf('Counter-Intel upgraded!')
+  rIn()
 }
 
 // ── Exported action handlers ─────────────────────────────────────────────────

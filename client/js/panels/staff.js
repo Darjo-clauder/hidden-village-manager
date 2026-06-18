@@ -108,6 +108,7 @@ function _rosterTab() {
                 <button class="gb gb-r" onclick="releaseStaff('${st.id}')" style="font-size:7px;padding:3px 7px">Release</button>
                 ${canBeAK ? `<button class="gb" onclick="designateAsstKage('${st.id}')" style="font-size:7px;padding:3px 7px;border-color:#87ceeb;color:#87ceeb">Designate AK</button>` : ''}
                 ${isAsstKage ? `<button class="gb" onclick="designateAsstKage(null)" style="font-size:7px;padding:3px 7px;border-color:#555;color:#555">Remove AK</button>` : ''}
+                ${(st.monthsServed||0) >= 6 && st.hiddenFlaw && !st.flawRevealed ? `<button class="gb" onclick="staffPersonalMeeting('${st.id}')" style="font-size:7px;padding:3px 7px;border-color:#c9a84c;color:#c9a84c">1-on-1 Meeting</button>` : ''}
               </div>
             </div>
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px">
@@ -401,6 +402,21 @@ export function doRetireToStaff(shinobiId, roleId) {
   addChronicle('Staff Transition', sn(s) + ' transitioned to ' + roleDef?.n + ' after ' + s.wins + ' missions.', 'shinobi')
   cm('retiretostaff')
   upUI()
+}
+
+export function staffPersonalMeeting(staffId) {
+  const st = (G.staff || []).find(x => x.id === staffId)
+  if (!st || st.flawRevealed || !st.hiddenFlaw || (st.monthsServed || 0) < 6) return
+  st.flawRevealed = true
+  if (Math.random() < 0.65) {
+    aL(`Personal meeting with ${st.fn} ${st.ln}: "${st.hiddenFlaw}" — now fully disclosed.`, 'warn')
+    ntf(`Staff flaw revealed: ${st.fn} ${st.ln}`)
+  } else {
+    st.hiddenFlaw = null
+    aL(`Personal meeting with ${st.fn} ${st.ln}: concerns were unfounded — strong character confirmed.`, 'good')
+    ntf(`${st.fn} ${st.ln} cleared in personal review.`)
+  }
+  rSt()
 }
 
 function addChronicle(title, body, type) {

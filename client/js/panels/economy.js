@@ -43,8 +43,24 @@ export function tgCo(id, on) {
 
 export function rBl() {
   const hon = G.shinobi.some(s => s.pers.n === 'Honorable')
+  const ledger = G.blackLedger || { balance: 0, history: [] }
+  const ledgerHtml = ledger.history.length ? `
+    <div style="margin-bottom:14px;padding:10px 12px;border:1px solid #5a2a1a;background:#0d0905">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:9px;color:#fa0;letter-spacing:1px;text-transform:uppercase">Off-Books Ledger</span>
+        <span style="font-size:10px;color:#fa0;font-weight:bold">${fmt(ledger.balance)} ryo accumulated</span>
+      </div>
+      <div style="max-height:120px;overflow-y:auto">
+        ${[...ledger.history].reverse().map(e => `
+          <div style="display:flex;justify-content:space-between;font-size:8px;padding:3px 0;border-bottom:1px solid #2a1a0a">
+            <span style="color:#7a7060">Y${e.year} M${e.month} — ${e.type}</span>
+            <span style="color:${e.amount > 0 ? '#fa0' : '#f66'}">${e.amount > 0 ? '+' : ''}${fmt(e.amount)}</span>
+          </div>`).join('')}
+      </div>
+    </div>` : ''
   document.getElementById('ec-black').innerHTML =
     `<div style="font-size:9px;color:#fa0;margin-bottom:10px;padding:8px;border:1px solid #8b1a1a;background:#0d0905">⚠ Black market dealings risk your reputation.${hon ? ' An Honorable shinobi may expose you.' : ''}</div>` +
+    ledgerHtml +
     BLACK_MARKET.map(bm =>
       `<div class="bm-card"><div style="font-size:11px;color:#fa0;font-weight:bold;margin-bottom:3px">${bm.n}</div><div style="font-size:9px;color:#7a7060;margin-bottom:7px">${bm.desc}</div><div style="display:flex;gap:14px;font-size:8px;margin-bottom:7px"><span style="color:#fa0">Gain: ${fmt(bm.ryoGain)} ryo</span><span style="color:#f66">Rep loss: -${bm.repLoss}</span><span style="color:#7a7060">Exposure: ${Math.round(bm.risk * 100)}%</span></div><button class="gb" style="border-color:#fa0;color:#fa0" onclick="doBl('${bm.id}')">Execute ►</button></div>`
     ).join('')

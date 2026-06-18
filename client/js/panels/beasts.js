@@ -14,9 +14,25 @@ export function rBe() {
   const passives = getBeastPassives(G)
   const sealedBeasts = G.beasts.filter(b => b.sealed)
   const wildBeasts = G.beasts.filter(b => !b.sealed)
+  const escapeNotices = (G.notices || []).filter(n => n.type === 'beast_escape')
 
   el.innerHTML = `
     <div class="pt">Tailed Beasts</div>
+
+    ${escapeNotices.length > 0 ? `
+      <div style="background:#3a0a0a;border:1px solid var(--red);padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:9px;color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">⚠ Beast Escape Alert</div>
+        ${escapeNotices.map(n => `
+          <div style="margin-bottom:8px;padding:8px 10px;background:rgba(255,0,0,0.05);border-left:2px solid var(--red)">
+            <div style="font-size:9px;color:var(--text-hi);margin-bottom:6px">${n.beastName} has escaped containment!</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="gb" style="border-color:var(--red);color:var(--red);font-size:8px" onclick="resolveEscape('${n.beastName}','containment')">Containment Team (3,000 ryo)</button>
+              <button class="gb" style="font-size:8px" onclick="resolveEscape('${n.beastName}','dismiss')">Dismiss</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
 
     <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
       ${['overview','lore','passives'].map(t => `
@@ -99,6 +115,22 @@ function _renderSealedCard(b) {
           ${data.syncCeiling && data.syncCeiling < 5 ? `<div style="font-size:7px;color:var(--text-dim);margin-top:3px">Sync ceiling: Stage ${data.syncCeiling} (${SYNC_STAGES[data.syncCeiling].n})</div>` : ''}
         </div>
       ` : `<div style="margin-bottom:12px;font-size:9px;color:var(--blue)">✦ Full Sync — Maximum bond achieved.</div>`}
+
+      <!-- Unique Ability -->
+      ${data.uniqueAbility ? `
+        <div style="background:var(--surface-2);border:1px solid var(--border);padding:8px 12px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+          <div style="flex:1">
+            <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:3px">Unique Ability</div>
+            <div style="font-size:9px;color:${stage >= data.uniqueAbility.stage ? 'var(--green)' : 'var(--text-dim)'}">
+              ${data.uniqueAbility.desc}
+            </div>
+          </div>
+          ${stage >= data.uniqueAbility.stage
+            ? `<div style="font-size:7px;font-weight:bold;color:var(--green);padding:2px 7px;border:1px solid var(--green)">ACTIVE</div>`
+            : `<div style="font-size:7px;color:var(--text-dim);white-space:nowrap">Unlocks at Stage ${data.uniqueAbility.stage}</div>`
+          }
+        </div>
+      ` : ''}
 
       <!-- Stage Description -->
       <div style="background:var(--surface-2);border-left:2px solid ${stageInfo.color};padding:8px 10px;font-size:9px;color:var(--text-dim);margin-bottom:12px;line-height:1.6">
@@ -323,6 +355,20 @@ export function lCap(bN) {
   aL(`${sn(s)} deployed to capture ${bN}. Expected return: ${data.captureMonths || 4} months.`, 'warn')
   ntf(`${bN} capture operation begun!`)
   upUI()
+}
+
+export function resolveEscape(beastName, action) {
+  if (action === 'containment') {
+    if (G.ryo < 3000) { ntf('Not enough ryo (3,000 needed)'); return }
+    G.ryo -= 3000
+    const b = G.beasts.find(x => x.n === beastName)
+    if (b) b._escapeContained = G.month + 3
+    aL(`Containment team deployed for ${beastName}. 3,000 ryo spent. Escape chance reduced for 3 months.`, 'good')
+  } else {
+    aL(`${beastName} escape notice dismissed.`, 'neutral')
+  }
+  G.notices = (G.notices || []).filter(n => !(n.type === 'beast_escape' && n.beastName === beastName))
+  rBe(); upUI()
 }
 
 export function releaseJinchuriki(bN) {
