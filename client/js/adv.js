@@ -23,6 +23,9 @@ import { getSafehousePassives, rollProspectLead, SAFEHOUSE_COST, MAX_SAFEHOUSES,
 import { getEventForMonth, getUpcomingEvent, resolveWorldEvent, WE_BY_ID } from '../../shared/constants/worldCalendar.js'
 import { successCeiling } from '../../shared/utils/missionOdds.js'
 import { emit, integrityCheck } from '../../shared/utils/telemetry.js'
+import { formationMods } from '../../shared/utils/formation.js'
+import { pickSupportEvent } from '../../shared/bonds/supportEvents.js'
+import { applyDebt } from '../../shared/utils/debt.js'
 import { activeBloodlineBonus, netBloodlineMod, canActivate, BLOODLINE_MULTIPLIER, ACTIVATION_COST, ACTIVATION_MIN_STAGE, ACTIVE_DURATION, COOLDOWN, AGGRO_INCREASE, DEBUFF_DURATION } from '../../shared/utils/bloodline.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
@@ -514,6 +517,16 @@ function _bloodlineBonus(memberIds) {
   return netBloodlineMod(active.map(() => ({ multiplier: BLOODLINE_MULTIPLIER })), anyDebuffed)
 }
 
+// #8 Tactical formation (flag-gated; 0 when off or no formation set)
+function _formationMod(sq) {
+  if (!G._ff_tacticalFormation || !sq.formation) return 0
+  return formationMods(sq.formation).successMod
+}
+function _formationRisk(sq) {
+  if (!G._ff_tacticalFormation || !sq.formation) return 0
+  return formationMods(sq.formation).riskMod
+}
+
 export function activateBloodline(beastName) {
   if (!G._ff_bloodlineActive) return
   const b = (G.beasts || []).find(x => x.n === beastName && x.sealed && x.jk)
@@ -955,7 +968,7 @@ export function adv() {
         ensureCareerFields(ms)
         return acc + (ms.declineMod || 0) * 0.5  // half-weight per member so one declining vet doesn't cripple a squad
       }, 0)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members), 0.1, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq), 0.1, successCeiling(m.rk))
 
       if (Math.random() < sc) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3, 0, 100)
@@ -1006,9 +1019,28 @@ export function adv() {
         }
         // Try bond formation after 5 squad wins
         if (sq.wins >= 5) tryFormBonds(sq)
+        // #11 Pairwise support events (flag-gated): one bonded pair may share a vignette
+        if (G._ff_supportEvents) {
+          const ids = sq.members
+          let fired = false
+          for (let a = 0; a < ids.length && !fired; a++) {
+            const sA = G.shinobi.find(x => x.id === ids[a]); if (!sA) continue
+            for (const bnd of (sA.bonds || [])) {
+              if (!ids.includes(bnd.otherId) || Math.random() >= 0.25) continue
+              const ev = pickSupportEvent(bnd.type); if (!ev) continue
+              const sB = G.shinobi.find(x => x.id === bnd.otherId); if (!sB) continue
+              if (ev.moraleMod) {
+                sA.indMorale = clamp((sA.indMorale || 70) + ev.moraleMod, 0, 100)
+                sB.indMorale = clamp((sB.indMorale || 70) + ev.moraleMod, 0, 100)
+              }
+              aL('🤝 ' + ev.text.replace('{a}', sn(sA)).replace('{b}', sn(sB)), 'good')
+              fired = true; break
+            }
+          }
+        }
       } else {
         const hasPr = sq.members.some(id => G.shinobi.find(s => s.id === id)?.pers.n === 'Protective')
-        const kR = clamp((hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08) + dp.kiaRiskMod, 0.005, 0.15)
+        const kR = clamp((hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08) + dp.kiaRiskMod + _formationRisk(sq), 0.005, 0.15)
         let hadKIA = false
         const survivorIds = []
         sq.members.forEach(id => {
@@ -1395,6 +1427,13 @@ export function adv() {
   G.ryo += trI + coI + jkI + daimyoB + examFeeAmt + loanFeeAmt + sponsorshipIncome
   G.ryo -= shinobiSal + staffSal + maintenance
 
+  // #12 Optional debt/overdraft (flag-gated): accrue interest instead of an implicit hole
+  if (G._ff_debt && G.ryo < 0) {
+    const d = applyDebt(G.ryo)
+    G.ryo = d.ryo; G.debt = d.debt
+    if (d.interestCharged > 0) aL(`Treasury in arrears — ${fmt(d.interestCharged)} ryo interest accrued (debt ${fmt(d.debt)}).`, 'bad')
+  }
+
   // Record finance snapshot
   if (!G.finances) G.finances = { history:[], deficitMonths:0, healthTier:'Stable', lastMonthNet:0, missionCommissions:{D:0,C:0,B:0,A:0,S:0}, examFees:0, loanFees:0, scoutCostThisMonth:0 }
   const commByRank = G.finances.missionCommissions || {D:0,C:0,B:0,A:0,S:0}
@@ -1471,7 +1510,9 @@ export function adv() {
   G.finances.loanFees = 0
   G.finances.scoutCostThisMonth = 0
 
-  if (G.ryo < 0) { aL('Treasury empty! Morale suffers.', 'bad'); G.morale = clamp(G.morale - 8, 0, 100); G.ryo = 0 }
+  // When debt is enabled, the overdraft mechanic owns the negative balance (no implicit zero-floor).
+  if (!G._ff_debt && G.ryo < 0) { aL('Treasury empty! Morale suffers.', 'bad'); G.morale = clamp(G.morale - 8, 0, 100); G.ryo = 0 }
+  else if (G._ff_debt && G.ryo < 0) { G.morale = clamp(G.morale - 4, 0, 100) }
 
   // ── Diplomacy drift ──────────────────────────────────────────────────────
   G.villages.forEach(v => {

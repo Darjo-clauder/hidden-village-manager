@@ -3,7 +3,7 @@ import { sp, cm, upUI, schEx, setNation, toggleColorblind } from './ui.js'
 import { showSetup, selIcon, beginGame, restoreGame } from './setup.js'
 import { adv } from './adv.js'
 import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout } from './panels/roster.js'
-import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev } from './panels/squads.js'
+import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM } from './panels/missions.js'
 import { rUp, buyUp, buildDistrict } from './panels/upgrades.js'
 import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer } from './panels/academy.js'
@@ -67,7 +67,7 @@ Object.assign(window, {
   // roster
   oDos, mkJK, treatTrauma, dosTab, toggleJutsuLoadout,
   // squads
-  oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev,
+  oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation,
   // missions
   mTab, oA, doA, pickSq, G_defShSet, G_defShClear, missionLogFilter, assignBM,
   // upgrades

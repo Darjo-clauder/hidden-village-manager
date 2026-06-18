@@ -3,6 +3,14 @@ import { RANKS, RKC, SQUAD_ROLES } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { sqSynergy, cohesionLabel, calcChemistry } from '../synergy.js'
 import { bondThresholdInfo } from '../../../shared/bonds/bondTypes.js'
+import { FORMATIONS } from '../../../shared/utils/formation.js'
+
+export function setFormation(squadId, formation) {
+  if (!G._ff_tacticalFormation) return
+  const sq = G.squads.find(q => q.id === squadId); if (!sq) return
+  sq.formation = formation
+  upUI(); rSq()
+}
 
 export function rSq() {
   const el = document.getElementById('sql')
@@ -62,6 +70,10 @@ export function rSq() {
           ? '<span style="color:#c9a84c">🤝 Bonds active</span>'
           : `<span>🤝 Bond in <b style="color:#87ceeb">${bi.away}</b>W</span>` })()}
       </div>
+      ${G._ff_tacticalFormation ? `<div style="display:flex;gap:5px;align-items:center;margin-top:6px">
+        <span style="font-size:7px;color:#7a7060;text-transform:uppercase;letter-spacing:1px">Formation</span>
+        ${Object.entries(FORMATIONS).map(([fid, f]) => `<button onclick="setFormation('${sq.id}','${fid}')" style="font-size:7px;padding:2px 7px;cursor:pointer;background:${(sq.formation || 'balanced') === fid ? '#c9a84c' : 'transparent'};color:${(sq.formation || 'balanced') === fid ? '#0d0d0f' : '#c9a84c'};border:1px solid #c9a84c">${f.name}</button>`).join('')}
+      </div>` : ''}
       ${(sq.fallen||[]).length ? `<div style="margin-top:5px;font-size:7px;color:#7a7060;letter-spacing:1px;text-transform:uppercase">Fallen</div>
         ${sq.fallen.map(f => `<div style="font-size:7px;color:#f66;margin-top:1px">✦ ${f.name} · ${f.rank} · Y${f.year}M${f.month} — "${f.mission}"</div>`).join('')}` : ''}
       ${aM
