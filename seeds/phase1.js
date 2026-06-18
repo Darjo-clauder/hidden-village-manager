@@ -85,7 +85,11 @@ export function seedPhase1(G) {
   const existingStaffIds = new Set(G.staff.map(s => s.id))
   SEED_SCOUTS.forEach(s => {
     if (!existingStaffIds.has(s.id)) {
-      G.staff.push({ ...s, regionAssigned: s.region, salary: s.costPerReport })
+      const base = Math.round((s.knowledge + s.judgement) / 2)
+      const stats = s.role === 'head_scout'
+        ? { perception: s.knowledge, judgement: s.judgement, intelligence: s.knowledge, leadership: base }
+        : { perception: s.knowledge, judgement: s.judgement, stealth: base, adaptability: base }
+      G.staff.push({ ...s, regionAssigned: s.region, salary: s.costPerReport, stats, ambition: base, monthsServed: 0 })
     }
   })
 
