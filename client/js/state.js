@@ -263,6 +263,11 @@ export function initState() {
     s.contractEnd = 1 + Math.floor(Math.random() * 3) + 1  // year 2–4
     G.shinobi.push(s)
   })
+  // Starter staff — gives new players immediate access to Staff and Scouting panels
+  ;['scout_jonin', 'team_sensei'].forEach(roleId => {
+    const st = mStaff(roleId, 8)
+    if (st) G.staff.push(st)
+  })
   rfM(); rfP()
 }
 
