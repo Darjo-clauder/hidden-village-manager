@@ -334,7 +334,11 @@ export function resolveBlackMarket(assignmentId) {
   // Discovery check
   if (Math.random() < discoveryChance(bm, G.blackMarketRep || 0)) {
     G.reputation = clamp(G.reputation - bm.repLoss, 0, 999)
-    G.councilApproval && (G.councilApproval.elder = clamp((G.councilApproval.elder || 50) - 8, 0, 100))
+    if (!G.councilApproval) G.councilApproval = {}
+    G.councilApproval.elder = clamp((G.councilApproval.elder || 50) - 8, 0, 100)
+    // Log to black ledger so exposure has a persistent record
+    if (!G.blackLedger) G.blackLedger = { balance: 0, history: [] }
+    G.blackLedger.history.push({ year: G.year, month: G.month, type: 'discovery', desc: `${bm.n} contract exposed`, repLoss: bm.repLoss })
     aL(`The "${bm.n}" contract was discovered! −${bm.repLoss} reputation.`, 'bad')
   }
 
@@ -564,11 +568,15 @@ export function adv() {
   // Passive prospect leads from safehouse network
   const lead = rollProspectLead(G)
   if (lead) {
-    if (!G.draftPool) G.draftPool = []
-    const exists = G.draftPool.some(p => p.name === lead.name)
+    const exists = (G.prospects || []).some(p => p.fromSafehouse && p.fn === lead.name)
     if (!exists) {
-      G.draftPool.push({ ...lead, id: 'sh_' + Date.now(), age: 14, pot: lead.ri + 1, stats: {}, traits: [] })
-      aL(`🏠 Safehouse network surfaced a prospect: ${lead.name} (from ${lead.source}).`, 'good')
+      const p = mS(lead.ri)
+      p.fn = lead.name
+      p.fromSafehouse = true
+      p.fromRegion = lead.source
+      p.urgencyMonths = rnd(3, 6)
+      G.prospects.push(p)
+      aL(`🏠 Safehouse network surfaced a prospect: ${lead.name} (via ${lead.source}).`, 'good')
     }
   }
   // ── World Events Calendar ────────────────────────────────────────────────
@@ -909,7 +917,12 @@ export function adv() {
         const ms = G.shinobi.find(x => x.id === id); if (!ms) return acc
         return acc + bondMissionBonus(ms, G.shinobi).successMod * 0.5
       }, 0)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus, 0.1, 0.97)
+      const sqDeclineMod = sq.members.reduce((acc, id) => {
+        const ms = G.shinobi.find(x => x.id === id); if (!ms) return acc
+        ensureCareerFields(ms)
+        return acc + (ms.declineMod || 0) * 0.5  // half-weight per member so one declining vet doesn't cripple a squad
+      }, 0)
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod, 0.1, 0.97)
 
       if (Math.random() < sc) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3, 0, 100)
@@ -942,7 +955,7 @@ export function adv() {
         }
         const _sqSuccessNarr = pickSquadNarrative(m.rk, 'success', sq.n)
         aL(sq.n + ' completed "' + m.n + '" — +' + fmt(m.ryo) + ' ryo. ' + _sqSuccessNarr, 'good')
-        pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: m.ryo, rep: m.rep, chainName: m.chainId ? (G.activeChains || []).find(c => c.id === m.chainId)?.name : null, narrative: _sqSuccessNarr })
+        pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: m.ryo, rep: m.rep, chainName: m.chainName || null, narrative: _sqSuccessNarr })
         addLegend(m.rk === 'S' ? 15 : m.rk === 'A' ? 8 : m.rk === 'B' ? 3 : 1)
         // Post-mission contribution scores (Phase 4)
         G.lastMissionReport = _buildMissionReport(sq, m, true)
@@ -1026,7 +1039,7 @@ export function adv() {
         checkJutsu(s)
         const _soloSuccNarr = pickNarrative(m.rk, 'success', sn(s), s.pers.n, { wins: s.wins, streak: s.streak, season })
         aL(sn(s) + ' completed "' + m.n + '" — +' + fmt(m.ryo) + ' ryo. ' + _soloSuccNarr, 'good')
-        pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: m.ryo, rep: m.rep + rB, chainName: m.chainId ? (G.activeChains || []).find(c => c.id === m.chainId)?.name : null, narrative: _soloSuccNarr })
+        pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: m.ryo, rep: m.rep + rB, chainName: m.chainName || null, narrative: _soloSuccNarr })
         addLegend(m.rk === 'S' ? 12 : m.rk === 'A' ? 6 : m.rk === 'B' ? 2 : 1)
         if (m.rk === 'S') addChronicle('S-Rank Completed', sn(s) + ' completed the S-rank mission "' + m.n + '".', 'legend')
         if (m.chainId) advanceChain(G, m.id, true)
@@ -1070,7 +1083,7 @@ export function adv() {
             aL(sn(s) + ' re-injured themselves — too soon to return to active duty.', 'warn')
           }
         }
-        pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, chainName: m.chainId ? (G.activeChains || []).find(c => c.id === m.chainId)?.name : null })
+        pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, chainName: m.chainName || null })
         G.morale = clamp(G.morale - 3, 0, 100)
         if (m.chainId) advanceChain(G, m.id, false)
       }

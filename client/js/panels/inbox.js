@@ -1,5 +1,6 @@
 import { G, fmt } from '../state.js'
 import { sp } from '../ui.js'
+import { WE_BY_ID } from '../../../shared/constants/worldCalendar.js'
 
 // Priority: urgent > standard > info
 const PRIORITY = { urgent: 0, standard: 1, info: 2 }
@@ -239,6 +240,23 @@ function buildItems() {
       archived: false,
     })
   })
+
+  // ── World Calendar active event ───────────────────────────────────────
+  if (G.worldCalendar?.activeEvent) {
+    const evDef = WE_BY_ID[G.worldCalendar.activeEvent.eventId]
+    if (evDef) {
+      items.push({
+        id:       'world_event_' + evDef.id,
+        priority: 'urgent',
+        cat:      'World',
+        icon:     evDef.icon || '🌍',
+        title:    evDef.name + ' — Choose a Response',
+        desc:     evDef.desc,
+        actions:  [{ label: 'Open Calendar', fn: `sp('calendar')` }],
+        archived: false,
+      })
+    }
+  }
 
   // ── Council proposals ─────────────────────────────────────────────────
   if (G.councilProposal) {

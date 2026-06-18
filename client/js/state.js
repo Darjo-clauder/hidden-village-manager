@@ -257,6 +257,13 @@ export function initState() {
     contractRenewalQueue: [],          // [{ shinobiId, demandSalary, year }]
     pairChemistryLog: {},              // global { `${idA}_${idB}`: missionCount }
     analyticsHistory: [],              // monthly snapshots for analytics dashboard
+    // Phase 2–5 additions (lazy-init guarded in adv but explicit here for save/load safety)
+    blackMarketRep: 0,                 // underworld reputation 0–100
+    councilApproval: {},               // { [factionId]: 0–100 } — populated by council tick
+    safehouses: [],                    // [{ id, locationId, status, established }]
+    worldCalendar: {},                 // keyed by event notice flags + pendingEvent/activeEvent
+    clanApproval: {},                  // { [clanId]: 0–100 } — drift toward 60 monthly
+    draftPool: [],                     // prospect leads from safehouse network (see rollProspectLead)
   });
   ;[2, 2, 1, 1, 1, 0, 0, 0].forEach(r => {
     const s = mS(r)

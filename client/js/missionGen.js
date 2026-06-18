@@ -33,7 +33,7 @@ export function pruneExpiredMissions(G) {
   const before = G.avM.length
   G.avM = G.avM.filter(m => {
     // Skip active assignments
-    if (G.aM.find(am => am.mId === m.id || am.squadMId === m.id)) return true
+    if (G.aM.find(am => am.missionId === m.id)) return true
     if (!m.expiresMonth) return true
 
     // Handle year rollover for expiry check
@@ -51,7 +51,7 @@ export function refreshMissionBoard(G) {
   if (pruned > 0) aL(`${pruned} mission contract${pruned > 1 ? 's' : ''} expired.`, 'neutral')
 
   // 2. Count current available (not active)
-  const activeMIds = new Set(G.aM.flatMap(am => [am.mId, am.squadMId]).filter(Boolean))
+  const activeMIds = new Set(G.aM.map(am => am.missionId).filter(Boolean))
   const available = G.avM.filter(m => !activeMIds.has(m.id))
   const soloAvail  = available.filter(m => !m.sq).length
   const squadAvail = available.filter(m =>  m.sq).length
