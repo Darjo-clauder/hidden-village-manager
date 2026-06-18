@@ -43,6 +43,13 @@ export function setNation(id) {
   upUI()
 }
 
+/** Accessibility: toggle colorblind mode (adds pattern tags to nation cues). */
+export function toggleColorblind() {
+  G._a11yColorblind = !G._a11yColorblind
+  upUI()
+  if (typeof window !== 'undefined' && window.sp) window.sp('dashboard')
+}
+
 export function upUI() {
   const season  = SEASONS[G.month - 1]
   const trI     = G.tradeRoutes.filter(r => r.active).reduce((a, r) => a + r.income, 0)

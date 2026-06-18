@@ -29,6 +29,16 @@ export const BOND_TYPES = {
 
 export const BOND_TYPE_KEYS = Object.keys(BOND_TYPES)
 
+/** Squad wins required before bonds may form (mirrors adv.js tryFormBonds gate). */
+export const BOND_FORM_THRESHOLD = 5
+
+/** "Next threshold" info for a squad — how close it is to forming bonds. */
+export function bondThresholdInfo(squad) {
+  const wins = (squad && squad.wins) || 0
+  const away = Math.max(0, BOND_FORM_THRESHOLD - wins)
+  return { wins, threshold: BOND_FORM_THRESHOLD, eligible: wins >= BOND_FORM_THRESHOLD, away }
+}
+
 /**
  * Returns combined bond bonuses for a shinobi's active missions,
  * given the full roster (to check if bonded partners are also active).

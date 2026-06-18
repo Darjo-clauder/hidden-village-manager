@@ -4,6 +4,7 @@ import { jutsuLoadoutBonus, toggleLoadoutSlot, LOADOUT_MAX } from '../../../shar
 import { BOND_TYPES } from '../../../shared/bonds/bondTypes.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { PHASE_META, ensureCareerFields } from '../careerEngine.js'
+import { computeStrain, strainBand } from '../../../shared/utils/strain.js'
 
 export function sBars(s) {
   const st = s.stats || {}
@@ -170,6 +171,11 @@ export function oDos(id) {
       <div style="flex:1;background:#222;height:4px;border-radius:2px"><div style="width:${commit}%;height:100%;background:${cColor}"></div></div>
       <div style="font-size:8px;color:${cColor};min-width:24px">${commit}</div>
     </div>
+    ${(() => { const st = computeStrain(s), b = strainBand(st); return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+      <div style="font-size:7px;color:#7a7060;width:70px">Strain</div>
+      <div style="flex:1;background:#222;height:4px;border-radius:2px"><div style="width:${st}%;height:100%;background:${b.color}"></div></div>
+      <div style="font-size:8px;color:${b.color};min-width:50px">${st} ${b.label}</div>
+    </div>` })()}
     ${s.legendStatus ? '<div style="font-size:8px;color:#c9a84c;margin-top:2px">★ Village Legend — exceptionally loyal</div>' : ''}
     ${commit <= 25 ? '<div style="font-size:7px;color:#f66;margin-top:2px">⚠ Low commitment — transfer risk! Consider a 1-on-1 meeting.</div>' : ''}
     ${s.roleGuarantee ? '<div style="font-size:7px;color:#87ceeb;margin-top:2px">Role guarantee promised — must deploy regularly.</div>' : ''}

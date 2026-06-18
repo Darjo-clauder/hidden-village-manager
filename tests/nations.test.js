@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { NATIONS, nationIdentity, isValidNation } from '../shared/constants/nations.js'
+import { NATIONS, nationIdentity, isValidNation, nationMods } from '../shared/constants/nations.js'
 
 // WCAG AA contrast vs the game's dark surface (mirrors scripts/hudContrast.mjs).
 const BG = '#0d0d0f'
@@ -35,6 +35,24 @@ describe('nationIdentity (I-NAT-1)', () => {
     const n = nationIdentity('atlantis')
     expect(n.name).toBe('Neutral')
     expect(n.accent).toMatch(/^#[0-9a-f]{6}$/i)
+  })
+})
+
+describe('nationMods — I-NAT invariants', () => {
+  it('I-NAT-2: every nation |successMod| <= 0.1 (never dominates sc)', () => {
+    for (const [id, n] of Object.entries(NATIONS))
+      expect(Math.abs(n.traitMods.successMod), `${id}`).toBeLessThanOrEqual(0.1)
+  })
+  it('I-NAT-2: ryoMod stays within a sane band [-0.1, 0.1]', () => {
+    for (const [id, n] of Object.entries(NATIONS))
+      expect(Math.abs(n.traitMods.ryoMod), `${id}`).toBeLessThanOrEqual(0.1)
+  })
+  it('I-NAT-1: unknown / unset nation yields zero mods (neutral)', () => {
+    expect(nationMods('atlantis')).toEqual({ successMod: 0, ryoMod: 0 })
+    expect(nationMods(undefined)).toEqual({ successMod: 0, ryoMod: 0 })
+  })
+  it('returns the declared mods for a known nation', () => {
+    expect(nationMods('dune').ryoMod).toBe(0.05)
   })
 })
 

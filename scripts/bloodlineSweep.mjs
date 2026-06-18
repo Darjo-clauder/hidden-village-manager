@@ -67,3 +67,18 @@ console.log(`multiplier: ${safe.length ? safe[0].toFixed(3) + ' .. ' + safe[safe
   `(single-activation success delta +0.05..+0.12 over base)`)
 console.log(`activationCost: 1500 .. 3000 ryo  (one mission's income or more -> real sink, no spiral at start 20000)`)
 console.log(`global clamp MAX_BLOODLINE_BONUS=${MAX_BLOODLINE_BONUS} binds at multiplier>=~0.5 for 2 jinchuriki -> simultaneous-activation guardrail holds.`)
+
+console.log('\n=== D. HEATMAP — win-rate uplift (rows=multiplier) x sustainability (cols=activationCost ryo) ===')
+const gridCosts = [500, 1500, 3000, 5000]
+console.log('mult\\cost  ' + gridCosts.map(c => String(c).padStart(8)).join(''))
+for (const m of mults.filter((_, i) => i % 2 === 0)) {
+  const w = winRate(m, 1)
+  const uplift = (w.adjusted - BASE_SUCCESS)
+  const cells = gridCosts.map(c => {
+    const sustainable = reservesAfterCampaign(c) >= 0
+    return (sustainable ? '+' + uplift.toFixed(2) : '  X') .padStart(8)
+  })
+  console.log(m.toFixed(3).padEnd(9) + cells.join(''))
+}
+console.log('Cell = success uplift over base 0.55 if reserves stay >=0 over a 12-mission campaign (income 1500/mo, start 20000); X = deficit.')
+console.log('Recommended region: multiplier 0.12-0.38, activationCost 1500-3000 (uplift meaningful, sustainable).')

@@ -60,6 +60,22 @@ export function strengthRatio(playerStrength, rivalStrength) {
 }
 
 /**
+ * Ranks the player and all rival villages into a standings table by strength (desc).
+ * @param {number} playerStrength
+ * @param {string} playerName
+ * @param {object[]} villages - rival villages with .n, .strength, .rel
+ * @returns {Array<{rank, name, strength, rel, isPlayer}>}
+ */
+export function rankStandings(playerStrength, playerName, villages = []) {
+  const rows = [
+    { name: playerName, strength: Math.round(playerStrength || 0), rel: null, isPlayer: true },
+    ...villages.map(v => ({ name: v.n, strength: Math.round(v.strength || 50), rel: v.rel ?? null, isPlayer: false })),
+  ]
+  rows.sort((a, b) => b.strength - a.strength)
+  return rows.map((r, i) => ({ ...r, rank: i + 1 }))
+}
+
+/**
  * Computes player village strength from G state.
  * @param {object} G
  * @returns {number}

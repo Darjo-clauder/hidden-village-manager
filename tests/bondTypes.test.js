@@ -1,7 +1,21 @@
 import { describe, it, expect } from 'vitest'
-import { bondMissionBonus, mentorGrowthBonus, kiaRipple, BOND_TYPES, BOND_TYPE_KEYS } from '../shared/bonds/bondTypes.js'
+import { bondMissionBonus, mentorGrowthBonus, kiaRipple, BOND_TYPES, BOND_TYPE_KEYS, bondThresholdInfo, BOND_FORM_THRESHOLD } from '../shared/bonds/bondTypes.js'
 
 const mk = (id, ri = 1, status = 'available', bonds = []) => ({ id, ri, status, bonds })
+
+describe('bondThresholdInfo — next-threshold display (#5)', () => {
+  it('reports wins remaining before bonds form', () => {
+    expect(bondThresholdInfo({ wins: 3 })).toEqual({ wins: 3, threshold: BOND_FORM_THRESHOLD, eligible: false, away: 2 })
+  })
+  it('eligible once threshold reached', () => {
+    const info = bondThresholdInfo({ wins: 5 })
+    expect(info.eligible).toBe(true)
+    expect(info.away).toBe(0)
+  })
+  it('handles missing squad / wins', () => {
+    expect(bondThresholdInfo(undefined)).toEqual({ wins: 0, threshold: 5, eligible: false, away: 5 })
+  })
+})
 
 describe('BOND_TYPES definitions', () => {
   it('has 4 bond types', () => {

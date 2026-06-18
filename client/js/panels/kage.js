@@ -1,6 +1,6 @@
 import { G, ui, clamp, sn, fmt } from '../state.js'
 import { aL, ntf, upUI } from '../ui.js'
-import { strengthRatio } from '../../../shared/utils/rivalSim.js'
+import { strengthRatio, rankStandings } from '../../../shared/utils/rivalSim.js'
 
 export function rKa() {
   const el = document.getElementById('kgl')
@@ -13,9 +13,17 @@ export function rKa() {
     const strLabel = ratio >= 1.5 ? 'Dominant' : ratio >= 1.2 ? 'Stronger' : ratio >= 0.8 ? 'Matched' : ratio >= 0.5 ? 'Weaker' : 'Outmatched'
     return `<div class="ke-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="font-size:20px">${v.ico}</div><div><div style="font-size:11px;color:#e8e0cc;font-weight:bold">${v.n}</div><div style="font-size:8px;color:#7a7060">${v.kageRank} ${v.kage} · <span style="color:${rc}">${v.rel > 60 ? 'Allied' : v.rel > 30 ? 'Neutral' : 'Hostile'}</span>${v.allied ? ' ✓ Allied' : ''}</div></div></div><div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><div style="font-size:7px;color:#7a7060;width:60px;text-transform:uppercase;letter-spacing:1px">Relations</div><div class="bar" style="flex:1"><div class="fill" style="width:${v.rel}%;background:${rc}"></div></div><div style="font-size:9px;color:#7a7060">${v.rel}</div></div><div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><div style="font-size:7px;color:#7a7060;width:60px;text-transform:uppercase;letter-spacing:1px">Strength</div><div class="bar" style="flex:1"><div class="fill" style="width:${Math.min(100,vs/2)}%;background:${strColor}"></div></div><div style="font-size:8px;color:${strColor}">${strLabel} (${Math.round(vs)})</div></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="gb gb-b" onclick="sGift('${v.n}')" ${G.ryo < 5000 ? 'disabled' : ''}>Send gifts +10 (5k ryo)</button>${v.rel > 60 && !v.allied ? `<button class="gb gb-g" onclick="propAl('${v.n}')" ${G.ryo < 10000 ? 'disabled' : ''}>Propose alliance (10k)</button>` : ''}${v.rel < 30 ? `<button class="gb gb-r" onclick="rattle('${v.n}')">Rattle sabres</button>` : ''}</div></div>`
   }).join('')
+  const standings = rankStandings(playerStr, (G.vName || 'Your Village'), G.villages)
+  const standingsHtml = `<div class="ke-card" style="margin-bottom:14px">
+    <div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">Power Standings</div>
+    <table style="width:100%;border-collapse:collapse;font-size:9px">
+      <thead><tr style="color:#7a7060;text-align:left"><th style="padding:2px 5px">#</th><th>Village</th><th style="text-align:right;padding:2px 5px">Strength</th></tr></thead>
+      <tbody>${standings.map(r => `<tr style="${r.isPlayer ? 'color:#c9a84c;font-weight:bold' : 'color:#e8e0cc'}"><td style="padding:2px 5px">${r.rank}</td><td>${r.name}${r.isPlayer ? ' (you)' : ''}</td><td style="text-align:right;padding:2px 5px">${r.strength}</td></tr>`).join('')}</tbody>
+    </table>
+  </div>`
   el.innerHTML = (ui.pKE
     ? `<div class="ke-card" style="border-color:#c9a84c;margin-bottom:14px"><div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">⚡ Kage Event</div><div style="font-size:12px;color:#e8e0cc;font-weight:bold;margin-bottom:5px">${ui.pKE.n}</div><div style="font-size:10px;color:#7a7060;margin-bottom:12px;line-height:1.5">${ui.pKE.desc}</div><div style="display:flex;flex-direction:column;gap:6px">${ui.pKE.choices.map((c, i) => `<button class="gb" onclick="resKE(${i})">${c.l}</button>`).join('')}</div></div>`
-    : '') + vH
+    : '') + standingsHtml + vH
 }
 
 export function resKE(i) {

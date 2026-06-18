@@ -22,6 +22,7 @@ import { getClanPassives, CLANS, CLAN_CHAINS, availableClanChains } from '../../
 import { getSafehousePassives, rollProspectLead, SAFEHOUSE_COST, MAX_SAFEHOUSES, SH_LOCATION_BY_ID, DC_OP_BY_ID, SAFEHOUSE_LOCATIONS } from '../../shared/constants/safehouses.js'
 import { getEventForMonth, getUpcomingEvent, resolveWorldEvent, WE_BY_ID } from '../../shared/constants/worldCalendar.js'
 import { successCeiling } from '../../shared/utils/missionOdds.js'
+import { emit, integrityCheck } from '../../shared/utils/telemetry.js'
 import { activeBloodlineBonus, netBloodlineMod, canActivate, BLOODLINE_MULTIPLIER, ACTIVATION_COST, ACTIVATION_MIN_STAGE, ACTIVE_DURATION, COOLDOWN, AGGRO_INCREASE, DEBUFF_DURATION } from '../../shared/utils/bloodline.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
@@ -1420,6 +1421,10 @@ export function adv() {
   const tier = computeFinanceTier(monthlyNet)
   G.finances.healthTier = tier.n
   if (tier.morale !== 0) G.morale = clamp(G.morale + tier.morale, 0, 100)
+
+  // Telemetry (side-effect-only buffer; never alters game logic)
+  emit('economy_tick', { year: G.year, month: G.month, ryo: G.ryo, net: monthlyNet, deficitMonths: G.finances.deficitMonths, tier: tier.n })
+  emit('integrity_check', integrityCheck(G))
 
   // Deficit tracking & debt spiral
   if (monthlyNet < 0) {

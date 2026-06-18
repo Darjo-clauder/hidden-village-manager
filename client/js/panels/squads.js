@@ -2,6 +2,7 @@ import { G, ui, sPow, sqP, sn, fmt } from '../state.js'
 import { RANKS, RKC, SQUAD_ROLES } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { sqSynergy, cohesionLabel, calcChemistry } from '../synergy.js'
+import { bondThresholdInfo } from '../../../shared/bonds/bondTypes.js'
 
 export function rSq() {
   const el = document.getElementById('sql')
@@ -57,6 +58,9 @@ export function rSq() {
         <span>W: <b style="color:#8fbc8f">${sq.wins||0}</b></span>
         <span>L: <b style="color:#f66">${sq.losses||0}</b></span>
         <span>Active: <b style="color:#c9a84c">${sq.monthsActive||0}m</b></span>
+        ${(() => { const bi = bondThresholdInfo(sq); return bi.eligible
+          ? '<span style="color:#c9a84c">🤝 Bonds active</span>'
+          : `<span>🤝 Bond in <b style="color:#87ceeb">${bi.away}</b>W</span>` })()}
       </div>
       ${(sq.fallen||[]).length ? `<div style="margin-top:5px;font-size:7px;color:#7a7060;letter-spacing:1px;text-transform:uppercase">Fallen</div>
         ${sq.fallen.map(f => `<div style="font-size:7px;color:#f66;margin-top:1px">✦ ${f.name} · ${f.rank} · Y${f.year}M${f.month} — "${f.mission}"</div>`).join('')}` : ''}

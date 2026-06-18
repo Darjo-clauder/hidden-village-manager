@@ -87,7 +87,8 @@ export function rDash() {
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">
       <span style="font-size:8px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Nation</span>
       ${Object.entries(NATIONS).map(([id, n]) => `
-        <button onclick="setNation('${id}')" style="font-size:8px;padding:3px 9px;cursor:pointer;background:${G.nationId === id ? n.accent : 'transparent'};color:${G.nationId === id ? '#0d0d0f' : n.accent};border:1px solid ${n.accent}">${n.crest} ${n.name}</button>`).join('')}
+        <button onclick="setNation('${id}')" style="font-size:8px;padding:3px 9px;cursor:pointer;background:${G.nationId === id ? n.accent : 'transparent'};color:${G.nationId === id ? '#0d0d0f' : n.accent};border:1px solid ${n.accent}">${n.crest} ${n.name}${G._a11yColorblind ? ' ·' + n.pattern : ''}</button>`).join('')}
+      <button onclick="toggleColorblind()" title="Colorblind mode: show pattern tags" style="font-size:8px;padding:3px 9px;cursor:pointer;background:transparent;color:var(--text-dim);border:1px solid var(--border)">${G._a11yColorblind ? '◑ CB on' : '◐ CB'}</button>
     </div>` : ''}
 
     <!-- Health snapshot -->
