@@ -3,38 +3,38 @@
 
 // ── Same-clan combos ──────────────────────────────────────────────────────────
 const SAME_CLAN_COMBOS = {
-  Uchiha:   { label: 'Sharingan Sync',       desc: '+18% power — twin Sharingan warp perception together.',          powerMod: 0.18 },
-  Hyuga:    { label: 'Twin Byakugan',        desc: '+14% power — 360° sight shared, zero blind spots.',             powerMod: 0.14 },
-  Nara:     { label: 'Shadow Twins',         desc: '+12% power — chained shadow techniques stagger any foe.',       powerMod: 0.12 },
-  Akimichi: { label: 'Meat Tank Formation',  desc: '+12% power — human shields absorb punishment for the team.',    powerMod: 0.12 },
-  Yamanaka: { label: 'Mind Link',            desc: '+10% power — seamless telepathic coordination.',                powerMod: 0.10 },
-  Inuzuka:  { label: 'Pack Tactics',         desc: '+14% power — fang attacks multiply with numbers.',              powerMod: 0.14 },
-  Aburame:  { label: 'Hive Coordination',    desc: '+10% power — insects swarm with coordinated precision.',        powerMod: 0.10 },
-  Uzumaki:  { label: 'Seal Chain',           desc: '+16% power — sealing techniques amplify each other.',           powerMod: 0.16 },
-  Senju:    { label: 'Mokuton Resonance',    desc: '+20% power — wood release flourishes in tandem.',               powerMod: 0.20 },
+  Kageha:   { label: 'Kagan Sync',       desc: '+18% power — twin Kagan warp perception together.',          powerMod: 0.18 },
+  Shiromi:    { label: 'Twin Hakugan',        desc: '+14% power — 360° sight shared, zero blind spots.',             powerMod: 0.14 },
+  Kagero:     { label: 'Shadow Twins',         desc: '+12% power — chained shadow techniques stagger any foe.',       powerMod: 0.12 },
+  Tsuchida: { label: 'Meat Tank Formation',  desc: '+12% power — human shields absorb punishment for the team.',    powerMod: 0.12 },
+  Tamashii: { label: 'Mind Link',            desc: '+10% power — seamless telepathic coordination.',                powerMod: 0.10 },
+  Okamura:  { label: 'Pack Tactics',         desc: '+14% power — fang attacks multiply with numbers.',              powerMod: 0.14 },
+  Mushiba:  { label: 'Hive Coordination',    desc: '+10% power — insects swarm with coordinated precision.',        powerMod: 0.10 },
+  Fuma:  { label: 'Seal Chain',           desc: '+16% power — sealing techniques amplify each other.',           powerMod: 0.16 },
+  Mori:    { label: 'Forest Birth Resonance',    desc: '+20% power — forest birth flourishes in tandem.',               powerMod: 0.20 },
 }
 
 // ── Cross-clan combos (specific pairs) ───────────────────────────────────────
 const CROSS_CLAN_COMBOS = [
-  { clans: ['Uchiha', 'Senju'],    label: 'Ancient Rivals United',  desc: '+22% power — centuries of rivalry become devastating synergy.',         powerMod: 0.22, successMod: 0 },
-  { clans: ['Uzumaki', 'Senju'],   label: 'Will of Fire',           desc: '+18% power — the bloodlines that built Konoha, reunited.',             powerMod: 0.18, successMod: 0.05 },
-  { clans: ['Nara', 'Inuzuka'],    label: 'Pack Strategists',       desc: '+14% power — shadow jutsu cage enemies for fang attacks.',             powerMod: 0.14, successMod: 0 },
-  { clans: ['Hyuga', 'Uchiha'],    label: 'Dojutsu Overlord',       desc: '+20% power — two great eye techniques, no blind spots anywhere.',      powerMod: 0.20, successMod: 0 },
-  { clans: ['Akimichi', 'Nara'],   label: 'Formation Ino-Shika',    desc: '+12% power — two thirds of the legendary formation.',                  powerMod: 0.12, successMod: 0.05 },
-  { clans: ['Yamanaka', 'Nara'],   label: 'Mind & Shadow',          desc: '+12% power — mental control layered over shadow binding.',             powerMod: 0.12, successMod: 0.05 },
-  { clans: ['Aburame', 'Inuzuka'], label: 'Swarm and Fang',         desc: '+14% power — insects drive targets into fang attack range.',           powerMod: 0.14, successMod: 0 },
-  { clans: ['Uzumaki', 'Hyuga'],   label: 'Unbreakable Sight',      desc: '+15% power — sealing arts guided by Byakugan precision.',             powerMod: 0.15, successMod: 0 },
-  { clans: ['Senju', 'Aburame'],   label: 'Nature\'s Arsenal',      desc: '+14% power — wood and insects combine into living barriers.',          powerMod: 0.14, successMod: 0 },
-  { clans: ['Uchiha', 'Nara'],     label: 'Fire and Shadow',        desc: '+16% power — Sharingan reads shadow bindings in real time.',           powerMod: 0.16, successMod: 0 },
-  { clans: ['Hyuga', 'Akimichi'],  label: 'See It, Crush It',       desc: '+12% power — Byakugan spots the vulnerability; Akimichi exploits it.', powerMod: 0.12, successMod: 0 },
-  { clans: ['Inuzuka', 'Uzumaki'], label: 'Feral Seal',             desc: '+14% power — seals lock targets for fang-strike finishers.',          powerMod: 0.14, successMod: 0.03 },
-  { clans: ['Yamanaka', 'Uchiha'], label: 'Mind Over Eye',          desc: '+16% power — mind-transfer guided by Sharingan perception.',          powerMod: 0.16, successMod: 0 },
-  { clans: ['Senju', 'Nara'],      label: 'Deep Root Strategy',     desc: '+14% power — wood pillars create perfect shadow-binding terrain.',     powerMod: 0.14, successMod: 0.04 },
-  { clans: ['Aburame', 'Yamanaka'],label: 'Hive Mind',              desc: '+12% power — insect chakra channels feed mental technique range.',     powerMod: 0.12, successMod: 0.03 },
+  { clans: ['Kageha', 'Mori'],    label: 'Ancient Rivals United',  desc: '+22% power — centuries of rivalry become devastating synergy.',         powerMod: 0.22, successMod: 0 },
+  { clans: ['Fuma', 'Mori'],   label: 'Will of Fire',           desc: '+18% power — the bloodlines that built the village, reunited.',             powerMod: 0.18, successMod: 0.05 },
+  { clans: ['Kagero', 'Okamura'],    label: 'Pack Strategists',       desc: '+14% power — shadow jutsu cage enemies for fang attacks.',             powerMod: 0.14, successMod: 0 },
+  { clans: ['Shiromi', 'Kageha'],    label: 'Dojutsu Overlord',       desc: '+20% power — two great eye techniques, no blind spots anywhere.',      powerMod: 0.20, successMod: 0 },
+  { clans: ['Tsuchida', 'Kagero'],   label: 'Formation Mind-Shadow',    desc: '+12% power — two parts of the three-minds formation.',                  powerMod: 0.12, successMod: 0.05 },
+  { clans: ['Tamashii', 'Kagero'],   label: 'Mind & Shadow',          desc: '+12% power — mental control layered over shadow binding.',             powerMod: 0.12, successMod: 0.05 },
+  { clans: ['Mushiba', 'Okamura'], label: 'Swarm and Fang',         desc: '+14% power — insects drive targets into fang attack range.',           powerMod: 0.14, successMod: 0 },
+  { clans: ['Fuma', 'Shiromi'],   label: 'Unbreakable Sight',      desc: '+15% power — sealing arts guided by Hakugan precision.',             powerMod: 0.15, successMod: 0 },
+  { clans: ['Mori', 'Mushiba'],   label: 'Nature\'s Arsenal',      desc: '+14% power — wood and insects combine into living barriers.',          powerMod: 0.14, successMod: 0 },
+  { clans: ['Kageha', 'Kagero'],     label: 'Fire and Shadow',        desc: '+16% power — Kagan reads shadow bindings in real time.',           powerMod: 0.16, successMod: 0 },
+  { clans: ['Shiromi', 'Tsuchida'],  label: 'See It, Crush It',       desc: '+12% power — Hakugan spots the vulnerability; Tsuchida exploits it.', powerMod: 0.12, successMod: 0 },
+  { clans: ['Okamura', 'Fuma'], label: 'Feral Seal',             desc: '+14% power — seals lock targets for fang-strike finishers.',          powerMod: 0.14, successMod: 0.03 },
+  { clans: ['Tamashii', 'Kageha'], label: 'Mind Over Eye',          desc: '+16% power — mind-transfer guided by Kagan perception.',          powerMod: 0.16, successMod: 0 },
+  { clans: ['Mori', 'Kagero'],      label: 'Deep Root Strategy',     desc: '+14% power — wood pillars create perfect shadow-binding terrain.',     powerMod: 0.14, successMod: 0.04 },
+  { clans: ['Mushiba', 'Tamashii'],label: 'Hive Mind',              desc: '+12% power — insect chakra channels feed mental technique range.',     powerMod: 0.12, successMod: 0.03 },
 ]
 
-// Ino-Shika-Cho requires all three clans
-const ISC_TRIO = new Set(['Nara', 'Akimichi', 'Yamanaka'])
+// Three-Minds Formation requires all three clans
+const ISC_TRIO = new Set(['Kagero', 'Tsuchida', 'Tamashii'])
 
 // ── Chemistry effects (trait combos) ─────────────────────────────────────────
 const CHEMISTRY = [
@@ -99,11 +99,11 @@ export function sqSynergy(sq, shinobi) {
   const clans = members.map(s => s.clan).filter(Boolean)
   const clanSet = new Set(clans)
 
-  // Ino-Shika-Cho trio
+  // Three-Minds Formation trio
   if ([...ISC_TRIO].every(c => clanSet.has(c))) {
     powerMod += 0.35
     successMod += 0.12
-    bonuses.push({ label: 'Ino-Shika-Cho', desc: '+35% power, +12% success — the legendary formation reborn.', color: '#c9a84c' })
+    bonuses.push({ label: 'Three-Minds Formation', desc: '+35% power, +12% success — the legendary formation reborn.', color: '#c9a84c' })
   } else {
     // Cross-clan combos (check before same-clan so they don't stack)
     const appliedCrossClans = new Set()

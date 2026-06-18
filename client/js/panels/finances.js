@@ -30,7 +30,7 @@ export function rFi() {
   // Income breakdown
   const trI = G.tradeRoutes.filter(r => r.active).reduce((a, r) => a + r.income, 0)
   const coI = G.contracts.filter(c => c.active).reduce((a, c) => a + c.income, 0)
-  const jkI = G.beasts.filter(b => b.sealed && b.n === 'Matatabi' && b.jk).length * 3000
+  const jkI = G.beasts.filter(b => b.sealed && b.n === 'Niryuu' && b.jk).length * 3000
   const leg = G.legend || 0
   let daimyoB = 0
   let daimyoLbl = daimyoLabel()
@@ -99,7 +99,7 @@ export function rFi() {
       <div style="font-size:8px;letter-spacing:2px;color:#8fbc8f;text-transform:uppercase;margin-bottom:8px">Income / Month</div>
       ${row('Trade Routes (' + G.tradeRoutes.filter(r=>r.active).length + ' active)', '+' + fmt(trI), '#8fbc8f')}
       ${row('Contracts (' + G.contracts.filter(c=>c.active).length + ' active)', '+' + fmt(coI), '#8fbc8f')}
-      ${jkI > 0 ? row('Jinchuriki (Matatabi)', '+' + fmt(jkI), '#c9a84c') : ''}
+      ${jkI > 0 ? row('Jinchuriki (Niryuu)', '+' + fmt(jkI), '#c9a84c') : ''}
       ${daimyoB > 0 ? row('Daimyo Bonus (' + daimyoLbl + ')', '+' + fmt(daimyoB), '#c9a84c') : ''}
       ${fin.examFees > 0 ? row('Exam Hosting Fees', '+' + fmt(fin.examFees), '#8fbc8f') : ''}
       ${fin.loanFees > 0 ? row('Loan Fees Received', '+' + fmt(fin.loanFees), '#8fbc8f') : ''}

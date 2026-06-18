@@ -46,12 +46,12 @@ function jkKIAImmune(s) {
   const b = getBeastForJK(s.id); if (!b) return false
   const data = BEAST_DATA[b.n]; if (!data?.uniqueAbility) return false
   if (getSyncStage(b) < data.uniqueAbility.stage) return false
-  // Shukaku Sand Armor and Kurama Nine-Tails Mode both grant KIA immunity once per year
-  if (b.n !== 'Shukaku' && b.n !== 'Kurama') return false
+  // Sakeru Sand Armor and Kureni Nine-Tails Mode both grant KIA immunity once per year
+  if (b.n !== 'Sakeru' && b.n !== 'Kureni') return false
   if (!G._jkKIAImmuneYear) G._jkKIAImmuneYear = {}
   if (G._jkKIAImmuneYear[b.n] === G.year) return false
   G._jkKIAImmuneYear[b.n] = G.year
-  aL(`${sn(s)}'s ${b.n} aura deflected certain death — ${b.n === 'Kurama' ? 'Nine-Tails Chakra Mode' : 'Sand Armor'} activated!`, 'good')
+  aL(`${sn(s)}'s ${b.n} aura deflected certain death — ${b.n === 'Kureni' ? 'Nine-Tails Mode' : 'Sand Armor'} activated!`, 'good')
   return true
 }
 
@@ -445,7 +445,7 @@ export function resolveClanChain(assignmentId) {
     G.reputation = clamp((G.reputation || 0) + chain.rep, 0, 999)
     if (!G.clanApproval) G.clanApproval = {}
     G.clanApproval[am.clanId] = clamp((G.clanApproval[am.clanId] ?? 80) + 3, 0, 100)
-    if (chain.id === 'akimichi_feast') G.morale = clamp((G.morale || 50) + 10, 0, 100)
+    if (chain.id === 'tsuchida_feast') G.morale = clamp((G.morale || 50) + 10, 0, 100)
     if (chain.id === 'formation_drill') members.forEach(s => { s.monthsActive = (s.monthsActive || 0) + 2 })
     aL(`${clan?.icon || ''} "${chain.n}" succeeded — +${chain.ryo.toLocaleString()} ryo, +${chain.rep} rep.`, 'good')
   } else {
@@ -1025,10 +1025,10 @@ export function adv() {
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)
-      // Chomei Lucky Scales: failed mission becomes marginal success once per month
-      const chomeiActive = hasUniqueAbility(s.id, 'Chomei') && !G._chomeiLuckyUsed
+      // Hanaku Lucky Scales: failed mission becomes marginal success once per month
+      const chomeiActive = hasUniqueAbility(s.id, 'Hanaku') && !G._hanakuLuckyUsed
       const rollResult = Math.random()
-      const missionPassed = rollResult < sc || (rollResult >= sc && chomeiActive && (() => { G._chomeiLuckyUsed = true; aL(`${sn(s)}'s Chomei Lucky Scales turned failure to success!`, 'good'); return true })())
+      const missionPassed = rollResult < sc || (rollResult >= sc && chomeiActive && (() => { G._hanakuLuckyUsed = true; aL(`${sn(s)}'s Hanaku Lucky Scales turned failure to success!`, 'good'); return true })())
       if (missionPassed) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep + rB, 0, 999); G.morale = clamp(G.morale + 2, 0, 100)
         recordMissionCommission(m.rk)
@@ -1216,7 +1216,7 @@ export function adv() {
     const poachTargets = (G.staff || []).filter(st => st.rating >= 14 && !st.asstKage)
     if (poachTargets.length > 0 && Math.random() < 0.04) {
       const target = poachTargets.sort((a, b) => b.rating - a.rating)[0]
-      const poachVillage = pk(['Sunagakure', 'Kirigakure', 'Iwagakure', 'Kumogakure'])
+      const poachVillage = pk(['Kazegakure', 'Shimogakure', 'Gangakure', 'Raikurokure'])
       const matchCost = Math.round(target.salary * rnd(12, 18))
       const expMonth = G.month === 12 ? 1 : G.month + 1
       const expYear = G.month === 12 ? G.year + 1 : G.year
@@ -1344,8 +1344,8 @@ export function adv() {
   // ── Economy & Finance snapshot ────────────────────────────────────────────
   const trI = Math.round(G.tradeRoutes.filter(r => r.active).reduce((a, r) => a + r.income, 0) * sb.tradeIncomeMultiplier)
   const coI = Math.round(G.contracts.filter(c => c.active).reduce((a, c) => a + c.income, 0) * sb.tradeIncomeMultiplier)
-  const jkI = G.beasts.filter(b => b.sealed && b.n === 'Matatabi' && b.jk).length * 3000
-    + (G._kuramagyukiBonus ? 5000 : 0) // Kurama+Gyuki trade bonus
+  const jkI = G.beasts.filter(b => b.sealed && b.n === 'Niryuu' && b.jk).length * 3000
+    + (G._kurenigykiBonus ? 5000 : 0) // Kureni+Hachitsuno trade bonus
   const daimyoB = Math.round(computeDaimyoBonus() * (G.daimyoBudgetMult || 1))
   const maintenance = computeMaintenance()
   const shinobiSal = G.shinobi.reduce((a, s) => a + s.salary, 0)
@@ -2288,7 +2288,7 @@ export function adv() {
       if (ev.type === 'lore')   addChronicle(ev.title, ev.body, 'lore', ev.narrative || null)
     })
   })
-  // Apply mission luck passive from beasts (Chomei, etc.)
+  // Apply mission luck passive from beasts (Hanaku, etc.)
 
 
   // ── Beast extraction attempts by rival villages ───────────────────────────
@@ -2323,7 +2323,7 @@ export function adv() {
   })
 
   // Reset monthly beast ability flags
-  G._chomeiLuckyUsed = false
+  G._hanakuLuckyUsed = false
 
   // ── Phase 1 engine ticks ──────────────────────────────────────────────────
   tickScouts(G)
@@ -2364,8 +2364,8 @@ function _squadBondBonus(sq) {
 export function resRaid() {
   if (!G.raid || G.raid.resolved) return
   const hL = G.upgrades.hospital
-  const isobu = G.beasts?.find(b => b.n === 'Isobu' && b.sealed && b.jk)
-  const isobuBonus = (isobu && getSyncStage(isobu) >= (BEAST_DATA['Isobu']?.uniqueAbility?.stage ?? 99)) ? 30 : 0
+  const isobu = G.beasts?.find(b => b.n === 'Tairyuu' && b.sealed && b.jk)
+  const isobuBonus = (isobu && getSyncStage(isobu) >= (BEAST_DATA['Tairyuu']?.uniqueAbility?.stage ?? 99)) ? 30 : 0
   const wD = (G.upgrades.wall === 1 ? 15 : G.upgrades.wall === 2 ? 35 : 0) + (G.upgrades.seal === 1 ? 10 : G.upgrades.seal === 2 ? 25 : 0) + (G.tempDef || 0) + isobuBonus
   const def = G.defSh ? G.shinobi.find(s => s.id === G.defSh) : null
   const jkB = G.beasts.filter(b => b.sealed && b.jk && G.shinobi.find(s => s.id === b.jk && s.status !== 'mission')).reduce((a, b) => a + Math.round(b.pow * 0.3), 0)

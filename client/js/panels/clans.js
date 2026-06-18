@@ -25,7 +25,7 @@ export function rClans() {
     </div>
     <div style="display:grid;gap:10px">
     ${CLANS.map(clan => {
-      const members = (G.shinobi || []).filter(s => s.clan === clan.id)
+      const members = (G.shinobi || []).filter(s => s.clan?.toLowerCase() === clan.id)
       const active = members.filter(s => s.status === 'available')
       const approval = (G.clanApproval || {})[clan.id] ?? 80
       const passiveActive = approval >= clan.approvalNeeded && active.length > 0
@@ -97,7 +97,7 @@ export function launchClanChain(clanId, chainId) {
   const chain = CLAN_CHAINS[chainId]
   const clan = CLAN_BY_ID[clanId]
   if (!chain || !clan) return
-  const members = (G.shinobi || []).filter(s => s.clan === clanId && s.status === 'available' && (s.ri || 0) >= (chain.reqRi || 0))
+  const members = (G.shinobi || []).filter(s => s.clan?.toLowerCase() === clanId && s.status === 'available' && (s.ri || 0) >= (chain.reqRi || 0))
   if (members.length < (chain.reqClanSize || 1)) { ntf(`Need ${chain.reqClanSize} eligible ${clan.name} members.`); return }
 
   // Send clan-size members on the chain (use highest-rank first)

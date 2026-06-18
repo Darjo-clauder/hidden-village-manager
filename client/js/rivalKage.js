@@ -111,7 +111,7 @@ export function getWorldReputationFlavor(G) {
   const vName = G.vName || 'the village'
 
   // Beast-specific override
-  if (beasts.some(b => b.n === 'Kurama') && getSyncStage(beasts.find(b => b.n === 'Kurama')) >= 4) {
+  if (beasts.some(b => b.n === 'Kureni') && getSyncStage(beasts.find(b => b.n === 'Kureni')) >= 4) {
     return `The world watches ${vName} with something between fear and awe. The Nine-Tails has been tamed — or so it appears.`
   }
   if (beasts.length >= 2) {

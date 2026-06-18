@@ -65,7 +65,7 @@ export function startEx() {
   // Assign exam format if not already set
   if (!G.examFormat) G.examFormat = pk(EXAM_FORMATS)
   // Assign judge from a rival village (potential bias)
-  const villages = ['Sunagakure','Kirigakure','Iwagakure','Kumogakure']
+  const villages = ['Kazegakure','Shimogakure','Gangakure','Raikurokure']
   const judgeVillage = pk(villages)
   const rivalV = (G.villages || []).find(v => v.n === judgeVillage)
   const isRival = rivalV && (rivalV.rel || 50) < 40

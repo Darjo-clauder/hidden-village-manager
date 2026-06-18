@@ -108,7 +108,7 @@ function maybePoach(scout, G) {
   if (rating < 16) return
   if (Math.random() > 0.06) return  // 6% monthly chance
 
-  const RIVALS = ['Kumogakure', 'Sunagakure', 'Kirigakure', 'Iwagakure']
+  const RIVALS = ['Raikurokure', 'Kazegakure', 'Shimogakure', 'Gangakure']
   const village = RIVALS[Math.floor(Math.random() * RIVALS.length)]
   const retentionCost = rating * 800
 
@@ -182,7 +182,7 @@ export function tickScouts(G) {
 
     // Shadow intel — head scout only, scaled by shadow budget allocation
     if (scout.role === 'head_scout') {
-      const budgetShadow = ((G.scoutBudget?.shadow || 30) / 30)
+      const budgetShadow = Math.min(1, (G.scoutBudget?.shadow || 30) / 30)
       if (Math.random() < 0.25 * budgetShadow) {
         const targetV = pk(G.villages || [])
         if (targetV) {

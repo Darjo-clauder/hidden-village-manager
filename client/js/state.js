@@ -33,7 +33,7 @@ export function mS(ri = 0) {
   const m = 1 + ri * 0.28
   Object.keys(base).forEach(k => { base[k] = clamp(Math.round(base[k] * m), 1, 99) })
   const p = pk(PERSONALITIES), sal = Math.round((500 + ri * 400) * (1 + (p.effect.salary || 0)))
-  const origin = Math.random() < 0.05 ? pk(['Sunagakure', 'Kirigakure', 'Iwagakure', 'Kumogakure']) : null
+  const origin = Math.random() < 0.05 ? pk(['Kazegakure', 'Shimogakure', 'Gangakure', 'Raikurokure']) : null
   return {
     id: Math.random().toString(36).slice(2), fn: pk(FNAMES), ln: pk(LNAMES),
     clan: clan?.n || null, trait: clan?.t || null, spec: pk(SPECS), age, ri,

@@ -56,19 +56,19 @@ describe('getClanPassives', () => {
     expect(p.growthBonus).toBe(0)
   })
 
-  it('applies Uchiha successMod when member is available', () => {
+  it('applies Kageha successMod when member is available', () => {
     const G = {
-      shinobi: [mkS('u1', 'uchiha')],
-      clanApproval: { uchiha: 80 },
+      shinobi: [mkS('u1', 'kageha')],
+      clanApproval: { kageha: 80 },
     }
     const p = getClanPassives(G)
-    expect(p.successMod).toBeCloseTo(CLAN_BY_ID['uchiha'].passive.successMod)
+    expect(p.successMod).toBeCloseTo(CLAN_BY_ID['kageha'].passive.successMod)
   })
 
   it('does not apply passive when approval below threshold', () => {
     const G = {
-      shinobi: [mkS('u1', 'uchiha')],
-      clanApproval: { uchiha: 30 },
+      shinobi: [mkS('u1', 'kageha')],
+      clanApproval: { kageha: 30 },
     }
     const p = getClanPassives(G)
     expect(p.successMod).toBe(0)
@@ -76,8 +76,8 @@ describe('getClanPassives', () => {
 
   it('does not apply passive when shinobi is not available', () => {
     const G = {
-      shinobi: [mkS('u1', 'uchiha', 1, 'injured')],
-      clanApproval: { uchiha: 80 },
+      shinobi: [mkS('u1', 'kageha', 1, 'injured')],
+      clanApproval: { kageha: 80 },
     }
     const p = getClanPassives(G)
     expect(p.successMod).toBe(0)
@@ -85,12 +85,12 @@ describe('getClanPassives', () => {
 
   it('stacks passives from multiple clans', () => {
     const G = {
-      shinobi: [mkS('u1', 'uchiha'), mkS('n1', 'nara')],
-      clanApproval: { uchiha: 80, nara: 80 },
+      shinobi: [mkS('u1', 'kageha'), mkS('n1', 'kagero')],
+      clanApproval: { kageha: 80, kagero: 80 },
     }
     const p = getClanPassives(G)
-    expect(p.successMod).toBeCloseTo(CLAN_BY_ID['uchiha'].passive.successMod)
-    expect(p.growthBonus).toBeCloseTo(CLAN_BY_ID['nara'].passive.growthBonus)
+    expect(p.successMod).toBeCloseTo(CLAN_BY_ID['kageha'].passive.successMod)
+    expect(p.growthBonus).toBeCloseTo(CLAN_BY_ID['kagero'].passive.growthBonus)
   })
 })
 
@@ -101,29 +101,29 @@ describe('availableClanChains', () => {
 
   it('marks chain canRun=false when no eligible members', () => {
     const G = { shinobi: [] }
-    const chains = availableClanChains('uchiha', G)
+    const chains = availableClanChains('kageha', G)
     for (const c of chains) expect(c.canRun).toBe(false)
   })
 
   it('marks chain canRun=true when requirement met', () => {
-    const G = { shinobi: [mkS('u1', 'uchiha', 1)] }
-    const chains = availableClanChains('uchiha', G)
-    const basic = chains.find(c => c.chainId === 'uchiha_trial')
-    // uchiha_trial needs 2 members
+    const G = { shinobi: [mkS('u1', 'kageha', 1)] }
+    const chains = availableClanChains('kageha', G)
+    const basic = chains.find(c => c.chainId === 'kageha_trial')
+    // kageha_trial needs 2 members
     expect(basic?.canRun).toBe(false)
   })
 
   it('marks chain canRun=true with 2 members for reqClanSize=2', () => {
-    const G = { shinobi: [mkS('u1', 'uchiha', 1), mkS('u2', 'uchiha', 1)] }
-    const chains = availableClanChains('uchiha', G)
-    const trial = chains.find(c => c.chainId === 'uchiha_trial')
+    const G = { shinobi: [mkS('u1', 'kageha', 1), mkS('u2', 'kageha', 1)] }
+    const chains = availableClanChains('kageha', G)
+    const trial = chains.find(c => c.chainId === 'kageha_trial')
     expect(trial?.canRun).toBe(true)
   })
 
   it('respects reqRi — higher-rank only chain blocked by low rank', () => {
-    const G = { shinobi: [mkS('u1', 'uchiha', 1)] }
-    const chains = availableClanChains('uchiha', G)
-    const sRank = chains.find(c => c.chainId === 'sharingan_hunt')
+    const G = { shinobi: [mkS('u1', 'kageha', 1)] }
+    const chains = availableClanChains('kageha', G)
+    const sRank = chains.find(c => c.chainId === 'kagan_hunt')
     expect(sRank?.canRun).toBe(false)
   })
 })
@@ -135,14 +135,14 @@ describe('clanCouncilInfluence', () => {
     for (const v of Object.values(inf)) expect(v).toBe(0)
   })
 
-  it('Uchiha has higher influence than Inuzuka with equal member counts', () => {
+  it('Kageha has higher influence than Okamura with equal member counts', () => {
     const G = {
       shinobi: [
-        mkS('u1', 'uchiha'),
-        mkS('i1', 'inuzuka'),
+        mkS('u1', 'kageha'),
+        mkS('i1', 'okamura'),
       ],
     }
     const inf = clanCouncilInfluence(G)
-    expect(inf['uchiha']).toBeGreaterThan(inf['inuzuka'])
+    expect(inf['kageha']).toBeGreaterThan(inf['okamura'])
   })
 })

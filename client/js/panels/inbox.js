@@ -115,6 +115,52 @@ function buildItems() {
     })
   })
 
+  // ── Bond formed events (support events — FE/DD alignment) ────────────
+  ;(G.shinobi || []).forEach(s => {
+    (s.bonds || []).forEach(bond => {
+      if (!bond.formed) return
+      const monthsAgo = (G.year - bond.formed.year) * 12 + (G.month - bond.formed.month)
+      if (monthsAgo > 1) return  // only surface bonds from this month or last
+      const partner = (G.shinobi || []).find(o => o.id === bond.otherId)
+      if (!partner) return
+      if (s.id > bond.otherId) return  // deduplicate — only emit once per pair
+      const icons = { 'Brothers-in-Arms': '⚔', 'Mentor/Student': '📖', 'Rivals': '🔥', 'Battle-Scarred': '🩸' }
+      const flavors = {
+        'Brothers-in-Arms': "They've bled together. The bond goes beyond duty now.",
+        'Mentor/Student': `${s.fn} is showing ${partner.fn} the ropes. A quiet investment in the next generation.`,
+        'Rivals': "The rivalry is fierce, but it's making both of them sharper.",
+        'Battle-Scarred': 'A shared near-death forged something neither of them expected.',
+      }
+      items.push({
+        id:       `bond_${s.id}_${bond.otherId}`,
+        priority: 'info',
+        cat:      'Bonds',
+        icon:     icons[bond.type] || '🤝',
+        title:    `${s.fn} ${s.ln} & ${partner.fn} ${partner.ln} — ${bond.type}`,
+        desc:     flavors[bond.type] || `A ${bond.type} bond has formed between these two.`,
+        actions:  [
+          { label: 'View ' + s.fn, fn: `oDos('${s.id}')` },
+          { label: 'View ' + partner.fn, fn: `oDos('${partner.id}')` },
+        ],
+        archived: false,
+      })
+    })
+  })
+
+  // ── Active trauma events ──────────────────────────────────────────────
+  ;(G.shinobi || []).filter(s => s.traumaStatus && (s.traumaMonths || 0) > 0).forEach(s => {
+    items.push({
+      id:       'trauma_' + s.id,
+      priority: 'standard',
+      cat:      'Trauma',
+      icon:     '🌑',
+      title:    `${s.fn} ${s.ln} — Psychological Trauma`,
+      desc:     `Status: ${s.traumaStatus}. ${s.traumaMonths} month${s.traumaMonths !== 1 ? 's' : ''} remaining. Consider a rest month or counselling.`,
+      actions:  [{ label: 'View Dossier', fn: `oDos('${s.id}')` }],
+      archived: false,
+    })
+  })
+
   // ── Retirement eligible ───────────────────────────────────────────────
   ;(G.shinobi || []).filter(s => s.retirementOffered).forEach(s => {
     items.push({
@@ -126,8 +172,8 @@ function buildItems() {
       desc:     `Age ${s.age}, ${s.phase} phase. Decline penalty: ${Math.round((s.declineMod || 0) * 100)}%. Decide their next chapter.`,
       actions:  [
         { label: 'View Dossier', fn: `oDos('${s.id}')` },
-        { label: 'Retire Honourably', fn: `retireShinobi('${s.id}')` },
-        { label: 'Move to Staff', fn: `retireToCoach('${s.id}')` },
+        { label: 'Retire Honourably', fn: `confirm('Retire ${s.fn} ${s.ln} permanently?') && retireShinobi('${s.id}')` },
+        { label: 'Move to Staff', fn: `confirm('Move ${s.fn} ${s.ln} to coaching staff?') && retireToCoach('${s.id}')` },
       ],
       archived: false,
     })
@@ -212,8 +258,8 @@ function buildItems() {
   ;(G.noticeboard || []).filter(n => !n.dismissed).forEach(n => {
     const retireActions = n.type === 'retirement' && n.shinobiId ? [
       { label: 'View Dossier',   fn: `oDos('${n.shinobiId}')` },
-      { label: 'Retire',         fn: `retireShinobi('${n.shinobiId}')` },
-      { label: 'Move to Staff',  fn: `retireToCoach('${n.shinobiId}')` },
+      { label: 'Retire',         fn: `confirm('Retire this shinobi permanently?') && retireShinobi('${n.shinobiId}')` },
+      { label: 'Move to Staff',  fn: `confirm('Move this shinobi to coaching staff?') && retireToCoach('${n.shinobiId}')` },
     ] : []
     items.push({
       id:       'notice_' + (n.id || n.shinobiId || Math.random()),

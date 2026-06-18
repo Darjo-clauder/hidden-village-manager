@@ -26,6 +26,7 @@ import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCoun
 import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc } from './panels/exam.js'
 import { showLobby, createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode } from './setup.js'
 import { rClans, clanGift, launchClanChain } from './panels/clans.js'
+import { dismissOnboarding } from './panels/dashboard.js'
 import { launchDeepCover } from './panels/safehouses.js'
 import { endTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose, setTimeout_, setMaxPlayers, voteAdvance, setAdvFn } from './room.js'
 import { copyInvite } from './panels/lobby.js'
@@ -117,6 +118,8 @@ Object.assign(window, {
   exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc,
   // clans
   clanGift, launchClanChain,
+  // onboarding
+  dismissOnboarding,
   // safehouses
   establishSafehouse, assignDeepCoverOp, launchDeepCover,
   // world calendar

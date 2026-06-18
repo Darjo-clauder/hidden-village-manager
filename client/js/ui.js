@@ -39,7 +39,7 @@ export function upUI() {
   const season  = SEASONS[G.month - 1]
   const trI     = G.tradeRoutes.filter(r => r.active).reduce((a, r) => a + r.income, 0)
                 + G.contracts.filter(c => c.active).reduce((a, c) => a + c.income, 0)
-  const jkI     = G.beasts.filter(b => b.sealed && b.n === 'Matatabi' && b.jk).length * 3000
+  const jkI     = G.beasts.filter(b => b.sealed && b.n === 'Niryuu' && b.jk).length * 3000
   const monthlyNet = trI + jkI - (G.staff || []).reduce((a, s) => a + (s.salary || 0), 0)
 
   const monthName = MONTHS[G.month - 1]?.n || season

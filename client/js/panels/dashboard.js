@@ -1,6 +1,11 @@
 import { G, fmt } from '../state.js'
 import { RANKS } from '../constants.js'
 
+export function dismissOnboarding() {
+  G._onboardingDismissed = true
+  rDash()
+}
+
 export function rDash() {
   const el = document.getElementById('p-dashboard')
   if (!el) return
@@ -17,18 +22,19 @@ export function rDash() {
   // ── Financial snapshot ────────────────────────────────────────────────
   const tradeIncome = (G.tradeRoutes || []).filter(r => r.active).reduce((a, r) => a + r.income, 0)
   const contractIncome = (G.contracts || []).filter(c => c.active).reduce((a, c) => a + c.income, 0)
-  const staffCost = (G.staff || []).reduce((a, s) => a + (s.salary || 0), 0)
-  const monthlyNet = tradeIncome + contractIncome - staffCost
+  const staffCost   = (G.staff   || []).reduce((a, s) => a + (s.salary || 0), 0)
+  const shinobiSal  = (G.shinobi || []).reduce((a, s) => a + (s.salary || 0), 0)
+  const monthlyNet = tradeIncome + contractIncome - staffCost - shinobiSal
   const financeHealth = G.ryo > 50000 ? 'strong' : G.ryo > 15000 ? 'stable' : G.ryo > 3000 ? 'tight' : 'critical'
   const financeColor = { strong: 'var(--green)', stable: 'var(--gold)', tight: 'var(--orange)', critical: 'var(--red)' }[financeHealth]
 
   // ── At-risk alerts ────────────────────────────────────────────────────
   const alerts = []
   G.shinobi.forEach(s => {
-    if ((s.commitmentScore || 50) < 25)
-      alerts.push({ icon: '⚠', title: `${s.fn} ${s.ln} — commitment critical`, sub: `Score: ${s.commitmentScore || 0}`, urgency: 'urgent' })
-    else if ((s.commitmentScore || 50) < 40)
-      alerts.push({ icon: '⚡', title: `${s.fn} ${s.ln} — low commitment`, sub: `Score: ${s.commitmentScore || 0}`, urgency: 'warn' })
+    if ((s.commitment ?? 50) < 25)
+      alerts.push({ icon: '⚠', title: `${s.fn} ${s.ln} — commitment critical`, sub: `Score: ${s.commitment ?? 0}`, urgency: 'urgent' })
+    else if ((s.commitment ?? 50) < 40)
+      alerts.push({ icon: '⚡', title: `${s.fn} ${s.ln} — low commitment`, sub: `Score: ${s.commitment ?? 0}`, urgency: 'warn' })
   })
   if (G.staffPoachOffer) alerts.push({ icon: '🎯', title: 'Staff poach offer pending', sub: 'A rival village is targeting your staff.', urgency: 'urgent' })
   if (G.legacyDecisionPending) alerts.push({ icon: '📜', title: 'Legacy decision pending', sub: 'A major decision awaits your judgement.', urgency: 'warn' })
@@ -53,8 +59,8 @@ export function rDash() {
                  : { m: 4, label: 'Chunin Exam (next year)', tag: 'EXAM', nextYear: true }
   calendar.push(nextExam)
   // Summit
-  const nextSummit = G.month <= 6 ? { m: 6, label: 'Five Kage Summit', tag: 'SUMMIT' }
-                   : { m: 6, label: 'Five Kage Summit (next year)', tag: 'SUMMIT', nextYear: true }
+  const nextSummit = G.month <= 6 ? { m: 6, label: 'Five-Village Summit', tag: 'SUMMIT' }
+                   : { m: 6, label: 'Five-Village Summit (next year)', tag: 'SUMMIT', nextYear: true }
   calendar.push(nextSummit)
   // Academy intake
   const nextIntake = G.month <= 4 ? { m: 4, label: 'Academy Intake', tag: 'ACADEMY' }
@@ -162,11 +168,38 @@ export function rDash() {
 
     <!-- Active world events -->
     ${activeEvents.length > 0 ? `
-    <div style="background:var(--surface);border:1px solid var(--border);padding:13px">
+    <div style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-bottom:12px">
       <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">Active World Events</div>
       ${activeEvents.map(n => `
         <div style="padding:5px 0;border-bottom:1px solid var(--border-dim);font-size:9px;color:var(--blue)">${n.text || n.msg || ''}</div>
       `).join('')}
+    </div>` : ''}
+
+    <!-- First-run onboarding guide -->
+    ${(!G._onboardingDismissed && G.year === 1 && G.month <= 4) ? `
+    <div style="background:#0a1208;border:1px solid #2a4020;padding:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:7px;letter-spacing:2px;color:#8fbc8f;text-transform:uppercase">Getting Started</div>
+        <button onclick="dismissOnboarding()" style="font-size:7px;padding:2px 8px;background:transparent;color:#5a7050;border:1px solid #2a4020;cursor:pointer">Dismiss</button>
+      </div>
+      <div style="font-size:9px;color:#7a9070;margin-bottom:10px">Your village is young. Here are the key actions for your first few months:</div>
+      <div style="display:grid;gap:6px">
+        ${[
+          { done: (G.shinobi||[]).some(s=>s.status==='mission'||s.wins>0), label: 'Assign a shinobi to a mission', tab: 'roster', hint: 'Open Roster → select a shinobi → assign a mission.' },
+          { done: (G.prospects||[]).length === 0 && (G.intakeClass||[]).length > 0, label: 'Recruit a prospect from the Academy', tab: 'academy', hint: 'Open Academy → click Recruit on a prospect.' },
+          { done: (G.staff||[]).some(s=>s.regionAssigned), label: 'Assign a scout to a region', tab: 'staff', hint: 'Open Staff → select your scout → assign a region.' },
+          { done: Object.keys(G.clanApproval||{}).length > 0 || (G.shinobi||[]).some(s=>s.clan), label: 'Check your clan standing', tab: 'clans', hint: 'Open Clans — see which bloodlines are active in your village.' },
+          { done: (G.tradeRoutes||[]).some(r=>r.active)||(G.contracts||[]).some(c=>c.active), label: 'Establish a trade route or contract', tab: 'finances', hint: 'Open Finances → activate a trade route to start earning income.' },
+        ].map(item => `
+          <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #1a2818">
+            <div style="font-size:10px;color:${item.done?'#8fbc8f':'#3a5030'};min-width:14px;margin-top:1px">${item.done?'✓':'○'}</div>
+            <div style="flex:1">
+              <div style="font-size:9px;color:${item.done?'#5a7050':'#c9c0a8'};text-decoration:${item.done?'line-through':'none'}">${item.label}</div>
+              ${!item.done ? `<div style="font-size:7px;color:#4a5a40;margin-top:2px">${item.hint}</div>` : ''}
+            </div>
+            ${!item.done ? `<button onclick="sp('${item.tab}')" style="font-size:7px;padding:2px 6px;background:#0d1a0a;color:#8fbc8f;border:1px solid #2a4020;cursor:pointer;white-space:nowrap">Open ▸</button>` : ''}
+          </div>`).join('')}
+      </div>
     </div>` : ''}
   `
 }

@@ -4,88 +4,88 @@
 
 export const CLANS = [
   {
-    id: 'uchiha',
-    name: 'Uchiha',
+    id: 'kageha',
+    name: 'Kageha',
     icon: '🔥',
-    bloodline: 'Sharingan',
+    bloodline: 'Kagan',
     passive: { successMod: 0.04, anbuSuccessBonus: 0.05 },
     councilWeight: 1.4,
     approvalNeeded: 60,
     desc: 'Elite warriors with visual prowess. Squad success bonus, ANBU advantage.',
-    missionChains: ['uchiha_trial', 'sharingan_hunt'],
+    missionChains: ['kageha_trial', 'kagan_hunt'],
   },
   {
-    id: 'hyuga',
-    name: 'Hyuga',
+    id: 'shiromi',
+    name: 'Shiromi',
     icon: '👁',
-    bloodline: 'Byakugan',
+    bloodline: 'Hakugan',
     passive: { scoutConfidenceBonus: 0.10, successMod: 0.02 },
     councilWeight: 1.2,
     approvalNeeded: 55,
     desc: 'Noble house of seers. Scouting intel bonus and solid mission success.',
-    missionChains: ['hyuga_succession', 'cage_bird_seal'],
+    missionChains: ['shiromi_succession', 'sealed_eye_liberation'],
   },
   {
-    id: 'nara',
-    name: 'Nara',
+    id: 'kagero',
+    name: 'Kagero',
     icon: '🦌',
-    bloodline: 'Shadow Manipulation',
+    bloodline: 'Shadow Weave',
     passive: { growthBonus: 0.08, missionRiskReduction: 0.03 },
     councilWeight: 1.1,
     approvalNeeded: 50,
     desc: 'Strategic geniuses. Shinobi grow faster and squad risk is reduced.',
-    missionChains: ['nara_deer_rite', 'shadow_ambush'],
+    missionChains: ['kagero_deer_rite', 'shadow_ambush'],
   },
   {
-    id: 'akimichi',
-    name: 'Akimichi',
+    id: 'tsuchida',
+    name: 'Tsuchida',
     icon: '⚡',
-    bloodline: 'Caloric Control',
+    bloodline: 'Body Expansion',
     passive: { successMod: 0.03, kiaRiskMod: -0.01 },
     councilWeight: 1.0,
     approvalNeeded: 45,
     desc: 'Stalwart fighters. Team presence reduces KIA risk.',
-    missionChains: ['akimichi_feast', 'formation_drill'],
+    missionChains: ['tsuchida_feast', 'formation_drill'],
   },
   {
-    id: 'inuzuka',
-    name: 'Inuzuka',
+    id: 'okamura',
+    name: 'Okamura',
     icon: '🐺',
-    bloodline: 'Beast Mimicry',
+    bloodline: 'Pack Bond',
     passive: { successMod: 0.02, scoutConfidenceBonus: 0.08 },
     councilWeight: 0.9,
     approvalNeeded: 40,
     desc: 'Tracking specialists. Scouting and mission success from feral instinct.',
-    missionChains: ['inuzuka_hunt', 'pack_formation'],
+    missionChains: ['okamura_hunt', 'pack_formation'],
   },
   {
-    id: 'aburame',
-    name: 'Aburame',
+    id: 'mushiba',
+    name: 'Mushiba',
     icon: '🪲',
-    bloodline: 'Insect Symbiosis',
+    bloodline: 'Hive Bond',
     passive: { anbuSuccessBonus: 0.06, missionRiskReduction: 0.02 },
     councilWeight: 0.9,
     approvalNeeded: 40,
     desc: 'Silent operatives. ANBU missions succeed more often.',
-    missionChains: ['aburame_colony', 'insect_net'],
+    missionChains: ['mushiba_colony', 'insect_net'],
   },
 ]
 
 export const CLAN_BY_ID = Object.fromEntries(CLANS.map(c => [c.id, c]))
 
 export const CLAN_CHAINS = {
-  uchiha_trial:    { n: 'Uchiha Awakening Trial', rk: 'A', ryo: 12000, rep: 8,  reqClanSize: 2, desc: 'Two Uchiha undertake the awakening trial.' },
-  sharingan_hunt:  { n: 'Sharingan Retrieval',    rk: 'S', ryo: 25000, rep: 15, reqClanSize: 1, reqRi: 3, desc: 'Recover a stolen Sharingan.' },
-  hyuga_succession:{ n: 'Succession Ceremony',    rk: 'B', ryo: 8000,  rep: 10, reqClanSize: 2, desc: 'Conduct the Hyuga heir ceremony.' },
-  cage_bird_seal:  { n: 'Cage Bird Liberation',   rk: 'A', ryo: 14000, rep: 12, reqClanSize: 1, reqRi: 3, desc: 'Eliminate a Hyuga seal threat.' },
-  nara_deer_rite:  { n: 'Deer Tending Rite',      rk: 'C', ryo: 4000,  rep: 5,  reqClanSize: 1, desc: 'Seasonal duty — tend the Nara deer.' },
-  shadow_ambush:   { n: 'Shadow Net Ambush',      rk: 'B', ryo: 9000,  rep: 7,  reqClanSize: 1, reqRi: 2, desc: 'Trap a fleeing target.' },
-  akimichi_feast:  { n: 'Grand Feast Hosting',    rk: 'C', ryo: 3500,  rep: 8,  reqClanSize: 1, desc: 'Host a village feast — morale +10.' },
-  formation_drill: { n: 'Formation Drill',         rk: 'B', ryo: 7000,  rep: 5,  reqClanSize: 2, desc: 'Run clan formation drills — growth bonus.' },
-  inuzuka_hunt:    { n: 'Great Hunt',              rk: 'B', ryo: 8500,  rep: 6,  reqClanSize: 1, desc: 'Track and bring back a target.' },
-  pack_formation:  { n: 'Pack Tactics Drill',      rk: 'C', ryo: 4500,  rep: 4,  reqClanSize: 2, desc: 'Two Inuzuka members sharpen pack tactics.' },
-  aburame_colony:  { n: 'Colony Calibration',      rk: 'C', ryo: 5000,  rep: 5,  reqClanSize: 1, desc: 'Tune insect hive — intel bonus next month.' },
-  insect_net:      { n: 'Insect Surveillance Net', rk: 'A', ryo: 13000, rep: 9,  reqClanSize: 1, reqRi: 3, desc: 'Blanket an area with surveillance bugs.' },
+  kageha_trial:         { n: 'Kageha Awakening Trial',  rk: 'A', ryo: 12000, rep: 8,  reqClanSize: 2, desc: 'Two Kageha undertake the awakening trial.' },
+  kagan_hunt:           { n: 'Kagan Eye Retrieval',      rk: 'S', ryo: 25000, rep: 15, reqClanSize: 1, reqRi: 3, desc: 'Recover a stolen bloodline eye.' },
+  shiromi_succession:   { n: 'Succession Ceremony',      rk: 'B', ryo: 8000,  rep: 10, reqClanSize: 2, desc: 'Conduct the Shiromi heir ceremony.' },
+  sealed_eye_liberation:{ n: 'Sealed Eye Liberation',    rk: 'A', ryo: 14000, rep: 12, reqClanSize: 1, reqRi: 3, desc: 'Eliminate a sealed bloodline threat.' },
+  kagero_deer_rite:     { n: 'Deer Tending Rite',        rk: 'C', ryo: 4000,  rep: 5,  reqClanSize: 1, desc: 'Seasonal duty — tend the Kagero deer.' },
+  shadow_ambush:        { n: 'Shadow Net Ambush',        rk: 'B', ryo: 9000,  rep: 7,  reqClanSize: 1, reqRi: 2, desc: 'Trap a fleeing target.' },
+  tsuchida_feast:       { n: 'Grand Feast Hosting',      rk: 'C', ryo: 3500,  rep: 8,  reqClanSize: 1, desc: 'Host a village feast — morale +10.' },
+  formation_drill:      { n: 'Formation Drill',           rk: 'B', ryo: 7000,  rep: 5,  reqClanSize: 2, desc: 'Run clan formation drills — growth bonus.' },
+  okamura_hunt:         { n: 'Great Hunt',                rk: 'B', ryo: 8500,  rep: 6,  reqClanSize: 1, desc: 'Track and bring back a target.' },
+  pack_formation:       { n: 'Pack Tactics Drill',        rk: 'C', ryo: 4500,  rep: 4,  reqClanSize: 2, desc: 'Two Okamura members sharpen pack tactics.' },
+  mushiba_colony:       { n: 'Colony Calibration',        rk: 'C', ryo: 5000,  rep: 5,  reqClanSize: 1, desc: 'Tune hive bond — intel bonus next month.' },
+  insect_net:           { n: 'Hive Surveillance Net',     rk: 'A', ryo: 13000, rep: 9,  reqClanSize: 1, reqRi: 3, desc: 'Blanket an area with surveillance insects.' },
 }
 
 /**
@@ -107,7 +107,7 @@ export function getClanPassives(G) {
   const activeClanIds = new Set(
     (G.shinobi || [])
       .filter(s => s.status === 'available' && s.clan)
-      .map(s => s.clan)
+      .map(s => s.clan?.toLowerCase()).filter(Boolean)
   )
   for (const clanId of activeClanIds) {
     const clan = CLAN_BY_ID[clanId]
@@ -131,7 +131,7 @@ export function getClanPassives(G) {
 export function availableClanChains(clanId, G) {
   const clan = CLAN_BY_ID[clanId]
   if (!clan) return []
-  const members = (G.shinobi || []).filter(s => s.clan === clanId && s.status === 'available')
+  const members = (G.shinobi || []).filter(s => s.clan?.toLowerCase() === clanId && s.status === 'available')
   return (clan.missionChains || []).map(chainId => {
     const chain = CLAN_CHAINS[chainId]
     if (!chain) return null
@@ -151,7 +151,7 @@ export function clanCouncilInfluence(G) {
   const total = (G.shinobi || []).filter(s => s.status !== 'retired' && s.status !== 'kia').length || 1
   const result = {}
   for (const clan of CLANS) {
-    const memberCount = (G.shinobi || []).filter(s => s.clan === clan.id).length
+    const memberCount = (G.shinobi || []).filter(s => s.clan?.toLowerCase() === clan.id).length
     result[clan.id] = (memberCount / total) * clan.councilWeight
   }
   return result

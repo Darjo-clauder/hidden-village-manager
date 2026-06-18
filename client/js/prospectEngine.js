@@ -134,7 +134,7 @@ export function applyGraduationBias(prospect) {
 }
 
 // ── Rival village names for offer generation ─────────────────────────────────
-const RIVAL_VILLAGES = ['Kumogakure', 'Sunagakure', 'Kirigakure', 'Iwagakure', 'Otogakure']
+const RIVAL_VILLAGES = ['Raikurokure', 'Kazegakure', 'Shimogakure', 'Gangakure', 'Onkyogakure']
 
 // ── Rival offer generation ────────────────────────────────────────────────────
 function maybeGenerateRivalOffer(p) {

@@ -277,8 +277,8 @@ export function oDos(id) {
     ${s.retirementOffered ? `<div style="margin-top:8px;padding:8px 10px;background:#1a0505;border:1px solid #8b1a1a">
       <div style="font-size:8px;color:#f66;margin-bottom:6px">⚠ ${sn(s)} has been offered retirement options</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="gb" style="border-color:#8fbc8f;color:#8fbc8f;font-size:7px" onclick="retireShinobi('${s.id}')">Retire Honorably ▸</button>
-        <button class="gb" style="border-color:#87ceeb;color:#87ceeb;font-size:7px" onclick="retireToCoach('${s.id}')">Transition to Staff ▸</button>
+        <button class="gb" style="border-color:#8fbc8f;color:#8fbc8f;font-size:7px" onclick="confirm('Retire ${s.fn} ${s.ln} honorably? This cannot be undone.') && retireShinobi('${s.id}')">Retire Honorably ▸</button>
+        <button class="gb" style="border-color:#87ceeb;color:#87ceeb;font-size:7px" onclick="confirm('Move ${s.fn} ${s.ln} to coaching staff? This cannot be undone.') && retireToCoach('${s.id}')">Transition to Staff ▸</button>
         <button class="gb" style="border-color:#7a7060;color:#7a7060;font-size:7px" onclick="extendCareer('${s.id}')">Request One More Year</button>
       </div>
     </div>` : ''}

@@ -162,14 +162,14 @@ function _trainingPlanHtml(p) {
 }
 
 const MINOR_CLANS = [
-  { n: 'Sarutobi', t: 'Fire Sage',   statKey: 'ninjutsu' },
-  { n: 'Hatake',   t: 'Copy Wheel',  statKey: 'intelligence' },
-  { n: 'Namikaze', t: 'Space-Time',  statKey: 'speed' },
-  { n: 'Kurama',   t: 'Illusion Arts', statKey: 'genjutsu' },
-  { n: 'Mitarashi', t: 'Cursed Seal', statKey: 'chakra' },
-  { n: 'Gekko',    t: 'Moon Shadow', statKey: 'taijutsu' },
-  { n: 'Shiranui', t: 'Needle Art',  statKey: 'speed' },
-  { n: 'Morino',   t: 'Torture Arts', statKey: 'intelligence' },
+  { n: 'Enzaru',    t: 'Fire Arts',    statKey: 'ninjutsu' },
+  { n: 'Kagami',    t: 'Mirror Arts',  statKey: 'intelligence' },
+  { n: 'Arashi',    t: 'Space-Time',   statKey: 'speed' },
+  { n: 'Maboroshi', t: 'Illusion Web', statKey: 'genjutsu' },
+  { n: 'Kushiro',   t: 'Sigil Arts',   statKey: 'chakra' },
+  { n: 'Tsukikage', t: 'Moon Shadow',  statKey: 'taijutsu' },
+  { n: 'Hariha',    t: 'Needle Art',   statKey: 'speed' },
+  { n: 'Touma',     t: 'Pressure Arts', statKey: 'intelligence' },
 ]
 
 function pk(a) { return a[Math.floor(Math.random() * a.length)] }
