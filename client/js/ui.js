@@ -1,5 +1,6 @@
 import { G, WS, ui, fmt } from './state.js'
 import { SEASONS, MONTHS } from './constants.js'
+import { nationIdentity, isValidNation } from '../../shared/constants/nations.js'
 import { schEx } from './state.js'
 
 // Panel renderers
@@ -34,6 +35,13 @@ import { rSafehouses } from './panels/safehouses.js'
 import { rWorldCalendar } from './panels/worldcalendar.js'
 
 export { schEx }
+
+/** Nation-selection hook (v2, behind _ff_nationHud). Sets G.nationId and re-tints. */
+export function setNation(id) {
+  if (!G._ff_nationHud || !isValidNation(id)) return
+  G.nationId = id
+  upUI()
+}
 
 export function upUI() {
   const season  = SEASONS[G.month - 1]
@@ -80,6 +88,13 @@ export function upUI() {
   _set('sbf',   G.shinobi.length + '/' + G.shinobi.filter(s => s.status === 'available').length + 'av')
   _set('sb-vname', G.vName || 'Your Village')
   _set('sb-icon',  G.vIcon || '🍃')
+
+  // ── Nation HUD tint (v2, behind G._ff_nationHud — no-op when flag off) ──────
+  if (G._ff_nationHud) {
+    const ident = nationIdentity(G.nationId)
+    const vn = document.getElementById('sb-vname'); if (vn) vn.style.color = ident.accent
+    const ic = document.getElementById('sb-icon');  if (ic) ic.style.color = ident.accent
+  }
 
   // ── People badge ───────────────────────────────────────────────────────
   const meetBadge = document.getElementById('meet-badge')

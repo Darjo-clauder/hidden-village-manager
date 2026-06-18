@@ -4,6 +4,7 @@ import { rWo, setWorldSocket, setRelLocal, showDip, respondAlliance } from './wo
 import { addNewsItem } from './news.js'
 import { RS } from './room.js'
 import { rLob } from './panels/lobby.js'
+import { migrateBeastStats } from './beastEngine.js'
 
 export let socket = null
 
@@ -81,6 +82,8 @@ export function initSocket(name, kageName, icon) {
     // Merge into G — existing keys from initState() provide defaults for any
     // fields that didn't exist in older saves.
     Object.keys(savedState).forEach(k => { G[k] = savedState[k] })
+    // MIG-1: heal any jinchuriki stats inflated by the pre-fix beast-stat bug (runs once)
+    migrateBeastStats(G)
     // Restore UI-visible name fields in sidebar
     if (G.vName) {
       const sb = document.getElementById('sb-vname')

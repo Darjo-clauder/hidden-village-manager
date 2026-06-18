@@ -147,6 +147,9 @@ export function initState() {
     keQ: [...KAGE_EVENTS].sort(() => Math.random() - 0.5), keCD: 0,
     memorial: [], chronicles: [], legend: 0, worldFlags: {}, pendingChoiceEvent: null,
     staff: [],
+    // v2 additive feature flags — OFF by default; no code reads them yet (flag scaffold only).
+    _ff_bloodlineActive: false,
+    _ff_nationHud: false,
     finances: {
       history: [],        // last 12 monthly snapshots
       deficitMonths: 0,

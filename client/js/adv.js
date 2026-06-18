@@ -1,7 +1,7 @@
 import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice, computeMarketValue, mS } from './state.js'
 import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS, EXAM_FORMATS, LEGACY_DECISIONS, PRESTIGE_TIERS } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
-import { tickBeast, applyBeastPairEffects, getBeastPassives, BEAST_DATA, getSyncStage } from './beastEngine.js'
+import { tickBeast, applyBeastPairEffects, getBeastPassives, BEAST_DATA, getSyncStage, captureChance } from './beastEngine.js'
 import { tickKageRels, getWorldReputationFlavor, shiftKageRel, ensureKageRels } from './rivalKage.js'
 import { syncToServer } from './socket.js'
 import { pickNarrative, pickSquadNarrative, pickRankUpNarrative, DARK_MOMENT_POOL, LAST_WORDS_POOL } from './narratives.js'
@@ -21,6 +21,8 @@ import { BM_MISSION_BY_ID, getUnderworldTier, discoveryChance, UNDERWORLD_TIERS 
 import { getClanPassives, CLANS, CLAN_CHAINS, availableClanChains } from '../../shared/constants/clans.js'
 import { getSafehousePassives, rollProspectLead, SAFEHOUSE_COST, MAX_SAFEHOUSES, SH_LOCATION_BY_ID, DC_OP_BY_ID, SAFEHOUSE_LOCATIONS } from '../../shared/constants/safehouses.js'
 import { getEventForMonth, getUpcomingEvent, resolveWorldEvent, WE_BY_ID } from '../../shared/constants/worldCalendar.js'
+import { successCeiling } from '../../shared/utils/missionOdds.js'
+import { activeBloodlineBonus, netBloodlineMod, canActivate, BLOODLINE_MULTIPLIER, ACTIVATION_COST, ACTIVATION_MIN_STAGE, ACTIVE_DURATION, COOLDOWN, AGGRO_INCREASE, DEBUFF_DURATION } from '../../shared/utils/bloodline.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
@@ -500,6 +502,36 @@ export function staffBonus() {
   }
 }
 
+// ── Bloodline active layer (v2, behind G._ff_bloodlineActive — returns 0 when flag off) ──
+function _bloodlineBonus(memberIds) {
+  if (!G._ff_bloodlineActive) return 0
+  const active = (G.beasts || []).filter(b =>
+    b.sealed && b.jk && memberIds.includes(b.jk) && (b.activeUntil || 0) > G.month)
+  const anyDebuffed = (G.shinobi || []).some(s =>
+    memberIds.includes(s.id) && (s._blDebuffUntil || 0) > G.month)
+  if (!active.length && !anyDebuffed) return 0
+  return netBloodlineMod(active.map(() => ({ multiplier: BLOODLINE_MULTIPLIER })), anyDebuffed)
+}
+
+export function activateBloodline(beastName) {
+  if (!G._ff_bloodlineActive) return
+  const b = (G.beasts || []).find(x => x.n === beastName && x.sealed && x.jk)
+  if (!b) return
+  const s = G.shinobi.find(x => x.id === b.jk)
+  const sqId = s && (G.squads || []).find(q => q.members?.includes(s.id))?.id
+  const squadActivations = sqId
+    ? (G.beasts || []).filter(x => x.activeUntil > G.month && (G.squads.find(q => q.id === sqId)?.members || []).includes(x.jk)).length
+    : 0
+  const v = canActivate({ stage: getSyncStage(b), ryo: G.ryo, cooldownUntil: b.cooldownUntil, month: G.month, squadActivations })
+  if (!v.ok) { aL(`Cannot channel ${beastName}: ${v.reason.replace('_', ' ')}.`, 'bad'); return }
+  G.ryo -= ACTIVATION_COST
+  b.activeUntil = G.month + ACTIVE_DURATION
+  b.cooldownUntil = G.month + COOLDOWN
+  if (s) s._aggro = (s._aggro || 0) + AGGRO_INCREASE
+  aL(`${sn(s)} channels ${beastName} — squad empowered this month (−${fmt(ACTIVATION_COST)} ryo).`, 'good')
+  upUI()
+}
+
 export function adv() {
   const tgM = G.upgrades.training === 1 ? 2 : G.upgrades.training === 2 ? 3 : 1
   const iB = G.upgrades.intel === 1 ? 0.05 : G.upgrades.intel === 2 ? 0.10 : 0
@@ -864,7 +896,7 @@ export function adv() {
     if (am.isBeastCapture) {
       const b = G.beasts.find(x => x.n === am.beastName), s = G.shinobi.find(x => x.id === am.assignedTo)
       if (!b || !s) return
-      const ok = Math.random() < (0.35 + (sPow(s) - b.pow) * 0.01)
+      const ok = Math.random() < captureChance(sPow(s), b.pow)
       s.status = 'available'; s.missId = null
       if (ok) {
         b.sealed = true
@@ -922,7 +954,7 @@ export function adv() {
         ensureCareerFields(ms)
         return acc + (ms.declineMod || 0) * 0.5  // half-weight per member so one declining vet doesn't cripple a squad
       }, 0)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod, 0.1, 0.97)
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members), 0.1, successCeiling(m.rk))
 
       if (Math.random() < sc) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3, 0, 100)
@@ -1021,7 +1053,7 @@ export function adv() {
       const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
       const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
       const bMB = bondMissionBonus(s, G.shinobi)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus, 0.08, 0.97)
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]), 0.08, successCeiling(m.rk))
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)
@@ -2288,6 +2320,16 @@ export function adv() {
       if (ev.type === 'lore')   addChronicle(ev.title, ev.body, 'lore', ev.narrative || null)
     })
   })
+  // Bloodline active-window expiry → post-use debuff (v2, flag-gated)
+  if (G._ff_bloodlineActive) {
+    G.beasts.forEach(b => {
+      if (b.activeUntil && G.month >= b.activeUntil) {
+        const jk = G.shinobi.find(s => s.id === b.jk)
+        if (jk) jk._blDebuffUntil = G.month + DEBUFF_DURATION
+        b.activeUntil = null
+      }
+    })
+  }
   // Apply mission luck passive from beasts (Hanaku, etc.)
 
 

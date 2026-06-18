@@ -291,14 +291,58 @@ export function applyBeastStats(s, beast) {
   const data = BEAST_DATA[beast.n]
   if (!data) return
   const stage = getSyncStage(beast)
-  if (stage === 0) return
-  const bonus = data.statBonus[stage]
-  if (!bonus) return
-  ;['ninjutsu', 'taijutsu', 'chakra', 'speed', 'genjutsu', 'intelligence'].forEach(k => {
-    if (bonus[k] !== undefined) {
-      s.stats[k] = Math.max(0, Math.min(99, (s.stats[k] || 0) + bonus[k]))
-    }
+  // statBonus entries are ABSOLUTE per-stage totals. Apply only the delta from the
+  // previously-applied bonus so repeated calls and stage transitions are idempotent
+  // (B-IDEMP-1): re-applying the same stage is a no-op; advancing applies the difference.
+  const bonus = stage === 0 ? {} : (data.statBonus[stage] || {})
+  const STAT_KEYS = ['ninjutsu', 'taijutsu', 'chakra', 'speed', 'genjutsu', 'intelligence']
+  const prev = s._beastBonusApplied || {}
+  STAT_KEYS.forEach(k => {
+    const delta = (bonus[k] || 0) - (prev[k] || 0)
+    if (delta !== 0) s.stats[k] = Math.max(0, Math.min(99, (s.stats[k] || 0) + delta))
   })
+  s._beastBonusApplied = STAT_KEYS.reduce((o, k) => { if (bonus[k] !== undefined) o[k] = bonus[k]; return o }, {})
+}
+
+/**
+ * MIG-1: heal jinchuriki stats inflated by the pre-fix cumulative bug.
+ * Pre-fix, applyBeastStats added Σ statBonus[1..stage]; the correct total is statBonus[stage].
+ * Subtract the over-application Σ statBonus[1..stage-1] once, and seed _beastBonusApplied so
+ * post-fix ticks stay correct. Runs once per save (G._beastStatsMigrated guard).
+ * Note: stats that saturated at 0/99 during original application can't be perfectly recovered;
+ * unsaturated stats heal exactly.
+ */
+export function migrateBeastStats(G) {
+  if (!G || G._beastStatsMigrated) return
+  G._beastStatsMigrated = true
+  const STAT_KEYS = ['ninjutsu', 'taijutsu', 'chakra', 'speed', 'genjutsu', 'intelligence']
+  for (const beast of G.beasts || []) {
+    if (!beast.sealed || !beast.jk) continue
+    const data = BEAST_DATA[beast.n]; if (!data) continue
+    const stage = getSyncStage(beast)
+    if (stage === 0) continue
+    const s = (G.shinobi || []).find(x => x.id === beast.jk)
+    if (!s || !s.stats || s._beastBonusApplied) continue // skip if already on post-fix accounting
+    const over = {}
+    for (let i = 1; i < stage; i++) {
+      const b = data.statBonus[i] || {}
+      STAT_KEYS.forEach(k => { if (b[k] !== undefined) over[k] = (over[k] || 0) + b[k] })
+    }
+    STAT_KEYS.forEach(k => {
+      if (over[k]) s.stats[k] = Math.max(0, Math.min(99, (s.stats[k] || 0) - over[k]))
+    })
+    const cur = data.statBonus[stage] || {}
+    s._beastBonusApplied = STAT_KEYS.reduce((o, k) => { if (cur[k] !== undefined) o[k] = cur[k]; return o }, {})
+  }
+}
+
+/**
+ * Probability of successfully capturing a wild beast (M-CAP-1).
+ * Base 35% shifted ±1%/point of power gap, clamped to a fair [5%, 95%] band so the
+ * outcome is never a foregone conclusion in either direction.
+ */
+export function captureChance(attackerPow, beastPow) {
+  return Math.max(0.05, Math.min(0.95, 0.35 + (attackerPow - beastPow) * 0.01))
 }
 
 /** Run monthly beast tick — returns array of event objects { title, body, type }. */

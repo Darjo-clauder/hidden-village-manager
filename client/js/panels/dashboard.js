@@ -1,5 +1,6 @@
 import { G, fmt } from '../state.js'
 import { RANKS } from '../constants.js'
+import { NATIONS } from '../../../shared/constants/nations.js'
 
 export function dismissOnboarding() {
   G._onboardingDismissed = true
@@ -81,6 +82,13 @@ export function rDash() {
 
   el.innerHTML = `
     <div class="pt">Dashboard — Y${G.year} M${G.month}</div>
+
+    ${G._ff_nationHud ? `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+      <span style="font-size:8px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Nation</span>
+      ${Object.entries(NATIONS).map(([id, n]) => `
+        <button onclick="setNation('${id}')" style="font-size:8px;padding:3px 9px;cursor:pointer;background:${G.nationId === id ? n.accent : 'transparent'};color:${G.nationId === id ? '#0d0d0f' : n.accent};border:1px solid ${n.accent}">${n.crest} ${n.name}</button>`).join('')}
+    </div>` : ''}
 
     <!-- Health snapshot -->
     <div class="dash-grid">

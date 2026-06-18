@@ -145,11 +145,11 @@ export const FINANCIAL_EVENTS = [
 ]
 // ── Scouting regions ──────────────────────────────────────────────────────────
 export const REGIONS = [
-  { id:'fire',      n:'Land of Fire',      icon:'🔥', clanAffinity:['Uchiha','Senju'],            statBonus:{ ninjutsu:5, intelligence:3 }, desc:'Rich chakra potential. Ninjutsu-heavy bloodlines.' },
-  { id:'lightning', n:'Land of Lightning',  icon:'⚡', clanAffinity:['Hyuga'],                     statBonus:{ speed:5, taijutsu:3 },         desc:'Fast and aggressive. Speed and taijutsu specialists.' },
-  { id:'water',     n:'Land of Water',      icon:'🌊', clanAffinity:['Inuzuka','Aburame'],         statBonus:{ chakra:4, genjutsu:4 },        desc:'Hidden talent and illusion arts. Rare genjutsu bloodlines.' },
+  { id:'fire',      n:'Land of Fire',      icon:'🔥', clanAffinity:['Kageha','Mori'],            statBonus:{ ninjutsu:5, intelligence:3 }, desc:'Rich chakra potential. Ninjutsu-heavy bloodlines.' },
+  { id:'lightning', n:'Land of Lightning',  icon:'⚡', clanAffinity:['Shiromi'],                   statBonus:{ speed:5, taijutsu:3 },         desc:'Fast and aggressive. Speed and taijutsu specialists.' },
+  { id:'water',     n:'Land of Water',      icon:'🌊', clanAffinity:['Okamura','Mushiba'],         statBonus:{ chakra:4, genjutsu:4 },        desc:'Hidden talent and illusion arts. Rare genjutsu bloodlines.' },
   { id:'wind',      n:'Land of Wind',       icon:'💨', clanAffinity:[],                            statBonus:{ speed:6, taijutsu:2 },         desc:'Desert-bred endurance. Natural speed from harsh conditions.' },
-  { id:'earth',     n:'Land of Earth',      icon:'🪨', clanAffinity:['Nara','Akimichi','Yamanaka'], statBonus:{ taijutsu:4, chakra:4 },        desc:'Clan-rich territory. Tactical bloodlines and strong physiques.' },
+  { id:'earth',     n:'Land of Earth',      icon:'🪨', clanAffinity:['Kagero','Tsuchida','Tamashii'], statBonus:{ taijutsu:4, chakra:4 },        desc:'Clan-rich territory. Tactical bloodlines and strong physiques.' },
   { id:'iron',      n:'Land of Iron',       icon:'⚔️', clanAffinity:[],                            statBonus:{ taijutsu:8 },                  desc:'Samurai country. Non-chakra fighters with exceptional taijutsu.' },
 ]
 

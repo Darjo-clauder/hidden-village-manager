@@ -144,13 +144,23 @@ function _renderSealedCard(b) {
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div>
               <div style="font-size:11px;color:var(--text-hi)">${jkS.fn} ${jkS.ln}</div>
-              <div style="font-size:8px;color:var(--text-dim);margin-top:2px">${jkS.status} · Commitment: ${jkS.commitmentScore ?? 50}</div>
+              <div style="font-size:8px;color:var(--text-dim);margin-top:2px">${jkS.status} · Commitment: ${jkS.commitment ?? 50}</div>
               ${jkS.title ? `<div style="font-size:8px;color:var(--gold);margin-top:2px">${jkS.title}</div>` : ''}
             </div>
             <div style="text-align:right;font-size:8px;color:var(--text-dim)">
               ${_statBonusLabel(b, stage)}
             </div>
           </div>
+          ${G._ff_bloodlineActive ? `
+            <div style="margin-top:8px">
+              ${(b.activeUntil || 0) > G.month
+                ? `<div style="font-size:8px;color:var(--green)">⚡ Bloodline channelled — active through M${b.activeUntil}</div>`
+                : (b.cooldownUntil || 0) > G.month
+                  ? `<div style="font-size:8px;color:var(--text-dim)">Bloodline on cooldown until M${b.cooldownUntil}</div>`
+                  : stage >= 3
+                    ? `<button class="gb" style="font-size:7px;border-color:var(--gold);color:var(--gold)" onclick="activateBloodline('${b.n}')">Channel Bloodline ▸</button>`
+                    : `<div style="font-size:8px;color:var(--text-dim)">Channel unlocks at Stage 3</div>`}
+            </div>` : ''}
           ${stage >= 4 && data.uniqueAbility ? `
             <div style="margin-top:8px;font-size:8px;background:var(--surface-3);padding:6px 8px;border-left:2px solid var(--gold)">
               <span style="color:var(--gold)">Unique Ability:</span> <span style="color:var(--text)">${data.uniqueAbility.desc}</span>

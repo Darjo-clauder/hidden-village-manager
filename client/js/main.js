@@ -1,5 +1,5 @@
 import { G } from './state.js'
-import { sp, cm, upUI, schEx } from './ui.js'
+import { sp, cm, upUI, schEx, setNation } from './ui.js'
 import { showSetup, selIcon, beginGame, restoreGame } from './setup.js'
 import { adv } from './adv.js'
 import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout } from './panels/roster.js'
@@ -12,7 +12,7 @@ import { rBe, lCap, beastTab, releaseJinchuriki, resolveEscape } from './panels/
 import { rKa, resKE, sGift, propAl, rattle } from './panels/kage.js'
 import { rEx, tEC, startEx, runRound } from './panels/exam.js'
 import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP, dipAccept, dipDecline } from './world.js'
-import { resolveChoiceEvent, resolveCouncilProposal, assignBlackMarket, resolveClanChain, establishSafehouse, assignDeepCoverOp, resolveWorldEventChoice } from './adv.js'
+import { resolveChoiceEvent, resolveCouncilProposal, assignBlackMarket, resolveClanChain, establishSafehouse, assignDeepCoverOp, resolveWorldEventChoice, activateBloodline } from './adv.js'
 import { rFi } from './panels/finances.js'
 import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff, staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting } from './panels/staff.js'
 import { rSco, assignScout, setScoutBudget, toggleWatchlist, trialDay, signProspect, draftSort } from './panels/scouting.js'
@@ -59,7 +59,7 @@ Object.assign(window, {
   endTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose,
   setTimeout_, setMaxPlayers, voteAdvance, copyInvite,
   // navigation & modals
-  sp, cm, adv, toggleNav,
+  sp, cm, adv, toggleNav, setNation,
   // inbox
   inboxTab, inboxFilter,
   // chronicles
@@ -78,7 +78,7 @@ Object.assign(window, {
   // economy
   eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship,
   // beasts
-  lCap, beastTab, releaseJinchuriki, resolveEscape,
+  lCap, beastTab, releaseJinchuriki, resolveEscape, activateBloodline,
   // kage
   resKE, sGift, propAl, rattle,
   // exam

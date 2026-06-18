@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
+import { withSeed } from './helpers/rng.js'
 import { resolveActiveStarter } from '../shared/types/DepthChart.js'
 import { calcConfidence, createScoutReport } from '../shared/types/ScoutReport.js'
 import { createScout } from '../shared/types/Scout.js'
@@ -36,27 +37,33 @@ describe('Scouting pipeline integration', () => {
   })
 
   it('a high-judgement scout at 6 months produces Detailed or Elite quality', () => {
-    const report = createScoutReport(scout, prospect, 6)
-    expect(['Detailed', 'Elite']).toContain(report.quality)
+    withSeed(42, () => {
+      const report = createScoutReport(scout, prospect, 6)
+      expect(['Detailed', 'Elite']).toContain(report.quality)
+    })
   })
 
   it('scout with positive bias over-estimates ability', () => {
-    const biasedScout = createScout({ judgement: 14, bias: 8 })
-    // Run 20 trials — majority should be above true ability
-    const estimates = Array.from({ length: 20 }, () =>
-      createScoutReport(biasedScout, prospect, 4).estimatedAbility
-    )
-    const aboveTrue = estimates.filter(e => e > prospect.currentAbility).length
-    expect(aboveTrue).toBeGreaterThanOrEqual(10)
+    withSeed(42, () => {
+      const biasedScout = createScout({ judgement: 14, bias: 8 })
+      // Run 20 trials — majority should be above true ability (seeded for determinism)
+      const estimates = Array.from({ length: 20 }, () =>
+        createScoutReport(biasedScout, prospect, 4).estimatedAbility
+      )
+      const aboveTrue = estimates.filter(e => e > prospect.currentAbility).length
+      expect(aboveTrue).toBeGreaterThanOrEqual(10)
+    })
   })
 
   it('negative bias scout under-estimates ability', () => {
-    const biasedScout = createScout({ judgement: 14, bias: -8 })
-    const estimates = Array.from({ length: 20 }, () =>
-      createScoutReport(biasedScout, prospect, 4).estimatedAbility
-    )
-    const belowTrue = estimates.filter(e => e < prospect.currentAbility).length
-    expect(belowTrue).toBeGreaterThanOrEqual(10)
+    withSeed(42, () => {
+      const biasedScout = createScout({ judgement: 14, bias: -8 })
+      const estimates = Array.from({ length: 20 }, () =>
+        createScoutReport(biasedScout, prospect, 4).estimatedAbility
+      )
+      const belowTrue = estimates.filter(e => e < prospect.currentAbility).length
+      expect(belowTrue).toBeGreaterThanOrEqual(10)
+    })
   })
 
   it('confidence increases monotonically with months active (for same scout)', () => {
