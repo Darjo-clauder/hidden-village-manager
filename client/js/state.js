@@ -273,7 +273,10 @@ export function initState() {
   // Starter staff — gives new players immediate access to Staff and Scouting panels
   ;['scout_jonin', 'team_sensei'].forEach(roleId => {
     const st = mStaff(roleId, 8)
-    if (st) G.staff.push(st)
+    if (st) {
+      if (roleId === 'scout_jonin') st.regionAssigned = 'fire'
+      G.staff.push(st)
+    }
   })
   rfM(); rfP()
 }

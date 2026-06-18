@@ -121,7 +121,7 @@ function _rivalOfferHtml(p) {
         style="font-size:7px">Match — ${matchCost.toLocaleString()} ryo</button>
       <button class="gb" onclick="exceedRivalOffer('${p.id}')" ${canExceed ? '' : 'disabled'}
         style="font-size:7px;color:#c9a84c;border-color:#c9a84c">Exceed +20% — ${exceedCost.toLocaleString()} ryo</button>
-      <button class="gb gb-r" onclick="declineRivalOffer('${p.id}')"
+      <button class="gb gb-r" onclick="confirm('Let ${p.fn} ${p.ln} go to ${offer.village}? They will sign elsewhere.') && declineRivalOffer('${p.id}')"
         style="font-size:7px">Let go</button>
     </div>
   </div>`
@@ -211,7 +211,7 @@ export function rAc() {
       <div style="font-size:8px;color:#7a7060;font-style:italic;margin-bottom:7px;line-height:1.5">${archFlavorTrunc}</div>
       <div class="sg">${sBars(p)}</div>
       <div style="margin-top:7px;display:flex;align-items:center;justify-content:space-between">
-        <span class="trait-tag ${pCl(p.pers)}">${p.pers.n}</span>
+        ${p.pers ? `<span class="trait-tag ${pCl(p.pers)}">${p.pers.n}</span>` : ''}
         <div style="font-size:8px">
           Pwr <span style="color:#e8e0cc">${sPow(p)}</span>
           &nbsp;·&nbsp;
@@ -261,7 +261,7 @@ export function rec(id) {
   if (!recruited.clan && Math.random() < 0.20) {
     const mc = pk(MINOR_CLANS)
     recruited.clan = mc.n; recruited.trait = mc.t
-    recruited.stats[mc.statKey] = clamp(recruited.stats[mc.statKey] + rnd(3, 8), 0, 99)
+    if (recruited.stats) recruited.stats[mc.statKey] = clamp(recruited.stats[mc.statKey] + rnd(3, 8), 0, 99)
     aL(sn(recruited) + ' revealed hidden ' + mc.n + ' heritage on graduation! Trait: ' + mc.t + '.', 'good')
   }
 

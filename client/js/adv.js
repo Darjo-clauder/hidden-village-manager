@@ -1479,96 +1479,10 @@ export function adv() {
     }
   })
 
-  // ── Scout network tick ────────────────────────────────────────────────────
+  // Scout network tick handled by tickScouts() below (Phase 1 engine)
   if (!G.scoutReports) G.scoutReports = []
   if (!G.scoutWatchlist) G.scoutWatchlist = []
   if (!G.scoutBudget) G.scoutBudget = { domestic: 40, foreign: 30, shadow: 30 }
-  const scouts = (G.staff || []).filter(st => st.role === 'scout_jonin' || st.role === 'head_scout')
-  const headScout = (G.staff || []).find(st => st.role === 'head_scout')
-  // Budget split modifiers — domestic boosts report frequency, foreign boosts contact growth, shadow boosts head-scout shadow intel chance
-  const budgetDomestic = (G.scoutBudget.domestic || 40) / 40   // 1.0 at baseline 40%
-  const budgetForeign  = (G.scoutBudget.foreign  || 30) / 30
-  const budgetShadow   = (G.scoutBudget.shadow   || 30) / 30
-  scouts.forEach(scout => {
-    if (!scout.contacts) scout.contacts = {}
-    if (scout.fatigue === undefined) scout.fatigue = 0
-    const region = scout.regionAssigned
-    if (!region) return
-    // Fatigue accumulation
-    scout.fatigue = Math.min(100, scout.fatigue + rnd(5, 12))
-    // Grow regional contacts over time (scaled by foreign budget allocation)
-    scout.contacts[region] = Math.min(20, (scout.contacts[region] || 0) + (Math.random() < 0.3 * budgetForeign ? 1 : 0))
-    const contactBonus = scout.contacts[region] || 0
-    const regionEvent = G.regionalMeta[region] ? REGION_EVENTS.find(e => e.id === G.regionalMeta[region].eventId) : null
-    const metaMod = regionEvent ? regionEvent.qualityMod : 0
-    // Generate a report
-    const reportRoll = Math.random()
-    const reportQuality = clamp((((scout.stats.perception || 8) + contactBonus + (headScout ? 2 : 0)) / 22) + metaMod, 0.05, 1.0)
-    if (reportRoll < (0.55 + reportQuality * 0.3) * budgetDomestic) {
-      // Conflicting reports: if another scout already covers this region, occasionally both file independent reads of the same prospect
-      const existingForRegion = G.prospects.filter(p => p.fromRegion === region && p.urgencyMonths > 0)
-      const otherScoutHere = scouts.find(s => s.id !== scout.id && s.regionAssigned === region)
-      let prospect, isSecondOpinion = false
-      if (otherScoutHere && existingForRegion.length && Math.random() < 0.4) {
-        prospect = pk(existingForRegion)
-        isSecondOpinion = true
-        // Re-derive this scout's own stat ranges for the same prospect (independent judgment)
-        const judgeAbility = scout.stats.perception || 8
-        const effectiveJudge = Math.min(20, judgeAbility + contactBonus)
-        const errorMargin = Math.max(1, Math.round(15 - effectiveJudge * 0.65))
-        const altRanges = {}
-        Object.keys(prospect.stats).forEach(k => {
-          const driftedTrue = clamp(prospect.stats[k] + rnd(-3, 3), 1, 99)
-          altRanges[k] = { lo: Math.max(1, driftedTrue - errorMargin), hi: Math.min(99, driftedTrue + errorMargin), exact: effectiveJudge >= 16 }
-        })
-        prospect.conflictingRanges = prospect.conflictingRanges || []
-        prospect.conflictingRanges.push({ scoutId: scout.id, scoutName: sn(scout), ranges: altRanges, confidence: clamp(Math.round(40 + effectiveJudge * 2.6), 40, 95) })
-      } else {
-        prospect = genRegionProspect(region, scout)
-        G.prospects.push(prospect)
-      }
-      const quality = reportQuality > 0.75 ? 'Detailed' : reportQuality > 0.45 ? 'General' : 'Vague'
-      const narrative = genScoutNarrative(scout, prospect, quality)
-      prospect.scoutHistory = prospect.scoutHistory || []
-      prospect.scoutHistory.push({ year: G.year, month: G.month, scoutName: sn(scout), quality, confidence: prospect.scoutConfidence || 60 })
-      G.scoutReports.push({
-        id: Math.random().toString(36).slice(2),
-        year: G.year, month: G.month,
-        scoutId: scout.id, scoutName: sn(scout),
-        region, prospectId: prospect.id,
-        prospectName: prospect.fn + ' ' + prospect.ln,
-        quality, rivalInterest: prospect.rivalInterest > 0,
-        confidence: prospect.scoutConfidence || clamp(Math.round(40 + reportQuality * 55), 40, 95),
-        narrative, isSecondOpinion,
-        personalityRevealed: !!prospect.personalityRevealed,
-      })
-      if (G.scoutReports.length > 30) G.scoutReports.shift()
-      aL(sn(scout) + ' filed a scout report from the ' + (REGIONS.find(r => r.id === region)?.n || region) + '.', 'neutral')
-      // Watchlist auto-refresh notice
-      if (G.scoutWatchlist.includes(prospect.id)) ntf('Watchlist update: new report on ' + prospect.fn + ' ' + prospect.ln)
-    }
-    // Shadow scouting intel (head scout unlocks, scaled by shadow budget allocation)
-    if (scout.role === 'head_scout' && Math.random() < 0.25 * budgetShadow) {
-      const targetV = pk(G.villages || [])
-      if (targetV) {
-        if (!targetV.scoutIntel) targetV.scoutIntel = {}
-        targetV.scoutIntel.squadDepth = rnd(3, 15)
-        targetV.scoutIntel.avgPower = rnd(100, 500)
-        targetV.scoutIntel.updatedY = G.year; targetV.scoutIntel.updatedM = G.month
-        aL(sn(scout) + ' gathered shadow intel on ' + targetV.n + '.', 'neutral')
-      }
-    }
-    // Fatigue resignation risk
-    if (scout.fatigue >= 90 && Math.random() < 0.12) {
-      aL(sn(scout) + ' resigned due to scout fatigue!', 'bad')
-      G.staff = G.staff.filter(st => st.id !== scout.id)
-    }
-    // Monthly fatigue recovery if resting (no region)
-  })
-  // Recover fatigue for scouts not assigned
-  ;(G.staff || []).filter(st => (st.role === 'scout_jonin' || st.role === 'head_scout') && !st.regionAssigned).forEach(scout => {
-    scout.fatigue = Math.max(0, (scout.fatigue || 0) - 20)
-  })
   // Tick down urgency on scout-sourced prospects
   G.prospects.forEach(p => {
     if (p.urgencyMonths > 0) p.urgencyMonths--

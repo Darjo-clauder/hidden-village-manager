@@ -87,14 +87,14 @@ function buildItems() {
   }
 
   // ── Low commitment warnings ───────────────────────────────────────────
-  ;(G.shinobi || []).filter(s => (s.commitmentScore || 50) < 30).forEach(s => {
+  ;(G.shinobi || []).filter(s => (s.commitment ?? 50) < 30).forEach(s => {
     items.push({
       id:       'commit_' + s.id,
       priority: 'urgent',
       cat:      'Roster',
       icon:     '⚠',
       title:    `${s.fn} ${s.ln} — Critical Commitment`,
-      desc:     `Commitment score: ${s.commitmentScore}. At risk of requesting a transfer.`,
+      desc:     `Commitment: ${s.commitment ?? 50}. At risk of requesting a transfer.`,
       actions:  [{ label: 'View Roster', fn: `sp('roster')` }],
       archived: false,
     })
@@ -228,14 +228,14 @@ function buildItems() {
   })
 
   // ── Academy students graduating soon ─────────────────────────────────
-  ;(G.intakeClass || []).filter(s => (s.monthsEnrolled || 0) >= 10).forEach(s => {
+  ;(G.intakeClass || []).filter(s => (s.monthsInClass || 0) >= 10).forEach(s => {
     items.push({
       id:       'grad_' + s.id,
       priority: 'info',
       cat:      'Academy',
       icon:     '🎓',
       title:    `${s.fn} ${s.ln} — Graduating Soon`,
-      desc:     `${12 - (s.monthsEnrolled || 0)} month(s) until graduation into the prospect pool.`,
+      desc:     `${12 - (s.monthsInClass || 0)} month(s) until graduation into the prospect pool.`,
       actions:  [{ label: 'Youth Academy', fn: `sp('youthacademy')` }],
       archived: false,
     })

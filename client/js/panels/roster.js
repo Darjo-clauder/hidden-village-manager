@@ -6,8 +6,9 @@ import { aL, ntf, upUI, cm } from '../ui.js'
 import { PHASE_META, ensureCareerFields } from '../careerEngine.js'
 
 export function sBars(s) {
+  const st = s.stats || {}
   return ['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed'].map(k =>
-    `<div class="sr"><div class="sl">${k.slice(0,5)}</div><div class="sw"><div class="bar"><div class="fill" style="width:${s.stats[k]}%"></div></div><div class="sn">${s.stats[k]}</div></div></div>`
+    `<div class="sr"><div class="sl">${k.slice(0,5)}</div><div class="sw"><div class="bar"><div class="fill" style="width:${st[k]||0}%"></div></div><div class="sn">${st[k]||0}</div></div></div>`
   ).join('')
 }
 

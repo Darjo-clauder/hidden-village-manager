@@ -152,7 +152,7 @@ export function tickScouts(G) {
     updateExpertise(scout, regionId, mem.contactLevel)
 
     // Fatigue accumulates while active
-    const adaptability = scout.stats.adaptability ?? scout.stats.ninjutsu ?? 8
+    const adaptability = scout.stats?.adaptability ?? scout.stats?.ninjutsu ?? 8
     const fatigueGain = Math.max(2, 10 - Math.floor(adaptability / 2))
     scout.fatigue = Math.min(100, (scout.fatigue || 0) + fatigueGain)
 
@@ -178,6 +178,21 @@ export function tickScouts(G) {
 
     if (Math.random() < reportChance) {
       _generateReport(scout, regionId, region, mem, qualityMod)
+    }
+
+    // Shadow intel — head scout only, scaled by shadow budget allocation
+    if (scout.role === 'head_scout') {
+      const budgetShadow = ((G.scoutBudget?.shadow || 30) / 30)
+      if (Math.random() < 0.25 * budgetShadow) {
+        const targetV = pk(G.villages || [])
+        if (targetV) {
+          if (!targetV.scoutIntel) targetV.scoutIntel = {}
+          targetV.scoutIntel.squadDepth = rnd(3, 15)
+          targetV.scoutIntel.avgPower = rnd(100, 500)
+          targetV.scoutIntel.updatedY = G.year; targetV.scoutIntel.updatedM = G.month
+          aL(`${scout.fn} ${scout.ln} gathered shadow intel on ${targetV.n}.`, 'neutral')
+        }
+      }
     }
   })
 

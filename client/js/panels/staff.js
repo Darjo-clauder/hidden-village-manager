@@ -53,8 +53,8 @@ function _rosterTab() {
       <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${offer.village} is offering ${offer.staffName} a position. Respond before they accept.</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="gb gb-g" onclick="matchPoachOffer()" style="font-size:7px">Match Offer (${fmt(offer.matchCost)} ryo retention bonus) ▸</button>
-        <button class="gb" onclick="dismissPoachOffer('let')" style="font-size:7px;border-color:#8fbc8f;color:#8fbc8f">Let Them Go ▸</button>
-        <button class="gb gb-r" onclick="dismissPoachOffer('block')" style="font-size:7px">Block (−10 rel with ${offer.village}) ▸</button>
+        <button class="gb" onclick="confirm('Let ${offer.staffName} go to ${offer.village}?') && dismissPoachOffer('let')" style="font-size:7px;border-color:#8fbc8f;color:#8fbc8f">Let Them Go ▸</button>
+        <button class="gb gb-r" onclick="confirm('Block ${offer.village}? This costs −10 relations.') && dismissPoachOffer('block')" style="font-size:7px">Block (−10 rel with ${offer.village}) ▸</button>
       </div>
     </div>`
   }
@@ -105,7 +105,7 @@ function _rosterTab() {
                 ${st.fromShinobi ? `<div style="font-size:8px;color:#c9a84c">↳ Transitioned from active duty</div>` : ''}
               </div>
               <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-                <button class="gb gb-r" onclick="releaseStaff('${st.id}')" style="font-size:7px;padding:3px 7px">Release</button>
+                <button class="gb gb-r" onclick="confirm('Release ${st.fn} ${st.ln}? This cannot be undone.') && releaseStaff('${st.id}')" style="font-size:7px;padding:3px 7px">Release</button>
                 ${canBeAK ? `<button class="gb" onclick="designateAsstKage('${st.id}')" style="font-size:7px;padding:3px 7px;border-color:#87ceeb;color:#87ceeb">Designate AK</button>` : ''}
                 ${isAsstKage ? `<button class="gb" onclick="designateAsstKage(null)" style="font-size:7px;padding:3px 7px;border-color:#555;color:#555">Remove AK</button>` : ''}
                 ${(st.monthsServed||0) >= 6 && st.hiddenFlaw && !st.flawRevealed ? `<button class="gb" onclick="staffPersonalMeeting('${st.id}')" style="font-size:7px;padding:3px 7px;border-color:#c9a84c;color:#c9a84c">1-on-1 Meeting</button>` : ''}

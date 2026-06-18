@@ -319,6 +319,7 @@ export function tickBeast(beast, G) {
   const newStage = getSyncStage(beast)
   if (newStage !== stage && newStage > 0) {
     const stageInfo = SYNC_STAGES[newStage]
+    applyBeastStats(jinchuriki, beast)
     events.push({
       title: `${beast.n}: ${stageInfo.n}`,
       body: `The bond between ${jinchuriki.fn} ${jinchuriki.ln} and ${beast.n} has advanced to ${stageInfo.n}. New capabilities are unlocking.`,
@@ -344,7 +345,7 @@ export function tickBeast(beast, G) {
   // ── Stage 1: Rejection events ────────────────────────────────────────────
   if (newStage === 1) {
     G.morale = Math.max(0, (G.morale || 75) - 3)
-    jinchuriki.commitmentScore = Math.max(0, (jinchuriki.commitmentScore || 50) - 5)
+    jinchuriki.commitment = Math.max(0, (jinchuriki.commitment || 50) - 5)
     if (Math.random() < 0.4) {
       events.push({ title: `${beast.n} Rejection Pain`, body: `${jinchuriki.fn} ${jinchuriki.ln} collapsed during training. The beast fights every seal pulse. Unrest spreading through the shinobi ranks.`, type: 'bad' })
       G.morale = Math.max(0, G.morale - 4)
@@ -390,7 +391,7 @@ export function tickBeast(beast, G) {
     if (data.loyaltyRisk && newStage <= 3 && Math.random() < 0.15) {
       events.push({
         title: 'Kurama Loyalty Test',
-        body: 'Kurama pushed against the seal with unusual force — not trying to escape, but testing. ${jinchuriki.fn} ${jinchuriki.ln} held. Barely.',
+        body: `Kurama pushed against the seal with unusual force — not trying to escape, but testing. ${jinchuriki.fn} ${jinchuriki.ln} held. Barely.`,
         type: 'warn',
       })
     }
@@ -545,7 +546,7 @@ export function applyBeastPairEffects(G) {
   if (sealed.includes('Matatabi') && sealed.includes('Chomei')) {
     G.shinobi?.forEach(s => {
       if (G.beasts.some(b => (b.n === 'Matatabi' || b.n === 'Chomei') && b.jk === s.id)) {
-        s.commitmentScore = Math.min(100, (s.commitmentScore || 50) + 3)
+        s.commitment = Math.min(100, (s.commitment || 50) + 3)
       }
     })
   }

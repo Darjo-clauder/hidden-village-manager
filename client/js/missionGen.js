@@ -169,7 +169,7 @@ function _injectChainMissions(G) {
 
 // ── Called from adv.js when a mission completes ────────────────────────────────
 export function advanceChain(G, missionId, succeeded) {
-  const m = G.avM.find(x => x.id === missionId) || G.aM.find(x => x.mId === missionId)
+  const m = G.avM.find(x => x.id === missionId) || G.aM.find(x => x.missionId === missionId)
   if (!m?.chainId) return
 
   const chain = (G.missionChains || []).find(c => c.id === m.chainId)
