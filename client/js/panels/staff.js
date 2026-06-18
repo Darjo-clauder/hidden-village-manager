@@ -88,7 +88,7 @@ function _rosterTab() {
         html += `<div style="font-size:8px;color:#3a3630;font-style:italic;padding:4px 0">— Vacant —</div>`
       } else {
         current.forEach(st => {
-          const statEntries = Object.entries(st.stats)
+          const statEntries = Object.entries(st.stats || {})
           const ambColor = (st.ambition||0) >= 14 ? '#f0a030' : (st.ambition||0) >= 10 ? '#c9a84c' : '#7a7060'
           const ambLabel = (st.ambition||0) >= 14 ? '▲ High Ambition' : (st.ambition||0) >= 10 ? 'Moderate Ambition' : 'Low Ambition'
           const isAsstKage = st.asstKage
