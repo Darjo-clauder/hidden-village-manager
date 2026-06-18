@@ -525,7 +525,6 @@ export function adv() {
       }
     }
   })
-  const dp = getDistrictPassives(G)
   if (dp.monthlyRyo > 0) G.ryo += dp.monthlyRyo
 
   // ── Persistent world flag tick-down ─────────────────────────────────────
