@@ -1,6 +1,6 @@
 import { G, fmt } from '../state.js'
 import { RANKS } from '../constants.js'
-import { NATIONS } from '../../../shared/constants/nations.js'
+import { NATIONS, nationMods } from '../../../shared/constants/nations.js'
 
 export function dismissOnboarding() {
   G._onboardingDismissed = true
@@ -89,6 +89,7 @@ export function rDash() {
       ${Object.entries(NATIONS).map(([id, n]) => `
         <button onclick="setNation('${id}')" style="font-size:8px;padding:3px 9px;cursor:pointer;background:${G.nationId === id ? n.accent : 'transparent'};color:${G.nationId === id ? '#0d0d0f' : n.accent};border:1px solid ${n.accent}">${n.crest} ${n.name}${G._a11yColorblind ? ' ·' + n.pattern : ''}</button>`).join('')}
       <button onclick="toggleColorblind()" title="Colorblind mode: show pattern tags" style="font-size:8px;padding:3px 9px;cursor:pointer;background:transparent;color:var(--text-dim);border:1px solid var(--border)">${G._a11yColorblind ? '◑ CB on' : '◐ CB'}</button>
+      ${G.nationId ? (() => { const m = nationMods(G.nationId); const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%'; return `<span style="font-size:8px;color:var(--text-dim)">${pct(m.successMod)} success · ${pct(m.ryoMod)} income</span>` })() : '<span style="font-size:8px;color:var(--text-dim)">— pick a nation for bonuses</span>'}
     </div>` : ''}
 
     <!-- Health snapshot -->
