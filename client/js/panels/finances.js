@@ -1,5 +1,6 @@
 import { G, fmt } from '../state.js'
 import { FINANCE_TIERS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, STAFF_ROLES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS } from '../constants.js'
+import { nationMods } from '../../../shared/constants/nations.js'
 
 function tierColor(name) {
   const t = FINANCE_TIERS.find(x => x.n === name)
@@ -51,7 +52,9 @@ export function rFi() {
     if (lv > 0) maintenance += (BUILDING_MAINTENANCE[k] || 400) * lv
   })
 
-  const totalIncome = trI + coI + jkI + daimyoB + (fin.examFees||0) + (fin.loanFees||0)
+  const _baseIncome = trI + coI + jkI + daimyoB + (fin.examFees||0) + (fin.loanFees||0)
+  const natBonus = G._ff_nationHud ? Math.round(_baseIncome * nationMods(G.nationId).ryoMod) : 0
+  const totalIncome = _baseIncome + natBonus
   const totalExpend = shinobiSal + staffSal + maintenance
   const netNow = totalIncome - totalExpend
 
@@ -103,6 +106,7 @@ export function rFi() {
       ${daimyoB > 0 ? row('Daimyo Bonus (' + daimyoLbl + ')', '+' + fmt(daimyoB), '#c9a84c') : ''}
       ${fin.examFees > 0 ? row('Exam Hosting Fees', '+' + fmt(fin.examFees), '#8fbc8f') : ''}
       ${fin.loanFees > 0 ? row('Loan Fees Received', '+' + fmt(fin.loanFees), '#8fbc8f') : ''}
+      ${natBonus !== 0 ? row('Nation Bonus', (natBonus >= 0 ? '+' : '') + fmt(natBonus), natBonus >= 0 ? '#c9a84c' : '#fa0') : ''}
       <div style="padding:4px 0;margin-top:2px;border-top:1px solid #2e2a22;display:flex;justify-content:space-between">
         <span style="font-size:9px;color:#e8e0cc;font-weight:bold">TOTAL</span>
         <span style="font-size:9px;color:#8fbc8f;font-weight:bold">+${fmt(totalIncome)}</span>
