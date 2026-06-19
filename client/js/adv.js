@@ -864,7 +864,7 @@ export function adv() {
       }
       return false
     }
-    if ((p.monthsWaiting || 0) >= 4 && Math.random() < 0.25) {
+    if (p.stats && (p.monthsWaiting || 0) >= 4 && Math.random() < 0.25) {
       const k = pk(['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed'])
       p.stats[k] = Math.max(5, p.stats[k] - 1)
     }
@@ -872,7 +872,7 @@ export function adv() {
     if (p.mentor) {
       const sensei = G.shinobi.find(s => s.id === p.mentor)
       if (sensei && sensei.status === 'available') {
-        if (Math.random() < 0.40) {
+        if (p.stats && Math.random() < 0.40) {
           const k = pk(['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed'])
           p.stats[k] = clamp(p.stats[k] + 1, 0, 99)
         }
@@ -952,8 +952,10 @@ export function adv() {
         return b
       })())
       // Tactical prep modifier (Phase 4)
-      const prepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
-      const prepRiskMod = G.missionPrepMode === 'aggressive' ? 0.04 : G.missionPrepMode === 'cautious' ? -0.03 : 0
+      // #8 merge: when this squad has a formation set, it OVERRIDES global prep-mode (no double-count)
+      const _fOverride = G._ff_tacticalFormation && !!sq.formation
+      const prepMod = _fOverride ? 0 : (G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0)
+      const prepRiskMod = _fOverride ? 0 : (G.missionPrepMode === 'aggressive' ? 0.04 : G.missionPrepMode === 'cautious' ? -0.03 : 0)
       const sqJutsuMod = sq.members.reduce((acc, id) => {
         const ms = G.shinobi.find(x => x.id === id); if (!ms) return acc
         const jb = jutsuLoadoutBonus(ms, JUTSU_LIST)

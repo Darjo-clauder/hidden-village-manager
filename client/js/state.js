@@ -147,13 +147,13 @@ export function initState() {
     keQ: [...KAGE_EVENTS].sort(() => Math.random() - 0.5), keCD: 0,
     memorial: [], chronicles: [], legend: 0, worldFlags: {}, pendingChoiceEvent: null,
     staff: [],
-    // v2 additive feature flags — OFF by default.
-    _ff_bloodlineActive: false,
-    _ff_nationHud: false,
-    _a11yColorblind: false,  // when true, nation cues add explicit pattern tags (not color-only)
-    _ff_tacticalFormation: false,  // #8 — named formations (pending merge-vs-parallel decision)
-    _ff_supportEvents: false,      // #11 — pairwise bond support events
-    _ff_debt: false,               // #12 — optional debt/overdraft mechanic
+    // v2 additive systems — ENABLED for partner playtest.
+    _ff_bloodlineActive: true,
+    _ff_nationHud: true,
+    _a11yColorblind: false,  // opt-in accessibility toggle (user flips in dashboard)
+    _ff_tacticalFormation: true,  // #8 — per-squad formations (override prep-mode)
+    _ff_supportEvents: true,      // #11 — pairwise bond support events
+    _ff_debt: true,               // #12 — debt/overdraft (treasury can go negative w/ interest)
     finances: {
       history: [],        // last 12 monthly snapshots
       deficitMonths: 0,
