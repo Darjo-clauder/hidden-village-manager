@@ -26,6 +26,7 @@ import { emit, integrityCheck } from '../../shared/utils/telemetry.js'
 import { formationMods } from '../../shared/utils/formation.js'
 import { pickSupportEvent } from '../../shared/bonds/supportEvents.js'
 import { applyDebt } from '../../shared/utils/debt.js'
+import { nationMods } from '../../shared/constants/nations.js'
 import { activeBloodlineBonus, netBloodlineMod, canActivate, BLOODLINE_MULTIPLIER, ACTIVATION_COST, ACTIVATION_MIN_STAGE, ACTIVE_DURATION, COOLDOWN, AGGRO_INCREASE, DEBUFF_DURATION } from '../../shared/utils/bloodline.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
@@ -527,6 +528,12 @@ function _formationRisk(sq) {
   return formationMods(sq.formation).riskMod
 }
 
+// Nation identity success modifier (flag-gated; 0 when off or neutral nation)
+function _nationSuccessMod() {
+  if (!G._ff_nationHud) return 0
+  return nationMods(G.nationId).successMod
+}
+
 export function activateBloodline(beastName) {
   if (!G._ff_bloodlineActive) return
   const b = (G.beasts || []).find(x => x.n === beastName && x.sealed && x.jk)
@@ -970,7 +977,7 @@ export function adv() {
         ensureCareerFields(ms)
         return acc + (ms.declineMod || 0) * 0.5  // half-weight per member so one declining vet doesn't cripple a squad
       }, 0)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq), 0.1, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod(), 0.1, successCeiling(m.rk))
 
       if (Math.random() < sc) {
         G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3, 0, 100)
@@ -1088,7 +1095,7 @@ export function adv() {
       const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
       const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
       const bMB = bondMissionBonus(s, G.shinobi)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]), 0.08, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod(), 0.08, successCeiling(m.rk))
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)
@@ -1421,12 +1428,13 @@ export function adv() {
   const examFeeAmt = G.finances?.examFees || 0
   const loanFeeAmt = G.finances?.loanFees || 0
 
-  const totalIncome = trI + coI + jkI + daimyoB + examFeeAmt + loanFeeAmt + sponsorshipIncome
+  const _natIncMult = G._ff_nationHud ? (1 + nationMods(G.nationId).ryoMod) : 1
+  const totalIncome = Math.round((trI + coI + jkI + daimyoB + examFeeAmt + loanFeeAmt + sponsorshipIncome) * _natIncMult)
   const totalExpend = shinobiSal + staffSal + maintenance
   const monthlyNet = totalIncome - totalExpend
 
   // Apply economy flows
-  G.ryo += trI + coI + jkI + daimyoB + examFeeAmt + loanFeeAmt + sponsorshipIncome
+  G.ryo += totalIncome  // nation-adjusted (see _natIncMult)
   G.ryo -= shinobiSal + staffSal + maintenance
 
   // #12 Optional debt/overdraft (flag-gated): accrue interest instead of an implicit hole
