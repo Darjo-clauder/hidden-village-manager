@@ -1,5 +1,5 @@
 import { G, ui, sPow, rnd, sn, pk, clamp, fmt, addChronicle, addLegend, computeMarketValue } from '../state.js'
-import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS } from '../constants.js'
+import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS, INJURY_TYPES } from '../constants.js'
 import { aL, ntf, upUI, schEx } from '../ui.js'
 
 window._exTab = 'exam'
@@ -133,8 +133,8 @@ function rExA(el, tabHtml) {
     <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${standing.length} villages in contention · ${totalAlive} combatants remaining</div>
     <div style="display:grid;gap:8px;margin-bottom:10px">
       ${standing.map((e, i) => `<div style="border:1px solid ${e.isPlayer ? '#c9a84c' : '#2e2a22'};padding:7px;background:${e.isPlayer ? 'rgba(201,168,76,0.06)' : '#0a0a0a'}">
-        <div style="font-size:9px;color:${e.isPlayer ? '#c9a84c' : '#9a9080'};margin-bottom:4px">${i === 0 ? '◆ ' : ''}${e.ico || '🏳'} ${e.name}${e.isPlayer ? ' (you)' : ''} <span style="color:#7a7060">— ${e.alive.length} alive</span></div>
-        ${e.alive.map(c => `<div style="font-size:8px;padding:2px 0;color:${c.isPlayer ? '#e8e0cc' : '#7a7060'}">${c.name} · Pwr ${c.pow}${c.isPlayer && _formatBonusById(c.shinobiId) > 0 ? ' <span style="color:#8fbc8f">★+15%</span>' : ''}</div>`).join('')}
+        <div style="font-size:9px;color:${e.isPlayer ? '#c9a84c' : '#9a9080'};margin-bottom:4px">${i === 0 ? '◆ ' : ''}${e.ico || '🏳'} ${e.name}${e.isPlayer ? ' (you)' : ''} <span style="color:#7a7060">— ${e.alive.length} alive${e.scrolls != null ? ` · ${e.scrolls} 📜` : ''}</span></div>
+        ${e.alive.map(c => `<div style="font-size:8px;padding:2px 0;color:${c.isPlayer ? '#e8e0cc' : '#7a7060'}">${c.name} · Pwr ${c.pow}${c._wounded ? ' <span style="color:#f88">⚕ wounded</span>' : ''}${c.isPlayer && _formatBonusById(c.shinobiId) > 0 ? ' <span style="color:#8fbc8f">★+15%</span>' : ''}</div>`).join('')}
       </div>`).join('')}
     </div>
     ${!ui.exSt.sabotaged && r === 1 ? `<button class="btn" onclick="sabotageSquad()" style="font-size:9px;margin-bottom:8px;color:#f88">Sabotage a rival squad (risk relations)</button> ` : ''}
@@ -212,36 +212,9 @@ export function runRound() {
       return clamp(0.45 + c.pow / 200, 0.1, 0.9)
     }, 'Passed the written test', 'Failed the written test', res)
   } else if (r === 1) {
-    // Quarterfinal — Forest of Death survival
-    const isHost = G.examHosting === true
-    _stageSurvival(field, c => {
-      if (c.isPlayer) {
-        const s = G.shinobi.find(x => x.id === c.shinobiId)
-        return clamp(0.4 + ((s?.stats.speed || 0) + (s?.stats.chakra || 0)) / 400 + (isHost ? 0.08 : 0) + _formatBonusById(c.shinobiId), 0.1, 0.95)
-      }
-      return clamp(0.42 + c.pow / 220, 0.1, 0.9)
-    }, 'Survived the forest', 'Eliminated in the forest', res)
+    return _runForest(field, res)
   } else if (r === 2) {
-    // Semifinal — seeded 1v1 duels across the whole field (best vs worst)
-    const pool = []
-    field.forEach(entry => entry.alive.forEach(c => pool.push({ c, entry })))
-    pool.sort((a, b) => b.c.pow - a.c.pow)
-    const losers = new Set()
-    let lo = 0, hi = pool.length - 1
-    const effPow = c => c.pow * (1 + (c.isPlayer ? _formatBonusById(c.shinobiId) : 0)) - (c.isPlayer ? biasMod * 100 : 0) + rnd(-8, 8)
-    while (lo < hi) {
-      const A = pool[lo], B = pool[hi]
-      const aWins = effPow(A.c) >= effPow(B.c)
-      const win = aWins ? A : B, lose = aWins ? B : A
-      losers.add(lose.c)
-      if (win.c.isPlayer) res.push({ name: win.c.name, result: `Won the duel vs ${lose.c.name}`, promoted: false, good: true })
-      if (lose.c.isPlayer) res.push({ name: lose.c.name, result: `Lost the duel to ${win.c.name}`, promoted: false, good: false })
-      lo++; hi--
-    }
-    field.forEach(entry => {
-      entry.out.push(...entry.alive.filter(c => losers.has(c)))
-      entry.alive = entry.alive.filter(c => !losers.has(c))
-    })
+    return _runSemifinal(field, res, biasMod)
   } else {
     return _runFinals(field, biasMod)
   }
@@ -249,6 +222,117 @@ export function runRound() {
   ui.exSt.round++
   G.examResults.push(...res.map(x => ({ id: '', name: x.name, result: x.result, promoted: false })))
   _renderRoundOverlay(r, res, field)
+}
+
+// Apply a Forest-of-Death injury that carries into the real game after the exam.
+// Mirrors adv.js applyInjury bookkeeping; status stays 'exam' until cleanup.
+function _examInjure(s) {
+  const pool = ['muscle', 'chakra', 'bone']
+  const inj = INJURY_TYPES.find(t => t.id === pool[Math.floor(Math.random() * pool.length)]) || INJURY_TYPES[0]
+  const medNinja = (G.staff || []).filter(st => st.role === 'medical').length
+  let dur = rnd(inj.minMo, inj.maxMo)
+  dur = Math.max(1, Math.round(dur - (s.pers?.effect?.injReduct || 0) - medNinja * 0.5))
+  s.injDays = dur; s.injuryType = inj.id
+  s.injuryCount = (s.injuryCount || 0) + 1
+  if (!s.injuryHistory) s.injuryHistory = []
+  s.injuryHistory.push({ year: G.year, month: G.month, type: inj.id, typeName: inj.n, duration: dur, treatment: 'exam' })
+  return { n: inj.n, dur }
+}
+
+// Quarterfinal — Forest of Death: secure a scroll to advance; danger brings real injuries.
+function _runForest(field, res) {
+  const isHost = G.examHosting === true
+  field.forEach(entry => {
+    const kept = []
+    entry.scrolls = 0
+    entry.alive.forEach(c => {
+      let prob
+      if (c.isPlayer) {
+        const s = G.shinobi.find(x => x.id === c.shinobiId)
+        prob = clamp(0.4 + ((s?.stats.speed || 0) + (s?.stats.chakra || 0)) / 400 + (isHost ? 0.08 : 0) + _formatBonusById(c.shinobiId), 0.1, 0.95)
+      } else {
+        prob = clamp(0.42 + c.pow / 220, 0.1, 0.9)
+      }
+      const survived = Math.random() < prob
+      if (survived) { kept.push(c); entry.scrolls++ } else entry.out.push(c)
+      // Player nominees risk real injury — far higher when overwhelmed and eliminated.
+      let injNote = ''
+      if (c.isPlayer) {
+        const injChance = survived ? 0.10 : 0.30
+        if (Math.random() < injChance) {
+          const s = G.shinobi.find(x => x.id === c.shinobiId)
+          if (s) { const inj = _examInjure(s); injNote = ` — wounded: ${inj.n} (${inj.dur}mo)`; c._wounded = true }
+        }
+        res.push({ name: c.name, result: (survived ? 'Secured a scroll, survived' : 'Eliminated in the forest') + injNote, promoted: false, good: survived })
+      }
+    })
+    entry.alive = kept
+  })
+  ui.exSt.round++
+  G.examResults.push(...res.map(x => ({ id: '', name: x.name, result: x.result, promoted: false })))
+  _renderRoundOverlay(1, res, field)
+}
+
+// Semifinal — seeded 1v1 duels across the whole field (best vs worst); named marquee matchups.
+function _runSemifinal(field, res, biasMod) {
+  const pool = []
+  field.forEach(entry => entry.alive.forEach(c => pool.push({ c, entry })))
+  pool.sort((a, b) => b.c.pow - a.c.pow)
+  pool.forEach((p, i) => { p.seed = i + 1 })
+  const effPow = c => c.pow * (1 + (c.isPlayer ? _formatBonusById(c.shinobiId) : 0)) - (c.isPlayer ? biasMod * 100 : 0)
+  const duels = []
+  const losers = new Set()
+  let lo = 0, hi = pool.length - 1
+  while (lo < hi) {
+    const A = pool[lo], B = pool[hi]
+    const aScore = effPow(A.c) + rnd(-8, 8), bScore = effPow(B.c) + rnd(-8, 8)
+    const aWins = aScore >= bScore
+    const win = aWins ? A : B, lose = aWins ? B : A
+    losers.add(lose.c)
+    const margin = Math.abs(aScore - bScore)
+    const marginLabel = margin < 5 ? 'narrow' : margin < 15 ? 'clear' : 'decisive'
+    const upset = lose.seed < win.seed  // a higher seed (lower number) was beaten
+    duels.push({
+      winName: win.c.name, winVil: win.entry.name, winPlayer: !!win.c.isPlayer,
+      loseName: lose.c.name, loseVil: lose.entry.name, losePlayer: !!lose.c.isPlayer,
+      marginLabel, upset,
+    })
+    if (win.c.isPlayer) res.push({ name: win.c.name, result: `Won a ${marginLabel} duel vs ${lose.c.name} (${lose.entry.name})`, promoted: false, good: true })
+    if (lose.c.isPlayer) res.push({ name: lose.c.name, result: `Lost a ${marginLabel} duel to ${win.c.name} (${win.entry.name})`, promoted: false, good: false })
+    if (win.c.isPlayer && upset) {
+      addChronicle('Semifinal Upset', `${win.c.name} upset the higher-seeded ${lose.c.name} of ${lose.entry.name} to reach the final.`, 'shinobi')
+      addLegend(2)
+    }
+    lo++; hi--
+  }
+  const bye = (lo === hi) ? pool[lo] : null
+  field.forEach(entry => {
+    entry.out.push(...entry.alive.filter(c => losers.has(c)))
+    entry.alive = entry.alive.filter(c => !losers.has(c))
+  })
+  ui.exSt.round++
+  G.examResults.push(...res.map(x => ({ id: '', name: x.name, result: x.result, promoted: false })))
+  _renderSemifinalOverlay(duels, bye, field)
+}
+
+function _renderSemifinalOverlay(duels, bye, field) {
+  const villagesIn = field.filter(e => e.alive.length > 0).length
+  const totalAlive = field.reduce((a, e) => a + e.alive.length, 0)
+  document.getElementById('ef-c').innerHTML =
+    `<div style="font-size:9px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">${EXAM_STAGES[2]}</div>` +
+    `<div style="display:grid;gap:6px">` +
+    (duels.length ? duels.map(d => `
+      <div style="border:1px solid #2e2a22;padding:6px;background:#0a0a0a">
+        <div style="font-size:9px">
+          <span style="color:${d.winPlayer ? '#c9a84c' : '#8fbc8f'}">▲ ${d.winName}</span><span style="color:#555"> (${d.winVil})</span>
+          <span style="color:#7a7060"> def. </span>
+          <span style="color:${d.losePlayer ? '#f88' : '#7a7060'}">${d.loseName}</span><span style="color:#555"> (${d.loseVil})</span>
+        </div>
+        <div style="font-size:7px;color:#7a7060;margin-top:2px">${d.marginLabel} decision${d.upset ? ' · <span style="color:#f0a030">UPSET</span>' : ''}</div>
+      </div>`).join('') : '<div style="font-size:9px;color:#7a7060">No duels this round.</div>') +
+    (bye ? `<div style="font-size:8px;color:#7a7060;padding:4px">${bye.c.name} (${bye.entry.name}) advances on a bye.</div>` : '') +
+    `</div><div style="margin-top:8px;font-size:9px;color:#7a7060">${villagesIn} villages reach the final · ${totalAlive} finalists.</div>`
+  document.getElementById('ov-examfight').classList.add('open'); upUI()
 }
 
 function _renderRoundOverlay(r, res, field) {
@@ -328,8 +412,14 @@ function _runFinals(field, biasMod) {
     addLegend(8)
   }
 
-  // Cleanup — restore nominee statuses and reset exam state.
-  G.examCands.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s) { s.status = 'available'; s.missId = null } })
+  // Cleanup — restore nominee statuses (wounds carry into the season) and reset exam state.
+  let woundedCount = 0
+  G.examCands.forEach(id => {
+    const s = G.shinobi.find(x => x.id === id); if (!s) return
+    s.missId = null
+    if ((s.injDays || 0) > 0) { s.status = 'injured'; woundedCount++ } else s.status = 'available'
+  })
+  if (woundedCount > 0) aL(`${woundedCount} nominee${woundedCount > 1 ? 's' : ''} returned from the exam injured.`, 'warn')
   if (G.examHosting) { G.ryo += 8000; aL('Hosting income from Chunin Exam: +8,000 ryo.', 'good'); G.examHosting = false }
   G.examFormat = null; G.examJudgeBias = null
   G.examResults.push(...res.map(x => ({ id: '', name: x.name, result: x.result, promoted: x.promoted })))
