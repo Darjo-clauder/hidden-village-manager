@@ -110,6 +110,10 @@ function _chainBadge(m) {
 
 export function rSoloM() {
   const el = document.getElementById('ms-solo'), av = G.shinobi.filter(s => s.status === 'available')
+  if (G.isOffSeason) {
+    el.innerHTML = _offSeasonBlock()
+    return
+  }
   el.innerHTML = G.avM.filter(m => !m.sq).map(m => {
     const rc = 'mr-' + m.rk.toLowerCase(), aM = G.aM.find(a => a.missionId === m.id && !a.isSquad)
     return `<div class="mc">
@@ -132,8 +136,62 @@ export function rSoloM() {
   }).join('')
 }
 
+function _offSeasonBlock() {
+  const campCost = 8000
+  const canAfford = (G.ryo || 0) >= campCost
+  const available = G.shinobi.filter(s => s.status === 'available').length
+  const highFatigue = G.shinobi.filter(s => (s.fatigue || 0) >= 40).length
+  return `<div style="border:1px solid #4a8080;background:rgba(0,80,80,.15);padding:16px;margin-bottom:12px">
+    <div style="font-size:13px;color:#87ceeb;font-weight:bold;margin-bottom:6px">⛄ Off-Season — Months 1–3</div>
+    <div style="font-size:9px;color:#7a7060;margin-bottom:14px">Missions resume Month 4. Use this time to rest, recruit, and prepare your squad for the upcoming season.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="background:#1a1a1a;padding:10px;border:1px solid #333">
+        <div style="font-size:8px;color:#7a7060;text-transform:uppercase">Available</div>
+        <div style="font-size:16px;color:#8fbc8f;font-weight:bold">${available}</div>
+        <div style="font-size:7px;color:#555">shinobi resting</div>
+      </div>
+      <div style="background:#1a1a1a;padding:10px;border:1px solid #333">
+        <div style="font-size:8px;color:#7a7060;text-transform:uppercase">High Fatigue</div>
+        <div style="font-size:16px;color:${highFatigue > 0 ? '#fa0' : '#8fbc8f'};font-weight:bold">${highFatigue}</div>
+        <div style="font-size:7px;color:#555">need recovery</div>
+      </div>
+    </div>
+    <div style="font-size:9px;color:#b0a88a;font-weight:bold;margin-bottom:8px">Off-Season Actions</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="border:1px solid #3a3630;padding:10px;background:#111">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:10px;color:#e8e0cc;font-weight:bold">Training Camp</div>
+            <div style="font-size:8px;color:#7a7060;margin-top:2px">Reset fatigue for all shinobi, small stat boost, +5 morale. Cost: 8,000 ryo.</div>
+          </div>
+          <button class="gb" onclick="runTrainingCamp()" ${canAfford ? '' : 'disabled'} style="white-space:nowrap">${canAfford ? 'Run Camp ►' : 'Need ryo'}</button>
+        </div>
+      </div>
+      <div style="border:1px solid #3a3630;padding:10px;background:#111">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:10px;color:#e8e0cc;font-weight:bold">Free Agent Market</div>
+            <div style="font-size:8px;color:#7a7060;margin-top:2px">Sign available shinobi without prospect pipeline pressure.</div>
+          </div>
+          <button class="gb" onclick="sp('transfers')">Open Market ►</button>
+        </div>
+      </div>
+      <div style="border:1px solid #3a3630;padding:10px;background:#111">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:10px;color:#e8e0cc;font-weight:bold">Contract Renewals</div>
+            <div style="font-size:8px;color:#7a7060;margin-top:2px">Review and renew contracts before the season starts.</div>
+          </div>
+          <button class="gb" onclick="sp('roster')">Open Roster ►</button>
+        </div>
+      </div>
+    </div>
+  </div>`
+}
+
 export function rSqM() {
   const el = document.getElementById('ms-squad')
+  if (G.isOffSeason) { el.innerHTML = ''; return }
   el.innerHTML = G.avM.filter(m => m.sq).map(m => {
     const rc = 'mr-' + m.rk.toLowerCase(), aM = G.aM.find(a => a.missionId === m.id && a.isSquad)
     return `<div class="mc">

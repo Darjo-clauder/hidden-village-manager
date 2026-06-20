@@ -192,6 +192,21 @@ function fatiguePenalty(s) {
   const f = s.fatigue || 0
   return f >= 80 ? -0.15 : f >= 60 ? -0.09 : f >= 40 ? -0.04 : 0
 }
+export function gradeShinobi(s) {
+  const pow = sPow(s)
+  const pot = Math.max(1, s.potential || 50)
+  let score = (pow / pot) * 100
+  if ((s.streak || 0) >= 3) score += 8
+  if ((s.lossStreak || 0) >= 3) score -= 8
+  score -= (s.fatigue || 0) * 0.25
+  if (s.declineMod) score += s.declineMod * 25
+  if (score >= 82) return { label: 'S', color: '#c9a84c' }
+  if (score >= 66) return { label: 'A', color: '#8fbc8f' }
+  if (score >= 50) return { label: 'B', color: '#87ceeb' }
+  if (score >= 34) return { label: 'C', color: '#b0a88a' }
+  if (score >= 18) return { label: 'D', color: '#fa0' }
+  return { label: 'F', color: '#f44' }
+}
 
 // ── Finance helpers ────────────────────────────────────────────────────────────
 function computeDaimyoBonus() {
@@ -1026,6 +1041,41 @@ export function adv() {
     if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
   }
   if (!G.sponsorshipOffer) G._sponsorInboxFired = false
+
+  // ── Pillar: Rumor mill — rival intel blurbs surfaced monthly ────────────────
+  if (Math.random() < 0.32) {
+    const rv = pk(G.villages)
+    const RUMOR_TEMPLATES = [
+      () => `Sources say ${rv.n} is quietly shopping one of their veterans — a trade may be imminent.`,
+      () => `Intel suggests ${rv.n} is investing heavily in their academy. Expect stronger genin next season.`,
+      () => `Whispers from ${rv.n}: a senior jonin is considering retirement. Their roster depth is at risk.`,
+      () => `${rv.n} appears to be hoarding ryo — a big signing or upgrade could be coming.`,
+      () => `Reports from border scouts: ${rv.n} has been running high-intensity S-rank drills. War readiness is up.`,
+      () => `Word on the road: ${rv.n} finished last season ${rv.strength >= 120 ? 'stronger than ever' : 'in disarray'}.`,
+      () => `A defector claims ${rv.n} lost a key jonin to injury — their next exam showing may suffer.`,
+    ]
+    const rumor = pk(RUMOR_TEMPLATES)()
+    G.narrativeInbox.push({ id: Math.random().toString(36).slice(2), type: 'rumor', tag: 'intel', title: 'Rumor: ' + rv.n, body: rumor, village: rv.n, year: G.year, month: G.month })
+    if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
+  }
+
+  // ── Pillar: Monthly intel report — performance grades summary ────────────────
+  if (G.month % 3 === 0 && G.shinobi.length > 0) {
+    const graded = G.shinobi.map(s => ({ s, g: gradeShinobi(s) }))
+    const sGrade  = graded.filter(x => x.g.label === 'S').map(x => sn(x.s))
+    const fGrade  = graded.filter(x => x.g.label === 'F').map(x => sn(x.s))
+    const peaking = G.shinobi.filter(s => s.peakAge && Math.abs((s.age || 0) - s.peakAge) <= 1)
+    const declining = G.shinobi.filter(s => s.peakAge && (s.age || 0) > s.peakAge + 3 && (s.declineMod || 0) < -0.05)
+    const lines = []
+    if (sGrade.length)    lines.push(sGrade.join(', ') + (sGrade.length === 1 ? ' is' : ' are') + ' performing at elite level.')
+    if (fGrade.length)    lines.push('⚠ Underperformers: ' + fGrade.join(', ') + '.')
+    if (peaking.length)   lines.push(peaking.map(s => sn(s)).join(', ') + (peaking.length === 1 ? ' is' : ' are') + ' in peak years — deploy them.')
+    if (declining.length) lines.push('Declining: ' + declining.map(s => sn(s)).join(', ') + ' — consider succession planning.')
+    if (lines.length > 0) {
+      G.narrativeInbox.push({ id: Math.random().toString(36).slice(2), type: 'intel_report', tag: 'intel', title: 'Quarterly Performance Report — Y' + G.year + ' M' + G.month, body: lines.join(' '), year: G.year, month: G.month })
+      if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
+    }
+  }
 
   // ── Squad injury crisis check ──────────────────────────────────────────────
   const injuredCount = G.shinobi.filter(s => s.status === 'injured').length
@@ -3354,5 +3404,27 @@ export function resolveQuickDecision(eventId, choiceId) {
   if (opt?.effect) opt.effect(G)
   if (G.narrativeInbox) G.narrativeInbox.forEach(n => { if (n.id === G.pendingQuickDecision?.id) n.dismissed = true })
   G.pendingQuickDecision = null
+  upUI()
+}
+
+export function runTrainingCamp() {
+  const cost = 8000
+  if ((G.ryo || 0) < cost) { if (typeof ntf === 'function') ntf('Not enough ryo — Training Camp costs 8,000 ryo.'); return }
+  G.ryo -= cost
+  let boosted = 0
+  G.shinobi.filter(s => s.status === 'available' || s.status === 'injured').forEach(s => {
+    s.fatigue = Math.max(0, (s.fatigue || 0) - 30)
+    s.workload = Math.max(0, (s.workload || 0) - 15)
+    const statKeys = Object.keys(s.stats || {})
+    if (statKeys.length) {
+      const k = statKeys[Math.floor(Math.random() * statKeys.length)]
+      s.stats[k] = clamp((s.stats[k] || 0) + rnd(1, 3), 0, 100)
+    }
+    boosted++
+  })
+  G.morale = clamp((G.morale || 50) + 5, 0, 100)
+  G.narrativeInbox = G.narrativeInbox || []
+  G.narrativeInbox.push({ id: Math.random().toString(36).slice(2), type: 'intel_report', tag: 'intel', title: 'Training Camp Complete', body: `${boosted} shinobi reset fatigue and received targeted stat training. Morale +5.`, year: G.year, month: G.month })
+  if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
   upUI()
 }
