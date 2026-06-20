@@ -1,6 +1,7 @@
 import { G, fmt } from '../state.js'
 import { FINANCE_TIERS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, STAFF_ROLES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS } from '../constants.js'
 import { nationMods } from '../../../shared/constants/nations.js'
+import { villageRevenue } from '../../../shared/utils/economy.js'
 
 function tierColor(name) {
   const t = FINANCE_TIERS.find(x => x.n === name)
@@ -52,7 +53,8 @@ export function rFi() {
     if (lv > 0) maintenance += (BUILDING_MAINTENANCE[k] || 400) * lv
   })
 
-  const _baseIncome = trI + coI + jkI + daimyoB + (fin.examFees||0) + (fin.loanFees||0)
+  const villageRev = villageRevenue(G.reputation || 0, G.prestigeTier || 'D')
+  const _baseIncome = villageRev + trI + coI + jkI + daimyoB + (fin.examFees||0) + (fin.loanFees||0)
   const natBonus = G._ff_nationHud ? Math.round(_baseIncome * nationMods(G.nationId).ryoMod) : 0
   const totalIncome = _baseIncome + natBonus
   const totalExpend = shinobiSal + staffSal + maintenance
@@ -100,6 +102,7 @@ export function rFi() {
     <!-- INCOME -->
     <div style="background:#1a1814;border:1px solid #2e2a22;padding:12px">
       <div style="font-size:8px;letter-spacing:2px;color:#8fbc8f;text-transform:uppercase;margin-bottom:8px">Income / Month</div>
+      ${row('Village Revenue (tax base · rep ' + (G.reputation||0) + ')', '+' + fmt(villageRev), '#8fbc8f')}
       ${row('Trade Routes (' + G.tradeRoutes.filter(r=>r.active).length + ' active)', '+' + fmt(trI), '#8fbc8f')}
       ${row('Contracts (' + G.contracts.filter(c=>c.active).length + ' active)', '+' + fmt(coI), '#8fbc8f')}
       ${jkI > 0 ? row('Jinchuriki (Niryuu)', '+' + fmt(jkI), '#c9a84c') : ''}

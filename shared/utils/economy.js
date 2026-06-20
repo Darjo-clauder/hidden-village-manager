@@ -17,3 +17,11 @@ export function monthlySnapshot({
 export function isFiniteRyo(ryo) {
   return Number.isFinite(ryo)
 }
+
+// Baseline village revenue — the franchise's "ticket revenue": civilian tax base +
+// daimyo patronage, scaling with reputation and prestige. Single source of truth so
+// the tick and the UI panels agree. Pure.
+export const PRESTIGE_REVENUE = { D: 0, C: 4000, B: 9000, A: 15000, S: 24000 }
+export function villageRevenue(reputation = 0, prestigeTier = 'D') {
+  return Math.round(22000 + reputation * 400 + (PRESTIGE_REVENUE[prestigeTier] || 0))
+}

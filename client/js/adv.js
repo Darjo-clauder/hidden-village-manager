@@ -16,6 +16,7 @@ import { DISTRICTS, getDistrictPassives } from '../../shared/constants/districts
 import { COUNCIL_FACTIONS, COUNCIL_PROPOSALS, getCouncilPerks } from '../../shared/constants/council.js'
 import { tickRivalStrength, shouldFireRivalEvent, pickRivalEvent, computePlayerStrength } from '../../shared/utils/rivalSim.js'
 import { initSeasonTable, playMatchday } from '../../shared/utils/season.js'
+import { villageRevenue } from '../../shared/utils/economy.js'
 import { resolveMission, qualityEffects } from '../../shared/utils/missionEngine.js'
 import { DYNASTY_YEARS, computeDynastyGrade } from '../../shared/utils/dynasty.js'
 import { bondMissionBonus, mentorGrowthBonus, kiaRipple, BOND_TYPES } from '../../shared/bonds/bondTypes.js'
@@ -168,6 +169,10 @@ function computeDaimyoBonus() {
     if (leg >= tier.at) return tier.amount
   }
   return 0
+}
+
+function computeVillageRevenue() {
+  return villageRevenue(G.reputation || 0, G.prestigeTier || 'D')
 }
 
 function computeMaintenance() {
@@ -1462,6 +1467,7 @@ export function adv() {
   const jkI = G.beasts.filter(b => b.sealed && b.n === 'Niryuu' && b.jk).length * 3000
     + (G._kurenigykiBonus ? 5000 : 0) // Kureni+Hachitsuno trade bonus
   const daimyoB = Math.round(computeDaimyoBonus() * (G.daimyoBudgetMult || 1))
+  const villageRev = Math.round(computeVillageRevenue() * (G.daimyoBudgetMult || 1))
   const maintenance = computeMaintenance()
   const shinobiSal = G.shinobi.reduce((a, s) => a + s.salary, 0)
   const staffSal = (G.staff || []).reduce((a, st) => a + st.salary, 0)
@@ -1470,7 +1476,7 @@ export function adv() {
   const loanFeeAmt = G.finances?.loanFees || 0
 
   const _natIncMult = G._ff_nationHud ? (1 + nationMods(G.nationId).ryoMod) : 1
-  const totalIncome = Math.round((trI + coI + jkI + daimyoB + examFeeAmt + loanFeeAmt + sponsorshipIncome) * _natIncMult)
+  const totalIncome = Math.round((trI + coI + jkI + daimyoB + villageRev + examFeeAmt + loanFeeAmt + sponsorshipIncome) * _natIncMult)
   const totalExpend = shinobiSal + staffSal + maintenance
   const monthlyNet = totalIncome - totalExpend
 
@@ -1491,7 +1497,7 @@ export function adv() {
   const commTotal = Object.entries(commByRank).reduce((a,[rk,cnt]) => a + cnt * (MISSION_COMMISSION[rk]||0), 0)
   const snap = {
     year: G.year, month: G.month,
-    income: { tradeRoutes:trI, contracts:coI, jinchuriki:jkI, daimyoBonus:daimyoB, missionCommissions:commTotal, examFees:examFeeAmt, loanFees:loanFeeAmt, sponsorship:sponsorshipIncome, nationBonus: totalIncome - (trI + coI + jkI + daimyoB + examFeeAmt + loanFeeAmt + sponsorshipIncome) },
+    income: { tradeRoutes:trI, contracts:coI, jinchuriki:jkI, daimyoBonus:daimyoB, villageRevenue:villageRev, missionCommissions:commTotal, examFees:examFeeAmt, loanFees:loanFeeAmt, sponsorship:sponsorshipIncome, nationBonus: totalIncome - (trI + coI + jkI + daimyoB + villageRev + examFeeAmt + loanFeeAmt + sponsorshipIncome) },
     expenditure: { shinobiWages:shinobiSal, staffWages:staffSal, maintenance, scoutCost:G.finances.scoutCostThisMonth||0 },
     totalIncome, totalExpend, net:monthlyNet,
     missionBreakdown: { ...commByRank },

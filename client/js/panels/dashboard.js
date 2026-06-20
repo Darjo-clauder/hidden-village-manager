@@ -1,6 +1,7 @@
 import { G, fmt } from '../state.js'
 import { RANKS } from '../constants.js'
 import { NATIONS, nationMods } from '../../../shared/constants/nations.js'
+import { villageRevenue } from '../../../shared/utils/economy.js'
 
 export function dismissOnboarding() {
   G._onboardingDismissed = true
@@ -25,7 +26,8 @@ export function rDash() {
   const contractIncome = (G.contracts || []).filter(c => c.active).reduce((a, c) => a + c.income, 0)
   const staffCost   = (G.staff   || []).reduce((a, s) => a + (s.salary || 0), 0)
   const shinobiSal  = (G.shinobi || []).reduce((a, s) => a + (s.salary || 0), 0)
-  const monthlyNet = tradeIncome + contractIncome - staffCost - shinobiSal
+  const villageRev = villageRevenue(G.reputation || 0, G.prestigeTier || 'D')
+  const monthlyNet = villageRev + tradeIncome + contractIncome - staffCost - shinobiSal
   const financeHealth = G.ryo > 50000 ? 'strong' : G.ryo > 15000 ? 'stable' : G.ryo > 3000 ? 'tight' : 'critical'
   const financeColor = { strong: 'var(--green)', stable: 'var(--gold)', tight: 'var(--orange)', critical: 'var(--red)' }[financeHealth]
 
