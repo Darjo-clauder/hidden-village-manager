@@ -24,6 +24,7 @@ import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfi
 import { rLeg, legTab, designateSuccessor, resolveLegacyDecision, triggerDynastyHandoff } from './panels/legacy.js'
 import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel } from './panels/intel.js'
 import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc } from './panels/exam.js'
+import { musterWar, startWar, runWarRound } from './panels/war.js'
 import { showLobby, createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode } from './setup.js'
 import { rClans, clanGift, launchClanChain } from './panels/clans.js'
 import { dismissOnboarding } from './panels/dashboard.js'
@@ -116,6 +117,8 @@ Object.assign(window, {
   intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel,
   // exam tabs
   exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc,
+  // nation war
+  musterWar, startWar, runWarRound,
   // clans
   clanGift, launchClanChain,
   // onboarding

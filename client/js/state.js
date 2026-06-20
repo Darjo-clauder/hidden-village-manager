@@ -160,6 +160,7 @@ export function initState() {
     raid: null, raidW: 0, defSh: null, tempDef: 0,
     examSched: false, examMonth: null, examActive: false, examResults: [], examCands: [], examChampion: null,
     season: null, seasonHistory: [],
+    warSched: false, warActive: false, warCands: [], warChampion: null, warHistory: [], warDoneYear: 0,
     tradeRoutes: JSON.parse(JSON.stringify(TRADE_ROUTES)),
     contracts: JSON.parse(JSON.stringify(CONTRACTS)),
     keQ: [...KAGE_EVENTS].sort(() => Math.random() - 0.5), keCD: 0,

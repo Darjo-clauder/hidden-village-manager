@@ -2,16 +2,19 @@ import { G, ui, sPow, rnd, sn, pk, clamp, fmt, addChronicle, addLegend, computeM
 import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS, INJURY_TYPES } from '../constants.js'
 import { aL, ntf, upUI, schEx } from '../ui.js'
 import { initSeasonTable, sortedTable, seedsFromTable } from '../../../shared/utils/season.js'
+import { renderWar } from './war.js'
 
 window._exTab = 'exam'
 
 export function rEx() {
   const el = document.getElementById('exl')
   if (!el) return
-  const tabs = ['exam', 'summit', 'srank', 'records']
+  const tabs = ['exam', 'war', 'summit', 'srank', 'records']
+  const labels = { exam: 'CHUNIN EXAM', war: 'NATION WAR', summit: 'SUMMIT', srank: 'S-RANK BIDS', records: 'RECORDS' }
   const tabHtml = `<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
-    ${tabs.map(t => `<button class="btn${window._exTab === t ? ' act' : ''}" onclick="exTab('${t}')" style="font-size:9px;padding:3px 8px">${t === 'exam' ? 'CHUNIN EXAM' : t === 'summit' ? 'SUMMIT' : t === 'srank' ? 'S-RANK BIDS' : 'RECORDS'}</button>`).join('')}
+    ${tabs.map(t => `<button class="btn${window._exTab === t ? ' act' : ''}" onclick="exTab('${t}')" style="font-size:9px;padding:3px 8px${t === 'war' ? ';color:#c9a84c' : ''}">${labels[t]}${t === 'war' && G.warSched ? ' ●' : ''}</button>`).join('')}
   </div>`
+  if (window._exTab === 'war') { renderWar(el, tabHtml); return }
   if (window._exTab === 'summit') { el.innerHTML = tabHtml + _summitTab(); return }
   if (window._exTab === 'srank') { el.innerHTML = tabHtml + _srankTab(); return }
   if (window._exTab === 'records') { el.innerHTML = tabHtml + _recordsTab(); return }

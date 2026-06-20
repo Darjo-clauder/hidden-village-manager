@@ -1210,6 +1210,10 @@ export function adv() {
   G.villages.forEach(v => {
     if (!v.strength) v.strength = 50 + Math.round(Math.random() * 40)
     if (!v.roster || !v.roster.length) v.roster = genVillageRoster(v)  // backfill rosters on older saves
+    // Replenish war/mission losses so rivals stay viable — recruit fresh genin toward a floor.
+    if (v.roster.length < 40 && Math.random() < 0.5) {
+      const recruit = mS(rnd(0, 1)); recruit.homeVillage = v.n; v.roster.push(recruit)
+    }
     tickRivalStrength(v)
     if (shouldFireRivalEvent(v)) {
       const ev = pickRivalEvent(v)
@@ -2110,6 +2114,13 @@ export function adv() {
   // ── Prodigy event (1% per month in rfP) — handled in rfP ────────────────
   if (G.tempDef > 0) G.tempDef = Math.max(0, G.tempDef - 5)
   if (G.examSched && G.month === G.examMonth) { aL('Chunin Exam is now! Go to Exam panel.', 'ev'); ntf('Chunin Exam!') }
+
+  // ── Nation War — annual marquee at year-end ───────────────────────────────
+  if (G.month === 12 && !G.warActive && G.warDoneYear !== G.year) {
+    G.warSched = true
+    aL('🏯 The Nation War mobilizes! The great powers prepare to clash. Muster your elite in the Nation War tab.', 'ev')
+    ntf('Nation War mobilizing!')
+  }
 
   // ── Prestige tier tick ──────────────────────────────────────────────────────
   const PTIERS = [{ id:'D', min:0 }, { id:'C', min:50 }, { id:'B', min:150 }, { id:'A', min:300 }, { id:'S', min:500 }]
