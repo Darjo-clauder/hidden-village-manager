@@ -305,6 +305,7 @@ export function initState() {
     rivalTendencies: { totalMissions: 0, eliteDeployments: 0, successRun: 0, squadMissions: 0, lastAdaptYear: 0 },
     narrativeInbox: [],              // [{ id, title, body, tag, link, year, month, actorIds, threadId }]
     narrativeThreads: [],            // [{ id, type, title, actorIds, events, state, priority, ... }]
+    mentorships: [],                 // [{ id, mentorId, studentId, startYear, startMonth, months, bonusApplied }]
   });
   // Starting roster — a workable core of ~15 (grows toward 23 via academy/transfers).
   ;[3, 2, 2, 2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0].forEach(r => {

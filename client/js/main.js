@@ -31,9 +31,30 @@ import { dismissOnboarding } from './panels/dashboard.js'
 import { launchDeepCover } from './panels/safehouses.js'
 import { endTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose, setTimeout_, setMaxPlayers, voteAdvance, setAdvFn } from './room.js'
 import { copyInvite } from './panels/lobby.js'
-import { inboxTab, inboxFilter } from './panels/inbox.js'
+import { inboxTab, inboxFilter, toggleThread } from './panels/inbox.js'
 import { G as _G } from './state.js'
 function dismissNarrative(id) { if (_G.narrativeInbox) { const n = _G.narrativeInbox.find(x => x.id === id); if (n) n.dismissed = true } }
+
+// ── Mentorship actions ────────────────────────────────────────────────────────
+import { createMentorship, removeMentorship, isMentorEligible, isStudentEligible } from '../../shared/utils/mentorship.js'
+
+function assignMentor(mentorId, studentId) {
+  if (!_G.mentorships) _G.mentorships = []
+  const mentor  = _G.shinobi.find(s => s.id === mentorId)
+  const student = _G.shinobi.find(s => s.id === studentId)
+  if (!mentor || !student) return
+  if (!isMentorEligible(mentor, _G.mentorships)) { ntf('That shinobi cannot mentor right now.'); return }
+  if (!isStudentEligible(student, _G.mentorships)) { ntf('That student already has a mentor.'); return }
+  _G.mentorships.push(createMentorship(mentorId, studentId, { year: _G.year, month: _G.month }))
+  ntf(`${mentor.fn} is now mentoring ${student.fn}.`)
+  upUI()
+}
+
+function releaseMentor(shinobiId) {
+  if (!_G.mentorships) return
+  const removed = removeMentorship(_G.mentorships, shinobiId)
+  if (removed) { ntf('Mentorship ended.'); upUI() }
+}
 import { chrFilter, chrSearch } from './panels/chronicles.js'
 import { roleBonus } from './depthEngine.js'
 
@@ -93,6 +114,10 @@ Object.assign(window, {
   resolveChoiceEvent, openWorldChoice, resolveCouncilProposal, assignBlackMarket, resolveClanChain,
   resolvePressConference,
   dismissNarrative,
+  // mentorship
+  assignMentor, releaseMentor,
+  // inbox threads
+  toggleThread,
   // staff
   openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff,
   staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting,

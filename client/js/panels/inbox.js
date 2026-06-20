@@ -1,15 +1,18 @@
 import { G, fmt } from '../state.js'
 import { sp } from '../ui.js'
 import { WE_BY_ID } from '../../../shared/constants/worldCalendar.js'
+import { sortedThreads } from '../../../shared/utils/narrativeThreads.js'
 
 // Priority: urgent > standard > info
 const PRIORITY = { urgent: 0, standard: 1, info: 2 }
 
 let _activeTab = 'active'
 let _activeFilter = 'all'
+let _expandedThreadIds = new Set()
 
 export function inboxTab(tab) { _activeTab = tab; rInbox() }
 export function inboxFilter(cat) { _activeFilter = cat; rInbox() }
+export function toggleThread(id) { _expandedThreadIds.has(id) ? _expandedThreadIds.delete(id) : _expandedThreadIds.add(id); rInbox() }
 
 /** Build a unified inbox item list from all G state sources. */
 function buildItems() {
@@ -380,6 +383,10 @@ export function rInbox() {
   const el = document.getElementById('p-inbox')
   if (!el) return
 
+  const threads = sortedThreads(G.narrativeThreads || [])
+  const activeThreads = threads.filter(t => t.state === 'open' || t.state === 'escalating')
+  const threadCount = activeThreads.length
+
   const all    = buildItems()
   const active = all.filter(i => !i.archived)
   const cats   = ['all', ...new Set(active.map(i => i.cat))]
@@ -389,8 +396,19 @@ export function rInbox() {
   const standardCount = filtered.filter(i => i.priority === 'standard').length
   const infoCount     = filtered.filter(i => i.priority === 'info').length
 
+  const tabBar = `<div style="display:flex;gap:6px;margin-bottom:12px">
+    <button class="tab${_activeTab !== 'threads' ? ' active' : ''}" style="padding:5px 10px;font-size:8px" onclick="inboxTab('active')">Inbox (${active.length})</button>
+    <button class="tab${_activeTab === 'threads' ? ' active' : ''}" style="padding:5px 10px;font-size:8px" onclick="inboxTab('threads')">Story Threads${threadCount > 0 ? ' (' + threadCount + ')' : ''}</button>
+  </div>`
+
+  if (_activeTab === 'threads') {
+    el.innerHTML = `<div class="pt">Inbox</div>${tabBar}${renderThreadsPanel(threads)}`
+    return
+  }
+
   el.innerHTML = `
     <div class="pt">Inbox</div>
+    ${tabBar}
 
     <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
       ${cats.map(c => `
@@ -428,6 +446,65 @@ export function rInbox() {
       </div>
     ` : ''}
   `
+}
+
+// ── Thread state metadata ─────────────────────────────────────────────────────
+const THREAD_STATE_META = {
+  open:       { label: 'Open',       color: '#87ceeb' },
+  escalating: { label: 'Escalating', color: '#f0a030' },
+  resolved:   { label: 'Resolved',   color: '#8fbc8f' },
+  tragedy:    { label: 'Tragedy',    color: '#f66' },
+}
+const THREAD_TYPE_ICONS = {
+  grudge: '⚡', bond: '🤝', rivalry: '⚔', redemption: '✨',
+  kia_arc: '🪦', career: '🎖', faction: '🕵',
+}
+
+function renderThreadsPanel(threads) {
+  if (!threads || threads.length === 0) {
+    return `<div style="text-align:center;padding:40px 0;color:var(--text-dim);font-size:10px">
+      <div style="font-size:28px;margin-bottom:8px">📖</div>
+      No active story threads. Play missions to build them.
+    </div>`
+  }
+
+  return threads.map(t => {
+    const meta    = THREAD_STATE_META[t.state] || THREAD_STATE_META.open
+    const icon    = THREAD_TYPE_ICONS[t.type] || 'ℹ'
+    const expanded = _expandedThreadIds.has(t.id)
+    const linkedBlurbs = (G.narrativeInbox || []).filter(n => n.threadId === t.id)
+    const latestBlurb  = linkedBlurbs[linkedBlurbs.length - 1]
+
+    const eventLines = expanded
+      ? linkedBlurbs.map(n => `
+          <div style="padding:5px 8px;border-left:2px solid #2a2a2a;margin-bottom:4px">
+            <div style="font-size:8px;color:#b0a88a">${n.title}</div>
+            <div style="font-size:8px;color:#7a7060;margin-top:2px">${n.body}</div>
+            <div style="font-size:7px;color:#3a3630;margin-top:1px">Y${n.year}·M${n.month}</div>
+          </div>`).join('')
+      : ''
+
+    return `<div style="border:1px solid #2a2a2a;border-left:3px solid ${meta.color};padding:10px 12px;margin-bottom:8px;background:#111">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:13px">${icon}</span>
+          <span style="font-size:9px;color:#e8e0cc;font-weight:bold">${t.title}</span>
+        </div>
+        <span style="font-size:7px;color:${meta.color};text-transform:uppercase;letter-spacing:1px;padding:2px 6px;border:1px solid ${meta.color}44">${meta.label}</span>
+      </div>
+      <div style="display:flex;gap:12px;font-size:8px;color:#7a7060;margin-bottom:6px">
+        <span>${t.events.length} event${t.events.length !== 1 ? 's' : ''}</span>
+        <span>Since Y${t.openedYear}·M${t.openedMonth}</span>
+        <span style="text-transform:capitalize">${t.type.replace('_', ' ')}</span>
+      </div>
+      ${latestBlurb && !expanded ? `<div style="font-size:8px;color:#7a7060;font-style:italic;margin-bottom:6px">${latestBlurb.body}</div>` : ''}
+      ${expanded ? eventLines : ''}
+      ${linkedBlurbs.length > 1 ? `
+        <button class="gb" style="font-size:7px;padding:2px 8px;margin-top:4px" onclick="toggleThread('${t.id}')">
+          ${expanded ? '▲ Collapse' : '▼ Show all ' + linkedBlurbs.length + ' events'}
+        </button>` : ''}
+    </div>`
+  }).join('')
 }
 
 function renderItem(item) {

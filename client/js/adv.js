@@ -42,6 +42,7 @@ import { genMissionBlurb, genKIABlurb, genRankUpBlurb, genBondBlurb, genGrudgeBl
 import { recordPlayerTactic, getPlayerTendency, applyCounterStrategy, rivalScPenalty, observePlayerTactic, explainStanceChange, rollMetaEvent, ensureRivalProfile } from '../../shared/utils/adaptiveAI.js'
 import { addMemory, decayMemories, memoryMoraleMod, memoryStateBlurb } from '../../shared/utils/memorySystem.js'
 import { linkToThread, pruneOldThreads } from '../../shared/utils/narrativeThreads.js'
+import { tickMentorships } from '../../shared/utils/mentorship.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
@@ -1413,6 +1414,24 @@ export function adv() {
       G.staff = G.staff.filter(x => x.id !== st.id)
     }
   })
+
+  // ── Mentorship tick ───────────────────────────────────────────────────────
+  if (!G.mentorships) G.mentorships = []
+  const _mentorEvents = tickMentorships(G.mentorships, G.shinobi, { year: G.year, month: G.month })
+  for (const ev of _mentorEvents) {
+    const actorIds = [ev.mentorId, ev.studentId].filter(Boolean)
+    if (ev.type === 'bond_memory') {
+      addMemory(G.shinobi.find(s => s.id === ev.mentorId), 'mentor_bond', 'mentorship', { year: G.year, month: G.month })
+      addMemory(G.shinobi.find(s => s.id === ev.studentId), 'mentor_bond', 'mentorship', { year: G.year, month: G.month })
+      pushNarrative({ title: `Mentorship: ${ev.mentorName} & ${ev.studentName}`, body: ev.detail, tag: 'bond', link: 'roster' }, actorIds)
+    } else if (ev.type === 'graduation') {
+      addMemory(G.shinobi.find(s => s.id === ev.mentorId), 'mentor_bond', 'mentorship', { year: G.year, month: G.month }, 0.65)
+      pushNarrative({ title: `Mentorship Complete: ${ev.studentName}`, body: ev.detail, tag: 'promotion', link: 'roster' }, actorIds)
+      aL(ev.detail, 'good')
+    } else {
+      pushNarrative({ title: `Mentorship: ${ev.mentorName} & ${ev.studentName}`, body: ev.detail, tag: 'bond', link: 'roster' }, actorIds)
+    }
+  }
 
   // ── Staff depth tick ──────────────────────────────────────────────────────
   if (!G.staffHallOfFame) G.staffHallOfFame = []
