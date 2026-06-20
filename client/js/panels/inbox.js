@@ -15,6 +15,23 @@ export function inboxTab(tab) { _activeTab = tab; rInbox() }
 export function inboxFilter(cat) { _activeFilter = cat; rInbox() }
 export function toggleThread(id) { _expandedThreadIds.has(id) ? _expandedThreadIds.delete(id) : _expandedThreadIds.add(id); rInbox() }
 
+export function dismissAllInfo() {
+  if (!G.narrativeInbox) return
+  const SAFE = new Set(['alumni', 'civic', 'rumor', 'intel_report', 'mission'])
+  G.narrativeInbox.forEach(n => {
+    if (SAFE.has(n.type) || n.priority === 'info') n.dismissed = true
+  })
+  // also clear noticeboard info items
+  ;(G.noticeboard || []).filter(n => n.priority === 'info' || !n.priority).forEach(n => { n.dismissed = true })
+  rInbox()
+}
+
+export function dismissNarrativeById(id) {
+  const n = (G.narrativeInbox || []).find(x => x.id === id)
+  if (n) n.dismissed = true
+  rInbox()
+}
+
 /** Build a unified inbox item list from all G state sources. */
 function buildItems() {
   const items = []
@@ -467,16 +484,18 @@ export function rInbox() {
     return
   }
 
+  const infoToDismiss = filtered.filter(i => i.priority === 'info').length
   el.innerHTML = `
     <div class="pt">Inbox</div>
     ${tabBar}
 
-    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+    <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
       ${cats.map(c => `
         <button class="tab${_activeFilter === c ? ' active' : ''}" style="padding:5px 10px;font-size:8px" onclick="inboxFilter('${c}')">
           ${c === 'all' ? 'All (' + filtered.length + ')' : c}
         </button>
       `).join('')}
+      ${infoToDismiss > 0 ? `<button onclick="dismissAllInfo()" style="margin-left:auto;font-size:7px;padding:3px 8px;border:1px solid #3a3630;color:#7a7060;background:transparent;cursor:pointer">Dismiss ${infoToDismiss} info ✕</button>` : ''}
     </div>
 
     ${urgentCount > 0 ? `

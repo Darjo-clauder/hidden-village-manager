@@ -780,9 +780,15 @@ export function rfM() {
 
   // ── Partial rotation: keep assigned missions, rotate ~40% of the rest ────
   const assigned = new Set((G.aM || []).map(a => a.missionId))
+  const absoluteNow = ((G.year || 1) - 1) * 12 + month
   const kept = (G.avM || []).filter(m => {
     if (m.isCrisis) return false                 // crisis ops never carry over
-    if (assigned.has(m.id)) return true
+    if (assigned.has(m.id)) return true          // keep anything currently assigned
+    // actively purge expired missions
+    if (m.expiresMonth) {
+      const absExp = ((m.addedYear || G.year || 1) - 1) * 12 + m.expiresMonth
+      if (absExp < absoluteNow) return false
+    }
     return Math.random() >= 0.40
   })
   const keptSolo  = kept.filter(m => !m.sq)
@@ -810,10 +816,23 @@ export function rfM() {
     ...seasonalThisMonth.map(m => m.n),
     ...crisisEntries.map(m => m.n),
   ])
+
+  // First active month after off-season (month 4): guarantee at least 4 accessible B/C missions
+  const isSeasonOpen = (month === 4)
+  const accessibleCount = [...keptSolo, ...seasonalThisMonth].filter(m => ['B','C','D'].includes(m.rk)).length
+  const guaranteedBC = isSeasonOpen && accessibleCount < 4
+    ? MISS_POOL
+        .filter(m => !m.sq && ['B','C'].includes(m.rk) && !usedNames.has(m.n))
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 4 - accessibleCount)
+        .map(mkEntry)
+    : []
+  guaranteedBC.forEach(m => usedNames.add(m.n))
+
   const freshSolo = MISS_POOL
     .filter(m => !m.sq && !usedNames.has(m.n))
     .sort(() => Math.random() - 0.5)
-    .slice(0, Math.max(0, soloSlots - keptSolo.length - seasonalThisMonth.length - crisisEntries.length))
+    .slice(0, Math.max(0, soloSlots - keptSolo.length - seasonalThisMonth.length - crisisEntries.length - guaranteedBC.length))
     .map(mkEntry)
 
   // ── Fill squad slots ──────────────────────────────────────────────────────
@@ -833,7 +852,7 @@ export function rfM() {
   })
 
   G.avM = [
-    ...sort([...keptSolo, ...crisisEntries, ...seasonalThisMonth.map(m => ({...m, seasonal:true})), ...freshSolo]),
+    ...sort([...keptSolo, ...crisisEntries, ...seasonalThisMonth.map(m => ({...m, seasonal:true})), ...guaranteedBC, ...freshSolo]),
     ...sort([...keptSquad, ...freshSquad]),
   ]
 }

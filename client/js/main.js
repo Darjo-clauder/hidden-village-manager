@@ -31,9 +31,9 @@ import { dismissOnboarding } from './panels/dashboard.js'
 import { launchDeepCover } from './panels/safehouses.js'
 import { endTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose, setTimeout_, setMaxPlayers, voteAdvance, setAdvFn } from './room.js'
 import { copyInvite } from './panels/lobby.js'
-import { inboxTab, inboxFilter, toggleThread } from './panels/inbox.js'
+import { inboxTab, inboxFilter, toggleThread, dismissAllInfo, dismissNarrativeById } from './panels/inbox.js'
 import { G as _G } from './state.js'
-function dismissNarrative(id) { if (_G.narrativeInbox) { const n = _G.narrativeInbox.find(x => x.id === id); if (n) n.dismissed = true } }
+function dismissNarrative(id) { dismissNarrativeById(id) }
 
 // ── Mentorship actions ────────────────────────────────────────────────────────
 import { createMentorship, removeMentorship, isMentorEligible, isStudentEligible } from '../../shared/utils/mentorship.js'
@@ -115,7 +115,7 @@ Object.assign(window, {
   resolvePressConference,
   resolveComplication, resolveRivalOffer, resolveQuickDecision,
   runTrainingCamp, gradeShinobi,
-  dismissNarrative,
+  dismissNarrative, dismissAllInfo,
   // mentorship
   assignMentor, releaseMentor,
   // inbox threads

@@ -63,7 +63,7 @@ export function upUI() {
   // ── Top bar stats ──────────────────────────────────────────────────────
   _set('tryo',    fmt(G.ryo))
   _set('trep',    G.reputation)
-  _set('tmiss',   G.aM.length)
+  _set('tmiss',   G.lifetimeMissions || 0)
   _set('tinc',    (monthlyNet >= 0 ? '+' : '') + fmt(monthlyNet) + '/mo')
   _set('tdate',   'Y' + G.year + ' · ' + monthName)
   const legEl = document.getElementById('tlegend')

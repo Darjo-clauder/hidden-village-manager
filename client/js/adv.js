@@ -65,6 +65,7 @@ function pushMissionLog(entry) {
   if (!G.missionLog) G.missionLog = []
   G.missionLog.push({ id: Math.random().toString(36).slice(2), ...entry, year: G.year, month: G.month })
   if (G.missionLog.length > 30) G.missionLog.splice(0, G.missionLog.length - 30)
+  G.lifetimeMissions = (G.lifetimeMissions || 0) + 1
 }
 
 // ── Beast unique ability helpers ───────────────────────────────────────────────
@@ -1540,8 +1541,9 @@ export function adv() {
             year: G.year, month: G.month, actorIds: [s.id],
           })
         }
-        // Costly result: 30% chance a follow-up recovery op appears on the board
-        if (_mev.quality === 'costly' && !m.isFollowUp && Math.random() < 0.30) {
+        // Costly/failed: recovery op spawns on costly (30%) or any other failure (10%)
+        const _recoveryChance = _mev.quality === 'costly' ? 0.30 : 0.10
+        if (!m.isFollowUp && Math.random() < _recoveryChance) {
           G.avM.push({
             ...m,
             id: Math.random().toString(36).slice(2),
@@ -3113,6 +3115,19 @@ export function adv() {
 
   // Hard floors enforced at end-of-tick after all events have settled
   if (G._moraleFloor && (G.morale || 0) < G._moraleFloor) G.morale = G._moraleFloor
+
+  // ── Auto-prune old non-actionable narrative inbox items (older than 6 months) ─
+  if (G.narrativeInbox) {
+    const absNow = (G.year - 1) * 12 + G.month
+    const SAFE_TO_PRUNE = new Set(['alumni', 'civic', 'rumor', 'intel_report', 'mission'])
+    G.narrativeInbox = G.narrativeInbox.filter(n => {
+      if (n.dismissed) return false
+      if (!SAFE_TO_PRUNE.has(n.type) && n.type !== undefined) return true  // keep actionable
+      if (!n.year) return true
+      const absItem = (n.year - 1) * 12 + (n.month || 1)
+      return (absNow - absItem) < 6
+    })
+  }
 
   syncToServer(); rfM(); rfP()
   G.month++; if (G.month > 12) { G.month = 1; G.year++; addChronicle('New Year', 'Year ' + G.year + ' begins. Legend: ' + G.legend + '. Shinobi: ' + G.shinobi.length + '.', 'event') }

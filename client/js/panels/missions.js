@@ -160,6 +160,11 @@ export function rSoloM() {
     </div>`
   }
 
+  // Split A/S rank missions by whether any shinobi is within 20% of min power
+  const maxPow = av.length ? Math.max(...av.map(s => sPow(s))) : 0
+  const actionable  = main.filter(m => maxPow >= m.mp * 0.80)
+  const aspirational= main.filter(m => maxPow < m.mp * 0.80)
+
   const idleBadge = idle > 0
     ? `<div style="font-size:8px;color:#fa0;margin-bottom:10px">⚠ ${idle} shinobi idle — assign missions below</div>`
     : ''
@@ -168,36 +173,92 @@ export function rSoloM() {
     <div style="font-size:7px;letter-spacing:2px;color:#3a3630;text-transform:uppercase;margin:14px 0 6px">Civilian Contracts (D-rank)</div>
     <div style="opacity:0.7">${civilian.map(_mCard).join('')}</div>`
 
-  el.innerHTML = idleBadge + main.map(_mCard).join('') + civilianSection
+  const aspirationalSection = aspirational.length === 0 ? '' : `
+    <details style="margin-top:14px">
+      <summary style="font-size:7px;letter-spacing:2px;color:#3a3630;text-transform:uppercase;cursor:pointer;user-select:none">
+        Future Ops — ${aspirational.length} mission${aspirational.length>1?'s':''} (need more power)
+      </summary>
+      <div style="opacity:0.45;margin-top:8px">${aspirational.map(_mCard).join('')}</div>
+    </details>`
+
+  el.innerHTML = idleBadge + actionable.map(_mCard).join('') + civilianSection + aspirationalSection
 }
 
 function _offSeasonBlock() {
-  const campCost = 8000
-  const canAfford = (G.ryo || 0) >= campCost
-  const available = G.shinobi.filter(s => s.status === 'available').length
-  const highFatigue = G.shinobi.filter(s => (s.fatigue || 0) >= 40).length
-  return `<div style="border:1px solid #4a8080;background:rgba(0,80,80,.15);padding:16px;margin-bottom:12px">
-    <div style="font-size:13px;color:#87ceeb;font-weight:bold;margin-bottom:6px">⛄ Off-Season — Months 1–3</div>
-    <div style="font-size:9px;color:#7a7060;margin-bottom:14px">Missions resume Month 4. Use this time to rest, recruit, and prepare your squad for the upcoming season.</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-      <div style="background:#1a1a1a;padding:10px;border:1px solid #333">
-        <div style="font-size:8px;color:#7a7060;text-transform:uppercase">Available</div>
-        <div style="font-size:16px;color:#8fbc8f;font-weight:bold">${available}</div>
-        <div style="font-size:7px;color:#555">shinobi resting</div>
+  const campCost   = 8000
+  const canAfford  = (G.ryo || 0) >= campCost
+  const available  = G.shinobi.filter(s => s.status === 'available').length
+  const onMission  = G.shinobi.filter(s => s.status === 'mission').length
+  const injured    = G.shinobi.filter(s => s.status === 'injured').length
+  const highFatigue= G.shinobi.filter(s => (s.fatigue || 0) >= 15).length
+  const avgFatigue = G.shinobi.length
+    ? Math.round(G.shinobi.reduce((a,s) => a + (s.fatigue||0), 0) / G.shinobi.length)
+    : 0
+
+  // Season preview — what's coming M4
+  const nextSeasonMissions = (G.avM || []).filter(m => !m.sq).length
+  const monthsLeft = 4 - ((G.month - 1) % 3 + 1)
+
+  // D-rank civilian contracts available even off-season
+  const dRankPool = (G.avM || []).filter(m => !m.sq && m.rk === 'D')
+  const dSection = dRankPool.length > 0 ? `
+    <div style="margin-top:14px;padding-top:10px;border-top:1px solid #2a2a2a">
+      <div style="font-size:8px;color:#7a7060;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Civilian Contracts — available year-round</div>
+      ${dRankPool.map(m => {
+        const aM  = (G.aM||[]).find(a => a.missionId === m.id)
+        const av2 = G.shinobi.filter(s => s.status === 'available')
+        const best = av2.sort((a,b) => sPow(b)-sPow(a))[0]
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border:1px solid #2a2a2a;background:#0d0d0d;margin-bottom:4px">
+          <div>
+            <div style="font-size:9px;color:#e8e0cc">${m.n}</div>
+            <div style="font-size:7px;color:#7a7060">${fmt(m.ryo)} ryo · ${m.dur}m · Risk ${Math.round(m.risk*100)}%</div>
+          </div>
+          ${aM
+            ? `<div style="font-size:8px;color:#fa0">⟳ ${sn(G.shinobi.find(s=>s.id===aM.assignedTo)||{fn:'?',ln:''})} — ${aM.daysLeft}m</div>`
+            : best ? `<button class="gb" style="font-size:7px" onclick="doA('${best.id}');rSoloM()">▶ ${sn(best)}</button>` : '<span style="font-size:7px;color:#555">No shinobi</span>'
+          }
+        </div>`
+      }).join('')}
+    </div>` : ''
+
+  return `<div style="border:1px solid #4a8080;background:rgba(0,80,80,.12);padding:16px;margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+      <div>
+        <div style="font-size:13px;color:#87ceeb;font-weight:bold">⛄ Off-Season — Month ${G.month}</div>
+        <div style="font-size:8px;color:#7a7060;margin-top:3px">Full missions resume Month 4 · ${monthsLeft > 0 ? monthsLeft + 'm remaining' : 'last month of rest'}</div>
       </div>
-      <div style="background:#1a1a1a;padding:10px;border:1px solid #333">
-        <div style="font-size:8px;color:#7a7060;text-transform:uppercase">High Fatigue</div>
-        <div style="font-size:16px;color:${highFatigue > 0 ? '#fa0' : '#8fbc8f'};font-weight:bold">${highFatigue}</div>
-        <div style="font-size:7px;color:#555">need recovery</div>
+      <div style="text-align:right">
+        <div style="font-size:8px;color:#7a7060">Avg fatigue</div>
+        <div style="font-size:14px;color:${avgFatigue>15?'#fa0':'#8fbc8f'};font-weight:bold">${avgFatigue}</div>
       </div>
     </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px">
+      <div style="background:#1a1a1a;padding:8px;border:1px solid #333;text-align:center">
+        <div style="font-size:14px;color:#8fbc8f;font-weight:bold">${available}</div>
+        <div style="font-size:7px;color:#555">Resting</div>
+      </div>
+      <div style="background:#1a1a1a;padding:8px;border:1px solid #333;text-align:center">
+        <div style="font-size:14px;color:#fa0;font-weight:bold">${onMission}</div>
+        <div style="font-size:7px;color:#555">On mission</div>
+      </div>
+      <div style="background:#1a1a1a;padding:8px;border:1px solid #333;text-align:center">
+        <div style="font-size:14px;color:${injured>0?'#f66':'#555'};font-weight:bold">${injured}</div>
+        <div style="font-size:7px;color:#555">Injured</div>
+      </div>
+      <div style="background:#1a1a1a;padding:8px;border:1px solid #333;text-align:center">
+        <div style="font-size:14px;color:${highFatigue>0?'#f88':'#555'};font-weight:bold">${highFatigue}</div>
+        <div style="font-size:7px;color:#555">High fatigue</div>
+      </div>
+    </div>
+
     <div style="font-size:9px;color:#b0a88a;font-weight:bold;margin-bottom:8px">Off-Season Actions</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <div style="border:1px solid #3a3630;padding:10px;background:#111">
+    <div style="display:flex;flex-direction:column;gap:6px">
+      <div style="border:1px solid #3a5050;padding:10px;background:#0d1a1a">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-size:10px;color:#e8e0cc;font-weight:bold">Training Camp</div>
-            <div style="font-size:8px;color:#7a7060;margin-top:2px">Reset fatigue for all shinobi, small stat boost, +5 morale. Cost: 8,000 ryo.</div>
+            <div style="font-size:10px;color:#87ceeb;font-weight:bold">🏕 Training Camp</div>
+            <div style="font-size:8px;color:#7a7060;margin-top:2px">Reset fatigue, +1 stat for each shinobi, +5 morale · 8,000 ryo${canAfford ? '' : ' <span style="color:#f66">(insufficient funds)</span>'}</div>
           </div>
           <button class="gb" onclick="runTrainingCamp()" ${canAfford ? '' : 'disabled'} style="white-space:nowrap">${canAfford ? 'Run Camp ►' : 'Need ryo'}</button>
         </div>
@@ -205,8 +266,17 @@ function _offSeasonBlock() {
       <div style="border:1px solid #3a3630;padding:10px;background:#111">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-size:10px;color:#e8e0cc;font-weight:bold">Free Agent Market</div>
-            <div style="font-size:8px;color:#7a7060;margin-top:2px">Sign available shinobi without prospect pipeline pressure.</div>
+            <div style="font-size:10px;color:#e8e0cc;font-weight:bold">🎓 Youth Academy</div>
+            <div style="font-size:8px;color:#7a7060;margin-top:2px">Review and graduate incoming prospects.</div>
+          </div>
+          <button class="gb" onclick="sp('academy')">View Academy ►</button>
+        </div>
+      </div>
+      <div style="border:1px solid #3a3630;padding:10px;background:#111">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:10px;color:#e8e0cc;font-weight:bold">🛒 Free Agent Market</div>
+            <div style="font-size:8px;color:#7a7060;margin-top:2px">Sign available shinobi before the season opens.</div>
           </div>
           <button class="gb" onclick="sp('transfers')">Open Market ►</button>
         </div>
@@ -214,13 +284,23 @@ function _offSeasonBlock() {
       <div style="border:1px solid #3a3630;padding:10px;background:#111">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-size:10px;color:#e8e0cc;font-weight:bold">Contract Renewals</div>
-            <div style="font-size:8px;color:#7a7060;margin-top:2px">Review and renew contracts before the season starts.</div>
+            <div style="font-size:10px;color:#e8e0cc;font-weight:bold">📋 Contract Renewals</div>
+            <div style="font-size:8px;color:#7a7060;margin-top:2px">Review salaries and renew contracts now.</div>
           </div>
           <button class="gb" onclick="sp('roster')">Open Roster ►</button>
         </div>
       </div>
+      <div style="border:1px solid #3a3630;padding:10px;background:#111">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:10px;color:#e8e0cc;font-weight:bold">🌍 Diplomacy</div>
+            <div style="font-size:8px;color:#7a7060;margin-top:2px">Negotiate trade routes and village relations during the quiet season.</div>
+          </div>
+          <button class="gb" onclick="sp('diplomacy')">Open ►</button>
+        </div>
+      </div>
     </div>
+    ${dSection}
   </div>`
 }
 
@@ -509,8 +589,9 @@ export function rMissionLog() {
             </div>
             <div style="font-size:7px;color:var(--text-dim)">${e.year} Y${e.month}</div>
           </div>
-          <div style="display:flex;gap:10px;margin-bottom:3px">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:3px;flex-wrap:wrap">
             <span style="font-size:8px;color:${statusColor}">${e.success ? '✓ Success' : '✗ Failed'}</span>
+            ${(() => { const q=e.quality; if(!q||q==='narrow'&&e.success)return ''; const qc={decisive:'#c9a84c',narrow:'#f0a030',costly:'#f88',disaster:'#f44'}; const ql={decisive:'⚔ Decisive',narrow:'⚡ Narrow',costly:'💸 Costly',disaster:'💥 Disaster'}; return `<span style="font-size:7px;padding:1px 5px;border:1px solid ${qc[q]||'#888'};color:${qc[q]||'#888'};border-radius:2px">${ql[q]||q}</span>` })()}
             ${e.success ? `<span style="font-size:8px;color:var(--gold)">+${e.ryo.toLocaleString()} ryo</span>` : ''}
             ${e.success ? `<span style="font-size:8px;color:var(--text-dim)">+${e.rep} rep</span>` : ''}
           </div>

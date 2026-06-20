@@ -226,6 +226,8 @@ function _renderRosDetail(id) {
         <span style="color:#7a7060">Pwr <b style="color:#e8e0cc">${pw}</b></span>
         <span style="color:#7a7060">Salary <b style="color:#f66">${fmt(s.salary)}</b></span>
         <span style="color:#7a7060">Wins <b style="color:#e8e0cc">${s.wins||0}</b></span>
+        ${(() => { const total = (s.wins||0) + (s.losses||0); const pct = total > 0 ? Math.round((s.wins||0)/total*100) : null; return pct !== null ? `<span style="color:#7a7060">Win% <b style="color:${pct>=70?'#8fbc8f':pct>=50?'#e8e0cc':'#f88'}">${pct}%</b></span>` : '' })()}
+        ${(s.winsS||0) > 0 ? `<span style="font-size:7px;color:#c9a84c">★ ${s.winsS} S-rank</span>` : ''}
         ${sq ? `<span style="color:#7a7060">Squad <b style="color:#87ceeb">${sq.n}</b></span>` : ''}
       </div>
       <div style="display:flex;gap:5px;flex-wrap:wrap">
