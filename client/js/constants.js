@@ -20,7 +20,103 @@ export const VILLAGES_DEF=[{n:'Kazegakure',ico:'🌵',rel:50,str:70,kage:'Sabaku
 export const TRADE_ROUTES=[{id:'iron',n:'Iron Country Trade Route',desc:'Export weapons-grade steel.',cost:8000,income:2500,active:false},{id:'herbs',n:'Medicinal Herb Caravan',desc:'Export rare herbs to hospitals.',cost:5000,income:1500,active:false},{id:'silk',n:'Silk Road Partnership',desc:'Facilitate luxury goods.',cost:12000,income:3500,active:false},{id:'intel_t',n:'Intelligence Brokerage',desc:'Sell non-critical intel. Requires intel network.',cost:6000,income:2000,active:false,req:'intel'},{id:'jk_tour',n:'Vessel Demonstration',desc:'Show off vessel power to daimyo. Requires a vessel.',cost:0,income:5000,active:false,req:'jk'}]
 export const CONTRACTS=[{id:'vip',n:'VIP Escort Contract',desc:'Escort the daimyo family monthly.',cost:3000,income:4000,active:false},{id:'border',n:'Border Guard Contract',desc:'Patrol the northern border.',cost:5000,income:5500,active:false},{id:'train',n:'Train Daimyo Samurai',desc:'Monthly training sessions.',cost:2000,income:3200,active:false}]
 export const BLACK_MARKET=[{id:'smuggle',n:'Smuggling Ring Cut',desc:'Take a cut from smugglers.',ryoGain:8000,repLoss:5,risk:0.15},{id:'scroll',n:'Sell Forbidden Scroll',desc:'A collector wants a forbidden jutsu scroll.',ryoGain:15000,repLoss:12,risk:0.25},{id:'hit',n:'Anonymous Assassination',desc:'A shadowy client wants a target eliminated.',ryoGain:12000,repLoss:8,risk:0.20},{id:'intel',n:'Sell Intel to Enemy',desc:'Pass information for cash.',ryoGain:10000,repLoss:15,risk:0.30}]
-export const MISS_POOL=[{n:'Escort merchant caravan',rk:'D',ryo:800,rep:1,dur:1,risk:0.05,mp:10,sq:false},{n:'Retrieve missing cat',rk:'D',ryo:500,rep:1,dur:1,risk:0.02,mp:10,sq:false},{n:'Garden work for daimyo',rk:'D',ryo:600,rep:1,dur:1,risk:0.01,mp:10,sq:false},{n:'Deliver confidential letter',rk:'D',ryo:700,rep:1,dur:1,risk:0.03,mp:10,sq:false},{n:'Bodyguard through bandit pass',rk:'C',ryo:2200,rep:3,dur:2,risk:0.12,mp:35,sq:false},{n:'Intercept rogue nin',rk:'C',ryo:2800,rep:4,dur:2,risk:0.18,mp:40,sq:false},{n:'Recon border territory',rk:'B',ryo:5000,rep:7,dur:2,risk:0.25,mp:55,sq:false},{n:'Assassinate crime lord',rk:'B',ryo:6000,rep:8,dur:3,risk:0.30,mp:60,sq:false},{n:'Retrieve stolen clan scroll',rk:'A',ryo:10000,rep:15,dur:3,risk:0.35,mp:80,sq:false},{n:'Infiltrate enemy village',rk:'A',ryo:12000,rep:18,dur:3,risk:0.40,mp:85,sq:false},{n:'Protect Five-Village Summit',rk:'S',ryo:25000,rep:40,dur:2,risk:0.45,mp:120,sq:false},{n:'Clear Bandit Stronghold',rk:'B',ryo:9000,rep:10,dur:2,risk:0.20,mp:150,sq:true},{n:'Escort VIP through war zone',rk:'A',ryo:16000,rep:20,dur:3,risk:0.30,mp:180,sq:true},{n:'Destroy rogue nin hideout',rk:'A',ryo:18000,rep:25,dur:3,risk:0.35,mp:200,sq:true},{n:'Capture enemy commander',rk:'S',ryo:30000,rep:50,dur:3,risk:0.45,mp:250,sq:true}]
+// spec values: 'stealth'|'combat'|'intel'|'escort'|'siege'|'recovery'
+// roleTag → spec affinity: lone_wolf→stealth, enforcer→combat, tactician→intel,
+//   playmaker/anchor→escort, grinder→siege, anchor→recovery
+export const MISS_POOL=[
+  // ── D-rank: civilian contracts ───────────────────────────────────────────
+  {n:'Escort merchant caravan',        rk:'D',ryo:800, rep:1,dur:1,risk:0.05,mp:10, sq:false,spec:'escort'},
+  {n:'Retrieve missing cat',           rk:'D',ryo:500, rep:1,dur:1,risk:0.02,mp:10, sq:false,spec:'intel'},
+  {n:'Garden work for daimyo',         rk:'D',ryo:600, rep:1,dur:1,risk:0.01,mp:10, sq:false,spec:null},
+  {n:'Deliver confidential letter',    rk:'D',ryo:700, rep:1,dur:1,risk:0.03,mp:10, sq:false,spec:'stealth'},
+  {n:'Locate lost child',              rk:'D',ryo:550, rep:1,dur:1,risk:0.02,mp:10, sq:false,spec:'intel'},
+  {n:'Patrol village outskirts',       rk:'D',ryo:650, rep:1,dur:1,risk:0.04,mp:10, sq:false,spec:'combat'},
+  {n:"Babysit a feudal lord's heir",   rk:'D',ryo:750, rep:1,dur:1,risk:0.01,mp:10, sq:false,spec:'escort'},
+  {n:'Exterminate pest nest',          rk:'D',ryo:600, rep:1,dur:1,risk:0.03,mp:10, sq:false,spec:'combat'},
+  {n:'Mediate a merchant dispute',     rk:'D',ryo:700, rep:2,dur:1,risk:0.02,mp:10, sq:false,spec:null},
+  {n:'Deliver supplies to outpost',    rk:'D',ryo:800, rep:1,dur:1,risk:0.05,mp:10, sq:false,spec:'escort'},
+  // ── C-rank: light field work ─────────────────────────────────────────────
+  {n:'Bodyguard through bandit pass',  rk:'C',ryo:2200,rep:3,dur:2,risk:0.12,mp:35, sq:false,spec:'escort'},
+  {n:'Intercept rogue nin',            rk:'C',ryo:2800,rep:4,dur:2,risk:0.18,mp:40, sq:false,spec:'combat'},
+  {n:'Recover stolen shipment',        rk:'C',ryo:2400,rep:3,dur:1,risk:0.14,mp:35, sq:false,spec:'intel'},
+  {n:'Locate missing courier',         rk:'C',ryo:2000,rep:3,dur:1,risk:0.10,mp:30, sq:false,spec:'intel'},
+  {n:'Escort chunin exam delegates',   rk:'C',ryo:2600,rep:4,dur:2,risk:0.15,mp:38, sq:false,spec:'escort'},
+  {n:'Disrupt bandit supply line',     rk:'C',ryo:3000,rep:4,dur:2,risk:0.20,mp:42, sq:false,spec:'siege'},
+  {n:'Guard a border checkpoint',      rk:'C',ryo:2300,rep:3,dur:1,risk:0.12,mp:35, sq:false,spec:'combat'},
+  {n:'Extract a defecting civilian',   rk:'C',ryo:2900,rep:5,dur:2,risk:0.18,mp:40, sq:false,spec:'recovery'},
+  // ── B-rank: mid-tier ops ─────────────────────────────────────────────────
+  {n:'Recon border territory',         rk:'B',ryo:5000,rep:7, dur:2,risk:0.25,mp:55, sq:false,spec:'intel'},
+  {n:'Assassinate crime lord',         rk:'B',ryo:6000,rep:8, dur:3,risk:0.30,mp:60, sq:false,spec:'stealth'},
+  {n:'Sabotage enemy supply depot',    rk:'B',ryo:5500,rep:7, dur:2,risk:0.28,mp:58, sq:false,spec:'stealth'},
+  {n:'Extract double agent',           rk:'B',ryo:6500,rep:9, dur:3,risk:0.32,mp:62, sq:false,spec:'recovery'},
+  {n:'Neutralise missing-nin cell',    rk:'B',ryo:5800,rep:8, dur:2,risk:0.27,mp:57, sq:false,spec:'combat'},
+  {n:'Steal enemy formation scroll',   rk:'B',ryo:6200,rep:9, dur:3,risk:0.30,mp:60, sq:false,spec:'stealth'},
+  {n:'Locate hidden weapon cache',     rk:'B',ryo:5200,rep:7, dur:2,risk:0.25,mp:55, sq:false,spec:'intel'},
+  {n:'Capture rogue jonin informant',  rk:'B',ryo:6800,rep:10,dur:3,risk:0.33,mp:65, sq:false,spec:'intel'},
+  // ── A-rank: high-stakes solo ─────────────────────────────────────────────
+  {n:'Retrieve stolen clan scroll',    rk:'A',ryo:10000,rep:15,dur:3,risk:0.35,mp:80, sq:false,spec:'stealth'},
+  {n:'Infiltrate enemy village',       rk:'A',ryo:12000,rep:18,dur:3,risk:0.40,mp:85, sq:false,spec:'stealth'},
+  {n:'Eliminate enemy jonin handler',  rk:'A',ryo:11000,rep:16,dur:3,risk:0.38,mp:82, sq:false,spec:'combat'},
+  {n:'Recover jinchuriki intel',       rk:'A',ryo:13000,rep:20,dur:3,risk:0.42,mp:88, sq:false,spec:'intel'},
+  {n:'Breach enemy intel network',     rk:'A',ryo:11500,rep:17,dur:3,risk:0.38,mp:84, sq:false,spec:'intel'},
+  {n:'Rescue captured ANBU agent',     rk:'A',ryo:12500,rep:19,dur:3,risk:0.42,mp:86, sq:false,spec:'recovery'},
+  // ── S-rank: nation-altering solo ─────────────────────────────────────────
+  {n:'Protect Five-Village Summit',    rk:'S',ryo:25000,rep:40,dur:2,risk:0.45,mp:120,sq:false,spec:'escort'},
+  {n:'Assassinate rival kage advisor', rk:'S',ryo:28000,rep:45,dur:3,risk:0.50,mp:130,sq:false,spec:'stealth'},
+  {n:'Retrieve tailed beast scroll',   rk:'S',ryo:30000,rep:50,dur:3,risk:0.52,mp:135,sq:false,spec:'intel'},
+  {n:'Uncover Akatsuki movements',     rk:'S',ryo:27000,rep:42,dur:3,risk:0.48,mp:125,sq:false,spec:'intel'},
+  // ── B-rank squad ops ─────────────────────────────────────────────────────
+  {n:'Clear bandit stronghold',        rk:'B',ryo:9000, rep:10,dur:2,risk:0.20,mp:150,sq:true, spec:'siege'},
+  {n:'Secure collapsed mine rescue',   rk:'B',ryo:8000, rep:9, dur:2,risk:0.18,mp:140,sq:true, spec:'recovery'},
+  {n:'Suppress rogue clan uprising',   rk:'B',ryo:9500, rep:11,dur:2,risk:0.22,mp:155,sq:true, spec:'combat'},
+  {n:'Fortify remote outpost',         rk:'B',ryo:7500, rep:8, dur:1,risk:0.15,mp:135,sq:true, spec:'siege'},
+  {n:'Neutralise missing-nin squad',   rk:'B',ryo:8500, rep:10,dur:2,risk:0.20,mp:145,sq:true, spec:'combat'},
+  // ── A-rank squad ops ─────────────────────────────────────────────────────
+  {n:'Escort VIP through war zone',    rk:'A',ryo:16000,rep:20,dur:3,risk:0.30,mp:180,sq:true, spec:'escort'},
+  {n:'Destroy rogue nin hideout',      rk:'A',ryo:18000,rep:25,dur:3,risk:0.35,mp:200,sq:true, spec:'siege'},
+  {n:'Capture enemy commander',        rk:'A',ryo:17000,rep:22,dur:3,risk:0.32,mp:190,sq:true, spec:'combat'},
+  {n:'Raid enemy border fortress',     rk:'A',ryo:19000,rep:28,dur:3,risk:0.38,mp:210,sq:true, spec:'siege'},
+  {n:'Ambush rival supply convoy',     rk:'A',ryo:15000,rep:18,dur:2,risk:0.28,mp:175,sq:true, spec:'stealth'},
+  {n:'Extract clan elders under fire', rk:'A',ryo:17500,rep:24,dur:3,risk:0.34,mp:195,sq:true, spec:'recovery'},
+  // ── S-rank squad ops ─────────────────────────────────────────────────────
+  {n:'Siege enemy ANBU safehouse',     rk:'S',ryo:30000,rep:50,dur:3,risk:0.45,mp:250,sq:true, spec:'siege'},
+  {n:'Intercept tailed beast convoy',  rk:'S',ryo:35000,rep:60,dur:3,risk:0.50,mp:280,sq:true, spec:'combat'},
+  {n:'Assault enemy kage compound',    rk:'S',ryo:32000,rep:55,dur:3,risk:0.48,mp:265,sq:true, spec:'siege'},
+]
+
+// Seasonal missions injected by rfM() when G.month matches.
+// months: array of month numbers (1–12); crisis: true = short expiry crisis op
+export const SEASONAL_MISSIONS=[
+  // Winter (1–2): border pressure, supply runs
+  {n:'Emergency supply convoy through blizzard', rk:'B',ryo:7000,rep:9, dur:2,risk:0.30,mp:58, sq:false,spec:'escort',  months:[1,2]},
+  {n:'Frozen border patrol',                     rk:'C',ryo:2500,rep:3, dur:1,risk:0.15,mp:36, sq:false,spec:'combat',  months:[1,2]},
+  {n:'Rogue nin exploit winter cover',           rk:'B',ryo:5500,rep:8, dur:2,risk:0.28,mp:56, sq:false,spec:'intel',   months:[1,2]},
+  // Spring (3–5): festival season, political events
+  {n:'Guard daimyo cherry-blossom procession',   rk:'C',ryo:3000,rep:5, dur:1,risk:0.10,mp:35, sq:false,spec:'escort',  months:[3,4,5]},
+  {n:'Intercept summit saboteur',                rk:'A',ryo:11000,rep:17,dur:2,risk:0.36,mp:82, sq:false,spec:'stealth', months:[4,5]},
+  {n:'Spring intel sweep — border villages',     rk:'B',ryo:5200,rep:7, dur:2,risk:0.24,mp:54, sq:false,spec:'intel',   months:[3,4,5]},
+  // Summer (6–8): monsoon disruption, rival aggression
+  {n:'Monsoon relief escort to flooded town',    rk:'C',ryo:2800,rep:5, dur:1,risk:0.12,mp:34, sq:false,spec:'escort',  months:[7]},
+  {n:'Rival village border incursion',           rk:'A',ryo:12500,rep:20,dur:3,risk:0.42,mp:86, sq:false,spec:'combat',  months:[6,7,8]},
+  {n:'Disrupt rival harvest raids',              rk:'B',ryo:6000,rep:8, dur:2,risk:0.27,mp:58, sq:false,spec:'siege',   months:[8]},
+  // Autumn (9–11): war season intel, caravan raids
+  {n:'Autumn war-season recon sweep',            rk:'B',ryo:5500,rep:8, dur:2,risk:0.27,mp:57, sq:false,spec:'intel',   months:[9,10]},
+  {n:'Protect harvest caravan from bandits',     rk:'C',ryo:2600,rep:4, dur:1,risk:0.14,mp:36, sq:false,spec:'escort',  months:[9,10,11]},
+  {n:'Eliminate pre-war saboteur cell',          rk:'A',ryo:12000,rep:19,dur:3,risk:0.40,mp:85, sq:false,spec:'stealth', months:[10,11]},
+  // Winter (12): year-end, high-tension
+  {n:'Year-end summit security detail',          rk:'A',ryo:13500,rep:22,dur:2,risk:0.38,mp:84, sq:false,spec:'escort',  months:[12]},
+  {n:'Intercept rogue-nin year-end strike',      rk:'S',ryo:26000,rep:42,dur:2,risk:0.46,mp:122,sq:false,spec:'combat',  months:[12]},
+]
+
+// Crisis ops: high-reward, 1-month window, injected at 15%/month chance
+export const CRISIS_MISSION_POOL=[
+  {n:'URGENT: Kidnapped daimyo aide',       rk:'A',ryo:16000,rep:25,dur:1,risk:0.44,mp:88, sq:false,spec:'recovery'},
+  {n:'URGENT: Rogue ANBU gone dark',        rk:'S',ryo:32000,rep:55,dur:1,risk:0.52,mp:130,sq:false,spec:'combat'},
+  {n:'URGENT: Intel leak — plug it now',    rk:'B',ryo:9000, rep:12,dur:1,risk:0.35,mp:65, sq:false,spec:'stealth'},
+  {n:'URGENT: Border post under siege',     rk:'A',ryo:14000,rep:20,dur:1,risk:0.42,mp:210,sq:true, spec:'siege'},
+  {n:'URGENT: Missing scroll — village intel compromised', rk:'B',ryo:8500,rep:11,dur:1,risk:0.33,mp:62,sq:false,spec:'intel'},
+  {n:'URGENT: Civilian hostage situation',  rk:'C',ryo:4500, rep:7, dur:1,risk:0.25,mp:40, sq:false,spec:'recovery'},
+]
 export const UPGRADES_DEF=[{id:'academy',n:'Academy',levels:['Basic','Improved (better prospects)','Elite (Jonin prospects)'],cost:[0,15000,40000]},{id:'hospital',n:'Field Hospital',levels:['None','Basic (-1 injury month)','Advanced (-2 months, KIA shield)'],cost:[0,12000,30000]},{id:'wall',n:'Village Walls',levels:['Palisade','Stone Wall (+15 def)','Ramparts (+35 def)'],cost:[0,20000,50000]},{id:'intel',n:'Intel Network',levels:['None','Informants (+5% success)','ANBU Net (+10%, early raid warning)'],cost:[0,18000,45000]},{id:'training',n:'Training Grounds',levels:['Open Field','Dedicated (2x growth)','Restricted (3x growth)'],cost:[0,10000,25000]},{id:'seal',n:'Barrier Seal',levels:['None','Basic (+10 def)','Full Array (+25 def)'],cost:[0,22000,55000]}]
 export const RAID_POOL=[{n:'Bandit Army',str:40,desc:'Rogue chunin leads bandits.',ryo:5000,rep:5},{n:'Rival Incursion',str:70,desc:'Enemy shinobi probe borders.',ryo:12000,rep:15},{n:'Missing-Nin Cell',str:55,desc:'S-rank missing-nin attack.',ryo:8000,rep:10},{n:'Tailed Beast Rampage',str:90,desc:'Uncontrolled beast approaches.',ryo:20000,rep:25},{n:'Enemy ANBU Squad',str:65,desc:'Elite infiltrators detected.',ryo:10000,rep:12}]
 export const VILLAGE_ICONS=['🍃','🌵','🌊','🪨','⚡','🌙','🔥','💨','🌸','❄️']

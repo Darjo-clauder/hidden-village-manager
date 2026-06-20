@@ -1,6 +1,6 @@
 import {
   CLANS, RANKS, FNAMES, LNAMES, SPECS, PERSONALITIES, BACKSTORIES, ARCHETYPES,
-  TAILED_BEASTS, VILLAGES_DEF, MISS_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
+  TAILED_BEASTS, VILLAGES_DEF, MISS_POOL, SEASONAL_MISSIONS, CRISIS_MISSION_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
   REGIONS, PM_DESC, REGION_EVENTS, DEV_CURVES, AGENT_AGENDAS,
 } from './constants.js'
 import { ARCHETYPE_POOL } from '../../shared/utils/personality.js'
@@ -309,8 +309,8 @@ export function initState() {
     narrativeThreads: [],            // [{ id, type, title, actorIds, events, state, priority, ... }]
     mentorships: [],                 // [{ id, mentorId, studentId, startYear, startMonth, months, bonusApplied }]
   });
-  // Starting roster — a workable core of ~15 (grows toward 23 via academy/transfers).
-  ;[3, 2, 2, 2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0].forEach(r => {
+  // Starting roster — ~22 ninja; enough for 3 squads + bench + depth-chart decisions from day 1.
+  ;[3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0].forEach(r => {
     const s = mS(r)
     s.contractEnd = 1 + Math.floor(Math.random() * 3) + 1  // year 2–4
     G.shinobi.push(s)
@@ -761,15 +761,111 @@ export function schEx() {
 }
 
 export function rfM() {
-  const s = MISS_POOL.filter(m => !m.sq).sort(() => Math.random() - 0.5).slice(0, 7)
-  const sq = MISS_POOL.filter(m => m.sq).sort(() => Math.random() - 0.5).slice(0, 4)
-  const expiryBase = (G.month || 1) + 3
-  G.avM = [...s, ...sq].map(m => ({
-    ...m,
+  const active   = (G.shinobi || []).filter(s => s.status !== 'retired').length
+  const sqCount  = (G.squads  || []).length
+  const month    = G.month || 1
+
+  // Solo slots ≈ half the active roster (min 7, max 18)
+  const soloSlots  = clamp(Math.floor(active / 2), 7, 18)
+  // Squad slots = number of squads + 2 options, min 3
+  const squadSlots = clamp(sqCount + 2, 3, 8)
+
+  const expiryBase = month + 3
+  const mkEntry = (m, overrides = {}) => ({
+    ...m, ...overrides,
     id: Math.random().toString(36).slice(2),
-    expiresMonth: expiryBase,   // month number; missions >3 months old are removed
+    expiresMonth: overrides.expiresMonth ?? expiryBase,
     addedYear: G.year || 1,
-  }))
+  })
+
+  // ── Partial rotation: keep assigned missions, rotate ~40% of the rest ────
+  const assigned = new Set((G.aM || []).map(a => a.missionId))
+  const kept = (G.avM || []).filter(m => {
+    if (m.isCrisis) return false                 // crisis ops never carry over
+    if (assigned.has(m.id)) return true
+    return Math.random() >= 0.40
+  })
+  const keptSolo  = kept.filter(m => !m.sq)
+  const keptSquad = kept.filter(m =>  m.sq)
+
+  // ── Seasonal injections: add missions matching current month ──────────────
+  const seasonalThisMonth = SEASONAL_MISSIONS
+    .filter(m => m.months.includes(month) && !keptSolo.some(k => k.n === m.n))
+    .map(m => mkEntry(m))
+
+  // ── Crisis op: 15% chance per tick, max 1 on the board at a time ─────────
+  const hasCrisis = (G.avM || []).some(m => m.isCrisis)
+  const crisisEntries = []
+  if (!hasCrisis && Math.random() < 0.15) {
+    const pool = CRISIS_MISSION_POOL.filter(m => !keptSolo.some(k => k.n === m.n))
+    if (pool.length) {
+      const pick = pool[Math.floor(Math.random() * pool.length)]
+      crisisEntries.push(mkEntry(pick, { isCrisis: true, expiresMonth: month + 1 }))
+    }
+  }
+
+  // ── Fill remaining solo slots from base pool ──────────────────────────────
+  const usedNames = new Set([
+    ...keptSolo.map(m => m.n),
+    ...seasonalThisMonth.map(m => m.n),
+    ...crisisEntries.map(m => m.n),
+  ])
+  const freshSolo = MISS_POOL
+    .filter(m => !m.sq && !usedNames.has(m.n))
+    .sort(() => Math.random() - 0.5)
+    .slice(0, Math.max(0, soloSlots - keptSolo.length - seasonalThisMonth.length - crisisEntries.length))
+    .map(mkEntry)
+
+  // ── Fill squad slots ──────────────────────────────────────────────────────
+  const usedSqNames = new Set(keptSquad.map(m => m.n))
+  const freshSquad = MISS_POOL
+    .filter(m => m.sq && !usedSqNames.has(m.n))
+    .sort(() => Math.random() - 0.5)
+    .slice(0, Math.max(0, squadSlots - keptSquad.length))
+    .map(mkEntry)
+
+  // ── Sort board S→A→B→C→D; crisis always first ────────────────────────────
+  const RK_ORDER = { S:0, A:1, B:2, C:3, D:4 }
+  const sort = arr => arr.slice().sort((a, b) => {
+    if (a.isCrisis !== b.isCrisis) return a.isCrisis ? -1 : 1
+    if (a.seasonal !== b.seasonal) return a.seasonal ? -1 : 1
+    return (RK_ORDER[a.rk] ?? 5) - (RK_ORDER[b.rk] ?? 5)
+  })
+
+  G.avM = [
+    ...sort([...keptSolo, ...crisisEntries, ...seasonalThisMonth.map(m => ({...m, seasonal:true})), ...freshSolo]),
+    ...sort([...keptSquad, ...freshSquad]),
+  ]
+}
+
+// Map roleTag/archetype to spec affinity for specialization bonus.
+const SPEC_AFFINITY = {
+  lone_wolf:  ['stealth'],
+  enforcer:   ['combat', 'siege'],
+  tactician:  ['intel'],
+  playmaker:  ['escort', 'recovery'],
+  grinder:    ['siege', 'combat'],
+  anchor:     ['escort', 'recovery'],
+}
+const ARCHETYPE_SPEC = {
+  'Rogue Element': 'stealth',  'Avenger': 'combat',   'Prodigy': 'intel',
+  'Sage Path':     'intel',    'Medic Path': 'recovery', 'Gentle Fist': 'recovery',
+  'Wild Card':     'combat',   'Will of Fire': 'escort', 'Clan Heir': 'escort',
+}
+
+/**
+ * Returns +0.05 if the shinobi's roleTag or archetype matches the mission spec, else 0.
+ * @param {object} s  shinobi
+ * @param {object} m  mission
+ * @returns {number}
+ */
+export function getMissionSpecBonus(s, m) {
+  if (!m.spec) return 0
+  const tag  = s.roleTag
+  const arch = s.narrativeArchetype
+  if (tag  && (SPEC_AFFINITY[tag] || []).includes(m.spec)) return 0.05
+  if (arch && ARCHETYPE_SPEC[arch] === m.spec)             return 0.05
+  return 0
 }
 
 export function rfP() {

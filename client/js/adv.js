@@ -1,4 +1,4 @@
-import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice, computeMarketValue, mS, genVillageRoster } from './state.js'
+import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice, computeMarketValue, mS, genVillageRoster, getMissionSpecBonus } from './state.js'
 import { RANKS, RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS, EXAM_FORMATS, LEGACY_DECISIONS, PRESTIGE_TIERS } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
 import { tickBeast, applyBeastPairEffects, getBeastPassives, BEAST_DATA, getSyncStage, captureChance } from './beastEngine.js'
@@ -1145,7 +1145,7 @@ export function adv() {
   // ── Auto-sign floor — world stays alive without player recruitment ────────
   {
     const activeRoster = G.shinobi.filter(s => s.status !== 'retired').length
-    if (activeRoster < 6 && G.prospects.length > 0) {
+    if (activeRoster < 14 && G.prospects.length > 0) {
       const best = G.prospects.reduce((a, b) => (b.potential || 0) > (a.potential || 0) ? b : a)
       best.status = 'available'
       if (best.academyOrigin) { best.homegrown = true; best.salary = Math.round(best.salary * 0.85) }
@@ -1448,7 +1448,7 @@ export function adv() {
       const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
       const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
       const bMB = bondMissionBonus(s, G.shinobi)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0) + fatiguePenalty(s), 0.08, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0) + fatiguePenalty(s) + getMissionSpecBonus(s, m), 0.08, successCeiling(m.rk))
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)
@@ -1528,7 +1528,34 @@ export function adv() {
         }
         updateConfidence(s, _mev.quality)
         addMemory(s, 'mission_disaster', m.id || m.n, { year: G.year, month: G.month })
-        if (_mev.quality === 'disaster') setEmotionalState(s, 'fearful')
+        if (_mev.quality === 'disaster') {
+          setEmotionalState(s, 'fearful')
+          // Aftermath inbox item — gives the player narrative context on the failure
+          G.narrativeInbox.push({
+            id: Math.random().toString(36).slice(2),
+            title: 'Debrief: ' + m.n,
+            body: sn(s) + ' returned from "' + m.n + '" with nothing to show. ' +
+              (m.rk === 'S' ? 'The Daimyo will want answers.' : m.rk === 'A' ? 'The village felt the setback.' : 'Morale has taken a hit.'),
+            tag: 'mission', link: 'missions', priority: 2,
+            year: G.year, month: G.month, actorIds: [s.id],
+          })
+        }
+        // Costly result: 30% chance a follow-up recovery op appears on the board
+        if (_mev.quality === 'costly' && !m.isFollowUp && Math.random() < 0.30) {
+          G.avM.push({
+            ...m,
+            id: Math.random().toString(36).slice(2),
+            n: '[Recovery] ' + m.n,
+            ryo: Math.round(m.ryo * 0.55),
+            rep: Math.max(1, Math.ceil(m.rep / 2)),
+            risk: Math.max(0.05, m.risk - 0.08),
+            dur: Math.max(1, m.dur - 1),
+            expiresMonth: (G.month || 1) + 2,
+            addedYear: G.year || 1,
+            isFollowUp: true,
+          })
+          aL('A recovery op appeared — the mission can still be salvaged.', 'neutral')
+        }
         recordPlayerTactic(G.rivalTendencies, m.rk, _mev.quality, false)
         G.villages.forEach(v => observePlayerTactic(v, m.rk, false))
         pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, chainName: m.chainName || null, quality: _mev.quality })
@@ -2191,7 +2218,7 @@ export function adv() {
     // Draft pick bonus: pick #1 gets full class, last pick gets slightly smaller class and lower base quality
     const _draftPick = G._draftPlayerPick || 3
     const _pickBonus = Math.max(0, (3 - _draftPick) * 0.08)  // #1 pick = +16%, #2 = +8%, #3+ = 0
-    const classSize = rnd(8, 12) + Math.floor(acLv * 1.5)
+    const classSize = rnd(14, 20) + Math.floor(acLv * 2)
     const prodigyIdx = Math.random() < (0.01 + _pickBonus * 0.5) * classSize ? rnd(0, classSize - 1) : -1
     for (let i = 0; i < classSize; i++) {
       const student = genStudent(acLv + (_pickBonus > 0 ? 1 : 0), hsRating)
@@ -2213,18 +2240,20 @@ export function adv() {
     G.lastMidIntakeYear = G.year
     if (!G.intakeClass) G.intakeClass = []
     const acLv = G.upgrades.academy || 0
-    const walkInCount = rnd(2, 4)
+    const walkInCount = rnd(5, 9)
     for (let i = 0; i < walkInCount; i++) G.intakeClass.push(genStudent(acLv, 0))
     aL(walkInCount + ' transfer students arrived mid-year.', 'neutral')
   }
 
   // ── Minimum prospect pool guarantee ──────────────────────────────────────
-  if (G.prospects.length < 3 && G.month % 3 === 0) {
+  if (G.prospects.length < 6 && G.month % 2 === 0) {
     const acLv = G.upgrades.academy || 0
-    const walkIn = genStudent(acLv, 0)
-    walkIn.status = 'prospect'
-    G.prospects.push(walkIn)
-    aL(sn(walkIn) + ' arrived at the village gates looking for a path.', 'neutral')
+    for (let _wi = 0; _wi < 2; _wi++) {
+      const walkIn = genStudent(acLv, 0)
+      walkIn.status = 'prospect'
+      G.prospects.push(walkIn)
+      aL(sn(walkIn) + ' arrived at the village gates looking for a path.', 'neutral')
+    }
   }
 
   // ── Youth academy development tick ────────────────────────────────────────

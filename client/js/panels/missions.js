@@ -1,4 +1,4 @@
-import { G, ui, sPow, sqP, sn, fmt, clamp } from '../state.js'
+import { G, ui, sPow, sqP, sn, fmt, clamp, getMissionSpecBonus } from '../state.js'
 import { RANKS, RKC } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { pCl } from './roster.js'
@@ -110,18 +110,40 @@ function _chainBadge(m) {
 
 export function rSoloM() {
   const el = document.getElementById('ms-solo'), av = G.shinobi.filter(s => s.status === 'available')
-  if (G.isOffSeason) {
-    el.innerHTML = _offSeasonBlock()
-    return
-  }
-  el.innerHTML = G.avM.filter(m => !m.sq).map(m => {
-    const rc = 'mr-' + m.rk.toLowerCase(), aM = G.aM.find(a => a.missionId === m.id && !a.isSquad)
-    return `<div class="mc">
+  if (G.isOffSeason) { el.innerHTML = _offSeasonBlock(); return }
+
+  const solo    = G.avM.filter(m => !m.sq)
+  const main    = solo.filter(m => m.rk !== 'D')
+  const civilian = solo.filter(m => m.rk === 'D')
+  const idle    = av.length - (G.aM || []).filter(a => !a.isSquad && !a.isScout).length
+
+  const SPEC_LABEL = { stealth:'Stealth', combat:'Combat', intel:'Intel', escort:'Escort', siege:'Siege', recovery:'Recovery' }
+  const _mCard = m => {
+    const rc  = 'mr-' + m.rk.toLowerCase()
+    const aM  = G.aM.find(a => a.missionId === m.id && !a.isSquad)
+    // Tags row
+    const crisisTag   = m.isCrisis   ? `<span style="font-size:6px;padding:1px 4px;border:1px solid #f66;color:#f88;border-radius:2px;margin-right:3px">⚠ URGENT</span>` : ''
+    const seasonalTag = m.seasonal   ? `<span style="font-size:6px;padding:1px 4px;border:1px solid #c9a84c;color:#e8c86a;border-radius:2px;margin-right:3px">Seasonal</span>` : ''
+    const followUpTag = m.isFollowUp ? `<span style="font-size:6px;padding:1px 4px;border:1px solid #9bc;color:#9bc;border-radius:2px;margin-right:3px">Recovery</span>` : ''
+    const specTag     = m.spec       ? `<span style="font-size:6px;padding:1px 4px;border:1px solid #6a8fa0;color:#9bc;border-radius:2px">${SPEC_LABEL[m.spec]}</span>` : ''
+    // Best-fit preview (highest sc eligible shinobi)
+    let bestFitBtn = ''
+    if (!aM && av.length) {
+      const best = av
+        .filter(s => sPow(s) >= m.mp && !(s.pers.effect.rankFilter && ['D','C'].includes(m.rk)))
+        .sort((a, b) => _previewSc(b, m) - _previewSc(a, m))[0]
+      if (best) {
+        const sc = _previewSc(best, m)
+        const col = sc >= 0.65 ? '#4caf50' : sc >= 0.40 ? '#f0a030' : '#f66'
+        bestFitBtn = `<button class="gb" onclick="doA('${best.id}');oA('${m.id}')" style="background:#1a2a1a;border-color:#4a7a4a;color:#8fbc8f;margin-right:4px" title="Quick-assign ${sn(best)} (${Math.round(sc*100)}%)">★ ${sn(best)} <span style="color:${col}">${Math.round(sc*100)}%</span></button>`
+      }
+    }
+    return `<div class="mc" style="${m.isCrisis ? 'border-left:2px solid #f66;' : m.seasonal ? 'border-left:2px solid #c9a84c;' : ''}">
       <div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:6px">
         <span class="mrb ${rc}">${m.rk}</span>
-        <div>
+        <div style="flex:1">
           <div style="font-size:11px;color:#e8e0cc;font-weight:bold">${m.n}</div>
-          <div style="margin-top:3px">${_expiryBadge(m)}${_chainBadge(m)}</div>
+          <div style="margin-top:3px">${crisisTag}${seasonalTag}${followUpTag}${specTag} ${_expiryBadge(m)}${_chainBadge(m)}</div>
         </div>
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:8px;color:#7a7060;margin-bottom:7px">
@@ -131,9 +153,22 @@ export function rSoloM() {
         <span>Risk: <span style="color:#e8e0cc">${Math.round(m.risk * 100)}%</span></span>
         <span>Min pwr: <span style="color:#e8e0cc">${m.mp}</span></span>
       </div>
-      ${aM ? `<div style="font-size:9px;color:#fa0">⟳ ${sn(G.shinobi.find(s => s.id === aM.assignedTo) || { fn: '?', ln: '' })} — ${aM.daysLeft}m left</div>` : `<button class="gb" onclick="oA('${m.id}')" ${av.length ? '' : 'disabled'}>${av.length ? 'Assign ►' : 'No shinobi'}</button>`}
+      ${aM
+        ? `<div style="font-size:9px;color:#fa0">⟳ ${sn(G.shinobi.find(s => s.id === aM.assignedTo) || {fn:'?',ln:''})} — ${aM.daysLeft}m left</div>`
+        : `<div style="display:flex;gap:4px;flex-wrap:wrap">${bestFitBtn}<button class="gb" onclick="oA('${m.id}')" ${av.length ? '' : 'disabled'}>Assign ►</button></div>`
+      }
     </div>`
-  }).join('')
+  }
+
+  const idleBadge = idle > 0
+    ? `<div style="font-size:8px;color:#fa0;margin-bottom:10px">⚠ ${idle} shinobi idle — assign missions below</div>`
+    : ''
+
+  const civilianSection = civilian.length === 0 ? '' : `
+    <div style="font-size:7px;letter-spacing:2px;color:#3a3630;text-transform:uppercase;margin:14px 0 6px">Civilian Contracts (D-rank)</div>
+    <div style="opacity:0.7">${civilian.map(_mCard).join('')}</div>`
+
+  el.innerHTML = idleBadge + main.map(_mCard).join('') + civilianSection
 }
 
 function _offSeasonBlock() {
@@ -304,15 +339,74 @@ export function rChains() {
   `
 }
 
+// Lightweight preview success-chance used in the assignment picker.
+// Intentionally approximate (full formula is in adv.js); directionally correct for decision-making.
+function _previewSc(s, m) {
+  const pw       = sPow(s)
+  const fatMod   = -(s.fatigue || 0) * 0.004
+  const confMod  = ((s.confidence || 50) - 50) * 0.002
+  const specBonus= getMissionSpecBonus(s, m)
+  const ceiling  = m.rk === 'S' ? 0.82 : m.rk === 'A' ? 0.88 : 0.95
+  return clamp(1 - m.risk + (pw - m.mp) * 0.01 + specBonus + confMod + fatMod, 0.08, ceiling)
+}
+
+function _scBadge(sc) {
+  const pct = Math.round(sc * 100)
+  const col = sc >= 0.65 ? '#4caf50' : sc >= 0.40 ? '#f0a030' : '#f66'
+  return `<span style="font-size:7px;padding:1px 5px;border:1px solid ${col};color:${col};border-radius:2px">${pct}%</span>`
+}
+
+function _fatigueBar(s) {
+  const f = s.fatigue || 0
+  const pct = Math.round(f * 4)   // fatigue 0-25 → 0-100%
+  const col = f <= 8 ? '#4caf50' : f <= 16 ? '#f0a030' : '#f66'
+  return `<span style="font-size:7px;color:${col}">⚡${pct}%</span>`
+}
+
 export function oA(mId) {
   ui.aT = mId
   const m = G.avM.find(x => x.id === mId)
-  document.getElementById('ma-t').textContent = 'Assign to: ' + m.n
+  const SPEC_LABEL = { stealth:'Stealth', combat:'Combat', intel:'Intel', escort:'Escort', siege:'Siege', recovery:'Recovery' }
+  const specTag     = m.spec     ? `<span style="font-size:7px;padding:1px 5px;border:1px solid #6a8fa0;color:#9bc;border-radius:2px">${SPEC_LABEL[m.spec]}</span> ` : ''
+  const crisisTag   = m.isCrisis ? `<span style="font-size:7px;padding:1px 5px;border:1px solid #f66;color:#f88;border-radius:2px">URGENT</span> ` : ''
+  const seasonalTag = m.seasonal ? `<span style="font-size:7px;padding:1px 5px;border:1px solid #c9a84c;color:#e8c86a;border-radius:2px">Seasonal</span> ` : ''
+  document.getElementById('ma-t').innerHTML = crisisTag + seasonalTag + specTag + 'Assign: ' + m.n
   document.getElementById('ma-d').textContent = m.rk + '-Rank · ' + fmt(m.ryo) + ' ryo · Risk ' + Math.round(m.risk * 100) + '% · Min pwr ' + m.mp
+
   const av = G.shinobi.filter(s => s.status === 'available')
-  document.getElementById('ma-l').innerHTML = av.map(s => {
-    const pw = sPow(s), ok = pw >= m.mp, ref = s.pers.effect.rankFilter && ['D', 'C'].includes(m.rk)
-    return `<div class="pi" onclick="${ok && !ref ? `doA('${s.id}')` : ''}" style="${ok && !ref ? '' : 'opacity:0.4;cursor:not-allowed'}"><div><div style="font-size:10px;color:#e8e0cc">${sn(s)} <span class="trait-tag ${pCl(s.pers)}" style="font-size:7px">${s.pers.n}</span></div><div style="font-size:8px;color:#7a7060">${RANKS[s.ri]} · Pwr ${pw}${ref ? ' · Refuses low-rank' : !ok ? ` (need ${m.mp - pw} more)` : ''}</div></div><span style="font-size:8px;color:${ok && !ref ? '#8fbc8f' : '#f66'}">${ok && !ref ? '✓' : '✗'}</span></div>`
+
+  // Compute preview SC for all candidates to find best fit
+  const candidates = av.map(s => {
+    const pw  = sPow(s)
+    const ok  = pw >= m.mp
+    const ref = s.pers.effect.rankFilter && ['D', 'C'].includes(m.rk)
+    const sc  = (!ok || ref) ? null : _previewSc(s, m)
+    const specMatch = m.spec && getMissionSpecBonus(s, m) > 0
+    return { s, pw, ok, ref, sc, specMatch }
+  })
+
+  // Best-fit = highest sc among eligible
+  const bestFitId = candidates
+    .filter(c => c.sc !== null)
+    .sort((a, b) => b.sc - a.sc)[0]?.s.id ?? null
+
+  const bestFitBtn = bestFitId
+    ? `<button onclick="doA('${bestFitId}')" style="width:100%;margin-bottom:10px;background:#1a2a1a;border:1px solid #4a9a4a;color:#8fbc8f;padding:5px;border-radius:3px;cursor:pointer;font-size:8px">★ Best Fit — auto-assign highest chance</button>`
+    : ''
+
+  document.getElementById('ma-l').innerHTML = bestFitBtn + candidates.map(({ s, pw, ok, ref, sc, specMatch }) => {
+    const eligible = ok && !ref
+    const specBadge = specMatch ? `<span style="font-size:6px;color:#9bc;margin-left:3px">▲${m.spec}</span>` : ''
+    return `<div class="pi" onclick="${eligible ? `doA('${s.id}')` : ''}" style="${eligible ? '' : 'opacity:0.4;cursor:not-allowed'}">
+      <div>
+        <div style="font-size:10px;color:#e8e0cc">${sn(s)} <span class="trait-tag ${pCl(s.pers)}" style="font-size:7px">${s.pers.n}</span>${specBadge}</div>
+        <div style="font-size:8px;color:#7a7060">${RANKS[s.ri]} · Pwr ${pw}${ref ? ' · Refuses low-rank' : !ok ? ` (need ${m.mp - pw} more)` : ''} · ${_fatigueBar(s)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+        ${sc !== null ? _scBadge(sc) : '<span style="font-size:8px;color:#f66">✗</span>'}
+        ${eligible && s.id === bestFitId ? '<span style="font-size:6px;color:#8fbc8f">★best</span>' : ''}
+      </div>
+    </div>`
   }).join('') || '<div style="color:#7a7060;font-size:9px">No available shinobi.</div>'
   document.getElementById('ov-assign').classList.add('open')
 }
