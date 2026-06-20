@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-20 · **HEAD:** `015a9a0` · **Branch:** `master` · **Tests:** 604 passing / 49 files
+**Last updated:** 2026-06-20 · **HEAD:** `992ef3a` · **Branch:** `master` · **Tests:** 604 passing / 49 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -76,6 +76,8 @@ REGULAR SEASON  →  PLAYOFFS  →  OFFSEASON
 
 | System | Commit | Files | Notes |
 |---|---|---|---|
+| **Pillar 5 + 6 — Social & Stability** | `992ef3a` | `adv.js`, `panels/inbox.js`, `panels/dashboard.js` | Alumni network (retired shinobi messages), fan/civic events (citizen morale extremes), sponsor inbox bridge. Hard morale floor by tier (D:20→S:60) enforced end-of-tick; rep floor (D:5→S:60) with passive recovery. Social dashboard card. |
+| **Pillar 4 — Live HUD micro-decisions** | `26847b2` | `adv.js`, `main.js`, `panels/roster.js`, `panels/dashboard.js`, `panels/inbox.js` | Fatigue meter (0–100, mission rank-scaled, sc penalty at 40/60/80%), 7 monthly quick-decision events (55%/mo, urgent inbox items), tactics quick-bar on dashboard. |
 | **FHM parity batch — 7 features** | `015a9a0` | `adv.js`, `main.js`, `panels/exam.js`, `panels/inbox.js` | Salary seniority (+5%/yr, +10% on promo), citizen morale (0–100, rev mult 0.7–1.3×), mission complications (30% mid-tick inbox choice, scMod wired), rival GM moves (prospect bids + trade proposals as inbox items), off-season flag months 1–3, LEADERS tab in exam (career/S-rank/veterans/awards), demand escalation (2nd underuse → transfer threat). |
 | **Prospect Pipeline + Press Expansion** | `f95d179` | `pressConference.js`, `adv.js`, `panels/inbox.js`, `panels/academy.js`, `index.html` | Pipeline: Academy tab shows mentor→student cards with progress bar + milestones. Press: 6 tones, 12 questions, callout/emotional/deflect tones, follow-up copy, hydrateQuestion with live names, 4 new triggers. |
 | **Mentorship + Story Threads UI** | `00d57d0` | `shared/utils/mentorship.js`, `adv.js`, `main.js`, `panels/roster.js`, `panels/inbox.js` | Mentorship: Jonin+ mentor→Genin/Chunin student; month 3 memory, month 6 morale, month 12 stat bonus. Inbox: Story Threads tab with state badges, collapsible event history. |
@@ -165,15 +167,12 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 
 ## 7. Next targets
 
-FHM parity batch landed. All 7 gap features at 70%+. Remaining candidates:
+Pillars 4–6 all shipped. Remaining candidates:
 
-1. **Pillar 4 — Live HUD micro-decisions** — shift timers, fatigue meters, tactics quick-bar; replayable events
-2. **Pillar 5 — Social systems** — fan morale, alumni network, shareable highlights
-3. **Rep/morale decay tuning** — see §6
-4. **Hard salary cap by village tier** — ceiling not yet tiered by village level
-5. **Press conference playtest verification** — tones + follow-up render correctly but a live press event needs a win/loss streak in a real session to confirm end-to-end
-6. **Complication resolution UX** — `resolveComplication` exposed + wired; needs a live test with an active mission running
-7. **Trade offer completion** — `resolveRivalOffer` accept path modifies G.shinobi but the rival roster remove is conditional on homeVillage check — verify in a 20yr run
+1. **20-year longevity run** — verify alumni fire after year 15+, civic events at morale extremes, salary seniority compounding, trade offer acceptance path
+2. **Press conference playtest** — needs a win/loss streak; confirm tones + follow-up render end-to-end in a live session
+3. **Complication resolution UX** — wired; confirm scMod actually shifts outcome in a real mission
+4. **Rival trade acceptance path** — `resolveRivalOffer` accept modifies G.shinobi; the roster remove of their ninja is conditional on homeVillage check, verify doesn't leave ghost entries
 
 ---
 
