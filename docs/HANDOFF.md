@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-20 · **HEAD:** `992ef3a` · **Branch:** `master` · **Tests:** 604 passing / 49 files
+**Last updated:** 2026-06-20 · **HEAD:** `7f5b8d0` · **Branch:** `master` · **Tests:** 604 passing / 49 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -76,6 +76,7 @@ REGULAR SEASON  →  PLAYOFFS  →  OFFSEASON
 
 | System | Commit | Files | Notes |
 |---|---|---|---|
+| **Gap closure — phase/grades/rumors/aging** | `7f5b8d0` | `adv.js`, `main.js`, `panels/missions.js`, `panels/roster.js`, `panels/inbox.js` | Off-season gate (months 1–3): missions replaced with Training Camp (8k ryo, fatigue reset + stat boost + morale +5), Free Agent link, Contract Renewals link. `gradeShinobi()` S/A/B/C/D/F from power ratio+streak+fatigue+decline. Grade badge column in roster table; Grade in dossier stats footer. ★ PEAK and ↘ past-peak tags on roster names. Rumor mill 32%/mo → rival intel blurbs in Inbox › Intel (🕵). Quarterly intel report every 3 months → peak-year + grade callouts (📊). |
 | **Pillar 5 + 6 — Social & Stability** | `992ef3a` | `adv.js`, `panels/inbox.js`, `panels/dashboard.js` | Alumni network (retired shinobi messages), fan/civic events (citizen morale extremes), sponsor inbox bridge. Hard morale floor by tier (D:20→S:60) enforced end-of-tick; rep floor (D:5→S:60) with passive recovery. Social dashboard card. |
 | **Pillar 4 — Live HUD micro-decisions** | `26847b2` | `adv.js`, `main.js`, `panels/roster.js`, `panels/dashboard.js`, `panels/inbox.js` | Fatigue meter (0–100, mission rank-scaled, sc penalty at 40/60/80%), 7 monthly quick-decision events (55%/mo, urgent inbox items), tactics quick-bar on dashboard. |
 | **FHM parity batch — 7 features** | `015a9a0` | `adv.js`, `main.js`, `panels/exam.js`, `panels/inbox.js` | Salary seniority (+5%/yr, +10% on promo), citizen morale (0–100, rev mult 0.7–1.3×), mission complications (30% mid-tick inbox choice, scMod wired), rival GM moves (prospect bids + trade proposals as inbox items), off-season flag months 1–3, LEADERS tab in exam (career/S-rank/veterans/awards), demand escalation (2nd underuse → transfer threat). |
@@ -167,12 +168,13 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 
 ## 7. Next targets
 
-Pillars 4–6 all shipped. Remaining candidates:
+Pillars 4–6 and the 4-system gap closure batch all shipped. A fresh FHM gap chart re-score will reveal updated ratings — recommend doing that before picking next targets. Likely still-lagging areas:
 
-1. **20-year longevity run** — verify alumni fire after year 15+, civic events at morale extremes, salary seniority compounding, trade offer acceptance path
-2. **Press conference playtest** — needs a win/loss streak; confirm tones + follow-up render end-to-end in a live session
-3. **Complication resolution UX** — wired; confirm scMod actually shifts outcome in a real mission
-4. **Rival trade acceptance path** — `resolveRivalOffer` accept modifies G.shinobi; the roster remove of their ninja is conditional on homeVillage check, verify doesn't leave ghost entries
+1. **Chemistry/cliques** (≈58%) — individual pair chemistry exists but no clique formation (3+ bonded shinobi forming a in-group with morale and squad bonuses)
+2. **Conferences/rumors deeper** (≈72%) — headline ticker on dashboard would surface rumors passively without inbox visit
+3. **20-year longevity run** — verify alumni fire after year 15+, civic events at morale extremes, salary seniority compounding, rival trade acceptance path integrity
+4. **Press conference playtest** — needs a live win/loss streak; confirm tones + follow-up render end-to-end
+5. **Complication resolution UX** — wired; confirm scMod shifts outcome in a real mission with active assignment
 
 ---
 
@@ -190,5 +192,5 @@ Pillars 4–6 all shipped. Remaining candidates:
 
 1. Read this doc + the auto-memory (`MEMORY.md` index loads automatically).
 2. `git -C C:\Users\Tyler\ninja\hidden-village-manager log --oneline -5` — confirm HEAD matches above.
-3. `npx vitest run` — expect 450 passing / 43 files.
+3. `npx vitest run` — expect 604 passing / 49 files.
 4. Ask the user which target to take next (see §7), or continue whatever they were mid-stream on.
