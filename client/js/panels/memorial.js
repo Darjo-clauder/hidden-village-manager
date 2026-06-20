@@ -11,7 +11,7 @@ export function rMem() {
       return `<div style="padding:10px 0;border-bottom:1px solid #2e2a22">
         <div style="font-size:11px;color:#e8e0cc;font-weight:bold">${m.name}</div>
         <div style="font-size:8px;color:#7a7060;margin-top:2px">${m.rank}${m.clan ? ' · ' + m.clan + ' Clan' : ''} · Fell Y${m.year} ${monthName}</div>
-        <div style="font-size:8px;color:#7a7060;margin-top:2px">Mission: "${m.mission}" · Wins: ${m.wins || 0}</div>
+        ${m.transfer ? '' : `<div style="font-size:8px;color:#7a7060;margin-top:2px">Mission: "${m.mission || '—'}" · Wins: ${m.wins || 0}</div>`}
         ${m.lastWords ? `<div style="font-size:8px;color:#f66;margin-top:4px;font-style:italic">${m.lastWords}</div>` : ''}
       </div>`
     }).join('')
