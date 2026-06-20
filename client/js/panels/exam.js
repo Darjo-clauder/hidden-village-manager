@@ -60,27 +60,52 @@ export function tEC(id) {
   rEx()
 }
 
+// Stage labels — now framed as a competitive bracket.
+export const EXAM_STAGES = ['Qualifier — Written Test', 'Quarterfinal — Forest of Death', 'Semifinal — Preliminary Duels', 'Final — Championship']
+
+// Rival genin names by village flavour.
+const RIVAL_NAME_POOL = ['Genin', 'Prodigy', 'Cadet', 'Aspirant', 'Hopeful', 'Adept']
+function _rivalCombatants(v) {
+  // A village fields 4–6 genin; individual power scales off the village's aggregate str.
+  const n = rnd(4, 6)
+  return Array.from({ length: n }, (_, i) => ({
+    id: 'r_' + v.n + '_' + i,
+    name: v.n.replace(/gakure$/, '') + ' ' + pk(RIVAL_NAME_POOL),
+    pow: clamp(Math.round(v.str * 0.5) + rnd(-8, 12), 15, 72),
+    isPlayer: false,
+  }))
+}
+
+// Build the full tournament field: player village + every rival village.
+function _buildExamField() {
+  const playerEntry = {
+    vid: 'player', name: G.vName, ico: G.vIcon, isPlayer: true,
+    alive: G.examCands.map(id => {
+      const s = G.shinobi.find(x => x.id === id)
+      return { id, shinobiId: id, name: sn(s), pow: sPow(s), isPlayer: true }
+    }).filter(c => c.id),
+    out: [],
+  }
+  const rivalEntries = (G.villages || []).map(v => ({
+    vid: v.n, name: v.n, ico: v.ico, isPlayer: false,
+    alive: _rivalCombatants(v), out: [],
+  }))
+  return [playerEntry, ...rivalEntries]
+}
+
 export function startEx() {
   if (!G.examCands.length) { ntf('Add candidates!'); return }
   // Assign exam format if not already set
   if (!G.examFormat) G.examFormat = pk(EXAM_FORMATS)
   // Assign judge from a rival village (potential bias)
-  const villages = ['Kazegakure','Shimogakure','Gangakure','Raikurokure']
-  const judgeVillage = pk(villages)
-  const rivalV = (G.villages || []).find(v => v.n === judgeVillage)
-  const isRival = rivalV && (rivalV.rel || 50) < 40
+  const judge = pk(G.villages || [{ n: 'Neutral Panel' }])
+  const isRival = judge && (judge.rel || 50) < 40
   G.examJudgeBias = isRival
-    ? { villageName: judgeVillage, biasMod: rnd(5, 10) / 100, isBiased: true }
-    : { villageName: judgeVillage, biasMod: 0, isBiased: false }
+    ? { villageName: judge.n, biasMod: rnd(5, 10) / 100, isBiased: true }
+    : { villageName: judge.n, biasMod: 0, isBiased: false }
   G.examJudgeProtested = false
-  // Generate NPC opponents
-  const npcCount = rnd(2, 4)
-  const npcNames = ['Kiri Genin','Suna Prodigy','Iwa Fighter','Kumo Rookie','Foreign Rival']
-  const npcOps = Array.from({ length: npcCount }, (_, i) => ({
-    id: 'npc_' + i, name: pk(npcNames) + ' #' + (i + 1), pow: rnd(25, 55), isNpc: true,
-  }))
   G.examActive = true
-  ui.exSt = { round: 0, survivors: [...G.examCands], npcSurvivors: npcOps, sabotaged: false, promotions: 0 }
+  ui.exSt = { round: 0, field: _buildExamField(), sabotaged: false }
   G.examCands.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s) s.status = 'exam' })
   rEx()
 }
@@ -92,23 +117,34 @@ function _formatBonus(s) {
 }
 
 function rExA(el, tabHtml) {
-  const rounds = ['Written Test', 'Forest Survival', 'Combat Rounds', 'Final Evaluation'], r = ui.exSt.round
-  const mySurv = ui.exSt.survivors.map(id => G.shinobi.find(x => x.id === id)).filter(Boolean)
-  const npcSurv = ui.exSt.npcSurvivors || []
+  const r = ui.exSt.round
+  const field = ui.exSt.field || []
   const bias = G.examJudgeBias
   const biasWarning = bias?.isBiased && !G.examJudgeProtested && r === 3
     ? `<div style="padding:7px;border:1px solid #f0a030;background:#0d0a04;margin-bottom:8px;font-size:8px;color:#f0a030">⚠ Judge from ${bias.villageName} (rival) — nominee scores lowered by ${Math.round(bias.biasMod * 100)}%. <button class="gb" onclick="protestJudge()" style="font-size:7px;margin-left:8px;border-color:#f0a030;color:#f0a030">File Protest (costs 5 prestige) ▸</button></div>`
     : ''
+  // Standings: villages still in contention, sorted by survivor count.
+  const standing = field.filter(e => e.alive.length > 0)
+    .sort((a, b) => b.alive.length - a.alive.length || b.alive.reduce((x, c) => x + c.pow, 0) - a.alive.reduce((x, c) => x + c.pow, 0))
+  const totalAlive = field.reduce((a, e) => a + e.alive.length, 0)
   el.innerHTML = tabHtml + biasWarning + `<div style="background:#0d0d0d;border:1px solid #c9a84c;padding:14px">
-    <div style="font-size:8px;letter-spacing:3px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">Round ${r + 1}: ${rounds[r] || 'Finals'}</div>
+    <div style="font-size:8px;letter-spacing:3px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">${EXAM_STAGES[r] || 'Final'}</div>
     ${G.examFormat ? `<div style="font-size:8px;color:#7a7060;margin-bottom:8px">${G.examFormat.icon} Format: ${G.examFormat.n} — format-matched nominees get +15%</div>` : ''}
-    <div style="margin-bottom:6px">
-      ${mySurv.map(s => `<div style="font-size:9px;padding:3px 0;border-bottom:1px solid #2e2a22;color:#e8e0cc">${sn(s)} <span style="color:#7a7060">${RANKS[s.ri]} · Pwr ${sPow(s)}</span>${_formatBonus(s) > 0 ? ' <span style="color:#8fbc8f;font-size:7px">★+15%</span>' : ''}</div>`).join('')}
-      ${npcSurv.map(n => `<div style="font-size:9px;padding:3px 0;border-bottom:1px solid #2e2a22;color:#7a7060">${n.name} (NPC) · Pwr ~${n.pow}</div>`).join('')}
+    <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${standing.length} villages in contention · ${totalAlive} combatants remaining</div>
+    <div style="display:grid;gap:8px;margin-bottom:10px">
+      ${standing.map((e, i) => `<div style="border:1px solid ${e.isPlayer ? '#c9a84c' : '#2e2a22'};padding:7px;background:${e.isPlayer ? 'rgba(201,168,76,0.06)' : '#0a0a0a'}">
+        <div style="font-size:9px;color:${e.isPlayer ? '#c9a84c' : '#9a9080'};margin-bottom:4px">${i === 0 ? '◆ ' : ''}${e.ico || '🏳'} ${e.name}${e.isPlayer ? ' (you)' : ''} <span style="color:#7a7060">— ${e.alive.length} alive</span></div>
+        ${e.alive.map(c => `<div style="font-size:8px;padding:2px 0;color:${c.isPlayer ? '#e8e0cc' : '#7a7060'}">${c.name} · Pwr ${c.pow}${c.isPlayer && _formatBonusById(c.shinobiId) > 0 ? ' <span style="color:#8fbc8f">★+15%</span>' : ''}</div>`).join('')}
+      </div>`).join('')}
     </div>
-    ${!ui.exSt.sabotaged && r === 1 ? `<button class="btn" onclick="sabotageSquad()" style="font-size:9px;margin-bottom:8px;color:#f88">Sabotage rival squad (−10 morale, risk rel)</button> ` : ''}
-    <button class="gb" onclick="runRound()">Run Round ${r + 1} ►</button>
+    ${!ui.exSt.sabotaged && r === 1 ? `<button class="btn" onclick="sabotageSquad()" style="font-size:9px;margin-bottom:8px;color:#f88">Sabotage a rival squad (risk relations)</button> ` : ''}
+    <button class="gb" onclick="runRound()">Run ${EXAM_STAGES[r] ? EXAM_STAGES[r].split(' — ')[0] : 'Round'} ►</button>
   </div>`
+}
+
+function _formatBonusById(id) {
+  const s = G.shinobi.find(x => x.id === id)
+  return s ? _formatBonus(s) : 0
 }
 
 export function protestJudge() {
@@ -130,126 +166,184 @@ export function protestJudge() {
 export function sabotageSquad() {
   if (!ui.exSt || ui.exSt.sabotaged) return
   ui.exSt.sabotaged = true
-  if (ui.exSt.npcSurvivors?.length > 0) {
-    ui.exSt.npcSurvivors.shift()
+  const rivals = (ui.exSt.field || []).filter(e => !e.isPlayer && e.alive.length > 0)
+  if (rivals.length) {
+    const target = pk(rivals)
+    const removed = target.alive.pop()
+    if (removed) target.out.push(removed)
     if (Math.random() < 0.4) {
-      const v = pk(G.villages)
-      v.rel = clamp((v.rel || 50) - 8, 0, 100)
-      aL('Sabotage discovered — ' + v.n + ' relations damaged.', 'warn')
+      const v = (G.villages || []).find(x => x.n === target.vid)
+      if (v) v.rel = clamp((v.rel || 50) - 8, 0, 100)
+      aL('Sabotage discovered — ' + target.name + ' relations damaged.', 'warn')
     } else {
-      aL('Squad sabotage went undetected.', 'neutral')
+      aL('Sabotage went undetected — ' + target.name + ' lost a combatant.', 'neutral')
     }
   }
   rEx()
 }
 
+// Eliminate combatants from a village entry by a survival probability; logs player results.
+function _stageSurvival(field, probFn, passLabel, failLabel, res) {
+  field.forEach(entry => {
+    const kept = []
+    entry.alive.forEach(c => {
+      const survived = Math.random() < probFn(c)
+      if (survived) kept.push(c)
+      else entry.out.push(c)
+      if (c.isPlayer) res.push({ name: c.name, result: survived ? passLabel : failLabel, promoted: false, good: survived })
+    })
+    entry.alive = kept
+  })
+}
+
 export function runRound() {
-  const rounds = ['Written Test', 'Forest Survival', 'Combat Rounds', 'Final Evaluation'], r = ui.exSt.round
-  let surv = [...ui.exSt.survivors]; const res = []
-  let npcSurv = [...(ui.exSt.npcSurvivors || [])]
+  const r = ui.exSt.round
+  const field = ui.exSt.field
+  const res = []
   const biasMod = (G.examJudgeBias?.isBiased && !G.examJudgeProtested) ? G.examJudgeBias.biasMod : 0
 
   if (r === 0) {
-    npcSurv = npcSurv.filter(() => Math.random() < 0.7)
-    surv = surv.filter(id => {
-      const s = G.shinobi.find(x => x.id === id); if (!s) return false
-      const fmtB = _formatBonus(s)
-      const p = Math.random() < (0.5 + s.stats.intelligence / 200 + fmtB)
-      res.push({ id, name: sn(s), result: p ? 'Passed written test' : 'Failed written test', promoted: false })
-      return p
-    })
-  } else if (r === 1) {
-    const isHost = G.examHosting === true
-    npcSurv = npcSurv.filter(() => Math.random() < (isHost ? 0.55 : 0.7))
-    surv = surv.filter(id => {
-      const s = G.shinobi.find(x => x.id === id); if (!s) return false
-      const hostBonus = isHost ? 0.08 : 0
-      const fmtB = _formatBonus(s)
-      const p = Math.random() < (0.4 + (s.stats.speed + s.stats.chakra) / 400 + hostBonus + fmtB)
-      res.push({ id, name: sn(s), result: p ? 'Survived the forest' : 'Eliminated in forest', promoted: false })
-      return p
-    })
-  } else if (r === 2) {
-    const allCombatants = [
-      ...surv.map(id => { const s = G.shinobi.find(x => x.id === id); return { id, pow: sPow(s) * (1 + _formatBonus(s)) + rnd(-8, 8), isNpc: false } }),
-      ...npcSurv.map(n => ({ id: n.id, pow: n.pow + rnd(-8, 8), name: n.name, isNpc: true })),
-    ].sort(() => Math.random() - 0.5)
-    const loseIds = []
-    for (let i = 0; i < allCombatants.length - 1; i += 2) {
-      const a = allCombatants[i], b = allCombatants[i + 1]
-      if (!b) continue
-      const aWins = a.pow >= b.pow
-      if (!aWins) loseIds.push(a.id); else loseIds.push(b.id)
-      if (!a.isNpc) { const s2 = G.shinobi.find(x => x.id === a.id); res.push({ id: a.id, name: s2 ? sn(s2) : a.id, result: aWins ? 'Won combat round' : 'Lost combat round', promoted: false }) }
-      if (!b.isNpc) { const s2 = G.shinobi.find(x => x.id === b.id); res.push({ id: b.id, name: s2 ? sn(s2) : b.id, result: !aWins ? 'Won combat round' : 'Lost combat round', promoted: false }) }
-    }
-    surv = surv.filter(id => !loseIds.includes(id))
-    npcSurv = npcSurv.filter(n => !loseIds.includes(n.id))
-  } else {
-    // Finals — promotion round
-    let examPromotions = 0
-    surv.forEach(id => {
-      const s = G.shinobi.find(x => x.id === id); if (!s) return
-      const hostBonus = G.examHosting ? 0.10 : 0
-      const fmtB = _formatBonus(s)
-      const prom = Math.random() < clamp(0.55 + hostBonus + fmtB - biasMod, 0.05, 0.97)
-      if (prom && s.ri < 4) {
-        s.ri++; s.salary = 500 + s.ri * 400
-        examPromotions++
-        res.push({ id, name: sn(s), result: 'Promoted to ' + RANKS[s.ri] + '!', promoted: true })
-        aL(sn(s) + ' promoted via Exam!' + (fmtB > 0 ? ' (format bonus applied)' : '') + (biasMod > 0 ? ' (judge bias penalised)' : ''), 'good')
-        G.dynastyRecords.examWins = (G.dynastyRecords?.examWins || 0) + 1
-        addLegend(5)
-        // Deep chronicle entry — decisive moment
-        const finalist = npcSurv[0]
-        const momentDesc = finalist
-          ? `${sn(s)} defeated ${finalist.name} in the final round${Math.random() < 0.3 ? ' with a last-second reversal' : ''}.`
-          : `${sn(s)} stood alone at the end — promoted to ${RANKS[s.ri]}.`
-        addChronicle('Exam Promotion', momentDesc, 'shinobi')
-      } else {
-        res.push({ id, name: sn(s), result: 'Good showing, not promoted.', promoted: false })
+    // Qualifier — written test (intelligence for player, power proxy for rivals)
+    _stageSurvival(field, c => {
+      if (c.isPlayer) {
+        const s = G.shinobi.find(x => x.id === c.shinobiId)
+        return clamp(0.5 + (s?.stats.intelligence || 30) / 200 + _formatBonusById(c.shinobiId), 0.1, 0.95)
       }
-      s.status = 'available'; s.missId = null
+      return clamp(0.45 + c.pow / 200, 0.1, 0.9)
+    }, 'Passed the written test', 'Failed the written test', res)
+  } else if (r === 1) {
+    // Quarterfinal — Forest of Death survival
+    const isHost = G.examHosting === true
+    _stageSurvival(field, c => {
+      if (c.isPlayer) {
+        const s = G.shinobi.find(x => x.id === c.shinobiId)
+        return clamp(0.4 + ((s?.stats.speed || 0) + (s?.stats.chakra || 0)) / 400 + (isHost ? 0.08 : 0) + _formatBonusById(c.shinobiId), 0.1, 0.95)
+      }
+      return clamp(0.42 + c.pow / 220, 0.1, 0.9)
+    }, 'Survived the forest', 'Eliminated in the forest', res)
+  } else if (r === 2) {
+    // Semifinal — seeded 1v1 duels across the whole field (best vs worst)
+    const pool = []
+    field.forEach(entry => entry.alive.forEach(c => pool.push({ c, entry })))
+    pool.sort((a, b) => b.c.pow - a.c.pow)
+    const losers = new Set()
+    let lo = 0, hi = pool.length - 1
+    const effPow = c => c.pow * (1 + (c.isPlayer ? _formatBonusById(c.shinobiId) : 0)) - (c.isPlayer ? biasMod * 100 : 0) + rnd(-8, 8)
+    while (lo < hi) {
+      const A = pool[lo], B = pool[hi]
+      const aWins = effPow(A.c) >= effPow(B.c)
+      const win = aWins ? A : B, lose = aWins ? B : A
+      losers.add(lose.c)
+      if (win.c.isPlayer) res.push({ name: win.c.name, result: `Won the duel vs ${lose.c.name}`, promoted: false, good: true })
+      if (lose.c.isPlayer) res.push({ name: lose.c.name, result: `Lost the duel to ${win.c.name}`, promoted: false, good: false })
+      lo++; hi--
+    }
+    field.forEach(entry => {
+      entry.out.push(...entry.alive.filter(c => losers.has(c)))
+      entry.alive = entry.alive.filter(c => !losers.has(c))
     })
-
-    // Update historical exam records
-    if (!G.examHistoricalRecords) G.examHistoricalRecords = { totalPromotions: 0, bestSingleExam: 0, examWinsByVillage: {} }
-    G.examHistoricalRecords.totalPromotions = (G.examHistoricalRecords.totalPromotions || 0) + examPromotions
-    if (examPromotions > (G.examHistoricalRecords.bestSingleExam || 0)) {
-      G.examHistoricalRecords.bestSingleExam = examPromotions
-      G.examHistoricalRecords.bestSingleExamYear = G.year
-    }
-
-    // Upset detection: lower prestige villages getting 2+ promotions = upset
-    const presOrd = { D:0, C:1, B:2, A:3, S:4 }
-    const myOrd = presOrd[G.prestigeTier || 'D'] || 0
-    if (examPromotions >= 2 && myOrd <= 1) {
-      const upsetDesc = `${G.vName} (${G.prestigeTier || 'D'}-tier) produced ${examPromotions} promotions in a single exam — an unexpected result that turned heads.`
-      G.upsetHistory = G.upsetHistory || []
-      G.upsetHistory.push({ year: G.year, desc: upsetDesc })
-      addChronicle('Exam Upset', upsetDesc, 'milestone')
-      aL('⭐ Upset! ' + G.vName + ' outperformed expectations — this result will be remembered.', 'good')
-      addLegend(8)
-    }
-
-    G.examCands.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s && s.status === 'exam') s.status = 'available' })
-    if (G.examHosting) {
-      G.ryo += 8000
-      aL('Hosting income from Chunin Exam: +8,000 ryo.', 'good')
-      G.examHosting = false
-    }
-    G.examFormat = null  // reset for next exam
-    G.examJudgeBias = null
-    G.examResults.push(...res); G.examActive = false; G.examSched = false; G.examCands = []; ui.exSt = null
-    schEx()
-    document.getElementById('ef-c').innerHTML = '<div style="font-size:9px;color:#7a7060;margin-bottom:10px">Exam complete!</div>' + res.map(r => `<div style="font-size:9px;padding:4px 0;border-bottom:1px solid #2e2a22;color:${r.promoted ? '#8fbc8f' : '#e8e0cc'}"><span style="color:#c9a84c">${r.name}</span> — ${r.result}</div>`).join('')
-    document.getElementById('ov-examfight').classList.add('open'); upUI(); return
+  } else {
+    return _runFinals(field, biasMod)
   }
-  ui.exSt.survivors = surv; ui.exSt.npcSurvivors = npcSurv; ui.exSt.round++; G.examResults.push(...res)
+
+  ui.exSt.round++
+  G.examResults.push(...res.map(x => ({ id: '', name: x.name, result: x.result, promoted: false })))
+  _renderRoundOverlay(r, res, field)
+}
+
+function _renderRoundOverlay(r, res, field) {
+  const villagesIn = field.filter(e => e.alive.length > 0).length
+  const totalAlive = field.reduce((a, e) => a + e.alive.length, 0)
   document.getElementById('ef-c').innerHTML =
-    `<div style="font-size:9px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Round ${r + 1}: ${rounds[r]}</div>` +
-    res.map(x => `<div style="font-size:9px;padding:4px 0;border-bottom:1px solid #2e2a22;color:${x.result.includes('Passed') || x.result.includes('Survived') || x.result.includes('Won') ? '#8fbc8f' : '#f66'}"><span style="color:#c9a84c">${x.name}</span> — ${x.result}</div>`).join('') +
-    `<div style="margin-top:8px;font-size:9px;color:#7a7060">${surv.length} of ours advance. ${npcSurv.length} NPC remaining.</div>`
+    `<div style="font-size:9px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">${EXAM_STAGES[r]}</div>` +
+    (res.length
+      ? res.map(x => `<div style="font-size:9px;padding:4px 0;border-bottom:1px solid #2e2a22;color:${x.good ? '#8fbc8f' : '#f66'}"><span style="color:#c9a84c">${x.name}</span> — ${x.result}</div>`).join('')
+      : '<div style="font-size:9px;color:#7a7060">Your nominees saw no decisive action this stage.</div>') +
+    `<div style="margin-top:8px;font-size:9px;color:#7a7060">${villagesIn} villages still in contention · ${totalAlive} combatants advance.</div>`
+  document.getElementById('ov-examfight').classList.add('open'); upUI()
+}
+
+function _runFinals(field, biasMod) {
+  const res = []
+  let examPromotions = 0
+
+  // Promote player finalists who reached the championship round.
+  const playerEntry = field.find(e => e.isPlayer)
+  ;(playerEntry?.alive || []).forEach(c => {
+    const s = G.shinobi.find(x => x.id === c.shinobiId); if (!s) return
+    const hostBonus = G.examHosting ? 0.10 : 0
+    const fmtB = _formatBonus(s)
+    const prom = Math.random() < clamp(0.55 + hostBonus + fmtB - biasMod, 0.05, 0.97)
+    if (prom && s.ri < 4) {
+      s.ri++; s.salary = 500 + s.ri * 400; examPromotions++
+      res.push({ name: sn(s), result: 'Promoted to ' + RANKS[s.ri] + '!', promoted: true })
+      aL(sn(s) + ' promoted via Exam!' + (fmtB > 0 ? ' (format bonus applied)' : '') + (biasMod > 0 ? ' (judge bias penalised)' : ''), 'good')
+      G.dynastyRecords.examWins = (G.dynastyRecords?.examWins || 0) + 1
+      addLegend(5)
+      addChronicle('Exam Promotion', `${sn(s)} fought through the field of five villages and was promoted to ${RANKS[s.ri]}.`, 'shinobi')
+    } else {
+      res.push({ name: sn(s), result: 'Reached the final, not promoted.', promoted: false })
+    }
+  })
+
+  // Crown the champion village — most finalists, tiebreak by combined power.
+  const finalists = field.filter(e => e.alive.length > 0)
+    .map(e => ({ e, count: e.alive.length, pow: e.alive.reduce((a, c) => a + c.pow, 0) }))
+    .sort((a, b) => b.count - a.count || b.pow - a.pow)
+  const champ = finalists[0]?.e
+  const playerWon = !!champ?.isPlayer
+
+  if (!G.examHistoricalRecords) G.examHistoricalRecords = { totalPromotions: 0, bestSingleExam: 0, examWinsByVillage: {} }
+  if (champ) {
+    G.examChampion = { year: G.year, village: champ.name, ico: champ.ico, player: playerWon }
+    G.examHistoricalRecords.championsByVillage = G.examHistoricalRecords.championsByVillage || {}
+    G.examHistoricalRecords.championsByVillage[champ.name] = (G.examHistoricalRecords.championsByVillage[champ.name] || 0) + 1
+    if (playerWon) {
+      G.examHistoricalRecords.championships = (G.examHistoricalRecords.championships || 0) + 1
+      addLegend(15); G.reputation = clamp((G.reputation || 0) + 15, 0, 999)
+      aL('🏆 ' + G.vName + ' WINS the Chunin Exam Championship! +15 legend, +15 reputation.', 'good')
+      addChronicle('Exam Champion', `${G.vName} stood above all five villages to claim the Year ${G.year} Chunin Exam championship.`, 'milestone')
+    } else {
+      aL('🏆 ' + champ.name + ' wins the Chunin Exam championship. ' + G.vName + ' did not take the title.', 'neutral')
+      addChronicle('Exam Champion', `${champ.name} claimed the Year ${G.year} Chunin Exam championship.`, 'milestone')
+    }
+  }
+
+  // Promotion records
+  G.examHistoricalRecords.totalPromotions = (G.examHistoricalRecords.totalPromotions || 0) + examPromotions
+  if (examPromotions > (G.examHistoricalRecords.bestSingleExam || 0)) {
+    G.examHistoricalRecords.bestSingleExam = examPromotions
+    G.examHistoricalRecords.bestSingleExamYear = G.year
+  }
+
+  // Upset — winning the title from a low prestige tier.
+  const presOrd = { D: 0, C: 1, B: 2, A: 3, S: 4 }
+  const myOrd = presOrd[G.prestigeTier || 'D'] || 0
+  if (playerWon && myOrd <= 1) {
+    const upsetDesc = `${G.vName} (${G.prestigeTier || 'D'}-tier) won the Chunin Exam outright — a result far above expectations.`
+    G.upsetHistory = G.upsetHistory || []
+    G.upsetHistory.push({ year: G.year, desc: upsetDesc })
+    addChronicle('Exam Upset', upsetDesc, 'milestone')
+    aL('⭐ Upset! ' + G.vName + ' was not expected to win — this will be remembered.', 'good')
+    addLegend(8)
+  }
+
+  // Cleanup — restore nominee statuses and reset exam state.
+  G.examCands.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s) { s.status = 'available'; s.missId = null } })
+  if (G.examHosting) { G.ryo += 8000; aL('Hosting income from Chunin Exam: +8,000 ryo.', 'good'); G.examHosting = false }
+  G.examFormat = null; G.examJudgeBias = null
+  G.examResults.push(...res.map(x => ({ id: '', name: x.name, result: x.result, promoted: x.promoted })))
+  G.examActive = false; G.examSched = false; G.examCands = []; ui.exSt = null
+  schEx()
+
+  const champLine = champ
+    ? `<div style="font-size:11px;color:${playerWon ? '#c9a84c' : '#9a9080'};margin-bottom:10px">🏆 Champion: ${champ.ico || ''} ${champ.name}${playerWon ? ' (you)' : ''}</div>`
+    : ''
+  document.getElementById('ef-c').innerHTML = champLine +
+    '<div style="font-size:9px;color:#7a7060;margin-bottom:10px">Exam complete!</div>' +
+    (res.length
+      ? res.map(x => `<div style="font-size:9px;padding:4px 0;border-bottom:1px solid #2e2a22;color:${x.promoted ? '#8fbc8f' : '#e8e0cc'}"><span style="color:#c9a84c">${x.name}</span> — ${x.result}</div>`).join('')
+      : '<div style="font-size:9px;color:#7a7060">Your nominees were eliminated before the final.</div>')
   document.getElementById('ov-examfight').classList.add('open'); upUI()
 }
 
@@ -350,13 +444,20 @@ export function bidSrank(contractId) {
 function _recordsTab() {
   const rec = G.examHistoricalRecords || {}
   const upsets = G.upsetHistory || []
+  const champ = G.examChampion
+  const byV = rec.championsByVillage || {}
   const rows = [
+    { label: 'Championships Won', value: rec.championships || 0 },
     { label: 'Career Exam Promotions', value: rec.totalPromotions || 0 },
     { label: 'Best Single Exam', value: rec.bestSingleExam ? `${rec.bestSingleExam} promotions (Year ${rec.bestSingleExamYear || '?'})` : '—' },
-    { label: 'Total Exams Participated', value: (G.examResults?.length ? Math.ceil(G.examResults.length / 3) : 0) },
     { label: 'Dynasty Exam Wins', value: G.dynastyRecords?.examWins || 0 },
   ]
+  const champLeaders = Object.entries(byV).sort((a, b) => b[1] - a[1])
   return `<div>
+    ${champ ? `<div style="border:1px solid ${champ.player ? '#c9a84c' : '#2e2a22'};background:${champ.player ? '#0d0a04' : '#0a0a0a'};padding:10px;margin-bottom:12px">
+      <div style="font-size:8px;color:#7a7060;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Reigning Champion (Year ${champ.year})</div>
+      <div style="font-size:13px;color:${champ.player ? '#c9a84c' : '#e8e0cc'}">🏆 ${champ.ico || ''} ${champ.village}${champ.player ? ' — your village' : ''}</div>
+    </div>` : ''}
     <div style="font-size:10px;color:#c9a84c;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">Historical Exam Records</div>
     <div style="display:grid;gap:4px;margin-bottom:14px">
       ${rows.map(r => `<div style="display:flex;justify-content:space-between;padding:5px 8px;background:#0a0a0a;border-radius:3px">
@@ -364,6 +465,8 @@ function _recordsTab() {
         <span style="font-size:10px;color:#e8e0cc;font-weight:bold">${r.value}</span>
       </div>`).join('')}
     </div>
+    ${champLeaders.length ? `<div style="font-size:10px;color:#c9a84c;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Championship Titles</div>
+      <div style="display:grid;gap:3px;margin-bottom:14px">${champLeaders.map(([v, n]) => `<div style="display:flex;justify-content:space-between;padding:4px 8px;background:#0a0a0a;border-radius:3px"><span style="font-size:9px;color:${v === G.vName ? '#c9a84c' : '#7a7060'}">${v}${v === G.vName ? ' (you)' : ''}</span><span style="font-size:10px;color:#e8e0cc;font-weight:bold">${n}</span></div>`).join('')}</div>` : ''}
     ${upsets.length ? `<div style="font-size:10px;color:#f0a030;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Recorded Upsets</div>
       ${upsets.slice().reverse().map(u => `<div style="font-size:8px;color:#7a7060;padding:5px 8px;background:#0a0a0a;margin-bottom:4px;border-left:2px solid #f0a030">Year ${u.year}: ${u.desc}</div>`).join('')}` : '<div style="font-size:8px;color:#555">No upsets recorded yet — outperform expectations at D or C prestige to create one.</div>'}
   </div>`
