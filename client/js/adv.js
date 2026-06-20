@@ -908,7 +908,7 @@ export function adv() {
 
   // ── Prospect aging ──────────────────────────────────────────────────────
   G.prospects = G.prospects.filter(p => {
-    if ((p.monthsWaiting || 0) >= 8) {
+    if ((p.monthsWaiting || 0) >= 24) {
       aL(sn(p) + ' lost patience and left the academy.', 'neutral')
       // 10% chance dropout becomes a missing-nin event
       if (Math.random() < 0.10) {
@@ -935,6 +935,20 @@ export function adv() {
     }
     return true
   })
+
+  // ── Auto-sign floor — world stays alive without player recruitment ────────
+  {
+    const activeRoster = G.shinobi.filter(s => s.status !== 'retired').length
+    if (activeRoster < 6 && G.prospects.length > 0) {
+      const best = G.prospects.reduce((a, b) => (b.potential || 0) > (a.potential || 0) ? b : a)
+      best.status = 'available'
+      if (best.academyOrigin) { best.homegrown = true; best.salary = Math.round(best.salary * 0.85) }
+      G.shinobi.push(best)
+      G.prospects = G.prospects.filter(x => x.id !== best.id)
+      aL(sn(best) + ' signed on — the village needed them.', 'good')
+      addChronicle('Roster Crisis Signing', sn(best) + ' joined amid a roster shortage.', 'shinobi')
+    }
+  }
 
   // ── Mission resolution ──────────────────────────────────────────────────
   const beastPassives = getBeastPassives(G)
@@ -1914,6 +1928,25 @@ export function adv() {
     }
     aL('Annual intake: ' + classSize + ' students joined the Academy (Year ' + G.year + ').', 'good')
     ntf('New Academy intake — ' + classSize + ' students!')
+  }
+
+  // ── Mid-year walk-ins (October = month 10) ────────────────────────────────
+  if (G.month === 10 && (G.lastMidIntakeYear || 0) < G.year) {
+    G.lastMidIntakeYear = G.year
+    if (!G.intakeClass) G.intakeClass = []
+    const acLv = G.upgrades.academy || 0
+    const walkInCount = rnd(2, 4)
+    for (let i = 0; i < walkInCount; i++) G.intakeClass.push(genStudent(acLv, 0))
+    aL(walkInCount + ' transfer students arrived mid-year.', 'neutral')
+  }
+
+  // ── Minimum prospect pool guarantee ──────────────────────────────────────
+  if (G.prospects.length < 3 && G.month % 3 === 0) {
+    const acLv = G.upgrades.academy || 0
+    const walkIn = genStudent(acLv, 0)
+    walkIn.status = 'prospect'
+    G.prospects.push(walkIn)
+    aL(sn(walkIn) + ' arrived at the village gates looking for a path.', 'neutral')
   }
 
   // ── Youth academy development tick ────────────────────────────────────────
