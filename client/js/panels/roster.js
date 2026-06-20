@@ -15,14 +15,226 @@ export function sBars(s) {
 
 export function pCl(p) { return p.cat === 'pos' ? 'trait-pos' : p.cat === 'neg' ? 'trait-neg' : 'trait-neu' }
 
+// ── Power → star rating (1–5 stars) ─────────────────────────────────────────
+function _stars(val, max = 100) {
+  const count = Math.max(1, Math.min(5, Math.ceil((val / max) * 5)))
+  return '★'.repeat(count) + '☆'.repeat(5 - count)
+}
+function _starsHtml(val, max = 100) {
+  const count = Math.max(0, Math.min(5, Math.ceil((val / max) * 5)))
+  const col = count >= 4 ? '#c9a84c' : count >= 3 ? '#8fbc8f' : count >= 2 ? '#7a7060' : '#444'
+  return `<span style="color:${col};letter-spacing:-1px;font-size:10px">${'★'.repeat(count)}${'☆'.repeat(5-count)}</span>`
+}
+
+// ── Potential: capped stat average as proxy for ceiling ──────────────────────
+function _potential(s) {
+  const st = s.stats || {}
+  const keys = ['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed']
+  const avg = keys.reduce((a, k) => a + (st[k] || 0), 0) / keys.length
+  const potFactor = s.potential !== undefined ? s.potential : avg
+  return Math.round(potFactor)
+}
+
 export function rRo() {
   const el = document.getElementById('rl')
-  if (!G.shinobi.length) { el.innerHTML = '<div style="color:#7a7060;font-size:10px">No shinobi. Recruit from Academy.</div>'; return }
-  el.innerHTML = G.shinobi.map(s => {
-    const sq = G.squads.find(q => q.members.includes(s.id))
-    const stT = s.status === 'available' ? '<span class="st st-a">Available</span>' : s.status === 'mission' ? '<span class="st st-m">Mission</span>' : s.status === 'injured' ? `<span class="st st-i">Injured ${s.injDays}m</span>` : '<span class="st st-e">Exam</span>'
-    return `<div class="card" onclick="oDos('${s.id}')"><div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:6px"><div style="flex:1"><div style="font-size:11px;color:#e8e0cc;font-weight:bold">${sn(s)}${s.jk ? ` <span style="font-size:8px;color:#c9a84c">[${s.jk} JK]</span>` : ''}</div><div style="font-size:8px;color:#7a7060">${s.clan ? s.clan + ' · ' + s.trait : s.spec} · Age ${s.age}${sq ? ' · ' + sq.n : ''}</div></div><span class="rk ${RKC[s.ri]}">${RANKS[s.ri]}</span></div><div class="sg">${sBars(s)}</div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px"><div style="display:flex;align-items:center;gap:5px">${stT}<span class="trait-tag ${pCl(s.pers)}">${s.pers.n}</span></div><div style="font-size:8px;color:#7a7060">Pwr ${sPow(s)} · ${fmt(s.salary)}/mo</div></div></div>`
+  if (!G.shinobi.length) { el.innerHTML = '<div style="color:#7a7060;font-size:10px;padding:12px">No shinobi. Recruit from Academy.</div>'; return }
+
+  // Sort: by rank desc, then power desc
+  const sorted = [...G.shinobi].sort((a, b) => (b.ri - a.ri) || (sPow(b) - sPow(a)))
+
+  // Active-assignments panel: shinobi on missions
+  const active = sorted.filter(s => s.status === 'mission' || s.status === 'exam' || s.status === 'injured')
+
+  const assignedHtml = active.length === 0
+    ? `<div style="font-size:8px;color:#555;padding:10px 0">No active assignments.</div>`
+    : active.map(s => {
+        const sq = G.squads.find(q => q.members.includes(s.id))
+        const mission = s.missId ? (G.missions || []).find(m => m.id === s.missId) : null
+        const rankLabel = RANKS[s.ri]
+        const rankCol = ['#7a7060','#87ceeb','#8fbc8f','#cc7fb8','#c9a84c'][s.ri] || '#7a7060'
+
+        let label, detail, progress, barColor
+        if (s.status === 'mission' && mission) {
+          label = mission.n
+          detail = mission.rk + '-rank · ' + (sq ? sq.n : 'Solo')
+          progress = mission.duration ? Math.min(100, Math.round(((mission.duration - (s.missionMonthsLeft || mission.duration)) / mission.duration) * 100)) : 50
+          barColor = '#c9a84c'
+        } else if (s.status === 'injured') {
+          label = 'Recovering from injury'
+          detail = `${s.injDays || '?'} months remaining`
+          progress = s.injuryMax ? Math.min(100, Math.round((1 - s.injDays / s.injuryMax) * 100)) : 30
+          barColor = '#f66'
+        } else if (s.status === 'exam') {
+          label = 'Chunin Exam'
+          detail = 'In progress'
+          progress = 50
+          barColor = '#87ceeb'
+        } else {
+          label = s.status
+          detail = ''
+          progress = 50
+          barColor = '#555'
+        }
+
+        return `<div style="background:#1a1814;border:1px solid #2e2a22;padding:10px 12px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="font-size:8px;font-weight:bold;color:${rankCol};background:${rankCol}22;padding:1px 5px;border:1px solid ${rankCol}44">${rankLabel.slice(0,3).toUpperCase()}</span>
+            <span style="font-size:10px;color:#e8e0cc;font-weight:bold;cursor:pointer" onclick="oDos('${s.id}')">${sn(s)}</span>
+            ${s.jk ? `<span style="font-size:7px;color:#c9a84c">[JK]</span>` : ''}
+            <span style="font-size:8px;color:#555;margin-left:auto">${label}</span>
+          </div>
+          <div style="background:#111;border-radius:2px;height:4px;margin-bottom:4px">
+            <div style="height:4px;border-radius:2px;background:${barColor};width:${progress}%;transition:width .3s"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:7px;color:#555">
+            <span>${detail}</span>
+            <span style="color:#7a7060">${progress}% complete</span>
+          </div>
+        </div>`
+      }).join('')
+
+  // Main roster table
+  const tableRows = sorted.map((s, i) => {
+    const pw    = sPow(s)
+    const pot   = _potential(s)
+    const sq    = G.squads.find(q => q.members.includes(s.id))
+    const rankLabel = RANKS[s.ri]
+    const rankCol   = ['#7a7060','#87ceeb','#8fbc8f','#cc7fb8','#c9a84c'][s.ri] || '#7a7060'
+    const isSelected = window._rosSelId === s.id
+
+    let statusCell
+    if (s.status === 'available')
+      statusCell = `<span style="color:#8fbc8f;font-size:8px">●</span>`
+    else if (s.status === 'mission')
+      statusCell = `<span style="color:#c9a84c;font-size:8px">▶</span>`
+    else if (s.status === 'injured')
+      statusCell = `<span style="color:#f66;font-size:8px" title="Injured ${s.injDays}m">✕</span>`
+    else
+      statusCell = `<span style="color:#87ceeb;font-size:8px">⚑</span>`
+
+    const noTradeTag = s.noTrade ? `<span style="font-size:6px;color:#f99;border:1px solid #744;padding:0 3px;margin-left:3px">NT</span>` : ''
+    const twoWayTag  = s.twoWay  ? `<span style="font-size:6px;color:#87ceeb;border:1px solid #468;padding:0 3px;margin-left:2px">2W</span>` : ''
+
+    return `<tr style="background:${isSelected ? '#1e1c16' : i%2===0?'#0f0e0c':'#000'};cursor:pointer;border-bottom:1px solid #111"
+      onclick="rosSelect('${s.id}')">
+      <td style="padding:5px 6px;width:50px">
+        <span style="font-size:8px;font-weight:bold;color:${rankCol};background:${rankCol}22;padding:1px 5px;border:1px solid ${rankCol}44">${rankLabel.slice(0,3).toUpperCase()}</span>
+      </td>
+      <td style="padding:5px 6px;max-width:140px">
+        <div style="font-size:9px;color:#e8e0cc;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          ${sn(s)}${s.jk?'<span style="font-size:7px;color:#c9a84c"> ⚡</span>':''}${noTradeTag}${twoWayTag}
+        </div>
+        <div style="font-size:7px;color:#555">${s.clan || s.spec || '—'}</div>
+      </td>
+      <td style="padding:5px 6px;font-size:8px;color:#7a7060;text-align:center">${s.age}</td>
+      <td style="padding:5px 6px;text-align:center">${_starsHtml(pw)}</td>
+      <td style="padding:5px 6px;text-align:center">${_starsHtml(pot)}</td>
+      <td style="padding:5px 6px;text-align:center">${statusCell}</td>
+      <td style="padding:5px 6px;font-size:8px;color:#555;text-align:right">${fmt(s.salary)}</td>
+    </tr>`
   }).join('')
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 280px;gap:12px;align-items:start">
+
+      <!-- Left: roster table -->
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase">Roster — ${G.shinobi.length} shinobi</div>
+          <div style="margin-left:auto;display:flex;gap:12px;font-size:8px;color:#555">
+            <span><span style="color:#8fbc8f">●</span> Available</span>
+            <span><span style="color:#c9a84c">▶</span> Mission</span>
+            <span><span style="color:#f66">✕</span> Injured</span>
+            <span><span style="color:#87ceeb">⚑</span> Exam</span>
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            <tr style="background:#0a0908;border-bottom:1px solid #2e2a22">
+              <th style="padding:4px 6px;font-size:7px;color:#555;letter-spacing:1px;text-align:left;text-transform:uppercase">Rank</th>
+              <th style="padding:4px 6px;font-size:7px;color:#555;letter-spacing:1px;text-align:left;text-transform:uppercase">Name</th>
+              <th style="padding:4px 6px;font-size:7px;color:#555;letter-spacing:1px;text-align:center;text-transform:uppercase">Age</th>
+              <th style="padding:4px 6px;font-size:7px;color:#555;letter-spacing:1px;text-align:center;text-transform:uppercase">Ability</th>
+              <th style="padding:4px 6px;font-size:7px;color:#555;letter-spacing:1px;text-align:center;text-transform:uppercase">Potential</th>
+              <th style="padding:4px 6px;font-size:7px;color:#555;letter-spacing:1px;text-align:center;text-transform:uppercase">Sts</th>
+              <th style="padding:4px 6px;font-size:7px;color:#555;letter-spacing:1px;text-align:right;text-transform:uppercase">Salary</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+
+      <!-- Right: active assignments + selected dossier -->
+      <div>
+        <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:8px">
+          Active Assignments <span style="color:#444">— ${active.length}/${G.shinobi.length}</span>
+        </div>
+        ${assignedHtml}
+        <div id="ros-detail"></div>
+      </div>
+    </div>`
+
+  // Render selected shinobi quick-view if one is selected
+  if (window._rosSelId) _renderRosDetail(window._rosSelId)
+}
+
+export function rosSelect(id) {
+  window._rosSelId = (window._rosSelId === id) ? null : id
+  rRo()
+}
+
+function _renderRosDetail(id) {
+  const el = document.getElementById('ros-detail'); if (!el) return
+  const s = G.shinobi.find(x => x.id === id); if (!s) return
+  const pw  = sPow(s)
+  const pot = _potential(s)
+  const sq  = G.squads.find(q => q.members.includes(s.id))
+  const rankCol = ['#7a7060','#87ceeb','#8fbc8f','#cc7fb8','#c9a84c'][s.ri] || '#7a7060'
+
+  el.innerHTML = `
+    <div style="background:#1a1814;border:1px solid #2e2a22;padding:12px;margin-top:10px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:9px;font-weight:bold;color:${rankCol};background:${rankCol}22;padding:2px 7px;border:1px solid ${rankCol}44">${RANKS[s.ri]}</span>
+        <div>
+          <div style="font-size:11px;color:#e8e0cc;font-weight:bold">${sn(s)}</div>
+          <div style="font-size:8px;color:#555">${s.clan || s.spec || ''} · Age ${s.age}</div>
+        </div>
+        <button class="gb" style="margin-left:auto;font-size:7px;padding:2px 8px" onclick="oDos('${s.id}')">Full Dossier ▸</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+        ${['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed'].map(k => {
+          const v = s.stats?.[k] || 0
+          return `<div>
+            <div style="display:flex;justify-content:space-between;font-size:7px;color:#555;margin-bottom:2px">
+              <span>${k.slice(0,5)}</span><span>${v}</span>
+            </div>
+            <div style="background:#111;height:3px;border-radius:1px">
+              <div style="background:#c9a84c;height:3px;border-radius:1px;width:${v}%"></div>
+            </div>
+          </div>`
+        }).join('')}
+      </div>
+      <div style="display:flex;gap:8px;font-size:8px;margin-bottom:10px;flex-wrap:wrap">
+        <span style="color:#7a7060">Pwr <b style="color:#e8e0cc">${pw}</b></span>
+        <span style="color:#7a7060">Salary <b style="color:#f66">${fmt(s.salary)}</b></span>
+        <span style="color:#7a7060">Wins <b style="color:#e8e0cc">${s.wins||0}</b></span>
+        ${sq ? `<span style="color:#7a7060">Squad <b style="color:#87ceeb">${sq.n}</b></span>` : ''}
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        ${s.noTrade ? `<span style="font-size:7px;color:#f99;border:1px solid #744;padding:1px 5px">No-Trade</span>` : ''}
+        ${s.twoWay  ? `<span style="font-size:7px;color:#87ceeb;border:1px solid #468;padding:1px 5px">Two-Way</span>` : ''}
+        ${s.buyoutCost ? `<span style="font-size:7px;color:#555">Buyout: ${fmt(s.buyoutCost)}</span>` : ''}
+      </div>
+      <div style="margin-top:10px;display:flex;gap:5px;flex-wrap:wrap">
+        <button class="gb gb-b" style="font-size:7px;padding:2px 8px" onclick="toggleNoTrade('${s.id}')">
+          ${s.noTrade ? 'Remove No-Trade' : 'Add No-Trade'}
+        </button>
+        <button class="gb gb-b" style="font-size:7px;padding:2px 8px" onclick="toggleTwoWay('${s.id}')">
+          ${s.twoWay ? 'Remove Two-Way' : 'Add Two-Way'}
+        </button>
+        ${s.buyoutCost ? `<button class="gb gb-r" style="font-size:7px;padding:2px 8px" onclick="executeBuyout('${s.id}')" ${(window.G?.ryo||G.ryo||0)<s.buyoutCost?'disabled':''}>Release (${fmt(s.buyoutCost)})</button>` : ''}
+      </div>
+    </div>`
 }
 
 export function oDos(id) {
