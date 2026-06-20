@@ -644,8 +644,16 @@ export function adv() {
   // Apply perks
   if (cp.monthlyRyo > 0) G.ryo += cp.monthlyRyo
   if (cp.monthlyRep > 0) G.reputation = clamp(G.reputation + cp.monthlyRep, 0, 999)
-  // Passive rep floor — prevents permanent zero in idle villages
-  if ((G.reputation || 0) < 10) G.reputation = Math.min(10, (G.reputation || 0) + 1)
+  // ── Pillar 6a: Tier-based rep floor + softened decay ─────────────────────
+  const TIER_REP_FLOOR = { D: 5, C: 15, B: 25, A: 40, S: 60 }
+  const TIER_MORALE_FLOOR = { D: 20, C: 30, B: 40, A: 50, S: 60 }
+  const tierKey = G.prestigeTier || 'D'
+  const repFloor = TIER_REP_FLOOR[tierKey] || 5
+  const moraleFloor = TIER_MORALE_FLOOR[tierKey] || 20
+  if ((G.reputation || 0) < repFloor) G.reputation = Math.min(repFloor, (G.reputation || 0) + 2)
+  // Hard morale floor — tier prestige buys resilience; morale cannot stay below floor
+  G._moraleFloor = moraleFloor
+  if ((G.morale || 50) < moraleFloor) G.morale = clamp(moraleFloor, 0, 100)
 
   // ── Citizen morale — village population sentiment ─────────────────────────
   if (!G.citizenMorale) G.citizenMorale = 60
@@ -963,7 +971,61 @@ export function adv() {
       addLegend(s.ri * 3)
     }
   })
+  // ── Alumni roster — capture retirees before filter ───────────────────────
+  if (!G.alumni) G.alumni = []
+  G.shinobi.filter(s => s.status === 'retired').forEach(s => {
+    if (!G.alumni.find(a => a.id === s.id)) {
+      G.alumni.push({ id: s.id, fn: s.fn, ln: s.ln, ri: s.ri, clan: s.clan, wins: s.wins, age: s.age, retiredY: G.year, lastContactY: G.year })
+    }
+  })
   G.shinobi = G.shinobi.filter(s => s.status !== 'retired')
+
+  // ── Pillar 5a: Alumni network — retired shinobi send word ─────────────────
+  if (G.alumni.length > 0 && Math.random() < 0.18) {
+    const al = pk(G.alumni)
+    al.lastContactY = G.year
+    const ALUMNI_MSGS = [
+      { body: `${al.fn} ${al.ln} sent a gift from retirement — ryo and warm wishes.`, effect: g => { g.ryo += 1500; g.morale = clamp((g.morale||50)+3,0,100) }, label: '+1,500 ryo · morale +3' },
+      { body: `${al.fn} ${al.ln} dropped by to train the genin — an old master's lesson.`, effect: g => { const s = g.shinobi.filter(x => x.ri === 0 && x.status === 'available')[Math.floor(Math.random() * g.shinobi.filter(x=>x.ri===0).length)]; if (s) { const k = pk(['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed']); s.stats[k] = clamp((s.stats[k]||0)+3,0,99); aL(s.fn + ' got a lesson from ' + al.fn + ' — ' + k + ' +3.', 'good') } }, label: 'training +3 to a genin stat' },
+      { body: `${al.fn} ${al.ln} passed along field intelligence from their travels.`, effect: g => { g.reputation = clamp((g.reputation||0)+4,0,999); aL('Alumni intel — rep +4.', 'good') }, label: 'rep +4' },
+      { body: `${al.fn} ${al.ln} vouched for the village to a passing merchant.`, effect: g => { g.ryo += 3000; aL(al.fn + '\'s endorsement brought trade — +3,000 ryo.', 'good') }, label: '+3,000 ryo' },
+    ]
+    const msg = pk(ALUMNI_MSGS)
+    msg.effect(G)
+    G.narrativeInbox.push({ id: Math.random().toString(36).slice(2), type: 'alumni', tag: 'people', title: 'Word from ' + al.fn + ' ' + al.ln, body: msg.body + ' (' + msg.label + ')', year: G.year, month: G.month })
+    if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
+  }
+
+  // ── Pillar 5b: Fan/civic events — citizen morale drives street-level events ─
+  if (Math.random() < 0.28) {
+    const cm = G.citizenMorale || 60
+    if (cm >= 70) {
+      const HIGH_EVENTS = [
+        () => { G.ryo += 2000; aL('Civilian fundraiser — grateful citizens donated 2,000 ryo.', 'good'); G.narrativeInbox.push({ id: Math.random().toString(36).slice(2), type:'civic', tag:'prestige', title:'Citizen Fundraiser', body:'High morale turned to action — civilians raised 2,000 ryo for the village.', year:G.year, month:G.month }) },
+        () => { const st = genStudent(G.upgrades.academy||0, 0); G.intakeClass.push(st); aL('A volunteer enrolled — civilian spirit at peak.', 'good') },
+        () => { G.reputation = clamp((G.reputation||0)+3,0,999); aL('Public ceremony — citizens praising the village — rep +3.', 'good') },
+      ]
+      pk(HIGH_EVENTS)()
+    } else if (cm <= 35) {
+      const LOW_EVENTS = [
+        () => { G.morale = clamp((G.morale||50)-5,0,100); aL('Civilian protest in the market district — morale −5.', 'bad'); G.narrativeInbox.push({ id: Math.random().toString(36).slice(2), type:'civic', tag:'prestige', title:'Civilian Protest', body:'Low citizen morale boiled over — a protest in the market drained village morale.', year:G.year, month:G.month }) },
+        () => { const target = G.shinobi.find(s => (s.commitment||50) < 55 && s.status==='available'); if (target) { target.commitment = clamp((target.commitment||50)-8,0,100); aL(sn(target) + ' rattled by public unrest — commitment −8.', 'warn') } },
+        () => { G.ryo = Math.max(0, G.ryo - 1500); aL('Vandalism and unrest — repairs cost 1,500 ryo.', 'warn') },
+      ]
+      pk(LOW_EVENTS)()
+    }
+    if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
+  }
+
+  // ── Pillar 5c: Sponsor inbox bridge — route existing sponsorship offers through inbox ──
+  if (G.sponsorshipOffer && !G._sponsorInboxFired) {
+    G._sponsorInboxFired = true
+    const sp = G.sponsorshipOffer
+    const sid = Math.random().toString(36).slice(2)
+    G.narrativeInbox.push({ id: sid, type:'sponsor_offer', tag:'prestige', title:'Sponsorship: ' + sp.n, body:(sp.desc||'A sponsorship deal is available.') + ' +' + sp.monthlyRyo + ' ryo/month. View in Finances to accept.', year:G.year, month:G.month })
+    if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
+  }
+  if (!G.sponsorshipOffer) G._sponsorInboxFired = false
 
   // ── Squad injury crisis check ──────────────────────────────────────────────
   const injuredCount = G.shinobi.filter(s => s.status === 'injured').length
@@ -2969,6 +3031,9 @@ export function adv() {
   _tickSeniorGroup(G)
   _tickDevLoans(G)
   _tickAnalyticsSnapshot(G)
+
+  // Hard floors enforced at end-of-tick after all events have settled
+  if (G._moraleFloor && (G.morale || 0) < G._moraleFloor) G.morale = G._moraleFloor
 
   syncToServer(); rfM(); rfP()
   G.month++; if (G.month > 12) { G.month = 1; G.year++; addChronicle('New Year', 'Year ' + G.year + ' begins. Legend: ' + G.legend + '. Shinobi: ' + G.shinobi.length + '.', 'event') }

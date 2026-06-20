@@ -383,6 +383,21 @@ function buildItems() {
       items.push({ id: 'trd_' + n.id, priority: 'standard', cat: 'Transfers', icon: '📜', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: [{ label: '✓ Accept trade', fn: `resolveRivalOffer('${n.id}',true)` }, { label: '✗ Decline', fn: `resolveRivalOffer('${n.id}',false)` }], archived: false })
       return
     }
+    // ── Alumni message ──────────────────────────────────────────────────
+    if (n.type === 'alumni') {
+      items.push({ id: 'al_' + n.id, priority: 'info', cat: 'People', icon: '🎖', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'Dismiss', fn: `dismissNarrative('${n.id}')` }], archived: false })
+      return
+    }
+    // ── Civic event ─────────────────────────────────────────────────────
+    if (n.type === 'civic') {
+      items.push({ id: 'cv_' + n.id, priority: 'standard', cat: 'Village', icon: '🏘', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'Dismiss', fn: `dismissNarrative('${n.id}')` }], archived: false })
+      return
+    }
+    // ── Sponsor offer ───────────────────────────────────────────────────
+    if (n.type === 'sponsor_offer') {
+      items.push({ id: 'sp_' + n.id, priority: 'standard', cat: 'Finances', icon: '💰', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'View in Finances →', fn: `sp('economy')` }, { label: 'Dismiss', fn: `dismissNarrative('${n.id}')` }], archived: false })
+      return
+    }
     // ── Monthly quick decision ──────────────────────────────────────────
     if (n.type === 'quick_decision') {
       const opts = (n.options || []).map(o => ({ label: o.label, fn: `resolveQuickDecision('${n.eventId}','${o.id}')` }))

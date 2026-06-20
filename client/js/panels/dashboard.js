@@ -141,7 +141,14 @@ export function rDash() {
         <div class="dash-card-title">Morale</div>
         <div class="dash-stat" style="color:${(G.morale||75)>=70?'var(--green)':(G.morale||75)>=45?'var(--gold)':'var(--red)'}">${G.morale || 75}</div>
         <div class="dash-stat-sub">Reputation: ${G.reputation} · Prestige: ${G.prestigeTier || 'D'}</div>
-        <div class="dash-stat-sub" style="margin-top:3px">Legend: ${G.legend || 0}</div>
+        <div class="dash-stat-sub" style="margin-top:3px">Legend: ${G.legend || 0}${G._moraleFloor ? ` · Floor: ${G._moraleFloor}` : ''}</div>
+      </div>
+
+      <div class="dash-card">
+        <div class="dash-card-title">Social</div>
+        <div class="dash-stat" style="color:${(G.citizenMorale||60)>=70?'var(--green)':(G.citizenMorale||60)>=40?'var(--gold)':'var(--red)'}">${G.citizenMorale || 60}<span style="font-size:9px;color:#555">%</span></div>
+        <div class="dash-stat-sub">Citizens · Rev ×${((G._citizenRevMult||1)).toFixed(2)}</div>
+        <div class="dash-stat-sub" style="margin-top:3px">Alumni: ${(G.alumni||[]).length} · Sponsor: ${G.sponsorship ? G.sponsorship.n.slice(0,12) : 'none'}</div>
       </div>
     </div>
 
