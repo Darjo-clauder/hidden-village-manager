@@ -37,17 +37,26 @@ import { getPhilosophyMods } from '../../shared/constants/coachingPhilosophy.js'
 import { snapshotSeasonStats, leagueLeaders } from '../../shared/utils/seasonStats.js'
 import { computeAwards } from '../../shared/utils/awards.js'
 import { PRESS_QUESTIONS, PRESS_TONES, TONE_BY_ID } from '../../shared/utils/pressConference.js'
-import { updateConfidence, confidenceMod, formGrudge, grudgePenalty, pairChemistryBonus } from '../../shared/utils/personality.js'
+import { updateConfidence, confidenceMod, formGrudge, grudgePenalty, pairChemistryBonus, assignRoleTag, setEmotionalState, tickEmotionalState, emotionalScMod, getArchetypeQuote } from '../../shared/utils/personality.js'
 import { genMissionBlurb, genKIABlurb, genRankUpBlurb, genBondBlurb, genGrudgeBlurb, genCounterStrategyBlurb } from '../../shared/utils/narrativeEngine.js'
-import { recordPlayerTactic, getPlayerTendency, applyCounterStrategy, rivalScPenalty } from '../../shared/utils/adaptiveAI.js'
+import { recordPlayerTactic, getPlayerTendency, applyCounterStrategy, rivalScPenalty, observePlayerTactic, explainStanceChange, rollMetaEvent, ensureRivalProfile } from '../../shared/utils/adaptiveAI.js'
+import { addMemory, decayMemories, memoryMoraleMod, memoryStateBlurb } from '../../shared/utils/memorySystem.js'
+import { linkToThread, pruneOldThreads } from '../../shared/utils/narrativeThreads.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
-// ── Narrative inbox helper ─────────────────────────────────────────────────────
-function pushNarrative(blurb) {
+// ── Narrative inbox + thread helper ───────────────────────────────────────────
+function pushNarrative(blurb, actorIds = []) {
   if (!G.narrativeInbox) G.narrativeInbox = []
-  G.narrativeInbox.push({ id: Math.random().toString(36).slice(2), ...blurb, year: G.year, month: G.month })
-  if (G.narrativeInbox.length > 40) G.narrativeInbox.splice(0, G.narrativeInbox.length - 40)
+  if (!G.narrativeThreads) G.narrativeThreads = []
+  const entry = { id: Math.random().toString(36).slice(2), ...blurb, actorIds, year: G.year, month: G.month }
+  // Thread linking
+  const thread = linkToThread(G.narrativeThreads, entry.id, entry.tag, actorIds, entry.title, { year: G.year, month: G.month })
+  if (thread) entry.threadId = thread.id
+  G.narrativeInbox.push(entry)
+  if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
+  // Prune stale threads yearly
+  if (G.month === 1) G.narrativeThreads = pruneOldThreads(G.narrativeThreads, G.year, G.month)
 }
 
 // ── Mission log ────────────────────────────────────────────────────────────────
@@ -737,6 +746,15 @@ export function adv() {
     if (s.winsS === undefined) s.winsS = 0
     if (s.streak === undefined) s.streak = 0
 
+    // Memory decay + emotional state tick (monthly)
+    decayMemories(s, 1)
+    tickEmotionalState(s)
+    // Assign role tag on first mission (lazy)
+    if (!s.roleTag && s.wins > 0) assignRoleTag(s)
+    // Memory-driven morale nudge (small, monthly)
+    const _memMod = memoryMoraleMod(s)
+    if (_memMod !== 0) s.indMorale = clamp((s.indMorale || 70) + _memMod, 0, 100)
+
     s.months++
     if (s.months % 12 === 0) {
       s.age++
@@ -1049,10 +1067,21 @@ export function adv() {
         aL(_sqTag + sq.n + ' completed "' + m.n + '" — +' + fmt(_bonusRyo) + ' ryo. ' + _sqSuccessNarr, 'good')
         pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: _bonusRyo, rep: m.rep, chainName: m.chainName || null, narrative: _sqSuccessNarr, quality: _mev.quality })
         addLegend((m.rk === 'S' ? 15 : m.rk === 'A' ? 8 : m.rk === 'B' ? 3 : 1) + _mq.legend)
-        // Narrative Pillar 1&2: confidence + blurb
+        // Narrative Pillar 1&2: confidence + memory + blurb
         recordPlayerTactic(G.rivalTendencies, m.rk, _mev.quality, true)
-        sq.members.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s) updateConfidence(s, _mev.quality, { isLeader: s.id === sq.leaderId }) })
-        if (_mev.quality === 'decisive') pushNarrative(genMissionBlurb(sq.n, sq.members.length > 0 ? (G.shinobi.find(x => x.id === sq.members[0])?.ri ?? 2) : 2, m.n, 'decisive'))
+        G.villages.forEach(v => observePlayerTactic(v, m.rk, true))
+        const _sqActorIds = sq.members.slice()
+        sq.members.forEach(id => {
+          const s = G.shinobi.find(x => x.id === id); if (!s) return
+          updateConfidence(s, _mev.quality, { isLeader: s.id === sq.leaderId })
+          if (_mev.quality === 'decisive') {
+            addMemory(s, 'mission_triumph', m.id || m.n, { year: G.year, month: G.month })
+            if (s.wins === 10 || s.wins === 25) setEmotionalState(s, 'triumphant')
+          } else if (_mev.quality === 'narrow') {
+            addMemory(s, 'mission_triumph', m.id || m.n, { year: G.year, month: G.month }, 0.3)
+          }
+        })
+        if (_mev.quality === 'decisive') pushNarrative(genMissionBlurb(sq.n, sq.members.length > 0 ? (G.shinobi.find(x => x.id === sq.members[0])?.ri ?? 2) : 2, m.n, 'decisive'), _sqActorIds)
         // Post-mission contribution scores (Phase 4)
         G.lastMissionReport = _buildMissionReport(sq, m, true)
         // Squad identity unlock at cohesion 75
@@ -1115,7 +1144,7 @@ export function adv() {
             survivorIds.push(s.id)
           }
         })
-        // Survivors who witnessed KIA may develop trauma + grudges
+        // Survivors who witnessed KIA may develop trauma + grudges + memories
         if (hadKIA) {
           const fallen = sq.fallen[sq.fallen.length - 1]
           survivorIds.forEach(id => {
@@ -1123,18 +1152,24 @@ export function adv() {
             if (!survivor) return
             if (Math.random() < 0.5) applyTrauma(survivor)
             updateConfidence(survivor, _mev.quality, { hadKIA: true })
+            addMemory(survivor, 'witness_kia', m.id || m.n, { year: G.year, month: G.month })
+            setEmotionalState(survivor, 'grieving')
             // Bonded shinobi form a grudge against the rival village that caused the loss
             const wasBonded = fallen && (survivor.bonds || []).some(b => b.otherId === sq.fallen.find(f => f.name === fallen.name)?.id)
             if (wasBonded && G.villages.length) {
               const antagonist = pk(G.villages)
               formGrudge(survivor, antagonist.n, antagonist.n, 'kia_partner', { year: G.year, month: G.month })
-              if (fallen) pushNarrative(genGrudgeBlurb(survivor.fn + ' ' + survivor.ln, fallen.name, 'Fallen Comrade', 3))
+              const quote = getArchetypeQuote(survivor)
+              if (fallen) pushNarrative(genGrudgeBlurb(survivor.fn + ' ' + survivor.ln, fallen.name, 'Fallen Comrade', 3), [survivor.id])
+              aL(`"${quote}" — ${sn(survivor)}`, 'warn')
             }
           })
         } else {
           survivorIds.forEach(id => {
             const survivor = G.shinobi.find(x => x.id === id)
-            if (survivor) updateConfidence(survivor, _mev.quality)
+            if (!survivor) return
+            updateConfidence(survivor, _mev.quality)
+            if (_mev.quality === 'disaster') addMemory(survivor, 'mission_disaster', m.id || m.n, { year: G.year, month: G.month })
           })
         }
         sq.cohesion = Math.max(0, (sq.cohesion ?? 0) + (hadKIA ? -15 : -4))
@@ -1143,6 +1178,7 @@ export function adv() {
         const _sqFailTag = _mev.quality === 'disaster' ? '💥 Disaster — ' : ''
         aL(_sqFailTag + '"' + m.n + '" squad mission failed. ' + _sqFailNarr, 'bad')
         recordPlayerTactic(G.rivalTendencies, m.rk, _mev.quality, true)
+        G.villages.forEach(v => observePlayerTactic(v, m.rk, true))
         if (_mev.quality === 'disaster') pushNarrative(genMissionBlurb(sq.n, 2, m.n, 'disaster'))
         pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, narrative: _sqFailNarr, quality: _mev.quality })
         G.morale = clamp(G.morale - 5 + _mq.morale, 0, 100)
@@ -1186,7 +1222,10 @@ export function adv() {
         aL(_soloTag + sn(s) + ' completed "' + m.n + '" — +' + fmt(_bonusRyo) + ' ryo. ' + _soloSuccNarr, 'good')
         pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: _bonusRyo, rep: m.rep + rB, chainName: m.chainName || null, narrative: _soloSuccNarr, quality: _mev.quality })
         updateConfidence(s, _mev.quality)
+        if (_mev.quality === 'decisive') addMemory(s, 'mission_triumph', m.id || m.n, { year: G.year, month: G.month })
+        else if (_mev.quality === 'narrow') addMemory(s, 'mission_triumph', m.id || m.n, { year: G.year, month: G.month }, 0.3)
         recordPlayerTactic(G.rivalTendencies, m.rk, _mev.quality, false)
+        G.villages.forEach(v => observePlayerTactic(v, m.rk, false))
         addLegend((m.rk === 'S' ? 12 : m.rk === 'A' ? 6 : m.rk === 'B' ? 2 : 1) + _mq.legend)
         if (m.rk === 'S') addChronicle('S-Rank Completed', sn(s) + ' completed the S-rank mission "' + m.n + '".', 'legend')
         if (m.chainId) advanceChain(G, m.id, true)
@@ -1234,7 +1273,10 @@ export function adv() {
           }
         }
         updateConfidence(s, _mev.quality)
+        addMemory(s, 'mission_disaster', m.id || m.n, { year: G.year, month: G.month })
+        if (_mev.quality === 'disaster') setEmotionalState(s, 'fearful')
         recordPlayerTactic(G.rivalTendencies, m.rk, _mev.quality, false)
+        G.villages.forEach(v => observePlayerTactic(v, m.rk, false))
         pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, chainName: m.chainName || null, quality: _mev.quality })
         G.morale = clamp(G.morale - 3 + _mq.morale, 0, 100)
         if (m.chainId) advanceChain(G, m.id, false)
@@ -1275,10 +1317,21 @@ export function adv() {
       const recruit = mS(rnd(0, 1)); recruit.homeVillage = v.n; v.roster.push(recruit)
     }
     // Adaptive AI — rivals re-evaluate tactics each season (once per year minimum)
+    ensureRivalProfile(v)
     if (G.month === 1 || !v.counterStrategy) {
       const tendency = getPlayerTendency(G.rivalTendencies || {})
       const { changed, strategy } = applyCounterStrategy(v, tendency)
-      if (changed && strategy.id !== 'balanced') pushNarrative(genCounterStrategyBlurb(v.n, strategy.label, strategy.desc))
+      if (changed && strategy.id !== 'balanced') {
+        const explainedDesc = explainStanceChange(v, strategy)
+        pushNarrative(genCounterStrategyBlurb(v.n, strategy.label, explainedDesc), [v.n])
+        v.rivalProfile.lastStance = strategy.id
+        v.rivalProfile.stanceHistory = [...(v.rivalProfile.stanceHistory || []).slice(-4), { stance: strategy.id, year: G.year, month: G.month }]
+      }
+    }
+    // Meta-event: once per year, ~8% chance of league-wide shift
+    if (G.month === 6) {
+      const meta = rollMetaEvent(G.villages, { year: G.year, month: G.month })
+      if (meta.fired) pushNarrative({ title: 'League Shift', body: meta.desc, tag: 'intel', link: null }, [])
     }
     // Apply counter-strategy strength tick multiplier
     v._ctBonus = v.counterTickBonus ?? 1

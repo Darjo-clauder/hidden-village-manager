@@ -194,6 +194,134 @@ export function pairChemistryBonus(a, b, pairChemistryLog = {}) {
   return bonus
 }
 
+// ── Role identity / playstyle tags ───────────────────────────────────────────
+
+export const ROLE_TAGS = [
+  { id: 'playmaker',  label: 'Playmaker',  desc: 'Elevates squadmates. +3 to each ally\'s effective power when deployed together.',   missionBonus: 0,    squadBonus: 3  },
+  { id: 'grinder',    label: 'Grinder',    desc: 'Thrives on volume. +5% sc for every 10 missions completed (cap +15%).',              missionBonus: 0.05, squadBonus: 0  },
+  { id: 'enforcer',   label: 'Enforcer',   desc: 'Intimidation factor reduces KIA risk by 1% when deployed.',                          missionBonus: 0,    kiaRiskMod: -0.01 },
+  { id: 'tactician',  label: 'Tactician',  desc: 'Reduces mission failure margin. Costly results become Narrow on a 30% roll.',        missionBonus: 0,    squadBonus: 0  },
+  { id: 'lone_wolf',  label: 'Lone Wolf',  desc: '+8% sc on solo missions; −4 chemistry when forced into squads.',                     missionBonus: 0.08, squadBonus: -4 },
+  { id: 'anchor',     label: 'Anchor',     desc: 'Stabilises squad cohesion. Cohesion floor raised to 20 while deployed.',             missionBonus: 0,    squadBonus: 0  },
+]
+
+export const ROLE_TAG_BY_ID = Object.fromEntries(ROLE_TAGS.map(r => [r.id, r]))
+
+const ROLE_TAG_POOL = ['playmaker', 'grinder', 'enforcer', 'tactician', 'lone_wolf', 'anchor']
+
+/**
+ * Assign a role tag to a shinobi if they don't have one.
+ * Called lazily — not set at generation so it emerges after first missions.
+ */
+export function assignRoleTag(s) {
+  if (s.roleTag) return
+  // Bias toward archetype-compatible tags
+  const affinities = {
+    will_of_fire: 'playmaker', avenger: 'enforcer', prodigy: 'tactician',
+    gentle_fist: 'anchor', wild_card: 'lone_wolf', sage_path: 'tactician',
+    clan_heir: 'playmaker', rogue_element: 'lone_wolf', medic_path: 'anchor',
+  }
+  s.roleTag = affinities[s.narrativeArchetype] ?? ROLE_TAG_POOL[Math.floor(Math.random() * ROLE_TAG_POOL.length)]
+}
+
+// ── Emotional states ──────────────────────────────────────────────────────────
+
+export const EMOTIONAL_STATES = {
+  angry:      { label: 'Angry',      moodMod: -5,  scMod: 0.03,  duration: 2, desc: 'Fuelled by rage — reckless but hits hard.' },
+  inspired:   { label: 'Inspired',   moodMod: 8,   scMod: 0.05,  duration: 3, desc: 'Something lit a fire. Operating at peak.' },
+  homesick:   { label: 'Homesick',   moodMod: -4,  scMod: -0.03, duration: 3, desc: 'Distracted by thoughts of home.' },
+  grieving:   { label: 'Grieving',   moodMod: -8,  scMod: -0.05, duration: 4, desc: 'Loss has hollowed them out for now.' },
+  triumphant: { label: 'Triumphant', moodMod: 6,   scMod: 0.04,  duration: 2, desc: 'Victory still fresh. Unstoppable feeling.' },
+  fearful:    { label: 'Fearful',    moodMod: -6,  scMod: -0.04, duration: 3, desc: 'Something broke their nerve.' },
+  focused:    { label: 'Focused',    moodMod: 3,   scMod: 0.02,  duration: 2, desc: 'Locked in. Nothing else matters.' },
+}
+
+/**
+ * Set a shinobi's emotional state (replaces previous).
+ * @param {object} s  shinobi
+ * @param {string} stateId  key from EMOTIONAL_STATES
+ */
+export function setEmotionalState(s, stateId) {
+  const def = EMOTIONAL_STATES[stateId]
+  if (!def) return
+  s.emotionalState     = stateId
+  s.emotionalStateLabel = def.label
+  s.emotionalStateMo   = def.duration  // months remaining
+}
+
+/**
+ * Tick emotional state duration. Called monthly. Clears when expired.
+ */
+export function tickEmotionalState(s) {
+  if (!s.emotionalState) return
+  s.emotionalStateMo = (s.emotionalStateMo || 1) - 1
+  if (s.emotionalStateMo <= 0) {
+    s.emotionalState      = null
+    s.emotionalStateLabel = null
+    s.emotionalStateMo    = 0
+  }
+}
+
+/**
+ * Returns the sc modifier from the current emotional state (0 if none).
+ */
+export function emotionalScMod(s) {
+  if (!s.emotionalState) return 0
+  return EMOTIONAL_STATES[s.emotionalState]?.scMod ?? 0
+}
+
+// ── Dynamic NPC quotes ────────────────────────────────────────────────────────
+
+const ARCHETYPE_QUOTES = {
+  will_of_fire:   ["For the village.", "I won't let this end here.", "This is my nindo — my ninja way."],
+  avenger:        ["I'll remember this.", "Everyone who wronged me will know my name.", "Emotions are just another tool."],
+  prodigy:        ["I already knew that.", "My potential is limitless.", "Don't waste my time with easy missions."],
+  gentle_fist:    ["Precision over power.", "Every opening closes if you wait.", "I don't fight for glory. I fight to protect."],
+  wild_card:      ["Plans are just suggestions.", "Chaos is where I thrive.", "You never know what I'll do next — including me."],
+  sage_path:      ["Patience is a weapon too.", "The mission will speak to you if you're quiet enough.", "I've lived through worse."],
+  clan_heir:      ["The clan's honour demands nothing less than perfection.", "My name carries weight. I intend to keep it that way.", "Failure is not an option my ancestors would accept."],
+  rogue_element:  ["Some things stay buried.", "Trust is earned. I'm still earning mine.", "My past is mine alone."],
+  medic_path:     ["No one dies on my watch.", "I didn't train this hard to lose anyone.", "Save them first. Ask questions after."],
+}
+
+const MEMORY_VALENCE_QUOTES = {
+  positive:  ["Remembering what we're fighting for helps.", "Every win adds up."],
+  negative:  ["That failure still stings.", "I won't let that happen again."],
+  trauma:    ["Carrying it quietly.", "Some things don't leave you."],
+  neutral:   [],
+}
+
+/**
+ * Returns a personality-colored quote for a shinobi.
+ * Influenced by archetype and dominant memory valence.
+ * @param {object} s  shinobi (with narrativeArchetype + optional memories)
+ * @returns {string}
+ */
+export function getArchetypeQuote(s) {
+  const pk = arr => arr[Math.floor(Math.random() * arr.length)]
+  const arch = s.narrativeArchetype
+  const pool = ARCHETYPE_QUOTES[arch]
+
+  // 30% chance to pull a memory-colored quote instead
+  if (s.memories && s.memories.length && Math.random() < 0.30) {
+    const valence = dominantValence(s.memories)
+    const vPool = MEMORY_VALENCE_QUOTES[valence] || []
+    if (vPool.length) return pk(vPool)
+  }
+
+  return pool ? pk(pool) : 'Ready for the next mission.'
+}
+
+function dominantValence(memories) {
+  if (!memories || memories.length === 0) return 'neutral'
+  const scores = { positive: 0, negative: 0, trauma: 0 }
+  for (const m of memories) scores[m.valence] = (scores[m.valence] || 0) + m.intensity
+  const top = Object.entries(scores).sort((a, b) => b[1] - a[1])[0]
+  return top[1] > 0.15 ? top[0] : 'neutral'
+}
+
+// ── One-line blurb ────────────────────────────────────────────────────────────
+
 /**
  * One-line blurb describing a shinobi's current emotional arc.
  */

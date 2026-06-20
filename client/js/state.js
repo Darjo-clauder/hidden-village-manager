@@ -86,10 +86,15 @@ export function mS(ri = 0) {
     naturalRoles: ['flex'],          // roles this shinobi is comfortable in (1–3)
     restMonth: false,                // if true: skip mission deployment, recover workload
     pairChemistry: {},               // { otherId: missionsTogether } — pair-level chemistry tracker
-    // Narrative layer (Pillar 1)
+    // Narrative layer (Pillars 1–3)
     narrativeArchetype: ARCHETYPE_POOL[Math.floor(Math.random() * ARCHETYPE_POOL.length)],
     confidence: 50,                  // 0–100; feeds ±0.05 to mission sc
     grudges: [],                     // [{ targetId, targetName, reasonId, reasonLabel, intensity, formed, lastEvent }]
+    memories: [],                    // [{ id, type, label, valence, intensity, tau, source, year, month }]
+    roleTag: null,                   // assigned after first missions: playmaker|grinder|enforcer|tactician|lone_wolf|anchor
+    emotionalState: null,            // short-term state id or null
+    emotionalStateLabel: null,
+    emotionalStateMo: 0,             // months remaining on current emotional state
   }
 }
 
@@ -298,7 +303,8 @@ export function initState() {
     draftPool: [],                     // prospect leads from safehouse network (see rollProspectLead)
     // Narrative layer (Pillars 1–3)
     rivalTendencies: { totalMissions: 0, eliteDeployments: 0, successRun: 0, squadMissions: 0, lastAdaptYear: 0 },
-    narrativeInbox: [],              // [{ id, title, body, tag, link, year, month }] — generated blurbs
+    narrativeInbox: [],              // [{ id, title, body, tag, link, year, month, actorIds, threadId }]
+    narrativeThreads: [],            // [{ id, type, title, actorIds, events, state, priority, ... }]
   });
   // Starting roster — a workable core of ~15 (grows toward 23 via academy/transfers).
   ;[3, 2, 2, 2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0].forEach(r => {
