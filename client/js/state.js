@@ -130,6 +130,20 @@ export const KAGE_EVENTS = [
   ] },
 ]
 
+// ── Rival village rosters ──────────────────────────────────────────────────
+// Each village fields a full 23-shinobi roster (realistic rank pyramid) so the
+// world feels populated and the Chunin Exam can pit real squads against squads.
+const ROSTER_PYRAMID = [4, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0] // 23
+export function genVillageRoster(v) {
+  const mult = clamp(1 + (((v.str || 75) - 77) / 200), 0.95, 1.06) // stronger villages, slightly better ninja
+  return ROSTER_PYRAMID.map(r => {
+    const s = mS(r)
+    s.homeVillage = v.n
+    Object.keys(s.stats).forEach(k => { s.stats[k] = clamp(Math.round(s.stats[k] * mult), 1, 99) })
+    return s
+  })
+}
+
 // ── game init & helpers ────────────────────────────────────────────────────
 export function initState() {
   Object.keys(G).forEach(k => delete G[k])
@@ -137,7 +151,7 @@ export function initState() {
     vName: 'Hidden Village', kName: 'Kage', vIcon: '🍃',
     year: 1, month: 1, ryo: 60000, reputation: 10, morale: 75,
     shinobi: [], squads: [], aM: [], log: [], prospects: [],
-    villages: JSON.parse(JSON.stringify(VILLAGES_DEF)),
+    villages: JSON.parse(JSON.stringify(VILLAGES_DEF)).map(v => ({ ...v, roster: genVillageRoster(v) })),
     beasts: JSON.parse(JSON.stringify(TAILED_BEASTS)),
     avM: [], upgrades: { academy: 0, hospital: 0, wall: 0, intel: 0, training: 0, seal: 0 },
     raid: null, raidW: 0, defSh: null, tempDef: 0,
@@ -273,7 +287,8 @@ export function initState() {
     clanApproval: {},                  // { [clanId]: 0–100 } — drift toward 60 monthly
     draftPool: [],                     // prospect leads from safehouse network (see rollProspectLead)
   });
-  ;[2, 2, 1, 1, 1, 0, 0, 0].forEach(r => {
+  // Starting roster — a workable core of ~15 (grows toward 23 via academy/transfers).
+  ;[3, 2, 2, 2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0].forEach(r => {
     const s = mS(r)
     s.contractEnd = 1 + Math.floor(Math.random() * 3) + 1  // year 2–4
     G.shinobi.push(s)

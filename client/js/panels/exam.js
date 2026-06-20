@@ -58,23 +58,28 @@ function _renderExamSetup(el, tabHtml) {
     el.innerHTML = tabHtml + hostInfo + formatBanner + seasonCard + '<div style="color:#7a7060;font-size:10px">No exam scheduled.<br><br><button class="gb" onclick="schEx()">Request exam</button></div>'
     return
   }
-  const cands = G.shinobi.filter(s => (s.ri === 0 || s.ri === 1) && s.status === 'available' && !(G.transferMarket?.loanIn || []).some(l => l.shinobiId === s.id))
-  const maxCands = G.worldFlags?.examExpanded ? 8 : 6
+  // Squads are the competitors — compositions, cohesion and formation all matter.
+  const maxCands = 4
+  const squads = (G.squads || []).map(sq => {
+    const members = (sq.members || []).map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
+    return { sq, members }
+  }).filter(o => o.members.length && o.members.every(s => s.status === 'available'))
   el.innerHTML = tabHtml + hostInfo + formatBanner + seasonCard +
-    `<div style="font-size:9px;color:#7a7060;margin-bottom:12px">Select nominees (max ${maxCands}). Loan-in shinobi are ineligible.</div>` +
+    `<div style="font-size:9px;color:#7a7060;margin-bottom:12px">Nominate squads (max ${maxCands}). All members must be available. Promotable members (Genin/Chunin) earn promotion by advancing deep.</div>` +
     '<div style="margin-bottom:12px">' +
-    (cands.map(s => {
-      const ent = G.examCands.includes(s.id)
-      const fmtMatch = fmt_ && fmt_.bonusStats.some(k => (s.stats[k] || 0) >= 35)
-      return `<div class="pi" onclick="tEC('${s.id}')" style="${ent ? 'border-color:#c9a84c;background:rgba(201,168,76,0.08)' : ''}"><div><div style="font-size:10px;color:#e8e0cc">${sn(s)}${fmtMatch ? ' <span style="color:#8fbc8f;font-size:8px">★ format match</span>' : ''}</div><div style="font-size:8px;color:#7a7060">${RANKS[s.ri]} · Pwr ${sPow(s)}</div></div>${ent ? '<span style="color:#c9a84c">✓</span>' : ''}</div>`
-    }).join('') || '<div style="color:#7a7060;font-size:9px">No eligible candidates.</div>') +
+    (squads.length ? squads.map(({ sq, members }) => {
+      const ent = G.examCands.includes(sq.id)
+      const fmtMatch = fmt_ && members.some(s => fmt_.bonusStats.some(k => (s.stats[k] || 0) >= 35))
+      const promotable = members.filter(s => s.ri <= 1).length
+      return `<div class="pi" onclick="tEC('${sq.id}')" style="${ent ? 'border-color:#c9a84c;background:rgba(201,168,76,0.08)' : ''}"><div><div style="font-size:10px;color:#e8e0cc">${sq.n}${sq.identity ? ` <span style="color:#c9a84c;font-size:8px">«${sq.identity.title}»</span>` : ''}${fmtMatch ? ' <span style="color:#8fbc8f;font-size:8px">★ format match</span>' : ''}</div><div style="font-size:8px;color:#7a7060">${members.length} ninja · Pwr ${_squadPow(members, sq.cohesion)} · cohesion ${sq.cohesion ?? 0} · ${promotable} promotable</div><div style="font-size:7px;color:#5a5448">${members.map(s => sn(s) + ' (' + RANKS[s.ri][0] + ')').join(', ')}</div></div>${ent ? '<span style="color:#c9a84c">✓</span>' : ''}</div>`
+    }).join('') : '<div style="color:#7a7060;font-size:9px">No eligible squads. Build a squad in the Squads panel (all members must be available).</div>') +
     '</div>' +
     (G.examCands.length ? '<button class="gb" onclick="startEx()">Start Exam ►</button>' : '') +
     (G.examResults.length ? '<div style="margin-top:14px;font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:7px">Recent Results</div>' + G.examResults.slice(-10).map(r => `<div style="font-size:9px;padding:4px 0;border-bottom:1px solid #2e2a22;color:${r.promoted ? '#8fbc8f' : '#7a7060'}">${r.name}: ${r.result}${r.promoted ? ' → Promoted!' : ''}</div>`).join('') : '')
 }
 
 export function tEC(id) {
-  const maxCands = G.worldFlags?.examExpanded ? 8 : 6
+  const maxCands = 4  // max nominated squads
   if (G.examCands.includes(id)) G.examCands = G.examCands.filter(x => x !== id)
   else if (G.examCands.length < maxCands) G.examCands.push(id)
   rEx()
@@ -83,17 +88,33 @@ export function tEC(id) {
 // Stage labels — now framed as a competitive bracket.
 export const EXAM_STAGES = ['Qualifier — Written Test', 'Quarterfinal — Forest of Death', 'Semifinal — Preliminary Duels', 'Final — Championship']
 
-// Rival genin names by village flavour.
-const RIVAL_NAME_POOL = ['Genin', 'Prodigy', 'Cadet', 'Aspirant', 'Hopeful', 'Adept']
-function _rivalCombatants(v) {
-  // A village fields 4–6 genin; individual power scales off the village's aggregate str.
-  const n = rnd(4, 6)
-  return Array.from({ length: n }, (_, i) => ({
-    id: 'r_' + v.n + '_' + i,
-    name: v.n.replace(/gakure$/, '') + ' ' + pk(RIVAL_NAME_POOL),
-    pow: clamp(Math.round(v.str * 0.5) + rnd(-8, 12), 15, 72),
-    isPlayer: false,
-  }))
+// Squad power = average member power, lifted by cohesion (rewards squad-building).
+function _squadPow(members, cohesion = 0) {
+  if (!members.length) return 0
+  const avg = members.reduce((a, s) => a + sPow(s), 0) / members.length
+  return Math.round(avg * (1 + (cohesion || 0) / 300))
+}
+// Average of a stat across a squad's members.
+function _avgStat(c, k) {
+  const ms = c.members || []
+  return ms.length ? ms.reduce((a, s) => a + (s.stats?.[k] || 0), 0) / ms.length : 30
+}
+// Format bonus if any member is strong in the format's stats.
+function _squadFormatBonus(c) {
+  const fmt_ = G.examFormat
+  if (!fmt_) return 0
+  return (c.members || []).some(s => fmt_.bonusStats.some(k => (s.stats?.[k] || 0) >= 35)) ? 0.15 : 0
+}
+
+// A rival village fields up to 3 three-genin cells drawn from its roster.
+function _rivalSquads(v) {
+  const pool = (v.roster || []).filter(s => s.ri <= 1).slice().sort(() => Math.random() - 0.5)
+  const squads = []
+  for (let i = 0; i + 3 <= pool.length && squads.length < 3; i += 3) {
+    const members = pool.slice(i, i + 3)
+    squads.push({ id: 'rs_' + v.n + '_' + squads.length, name: v.n.replace(/gakure$/, '') + ' Cell ' + (squads.length + 1), members })
+  }
+  return squads
 }
 
 // Build the full tournament field: player village + every rival village.
@@ -108,15 +129,18 @@ function _buildExamField() {
   }
   const playerEntry = {
     vid: 'player', name: G.vName, ico: G.vIcon, isPlayer: true, seed: seeds[G.vName] || null,
-    alive: G.examCands.map(id => {
-      const s = G.shinobi.find(x => x.id === id)
-      return { id, shinobiId: id, name: sn(s), pow: sPow(s), isPlayer: true, seedBonus: seedBonus(G.vName) }
-    }).filter(c => c.id),
+    alive: G.examCands.map(sqId => {
+      const sq = G.squads.find(q => q.id === sqId); if (!sq) return null
+      const members = (sq.members || []).map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
+      if (!members.length) return null
+      return { id: sqId, name: sq.n, members, pow: _squadPow(members, sq.cohesion), isPlayer: true, seedBonus: seedBonus(G.vName) }
+    }).filter(Boolean),
     out: [],
   }
   const rivalEntries = (G.villages || []).map(v => ({
     vid: v.n, name: v.n, ico: v.ico, isPlayer: false, seed: seeds[v.n] || null,
-    alive: _rivalCombatants(v).map(c => ({ ...c, seedBonus: seedBonus(v.n) })), out: [],
+    alive: _rivalSquads(v).map(sq => ({ id: sq.id, name: sq.name, members: sq.members, pow: _squadPow(sq.members, rnd(0, 30)), isPlayer: false, seedBonus: seedBonus(v.n) })),
+    out: [],
   }))
   return [playerEntry, ...rivalEntries]
 }
@@ -134,7 +158,11 @@ export function startEx() {
   G.examJudgeProtested = false
   G.examActive = true
   ui.exSt = { round: 0, field: _buildExamField(), sabotaged: false }
-  G.examCands.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s) s.status = 'exam' })
+  // Mark every nominated squad's members as committed to the exam.
+  G.examCands.forEach(sqId => {
+    const sq = G.squads.find(q => q.id === sqId); if (!sq) return
+    sq.members.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s) s.status = 'exam' })
+  })
   rEx()
 }
 
@@ -158,21 +186,16 @@ function rExA(el, tabHtml) {
   el.innerHTML = tabHtml + biasWarning + `<div style="background:#0d0d0d;border:1px solid #c9a84c;padding:14px">
     <div style="font-size:8px;letter-spacing:3px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">${EXAM_STAGES[r] || 'Final'}</div>
     ${G.examFormat ? `<div style="font-size:8px;color:#7a7060;margin-bottom:8px">${G.examFormat.icon} Format: ${G.examFormat.n} — format-matched nominees get +15%</div>` : ''}
-    <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${standing.length} villages in contention · ${totalAlive} combatants remaining</div>
+    <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${standing.length} villages in contention · ${totalAlive} squads remaining</div>
     <div style="display:grid;gap:8px;margin-bottom:10px">
       ${standing.map((e, i) => `<div style="border:1px solid ${e.isPlayer ? '#c9a84c' : '#2e2a22'};padding:7px;background:${e.isPlayer ? 'rgba(201,168,76,0.06)' : '#0a0a0a'}">
         <div style="font-size:9px;color:${e.isPlayer ? '#c9a84c' : '#9a9080'};margin-bottom:4px">${i === 0 ? '◆ ' : ''}${e.seed ? `<span style="color:#7a7060">#${e.seed}</span> ` : ''}${e.ico || '🏳'} ${e.name}${e.isPlayer ? ' (you)' : ''} <span style="color:#7a7060">— ${e.alive.length} alive${e.scrolls != null ? ` · ${e.scrolls} 📜` : ''}</span></div>
-        ${e.alive.map(c => `<div style="font-size:8px;padding:2px 0;color:${c.isPlayer ? '#e8e0cc' : '#7a7060'}">${c.name} · Pwr ${c.pow}${c._wounded ? ' <span style="color:#f88">⚕ wounded</span>' : ''}${c.isPlayer && _formatBonusById(c.shinobiId) > 0 ? ' <span style="color:#8fbc8f">★+15%</span>' : ''}</div>`).join('')}
+        ${e.alive.map(c => `<div style="font-size:8px;padding:2px 0;color:${c.isPlayer ? '#e8e0cc' : '#7a7060'}">${c.name} · ${(c.members || []).length}-ninja · Pwr ${c.pow}${c._wounded ? ' <span style="color:#f88">⚕ wounded</span>' : ''}${_squadFormatBonus(c) > 0 ? ' <span style="color:#8fbc8f">★+15%</span>' : ''}</div>`).join('')}
       </div>`).join('')}
     </div>
     ${!ui.exSt.sabotaged && r === 1 ? `<button class="btn" onclick="sabotageSquad()" style="font-size:9px;margin-bottom:8px;color:#f88">Sabotage a rival squad (risk relations)</button> ` : ''}
     <button class="gb" onclick="runRound()">Run ${EXAM_STAGES[r] ? EXAM_STAGES[r].split(' — ')[0] : 'Round'} ►</button>
   </div>`
-}
-
-function _formatBonusById(id) {
-  const s = G.shinobi.find(x => x.id === id)
-  return s ? _formatBonus(s) : 0
 }
 
 export function protestJudge() {
@@ -235,11 +258,7 @@ export function runRound() {
     // Seeds earned in the season standings add a survival edge here.
     _stageSurvival(field, c => {
       const sb = c.seedBonus || 0
-      if (c.isPlayer) {
-        const s = G.shinobi.find(x => x.id === c.shinobiId)
-        return clamp(0.5 + (s?.stats.intelligence || 30) / 200 + _formatBonusById(c.shinobiId) + sb, 0.1, 0.95)
-      }
-      return clamp(0.45 + c.pow / 200 + sb, 0.1, 0.9)
+      return clamp(0.46 + _avgStat(c, 'intelligence') / 200 + _squadFormatBonus(c) + sb, 0.1, 0.95)
     }, 'Passed the written test', 'Failed the written test', res)
   } else if (r === 1) {
     return _runForest(field, res)
@@ -276,24 +295,18 @@ function _runForest(field, res) {
     const kept = []
     entry.scrolls = 0
     entry.alive.forEach(c => {
-      let prob
-      if (c.isPlayer) {
-        const s = G.shinobi.find(x => x.id === c.shinobiId)
-        prob = clamp(0.4 + ((s?.stats.speed || 0) + (s?.stats.chakra || 0)) / 400 + (isHost ? 0.08 : 0) + _formatBonusById(c.shinobiId), 0.1, 0.95)
-      } else {
-        prob = clamp(0.42 + c.pow / 220, 0.1, 0.9)
-      }
+      const prob = clamp(0.4 + (_avgStat(c, 'speed') + _avgStat(c, 'chakra')) / 400 + (isHost && c.isPlayer ? 0.08 : 0) + _squadFormatBonus(c), 0.1, 0.95)
       const survived = Math.random() < prob
       if (survived) { kept.push(c); entry.scrolls++ } else entry.out.push(c)
-      // Player nominees risk real injury — far higher when overwhelmed and eliminated.
+      // Player squads risk a real injury to one member — higher when eliminated.
       let injNote = ''
       if (c.isPlayer) {
-        const injChance = survived ? 0.10 : 0.30
-        if (Math.random() < injChance) {
-          const s = G.shinobi.find(x => x.id === c.shinobiId)
-          if (s) { const inj = _examInjure(s); injNote = ` — wounded: ${inj.n} (${inj.dur}mo)`; c._wounded = true }
+        const injChance = survived ? 0.12 : 0.35
+        if (Math.random() < injChance && (c.members || []).length) {
+          const victim = pk(c.members)
+          if (victim) { const inj = _examInjure(victim); injNote = ` — ${sn(victim)} wounded: ${inj.n} (${inj.dur}mo)`; c._wounded = true }
         }
-        res.push({ name: c.name, result: (survived ? 'Secured a scroll, survived' : 'Eliminated in the forest') + injNote, promoted: false, good: survived })
+        res.push({ name: c.name, result: (survived ? 'Secured a scroll, advances' : 'Eliminated in the forest') + injNote, promoted: false, good: survived })
       }
     })
     entry.alive = kept
@@ -309,7 +322,7 @@ function _runSemifinal(field, res, biasMod) {
   field.forEach(entry => entry.alive.forEach(c => pool.push({ c, entry })))
   pool.sort((a, b) => b.c.pow - a.c.pow)
   pool.forEach((p, i) => { p.seed = i + 1 })
-  const effPow = c => c.pow * (1 + (c.isPlayer ? _formatBonusById(c.shinobiId) : 0)) - (c.isPlayer ? biasMod * 100 : 0)
+  const effPow = c => c.pow * (1 + _squadFormatBonus(c)) - (c.isPlayer ? biasMod * 100 : 0)
   const duels = []
   const losers = new Set()
   let lo = 0, hi = pool.length - 1
@@ -373,7 +386,7 @@ function _renderRoundOverlay(r, res, field) {
     (res.length
       ? res.map(x => `<div style="font-size:9px;padding:4px 0;border-bottom:1px solid #2e2a22;color:${x.good ? '#8fbc8f' : '#f66'}"><span style="color:#c9a84c">${x.name}</span> — ${x.result}</div>`).join('')
       : '<div style="font-size:9px;color:#7a7060">Your nominees saw no decisive action this stage.</div>') +
-    `<div style="margin-top:8px;font-size:9px;color:#7a7060">${villagesIn} villages still in contention · ${totalAlive} combatants advance.</div>`
+    `<div style="margin-top:8px;font-size:9px;color:#7a7060">${villagesIn} villages still in contention · ${totalAlive} squads advance.</div>`
   document.getElementById('ov-examfight').classList.add('open'); upUI()
 }
 
@@ -381,23 +394,25 @@ function _runFinals(field, biasMod) {
   const res = []
   let examPromotions = 0
 
-  // Promote player finalists who reached the championship round.
+  // Promote members of player squads that reached the championship round.
   const playerEntry = field.find(e => e.isPlayer)
   ;(playerEntry?.alive || []).forEach(c => {
-    const s = G.shinobi.find(x => x.id === c.shinobiId); if (!s) return
-    const hostBonus = G.examHosting ? 0.10 : 0
-    const fmtB = _formatBonus(s)
-    const prom = Math.random() < clamp(0.55 + hostBonus + fmtB - biasMod, 0.05, 0.97)
-    if (prom && s.ri < 4) {
-      s.ri++; s.salary = 500 + s.ri * 400; examPromotions++
-      res.push({ name: sn(s), result: 'Promoted to ' + RANKS[s.ri] + '!', promoted: true })
-      aL(sn(s) + ' promoted via Exam!' + (fmtB > 0 ? ' (format bonus applied)' : '') + (biasMod > 0 ? ' (judge bias penalised)' : ''), 'good')
-      G.dynastyRecords.examWins = (G.dynastyRecords?.examWins || 0) + 1
-      addLegend(5)
-      addChronicle('Exam Promotion', `${sn(s)} fought through the field of five villages and was promoted to ${RANKS[s.ri]}.`, 'shinobi')
-    } else {
-      res.push({ name: sn(s), result: 'Reached the final, not promoted.', promoted: false })
-    }
+    (c.members || []).forEach(s => {
+      if (!s || s.ri >= 4) return  // only Genin→ANBU range is promotable here
+      const hostBonus = G.examHosting ? 0.10 : 0
+      const fmtB = _formatBonus(s)
+      const prom = Math.random() < clamp(0.55 + hostBonus + fmtB - biasMod, 0.05, 0.97)
+      if (prom) {
+        s.ri++; s.salary = 500 + s.ri * 400; examPromotions++
+        res.push({ name: sn(s), result: `Promoted to ${RANKS[s.ri]}! (${c.name})`, promoted: true })
+        aL(sn(s) + ' promoted via Exam!' + (fmtB > 0 ? ' (format bonus applied)' : '') + (biasMod > 0 ? ' (judge bias penalised)' : ''), 'good')
+        G.dynastyRecords.examWins = (G.dynastyRecords?.examWins || 0) + 1
+        addLegend(5)
+        addChronicle('Exam Promotion', `${sn(s)} of ${c.name} fought through the field of five villages and was promoted to ${RANKS[s.ri]}.`, 'shinobi')
+      } else {
+        res.push({ name: sn(s), result: `Reached the final with ${c.name}, not promoted.`, promoted: false })
+      }
+    })
   })
 
   // Crown the champion village — most finalists, tiebreak by combined power.
@@ -442,12 +457,15 @@ function _runFinals(field, biasMod) {
     addLegend(8)
   }
 
-  // Cleanup — restore nominee statuses (wounds carry into the season) and reset exam state.
+  // Cleanup — restore squad-member statuses (wounds carry into the season) and reset exam state.
   let woundedCount = 0
-  G.examCands.forEach(id => {
-    const s = G.shinobi.find(x => x.id === id); if (!s) return
-    s.missId = null
-    if ((s.injDays || 0) > 0) { s.status = 'injured'; woundedCount++ } else s.status = 'available'
+  G.examCands.forEach(sqId => {
+    const sq = G.squads.find(q => q.id === sqId); if (!sq) return
+    sq.members.forEach(id => {
+      const s = G.shinobi.find(x => x.id === id); if (!s) return
+      s.missId = null
+      if ((s.injDays || 0) > 0) { s.status = 'injured'; woundedCount++ } else s.status = 'available'
+    })
   })
   if (woundedCount > 0) aL(`${woundedCount} nominee${woundedCount > 1 ? 's' : ''} returned from the exam injured.`, 'warn')
 
