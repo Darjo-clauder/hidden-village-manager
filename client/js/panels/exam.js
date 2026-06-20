@@ -59,7 +59,7 @@ function _renderExamSetup(el, tabHtml) {
     return
   }
   // Squads are the competitors — compositions, cohesion and formation all matter.
-  const maxCands = 4
+  const maxCands = 8  // up to 24 nominees (8 three-ninja squads)
   const squads = (G.squads || []).map(sq => {
     const members = (sq.members || []).map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
     return { sq, members }
@@ -79,7 +79,7 @@ function _renderExamSetup(el, tabHtml) {
 }
 
 export function tEC(id) {
-  const maxCands = 4  // max nominated squads
+  const maxCands = 8  // max nominated squads (24 ninja)
   if (G.examCands.includes(id)) G.examCands = G.examCands.filter(x => x !== id)
   else if (G.examCands.length < maxCands) G.examCands.push(id)
   rEx()
@@ -110,7 +110,7 @@ function _squadFormatBonus(c) {
 function _rivalSquads(v) {
   const pool = (v.roster || []).filter(s => s.ri <= 1).slice().sort(() => Math.random() - 0.5)
   const squads = []
-  for (let i = 0; i + 3 <= pool.length && squads.length < 3; i += 3) {
+  for (let i = 0; i + 3 <= pool.length && squads.length < 8; i += 3) {
     const members = pool.slice(i, i + 3)
     squads.push({ id: 'rs_' + v.n + '_' + squads.length, name: v.n.replace(/gakure$/, '') + ' Cell ' + (squads.length + 1), members })
   }

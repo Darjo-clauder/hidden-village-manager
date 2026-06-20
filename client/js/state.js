@@ -133,7 +133,10 @@ export const KAGE_EVENTS = [
 // ── Rival village rosters ──────────────────────────────────────────────────
 // Each village fields a full 23-shinobi roster (realistic rank pyramid) so the
 // world feels populated and the Chunin Exam can pit real squads against squads.
-const ROSTER_PYRAMID = [4, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0] // 23
+// 50-shinobi roster: a deep prospect base (genin/chunin = Chunin Exam pool) plus
+// a real elite tier (jonin/ANBU/S = Nation War pool). [rank, count] → 50 total.
+const ROSTER_TIERS = [[4, 2], [3, 5], [2, 11], [1, 14], [0, 18]]
+const ROSTER_PYRAMID = ROSTER_TIERS.flatMap(([r, c]) => Array(c).fill(r))
 export function genVillageRoster(v) {
   const mult = clamp(1 + (((v.str || 75) - 77) / 200), 0.95, 1.06) // stronger villages, slightly better ninja
   return ROSTER_PYRAMID.map(r => {
