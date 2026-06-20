@@ -10,15 +10,17 @@ window._exTab = 'exam'
 export function rEx() {
   const el = document.getElementById('exl')
   if (!el) return
-  const tabs = ['exam', 'war', 'summit', 'srank', 'records']
-  const labels = { exam: 'CHUNIN EXAM', war: 'NATION WAR', summit: 'SUMMIT', srank: 'S-RANK BIDS', records: 'RECORDS' }
-  const tabHtml = `<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+  const tabs = ['exam', 'war', 'summit', 'srank', 'records', 'leaders']
+  const labels = { exam: 'CHUNIN EXAM', war: 'NATION WAR', summit: 'SUMMIT', srank: 'S-RANK BIDS', records: 'RECORDS', leaders: 'LEADERS' }
+  const offSeasonBanner = G.isOffSeason ? `<div style="background:#0d0a04;border:1px solid #c9a84c;padding:6px 10px;margin-bottom:10px;font-size:8px;color:#c9a84c">⛄ Off-season — Months 1–3. Focus: recruitment, contract renewals, squad prep. Season begins Month 4.</div>` : ''
+  const tabHtml = `${offSeasonBanner}<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
     ${tabs.map(t => `<button class="btn${window._exTab === t ? ' act' : ''}" onclick="exTab('${t}')" style="font-size:9px;padding:3px 8px${t === 'war' ? ';color:#c9a84c' : ''}">${labels[t]}${t === 'war' && G.warSched ? ' ●' : ''}</button>`).join('')}
   </div>`
   if (window._exTab === 'war') { renderWar(el, tabHtml); return }
   if (window._exTab === 'summit') { el.innerHTML = tabHtml + _summitTab(); return }
   if (window._exTab === 'srank') { el.innerHTML = tabHtml + _srankTab(); return }
   if (window._exTab === 'records') { el.innerHTML = tabHtml + _recordsTab(); return }
+  if (window._exTab === 'leaders') { el.innerHTML = tabHtml + _leadersTab(); return }
   el.innerHTML = tabHtml
   if (G.examActive) { rExA(el, tabHtml); return }
   _renderExamSetup(el, tabHtml)
@@ -621,5 +623,39 @@ function _recordsTab() {
       <div style="display:grid;gap:3px;margin-bottom:14px">${champLeaders.map(([v, n]) => `<div style="display:flex;justify-content:space-between;padding:4px 8px;background:#0a0a0a;border-radius:3px"><span style="font-size:9px;color:${v === G.vName ? '#c9a84c' : '#7a7060'}">${v}${v === G.vName ? ' (you)' : ''}</span><span style="font-size:10px;color:#e8e0cc;font-weight:bold">${n}</span></div>`).join('')}</div>` : ''}
     ${upsets.length ? `<div style="font-size:10px;color:#f0a030;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Recorded Upsets</div>
       ${upsets.slice().reverse().map(u => `<div style="font-size:8px;color:#7a7060;padding:5px 8px;background:#0a0a0a;margin-bottom:4px;border-left:2px solid #f0a030">Year ${u.year}: ${u.desc}</div>`).join('')}` : '<div style="font-size:8px;color:#555">No upsets recorded yet — outperform expectations at D or C prestige to create one.</div>'}
+  </div>`
+}
+
+// ── League leaders tab ────────────────────────────────────────────────────────
+function _leadersTab() {
+  const allShinobi = [
+    ...G.shinobi.map(s => ({ ...s, village: G.vName, isPlayer: true })),
+    ...(G.villages || []).flatMap(v => (v.roster || []).map(s => ({ ...s, village: v.n, isPlayer: false })))
+  ]
+  const byWins = [...allShinobi].sort((a, b) => (b.wins || 0) - (a.wins || 0)).slice(0, 8)
+  const bySWins = [...allShinobi].filter(s => (s.winsS || 0) > 0).sort((a, b) => (b.winsS || 0) - (a.winsS || 0)).slice(0, 8)
+  const byAge = [...G.shinobi].sort((a, b) => (b.age || 0) - (a.age || 0)).slice(0, 5)
+  const row = (s, val, valLabel) => `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px;background:#0a0a0a;border-radius:3px;margin-bottom:3px">
+    <div>
+      <span style="font-size:9px;color:${s.isPlayer ? '#c9a84c' : '#e8e0cc'}">${s.fn || ''} ${s.ln || ''}</span>
+      <span style="font-size:8px;color:#555;margin-left:6px">${s.village || ''}</span>
+    </div>
+    <span style="font-size:10px;color:#8fbc8f;font-weight:bold">${val} <span style="font-size:8px;color:#555">${valLabel}</span></span>
+  </div>`
+  const section = (title, rows) => `<div style="font-size:10px;color:#c9a84c;margin:12px 0 6px;text-transform:uppercase;letter-spacing:1px">${title}</div>${rows}`
+  return `<div>
+    ${section('Career mission wins', byWins.map(s => row(s, s.wins || 0, 'wins')).join(''))}
+    ${bySWins.length ? section('S-rank kills', bySWins.map(s => row(s, s.winsS || 0, 'S-rank')).join('')) : ''}
+    ${section('Veterans (your roster)', byAge.map(s => row({ ...s, isPlayer: true }, s.age || '?', 'yrs')).join(''))}
+    ${G.seasonAwards && Object.keys(G.seasonAwards).length ? (() => {
+      const lastYear = Math.max(...Object.keys(G.seasonAwards).map(Number))
+      const awards = G.seasonAwards[lastYear]
+      if (!awards) return ''
+      return section('Year ' + lastYear + ' awards', Object.values(awards).filter(a => a?.name).map(a =>
+        `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px;background:#0a0a0a;border-radius:3px;margin-bottom:3px">
+          <span style="font-size:9px;color:#e8e0cc">${a.label}</span>
+          <span style="font-size:9px;color:#c9a84c">${a.name}</span>
+        </div>`).join(''))
+    })() : ''}
   </div>`
 }

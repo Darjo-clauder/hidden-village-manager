@@ -367,6 +367,22 @@ function buildItems() {
                       promotion: 'People', war: 'Chronicle', exam: 'Chronicle',
                       prestige: 'Legacy', intel: 'Intel', 'default': 'Chronicle' }
   ;(G.narrativeInbox || []).filter(n => !n.dismissed).forEach(n => {
+    // ── Mission complication ────────────────────────────────────────────
+    if (n.type === 'complication') {
+      const opts = (n.options || []).map(o => ({ label: o.label + (o.riskMod ? (o.riskMod > 0 ? ' ⚠' : ' ✓') : ''), fn: `resolveComplication('${n.id}','${o.id}')` }))
+      items.push({ id: 'comp_' + n.id, priority: 'urgent', cat: 'Missions', icon: '⚔', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: opts, archived: false })
+      return
+    }
+    // ── Rival prospect bid ──────────────────────────────────────────────
+    if (n.type === 'rival_bid') {
+      items.push({ id: 'rvb_' + n.id, priority: 'urgent', cat: 'Academy', icon: '🏹', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'Block their approach', fn: `resolveRivalOffer('${n.id}',false)` }, { label: 'Let them sign', fn: `resolveRivalOffer('${n.id}',true)` }], archived: false })
+      return
+    }
+    // ── Trade offer ────────────────────────────────────────────────────
+    if (n.type === 'trade_offer') {
+      items.push({ id: 'trd_' + n.id, priority: 'standard', cat: 'Transfers', icon: '📜', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: [{ label: '✓ Accept trade', fn: `resolveRivalOffer('${n.id}',true)` }, { label: '✗ Decline', fn: `resolveRivalOffer('${n.id}',false)` }], archived: false })
+      return
+    }
     const icon = TAG_ICONS[n.tag] ?? TAG_ICONS.default
     const cat  = TAG_CAT[n.tag]  ?? TAG_CAT.default
     const actions = []

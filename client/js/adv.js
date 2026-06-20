@@ -198,7 +198,8 @@ function computeDaimyoBonus() {
 }
 
 function computeVillageRevenue() {
-  return villageRevenue(G.reputation || 0, G.prestigeTier || 'D')
+  const base = villageRevenue(G.reputation || 0, G.prestigeTier || 'D')
+  return Math.round(base * (G._citizenRevMult || 1))
 }
 
 function computeMaintenance() {
@@ -362,7 +363,7 @@ export function resolveBlackMarket(assignmentId) {
     const kR = clamp(bm.kiaBonus, 0.01, 0.15)
     if (Math.random() < kR && !jkKIAImmune(s)) {
       aL(`${sn(s)} KIA on underground contract "${bm.n}".`, 'bad')
-      G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: bm.n, year: G.year, month: G.month, wins: s.wins, lastWords: '"No witnesses."' })
+      G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: bm.n, year: G.year, month: G.month, wins: s.wins, lastWords: '"No witnesses."' })
       G.shinobi = G.shinobi.filter(x => x.id !== s.id)
     } else {
       s.status = 'available'; s.missId = null
@@ -590,6 +591,8 @@ export function activateBloodline(beastName) {
 }
 
 export function adv() {
+  // Off-season phase: months 1–3 are recovery/prep. Flag used by UI.
+  G.isOffSeason = G.month >= 1 && G.month <= 3
   const tgM = G.upgrades.training === 1 ? 2 : G.upgrades.training === 2 ? 3 : 1
   const iB = G.upgrades.intel === 1 ? 0.05 : G.upgrades.intel === 2 ? 0.10 : 0
   const hL = G.upgrades.hospital
@@ -638,6 +641,27 @@ export function adv() {
   if (cp.monthlyRep > 0) G.reputation = clamp(G.reputation + cp.monthlyRep, 0, 999)
   // Passive rep floor — prevents permanent zero in idle villages
   if ((G.reputation || 0) < 10) G.reputation = Math.min(10, (G.reputation || 0) + 1)
+
+  // ── Citizen morale — village population sentiment ─────────────────────────
+  if (!G.citizenMorale) G.citizenMorale = 60
+  const _cm = G.citizenMorale
+  // Win streaks lift spirits; KIA and loss streaks erode trust
+  const _recentWins = (G.winStreak || 0)
+  const _recentLoss = (G.lossStreak || 0)
+  const _kiaThisMonth = (G._kiaThisMonth || 0)
+  let _cmDelta = 0
+  if (_recentWins >= 3) _cmDelta += 2
+  else if (_recentWins >= 1) _cmDelta += 1
+  if (_recentLoss >= 3) _cmDelta -= 3
+  else if (_recentLoss >= 1) _cmDelta -= 1
+  if (_kiaThisMonth > 0) _cmDelta -= _kiaThisMonth * 2
+  if ((G.reputation || 0) >= 50) _cmDelta += 1
+  // Slow drift toward 50 when nothing is happening
+  if (_cmDelta === 0) _cmDelta = G.citizenMorale > 50 ? -1 : G.citizenMorale < 50 ? 1 : 0
+  G.citizenMorale = clamp(G.citizenMorale + _cmDelta, 0, 100)
+  G._kiaThisMonth = 0
+  // Citizen morale multiplies village revenue
+  G._citizenRevMult = 0.7 + (G.citizenMorale / 100) * 0.6  // 0.7x at 0 morale, 1.3x at 100
   // Underworld passive income (Phantom tier)
   const uwTier = getUnderworldTier(G.blackMarketRep || 0)
   if (uwTier.passiveRyo) G.ryo += uwTier.passiveRyo
@@ -870,9 +894,13 @@ export function adv() {
         s.restMonth = false  // auto-clear after one month
       }
     }
+    // Annual salary raise — seniority scaling so cap bites after 5+ years
+    if (s.months > 0 && s.months % 12 === 0 && s.status !== 'retired') {
+      s.salary = Math.round((s.salary || 500) * 1.05)
+    }
     const pw = sPow(s), thresh = [0, 30, 55, 78, 90]
     if (s.ri < 4 && pw >= thresh[s.ri + 1] && s.months >= (s.ri + 1) * 12 && s.status === 'available') {
-      s.ri++; s.salary = 500 + s.ri * 400
+      s.ri++; s.salary = Math.round((s.salary || 500) * 1.1) // promotion bump on top of seniority
       const newRankName = RANKS[s.ri]
       aL(sn(s) + ' promoted to ' + newRankName + '! ' + pickRankUpNarrative(sn(s), newRankName), 'good')
       pushNarrative(genRankUpBlurb(sn(s), s.ri))
@@ -959,6 +987,38 @@ export function adv() {
       addChronicle('Roster Crisis Signing', sn(best) + ' joined amid a roster shortage.', 'shinobi')
     }
   }
+
+  // ── Mission complications — mid-mission inbox choices ─────────────────────
+  if (!G.pendingComplications) G.pendingComplications = []
+  G.aM.filter(am => !am.isScout && !am.isBM && !am.isClanChain && am.daysLeft === 1 && !am._complicationFired).forEach(am => {
+    if (Math.random() > 0.30) return
+    am._complicationFired = true
+    const m = G.avM?.find(x => x.id === am.missionId)
+    const mName = m?.n || 'the mission'
+    const COMPLICATIONS = [
+      { id:'push_hard', label:'Push harder', desc:'The target is within reach — press the advantage.', scMod:+0.12, ryoMod:0.25, risk:'Higher KIA risk', riskMod:+0.08 },
+      { id:'hold_back', label:'Play it safe', desc:'Pull back and complete the objective methodically.', scMod:-0.08, ryoMod:-0.15, risk:'Lower reward', riskMod:-0.05 },
+      { id:'call_backup', label:'Call for backup', desc:'Request support from the village. Costs ryo, reduces risk.', scMod:+0.05, ryoMod:-0.10, risk:'Costs 3,000 ryo', riskMod:-0.10 },
+    ]
+    const comp = pk(COMPLICATIONS)
+    const compId = Math.random().toString(36).slice(2)
+    G.pendingComplications.push({ id: compId, assignmentId: am.id, missionName: mName, choice: null, options: COMPLICATIONS, created: { year: G.year, month: G.month } })
+    G.narrativeInbox.push({ id: compId, type: 'complication', tag: 'mission', title: 'Field Decision: ' + mName, body: 'Your team reports an unexpected development. A choice must be made before they can proceed.', assignmentId: am.id, missionName: mName, options: COMPLICATIONS, year: G.year, month: G.month })
+    if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
+    ntf('Field decision needed — ' + mName + '!')
+  })
+  // Apply pending complication choices to assignments
+  G.pendingComplications.forEach(pc => {
+    if (!pc.choice) return
+    const am = G.aM.find(x => x.id === pc.assignmentId); if (!am) return
+    const opt = pc.options.find(o => o.id === pc.choice); if (!opt) return
+    am._scMod = (am._scMod || 0) + opt.scMod
+    am._ryoMod = (am._ryoMod || 0) + opt.ryoMod
+    am._riskMod = (am._riskMod || 0) + opt.riskMod
+    if (opt.id === 'call_backup') G.ryo = Math.max(0, G.ryo - 3000)
+    pc.applied = true
+  })
+  G.pendingComplications = G.pendingComplications.filter(pc => !pc.applied && ((G.year * 12 + G.month) - (pc.created.year * 12 + pc.created.month)) < 3)
 
   // ── Mission resolution ──────────────────────────────────────────────────
   const beastPassives = getBeastPassives(G)
@@ -1049,7 +1109,7 @@ export function adv() {
         ensureCareerFields(ms)
         return acc + (ms.declineMod || 0) * 0.5  // half-weight per member so one declining vet doesn't cripple a squad
       }, 0)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod(), 0.1, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod() + (am._scMod || 0), 0.1, successCeiling(m.rk))
 
       const _mev = resolveMission(sc)
       const _mq = qualityEffects(_mev.quality)
@@ -1157,7 +1217,7 @@ export function adv() {
             aL(sn(s) + ' KIA on "' + m.n + '". ' + lastWords, 'bad')
             sq.fallen.push({ name: sn(s), rank: RANKS[s.ri], mission: m.n, year: G.year, month: G.month })
             if (s.wins >= 50) { addChronicle('Fallen Veteran', sn(s) + ' died on "' + m.n + '" after ' + s.wins + ' missions.', 'shinobi'); addLegend(10) }
-            G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
+            G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
             pushNarrative(genKIABlurb(sn(s), s.ri, m.n))
             G.shinobi = G.shinobi.filter(x => x.id !== s.id)
             hadKIA = true; sq.kills++
@@ -1219,7 +1279,7 @@ export function adv() {
       const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
       const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
       const bMB = bondMissionBonus(s, G.shinobi)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk), 0.08, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0), 0.08, successCeiling(m.rk))
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)
@@ -1271,7 +1331,7 @@ export function adv() {
         if (Math.random() < kR && !jkKIAImmune(s)) {
           const lastWords = pk(LAST_WORDS_POOL)
           aL(sn(s) + ' KIA on "' + m.n + '". ' + lastWords, 'bad')
-          G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
+          G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
           pushNarrative(genKIABlurb(sn(s), s.ri, m.n))
           if (s.wins >= 50) addChronicle('Fallen Veteran', sn(s) + ' died on "' + m.n + '" after ' + s.wins + ' missions. ' + lastWords, 'shinobi')
           G._mandateKIAThisYear = (G._mandateKIAThisYear || 0) + 1
@@ -1373,6 +1433,45 @@ export function adv() {
     }
   })
   G._playerStrength = computePlayerStrength(G)
+
+  // ── Rival GM moves — rivals act on the transfer market each month ─────────
+  if (!G.rivalOffers) G.rivalOffers = []
+  // Rivals bid on unrecruted prospects (high-urgency or high-potential)
+  if (G.prospects.length > 0 && Math.random() < 0.18) {
+    const target = G.prospects.filter(p => (p.potential || 0) >= 50 || (p.urgencyMonths || 0) <= 2).sort((a, b) => (b.potential || 0) - (a.potential || 0))[0]
+    if (target && !G.rivalOffers.find(o => o.prospectId === target.id)) {
+      const bidder = pk(G.villages)
+      const offerId = Math.random().toString(36).slice(2)
+      G.rivalOffers.push({ id: offerId, type: 'prospect_bid', prospectId: target.id, village: bidder.n, expires: G.month + 2 > 12 ? 1 : G.month + 2, expiresYear: G.month + 2 > 12 ? G.year + 1 : G.year })
+      G.narrativeInbox.push({ id: offerId, type: 'rival_bid', tag: 'academy', title: bidder.n + ' wants ' + (target.fn || 'your prospect'), body: bidder.n + ' has offered to recruit ' + (target.fn || '') + ' ' + (target.ln || '') + ' directly. Respond within 2 months or they sign elsewhere.', prospectId: target.id, village: bidder.n, year: G.year, month: G.month })
+      if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
+      ntf(bidder.n + ' is scouting ' + (target.fn || 'your prospect') + '!')
+    }
+  }
+  // Expire rival prospect bids — remove prospect if player ignored
+  G.rivalOffers = G.rivalOffers.filter(o => {
+    const expired = o.expiresYear < G.year || (o.expiresYear === G.year && o.expires < G.month)
+    if (expired && o.type === 'prospect_bid') {
+      const p = G.prospects.find(x => x.id === o.prospectId)
+      if (p) {
+        G.prospects = G.prospects.filter(x => x.id !== o.prospectId)
+        aL(o.village + ' signed ' + (p.fn || 'prospect') + ' — opportunity window closed.', 'bad')
+      }
+    }
+    return !expired
+  })
+  // Rivals propose trades — offer one of their shinobi for one of yours (once per quarter)
+  if (G.month % 3 === 0 && G.shinobi.length >= 4 && Math.random() < 0.25) {
+    const rival = pk(G.villages)
+    const theirOffer = rival.roster ? pk(rival.roster.filter(s => s.ri >= 1)) : null
+    const yourTarget = G.shinobi.filter(s => s.ri >= 1 && s.status === 'available')[Math.floor(Math.random() * G.shinobi.filter(s => s.ri >= 1).length)]
+    if (theirOffer && yourTarget) {
+      const tradeId = Math.random().toString(36).slice(2)
+      G.narrativeInbox.push({ id: tradeId, type: 'trade_offer', tag: 'people', title: 'Trade offer: ' + rival.n, body: rival.n + ' proposes trading ' + (theirOffer.fn || '') + ' ' + (theirOffer.ln || '') + ' (' + ['Genin','Chunin','Jonin','ANBU','Sannin'][theirOffer.ri || 0] + ', Pow ' + (sPow(theirOffer) || '?') + ') for ' + sn(yourTarget) + '. Accept or decline.', rivalVillage: rival.n, offeredId: theirOffer.id, offeredName: (theirOffer.fn || '') + ' ' + (theirOffer.ln || ''), offeredRi: theirOffer.ri, offeredPow: sPow(theirOffer), targetId: yourTarget.id, targetName: sn(yourTarget), year: G.year, month: G.month })
+      if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
+      ntf(rival.n + ' proposes a trade!')
+    }
+  }
 
   // ── Season league table — the regular-season spine that seeds the exam ────
   {
@@ -2195,7 +2294,12 @@ export function adv() {
       let mType = null
       if (s.commitment < 20) mType = 'leaving'
       else if (s.traumaStatus && Math.random() < 0.40) mType = 'grieving'
-      else if (s.status === 'available' && (s.workload || 0) < 15 && s.months > 3 && Math.random() < 0.22) mType = 'underused'
+      else if (s.status === 'available' && (s.workload || 0) < 15 && s.months > 3 && Math.random() < 0.22) {
+        mType = 'underused'
+        // Escalation: second underuse offense in 6 months → demand transfer
+        if ((s._underusedCount || 0) >= 2) { mType = 'leaving'; s.commitment = clamp(s.commitment - 20, 0, 100) }
+        s._underusedCount = (s._underusedCount || 0) + 1
+      }
       else if (s.months > 12 && s.ri < 4 && (s.pMatrix.ambition || 10) >= 13 && Math.random() < 0.18) mType = 'promotion'
       else if (s.squadId && (s.pMatrix.temperament || 10) < 7 && Math.random() < 0.15) mType = 'squad_clash'
       else if (s.wins > 0 && s.wins % 25 === 0 && Math.random() < 0.55) mType = 'milestone'
@@ -2252,7 +2356,7 @@ export function adv() {
       const loyRoll = s.pMatrix.loyalty || 10
       if (loyRoll < 10 && Math.random() < 0.40) {
         aL(sn(s) + ' has submitted a transfer request and left the village!', 'bad')
-        G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, year: G.year, month: G.month, wins: s.wins, lastWords: 'Submitted a transfer request.', transfer: true })
+        G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, year: G.year, month: G.month, wins: s.wins, lastWords: 'Submitted a transfer request.', transfer: true })
         addChronicle('Transfer Departure', sn(s) + ' left the village after losing all commitment.', 'event')
         addNotice(sn(s) + ' has left the village for good.', 'bad')
         G.morale = clamp(G.morale - 4, 0, 100)
@@ -2850,7 +2954,7 @@ export function resRaid() {
     aL(G.raid.n + ' breached! Lost ' + fmt(loss) + ' ryo.', 'bad')
     if (def) {
       if (hL < 1 && Math.random() < 0.2) {
-        G.memorial.push({ name: sn(def), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][def.ri], clan: def.clan, mission: 'Village Defense', year: G.year, month: G.month, wins: def.wins, lastWords: '"The village... I held the line."' })
+        G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(def), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][def.ri], clan: def.clan, mission: 'Village Defense', year: G.year, month: G.month, wins: def.wins, lastWords: '"The village... I held the line."' })
         aL(sn(def) + ' fell defending the village.', 'bad')
         G.shinobi = G.shinobi.filter(s => s.id !== def.id)
       } else {
@@ -3074,5 +3178,48 @@ export function resolvePressConference(toneId, calloutVillage) {
   aL(logLine, m.morale >= 0 ? 'good' : 'warn')
   pushNarrative({ title: `Press: ${toneLabel}`, body: `"${p.question}" — Kage responded ${toneLabel.toLowerCase()}.${ovNote ? ' ' + ovNote : ''}`, tag: 'prestige', link: null }, [])
   G.pendingPress = null
+  upUI()
+}
+
+export function resolveComplication(compId, choiceId) {
+  if (!G.pendingComplications) return
+  const pc = G.pendingComplications.find(x => x.id === compId)
+  if (!pc) return
+  pc.choice = choiceId
+  const opt = pc.options.find(o => o.id === choiceId)
+  if (opt) aL('Field decision — ' + opt.label + ': ' + opt.desc, 'neutral')
+  if (G.narrativeInbox) G.narrativeInbox.forEach(n => { if (n.id === compId) n.dismissed = true })
+  upUI()
+}
+
+export function resolveRivalOffer(offerId, accept) {
+  if (!G.rivalOffers) return
+  const offer = G.rivalOffers.find(o => o.id === offerId)
+  if (!offer) return
+  if (offer.type === 'prospect_bid') {
+    if (!accept) {
+      G.rivalOffers = G.rivalOffers.filter(o => o.id !== offerId)
+      aL('You blocked ' + offer.village + '\'s recruitment approach.', 'good')
+    } else {
+      const p = G.prospects?.find(x => x.id === offer.prospectId)
+      if (p) { G.prospects = G.prospects.filter(x => x.id !== offer.prospectId); aL(offer.village + ' signed ' + (p.fn || 'prospect') + '.', 'neutral') }
+      G.rivalOffers = G.rivalOffers.filter(o => o.id !== offerId)
+    }
+  } else if (offer.type === 'trade_proposal') {
+    if (accept) {
+      const theirs = G.villages.find(v => v.n === offer.rivalVillage)?.roster?.find(s => s.id === offer.offeredId)
+      const mine = G.shinobi.find(s => s.id === offer.targetId)
+      if (theirs && mine) {
+        G.shinobi = G.shinobi.filter(s => s.id !== mine.id)
+        G.memorial.push({ name: sn(mine), rank: RANKS[mine.ri], clan: mine.clan, year: G.year, month: G.month, wins: mine.wins, lastWords: 'Transferred to ' + offer.rivalVillage + '.', transfer: true })
+        theirs.homeVillage = G.vName; theirs.status = 'available'; theirs.salary = Math.round(sPow(theirs) * 6)
+        G.shinobi.push(theirs)
+        if (theirs.homeVillage !== G.vName) { const rv = G.villages.find(v => v.n === offer.rivalVillage); if (rv?.roster) rv.roster = rv.roster.filter(s => s.id !== theirs.id) }
+        aL('Trade completed — ' + offer.offeredName + ' joins the village.', 'good')
+      }
+    } else aL('Trade declined.', 'neutral')
+    G.rivalOffers = G.rivalOffers.filter(o => o.id !== offerId)
+  }
+  if (G.narrativeInbox) G.narrativeInbox.forEach(n => { if (n.id === offerId) n.dismissed = true })
   upUI()
 }
