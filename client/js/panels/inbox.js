@@ -2,6 +2,7 @@ import { G, fmt } from '../state.js'
 import { sp } from '../ui.js'
 import { WE_BY_ID } from '../../../shared/constants/worldCalendar.js'
 import { sortedThreads } from '../../../shared/utils/narrativeThreads.js'
+import { TONE_BY_ID } from '../../../shared/utils/pressConference.js'
 
 // Priority: urgent > standard > info
 const PRIORITY = { urgent: 0, standard: 1, info: 2 }
@@ -328,18 +329,31 @@ function buildItems() {
   // ── Press conference ───────────────────────────────────────────────────
   if (G.pendingPress) {
     const p = G.pendingPress
+    const availTones = (p.availableTones || ['confident', 'humble', 'dismissive']).map(id => TONE_BY_ID[id]).filter(Boolean)
+    // For callout tone: need a rival name — use stored one or let player pick
+    const villages  = (G.villages || []).map(v => v.n)
+    const calloutVillage = p.rivalName || villages[0] || ''
+    const pressActions = availTones.map(tone => ({
+      label: tone.label + (tone.hint ? ` — ${tone.hint}` : ''),
+      fn: tone.id === 'callout'
+        ? `resolvePressConference('callout','${calloutVillage}')`
+        : `resolvePressConference('${tone.id}')`,
+    }))
+    const calloutNote = availTones.some(t => t.id === 'callout') && calloutVillage
+      ? `<div style="font-size:7px;color:#f0a030;margin-top:4px">Callout target: <b>${calloutVillage}</b></div>`
+      : ''
+    const followUpHtml = p.followUp
+      ? `<div style="margin-top:8px;font-size:8px;color:#7a7060;border-left:2px solid #3a3630;padding-left:8px;font-style:italic">Follow-up: "${p.followUp}"</div>`
+      : ''
     items.push({
       id:       'press_' + p.id,
       priority: 'standard',
       cat:      'Media',
       icon:     '📰',
       title:    'Press Conference Request',
-      desc:     (p.intro ? p.intro + '<br><br>' : '') + '<em>"' + p.question + '"</em><br><br>Choose your tone:',
-      actions:  [
-        { label: 'Confident (+10 rep, +5 morale)',  fn: `resolvePressConference('confident')`  },
-        { label: 'Humble (+5 rep, +3 morale)',      fn: `resolvePressConference('humble')`     },
-        { label: 'Dismissive (−5 rep, −3 morale)', fn: `resolvePressConference('dismissive')` },
-      ],
+      desc:     (p.intro ? `<span style="color:#7a7060">${p.intro}</span><br><br>` : '') +
+                `<em>"${p.question}"</em>${followUpHtml}${calloutNote}<br>Choose your response:`,
+      actions:  pressActions,
       archived: false,
     })
   }

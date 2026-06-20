@@ -100,7 +100,9 @@ export function mS(ri = 0) {
 
 // ── stat helpers ───────────────────────────────────────────────────────────
 export function sPow(s) {
+  if (!s.stats) return 0
   const v = Object.values(s.stats)
+  if (!v.length) return 0
   let p = Math.round(v.reduce((a, b) => a + b, 0) / v.length)
   if (s.jk) { const b = G.beasts.find(x => x.n === s.jk); if (b) p += Math.round(b.pow * 0.4) }
   return p

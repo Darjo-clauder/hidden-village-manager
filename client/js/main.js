@@ -1,12 +1,12 @@
 import { G } from './state.js'
-import { sp, cm, upUI, schEx, setNation, toggleColorblind } from './ui.js'
+import { sp, cm, upUI, schEx, setNation, toggleColorblind, ntf } from './ui.js'
 import { showSetup, selIcon, beginGame, restoreGame } from './setup.js'
 import { adv } from './adv.js'
 import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM } from './panels/missions.js'
 import { rUp, buyUp, buildDistrict } from './panels/upgrades.js'
-import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer } from './panels/academy.js'
+import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship } from './panels/economy.js'
 import { rBe, lCap, beastTab, releaseJinchuriki, resolveEscape } from './panels/beasts.js'
 import { rKa, resKE, sGift, propAl, rattle, resNCV, setCoachingPhilosophy } from './panels/kage.js'
@@ -98,7 +98,7 @@ Object.assign(window, {
   buyUp, buildDistrict,
   // academy
   rec, oScout, doScout, oSensei, doSensei, setTrainingPlan,
-  matchRivalOffer, exceedRivalOffer, declineRivalOffer,
+  matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab,
   // economy
   eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship,
   // beasts

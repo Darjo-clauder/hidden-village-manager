@@ -36,7 +36,7 @@ import { pickMandates, evaluateMandates, MANDATE_BY_ID, CONFIDENCE_START, DISMIS
 import { getPhilosophyMods } from '../../shared/constants/coachingPhilosophy.js'
 import { snapshotSeasonStats, leagueLeaders } from '../../shared/utils/seasonStats.js'
 import { computeAwards } from '../../shared/utils/awards.js'
-import { PRESS_QUESTIONS, PRESS_TONES, TONE_BY_ID } from '../../shared/utils/pressConference.js'
+import { PRESS_QUESTIONS, PRESS_TONES, TONE_BY_ID, TONE_TRIGGER_OVERRIDES, hydrateQuestion } from '../../shared/utils/pressConference.js'
 import { updateConfidence, confidenceMod, formGrudge, grudgePenalty, pairChemistryBonus, assignRoleTag, setEmotionalState, tickEmotionalState, emotionalScMod, getArchetypeQuote } from '../../shared/utils/personality.js'
 import { genMissionBlurb, genKIABlurb, genRankUpBlurb, genBondBlurb, genGrudgeBlurb, genCounterStrategyBlurb } from '../../shared/utils/narrativeEngine.js'
 import { recordPlayerTactic, getPlayerTendency, applyCounterStrategy, rivalScPenalty, observePlayerTactic, explainStanceChange, rollMetaEvent, ensureRivalProfile } from '../../shared/utils/adaptiveAI.js'
@@ -1378,6 +1378,28 @@ export function adv() {
     }
     if (G._pressWinStreak  >= 3 && !G.pendingPress) { queuePressConference('win_streak');  G._pressWinStreak  = 0 }
     if (G._pressLossStreak >= 3 && !G.pendingPress) { queuePressConference('loss_streak'); G._pressLossStreak = 0 }
+  }
+
+  // ── New press triggers ────────────────────────────────────────────────────
+  // Trauma spike: 3+ shinobi in trauma simultaneously
+  const _traumaCount = (G.shinobi || []).filter(s => s.traumaStatus).length
+  if (_traumaCount >= 3 && !G.pendingPress && Math.random() < 0.4) {
+    queuePressConference('trauma')
+  }
+  // Rivalry heat: a village has grudgeTicks >= 8
+  if (!G.pendingPress) {
+    const _hotRival = (G.villages || []).find(v => (v.grudgeTicks || 0) >= 8)
+    if (_hotRival && Math.random() < 0.25) queuePressConference('rivalry_heat', { rivalName: _hotRival.n })
+  }
+  // Legend milestone: every 10 legend points gained, low-frequency press
+  if (!G.pendingPress && (G.legend || 0) > 0 && (G.legend || 0) % 50 === 0 && G.year >= 5) {
+    queuePressConference('legend', { legacyYears: G.year })
+  }
+  // KIA with grudge context
+  const _kiaGrudge = (G.shinobi || []).some(s => (s.grudges || []).some(gr => gr.intensity >= 2 && (G.year - (gr.formed?.year || G.year)) * 12 + (G.month - (gr.formed?.month || G.month)) < 3))
+  if (_kiaGrudge && !G.pendingPress && Math.random() < 0.3) {
+    const _fallen = (G.shinobi || []).filter(s => s.status === 'kia').slice(-1)[0]
+    queuePressConference('kia_grudge', { fallenName: _fallen ? sn(_fallen) : undefined })
   }
 
   // ── Staff tick ────────────────────────────────────────────────────────────
@@ -2941,34 +2963,70 @@ export function resolveNoConfidence(choice) {
 
 // ── Press Conference ─────────────────────────────────────────────────────────
 
-export function queuePressConference(triggerId) {
-  const q = PRESS_QUESTIONS.find(p => p.trigger === triggerId)
-  if (!q) return
+export function queuePressConference(triggerId, ctx = {}) {
   if (G.pendingPress) return  // one at a time
-  G.pendingPress = { id: q.id, trigger: triggerId, question: q.question, intro: q.intro }
+  const q = hydrateQuestion(triggerId, ctx)
+  if (!q) return
+
+  // Auto-build ctx from live state when not supplied
+  if (!ctx.rivalName && G.villages && G.villages.length) {
+    const antagV = G.villages.reduce((a, b) => ((b.grudgeTicks || 0) > (a.grudgeTicks || 0) ? b : a), G.villages[0])
+    if ((antagV.grudgeTicks || 0) > 0) ctx.rivalName = antagV.n
+  }
+
+  G.pendingPress = {
+    id: q.id, trigger: triggerId,
+    question: q.question, intro: q.intro,
+    followUp: q.followUp || null,
+    availableTones: q.availableTones || ['confident', 'humble', 'dismissive'],
+    rivalName: ctx.rivalName || null,
+  }
   G.inbox = G.inbox || []
   G.inbox.unshift({
     id: 'press_' + triggerId + '_' + G.year + '_' + G.month,
-    cat: 'press',
-    subject: 'Press Conference Request',
+    cat: 'press', subject: 'Press Conference Request',
     body: q.intro + '\n\n"' + q.question + '"',
-    year: G.year, month: G.month,
-    action: 'press',
-    pressId: q.id,
-    read: false,
+    year: G.year, month: G.month, action: 'press', pressId: q.id, read: false,
   })
   ntf('Press conference requested — check Inbox.')
 }
 
-export function resolvePressConference(toneId) {
+export function resolvePressConference(toneId, calloutVillage) {
   const p = G.pendingPress; if (!p) return
   const tone = TONE_BY_ID[toneId]; if (!tone) return
-  const m = tone.mods
+  const m = { ...tone.mods }
+
+  // Apply trigger-specific overrides
+  const overrideKey = `${toneId}:${p.id}`
+  const ov = TONE_TRIGGER_OVERRIDES[overrideKey]
+  if (ov) {
+    m.rep    = (m.rep    || 0) + (ov.repBonus    || 0)
+    m.morale = (m.morale || 0) + (ov.moraleBonus || 0)
+  }
+
+  // Callout: hit the named rival hard
+  const targetVillage = calloutVillage || p.rivalName
+  if (toneId === 'callout' && targetVillage) {
+    const tv = G.villages.find(v => v.n === targetVillage)
+    if (tv) {
+      tv.rel = clamp((tv.rel || 50) + m.rivalRel, 0, 100)
+      tv.grudgeTicks = (tv.grudgeTicks || 0) + 6
+      // Other villages get a mild diplomatic bump from the drama
+      G.villages.filter(v => v.n !== targetVillage).forEach(v => { v.rel = clamp((v.rel || 50) + 3, 0, 100) })
+    }
+  } else {
+    G.villages.forEach(v => { v.rel = clamp((v.rel || 50) + m.rivalRel, 0, 100) })
+  }
+
   G.morale     = clamp((G.morale || 50) + m.morale, 0, 100)
   G.reputation = clamp((G.reputation || 0) + m.rep, 0, 999)
-  G.villages.forEach(v => { v.rel = clamp((v.rel || 50) + m.rivalRel, 0, 100) })
-  addChronicle('Press Conference', `Kage responded ${tone.label.toLowerCase()} to: "${p.question}"`, 'event')
-  aL(`Press conference — ${tone.label} response. Morale ${m.morale >= 0 ? '+' : ''}${m.morale}, Rep ${m.rep >= 0 ? '+' : ''}${m.rep}.`, m.morale >= 0 ? 'good' : 'warn')
+
+  const toneLabel = tone.label + (toneId === 'callout' && targetVillage ? ` (${targetVillage})` : '')
+  const ovNote    = ov?.note || ''
+  const logLine   = `Press conference — ${toneLabel}. Morale ${m.morale >= 0 ? '+' : ''}${m.morale}, Rep ${m.rep >= 0 ? '+' : ''}${m.rep}.${ovNote ? ' ' + ovNote : ''}`
+  addChronicle('Press Conference', `Kage chose "${toneLabel}" responding to: "${p.question}"`, 'event')
+  aL(logLine, m.morale >= 0 ? 'good' : 'warn')
+  pushNarrative({ title: `Press: ${toneLabel}`, body: `"${p.question}" — Kage responded ${toneLabel.toLowerCase()}.${ovNote ? ' ' + ovNote : ''}`, tag: 'prestige', link: null }, [])
   G.pendingPress = null
   upUI()
 }

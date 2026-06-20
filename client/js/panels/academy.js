@@ -5,6 +5,94 @@ import { sBars, pCl } from './roster.js'
 import { isEnabled } from '../../../config/features.js'
 import { TRAINING_PLANS, PLAN_BY_ID } from '../../../shared/constants/trainingPlans.js'
 import { applyGraduationBias } from '../prospectEngine.js'
+import { mentorshipSummary } from '../../../shared/utils/mentorship.js'
+
+let _acTab = 'prospects'
+
+export function acTab(tab) {
+  _acTab = tab
+  document.querySelectorAll('#p-academy .tab').forEach(b => b.classList.remove('active'))
+  const btn = document.getElementById('ac-tab-' + tab)
+  if (btn) btn.classList.add('active')
+  const prospEl  = document.getElementById('acl')
+  const pipeEl   = document.getElementById('ac-pipeline')
+  if (prospEl) prospEl.style.display  = tab === 'prospects' ? '' : 'none'
+  if (pipeEl)  pipeEl.style.display   = tab === 'pipeline'  ? '' : 'none'
+  if (tab === 'pipeline') renderPipeline()
+}
+
+function renderPipeline() {
+  const el = document.getElementById('ac-pipeline')
+  if (!el) return
+  const mentorships = G.mentorships || []
+  const shinobi = G.shinobi || []
+
+  if (mentorships.length === 0) {
+    el.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--text-dim);font-size:10px">
+      <div style="font-size:28px;margin-bottom:8px">📖</div>
+      No active mentorships. Open a shinobi dossier (Career tab) to assign one.
+    </div>`
+    return
+  }
+
+  el.innerHTML = mentorships.map(m => {
+    const mentor  = shinobi.find(s => s.id === m.mentorId)
+    const student = shinobi.find(s => s.id === m.studentId)
+    if (!mentor || !student) return ''
+
+    const pct      = Math.min(100, Math.round((m.months / 12) * 100))
+    const milestone3  = m.months >= 3
+    const milestone6  = m.months >= 6
+    const milestone12 = m.bonusApplied
+
+    // Projected bonus stat (highest current stat for student)
+    const DEV_STATS = ['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed']
+    const bonusStat = DEV_STATS.reduce((best, k) => (student.stats[k] > student.stats[best] ? k : best), DEV_STATS[0])
+
+    return `<div style="border:1px solid #2a2a2a;border-left:3px solid #c9a84c;padding:12px;margin-bottom:10px;background:#111">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-size:9px;color:#e8e0cc;font-weight:bold">${sn(mentor)} <span style="color:#7a7060">→</span> ${sn(student)}</div>
+          <div style="font-size:7px;color:#7a7060;margin-top:2px">${RANKS[mentor.ri]} mentoring ${RANKS[student.ri]} · ${m.months}mo elapsed</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:8px;color:#c9a84c">${pct}%</div>
+          <div style="font-size:7px;color:#7a7060">of 12mo</div>
+        </div>
+      </div>
+
+      <!-- Progress bar -->
+      <div style="background:#1a1a1a;border:1px solid #333;height:6px;border-radius:3px;margin-bottom:8px">
+        <div style="background:#c9a84c;width:${pct}%;height:100%;border-radius:3px;transition:width 0.3s"></div>
+      </div>
+
+      <!-- Milestones -->
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="flex:1;text-align:center;padding:5px;border:1px solid ${milestone3?'#8fbc8f':'#2a2a2a'};background:${milestone3?'rgba(143,188,143,.08)':'transparent'}">
+          <div style="font-size:7px;color:${milestone3?'#8fbc8f':'#3a3630'}">Mo 3</div>
+          <div style="font-size:7px;color:${milestone3?'#8fbc8f':'#3a3630'};margin-top:2px">${milestone3?'✓ Bond memory':'Memory bond'}</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:5px;border:1px solid ${milestone6?'#8fbc8f':'#2a2a2a'};background:${milestone6?'rgba(143,188,143,.08)':'transparent'}">
+          <div style="font-size:7px;color:${milestone6?'#8fbc8f':'#3a3630'}">Mo 6</div>
+          <div style="font-size:7px;color:${milestone6?'#8fbc8f':'#3a3630'};margin-top:2px">${milestone6?'✓ Morale +8':'+8 morale'}</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:5px;border:1px solid ${milestone12?'#c9a84c':'#2a2a2a'};background:${milestone12?'rgba(201,168,76,.08)':'transparent'}">
+          <div style="font-size:7px;color:${milestone12?'#c9a84c':'#3a3630'}">Mo 12</div>
+          <div style="font-size:7px;color:${milestone12?'#c9a84c':'#3a3630'};margin-top:2px">${milestone12?'✓ Grad bonus':'+3 ' + bonusStat}</div>
+        </div>
+      </div>
+
+      <!-- Student stat preview -->
+      <div style="font-size:8px;color:#7a7060;margin-bottom:6px">
+        ${student.fn}'s strongest path: <span style="color:#e8e0cc">${bonusStat}</span>
+        <span style="color:#c9a84c">${student.stats[bonusStat]}</span>
+        ${!milestone12 ? `<span style="color:#7a7060"> → projected <span style="color:#c9a84c">${Math.min(99, student.stats[bonusStat] + 3)}</span> at graduation</span>` : '<span style="color:#8fbc8f"> (graduated)</span>'}
+      </div>
+
+      <button class="gb" style="font-size:7px;border-color:#7a7060;color:#7a7060;padding:2px 8px" onclick="releaseMentor('${mentor.id}')">End Mentorship</button>
+    </div>`
+  }).join('')
+}
 
 // ── Hidden attribute display ──────────────────────────────────────────────────
 const ATTR_LABELS = {
