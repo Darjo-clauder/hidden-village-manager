@@ -1,5 +1,5 @@
 import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice, computeMarketValue, mS, genVillageRoster } from './state.js'
-import { RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS, EXAM_FORMATS, LEGACY_DECISIONS, PRESTIGE_TIERS } from './constants.js'
+import { RANKS, RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS, EXAM_FORMATS, LEGACY_DECISIONS, PRESTIGE_TIERS } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
 import { tickBeast, applyBeastPairEffects, getBeastPassives, BEAST_DATA, getSyncStage, captureChance } from './beastEngine.js'
 import { tickKageRels, getWorldReputationFlavor, shiftKageRel, ensureKageRels } from './rivalKage.js'
@@ -37,8 +37,18 @@ import { getPhilosophyMods } from '../../shared/constants/coachingPhilosophy.js'
 import { snapshotSeasonStats, leagueLeaders } from '../../shared/utils/seasonStats.js'
 import { computeAwards } from '../../shared/utils/awards.js'
 import { PRESS_QUESTIONS, PRESS_TONES, TONE_BY_ID } from '../../shared/utils/pressConference.js'
+import { updateConfidence, confidenceMod, formGrudge, grudgePenalty, pairChemistryBonus } from '../../shared/utils/personality.js'
+import { genMissionBlurb, genKIABlurb, genRankUpBlurb, genBondBlurb, genGrudgeBlurb, genCounterStrategyBlurb } from '../../shared/utils/narrativeEngine.js'
+import { recordPlayerTactic, getPlayerTendency, applyCounterStrategy, rivalScPenalty } from '../../shared/utils/adaptiveAI.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
+
+// ── Narrative inbox helper ─────────────────────────────────────────────────────
+function pushNarrative(blurb) {
+  if (!G.narrativeInbox) G.narrativeInbox = []
+  G.narrativeInbox.push({ id: Math.random().toString(36).slice(2), ...blurb, year: G.year, month: G.month })
+  if (G.narrativeInbox.length > 40) G.narrativeInbox.splice(0, G.narrativeInbox.length - 40)
+}
 
 // ── Mission log ────────────────────────────────────────────────────────────────
 function pushMissionLog(entry) {
@@ -342,7 +352,7 @@ export function resolveBlackMarket(assignmentId) {
     const kR = clamp(bm.kiaBonus, 0.01, 0.15)
     if (Math.random() < kR && !jkKIAImmune(s)) {
       aL(`${sn(s)} KIA on underground contract "${bm.n}".`, 'bad')
-      G.memorial.push({ name: sn(s), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri], clan: s.clan, mission: bm.n, year: G.year, month: G.month, wins: s.wins, lastWords: '"No witnesses."' })
+      G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: bm.n, year: G.year, month: G.month, wins: s.wins, lastWords: '"No witnesses."' })
       G.shinobi = G.shinobi.filter(x => x.id !== s.id)
     } else {
       s.status = 'available'; s.missId = null
@@ -834,8 +844,9 @@ export function adv() {
     const pw = sPow(s), thresh = [0, 30, 55, 78, 90]
     if (s.ri < 4 && pw >= thresh[s.ri + 1] && s.months >= (s.ri + 1) * 12 && s.status === 'available') {
       s.ri++; s.salary = 500 + s.ri * 400
-      const newRankName = ['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri]
+      const newRankName = RANKS[s.ri]
       aL(sn(s) + ' promoted to ' + newRankName + '! ' + pickRankUpNarrative(sn(s), newRankName), 'good')
+      pushNarrative(genRankUpBlurb(sn(s), s.ri))
       addLegend(s.ri * 3)
     }
   })
@@ -1038,6 +1049,10 @@ export function adv() {
         aL(_sqTag + sq.n + ' completed "' + m.n + '" — +' + fmt(_bonusRyo) + ' ryo. ' + _sqSuccessNarr, 'good')
         pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: _bonusRyo, rep: m.rep, chainName: m.chainName || null, narrative: _sqSuccessNarr, quality: _mev.quality })
         addLegend((m.rk === 'S' ? 15 : m.rk === 'A' ? 8 : m.rk === 'B' ? 3 : 1) + _mq.legend)
+        // Narrative Pillar 1&2: confidence + blurb
+        recordPlayerTactic(G.rivalTendencies, m.rk, _mev.quality, true)
+        sq.members.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s) updateConfidence(s, _mev.quality, { isLeader: s.id === sq.leaderId }) })
+        if (_mev.quality === 'decisive') pushNarrative(genMissionBlurb(sq.n, sq.members.length > 0 ? (G.shinobi.find(x => x.id === sq.members[0])?.ri ?? 2) : 2, m.n, 'decisive'))
         // Post-mission contribution scores (Phase 4)
         G.lastMissionReport = _buildMissionReport(sq, m, true)
         // Squad identity unlock at cohesion 75
@@ -1086,9 +1101,10 @@ export function adv() {
           if (!hasPr && Math.random() < kR && !jkKIAImmune(s)) {
             const lastWords = pk(LAST_WORDS_POOL)
             aL(sn(s) + ' KIA on "' + m.n + '". ' + lastWords, 'bad')
-            sq.fallen.push({ name: sn(s), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri], mission: m.n, year: G.year, month: G.month })
+            sq.fallen.push({ name: sn(s), rank: RANKS[s.ri], mission: m.n, year: G.year, month: G.month })
             if (s.wins >= 50) { addChronicle('Fallen Veteran', sn(s) + ' died on "' + m.n + '" after ' + s.wins + ' missions.', 'shinobi'); addLegend(10) }
-            G.memorial.push({ name: sn(s), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
+            G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
+            pushNarrative(genKIABlurb(sn(s), s.ri, m.n))
             G.shinobi = G.shinobi.filter(x => x.id !== s.id)
             hadKIA = true; sq.kills++
             G._mandateKIAThisYear = (G._mandateKIAThisYear || 0) + 1
@@ -1099,11 +1115,26 @@ export function adv() {
             survivorIds.push(s.id)
           }
         })
-        // Survivors who witnessed KIA may develop trauma
+        // Survivors who witnessed KIA may develop trauma + grudges
         if (hadKIA) {
+          const fallen = sq.fallen[sq.fallen.length - 1]
           survivorIds.forEach(id => {
             const survivor = G.shinobi.find(x => x.id === id)
-            if (survivor && Math.random() < 0.5) applyTrauma(survivor)
+            if (!survivor) return
+            if (Math.random() < 0.5) applyTrauma(survivor)
+            updateConfidence(survivor, _mev.quality, { hadKIA: true })
+            // Bonded shinobi form a grudge against the rival village that caused the loss
+            const wasBonded = fallen && (survivor.bonds || []).some(b => b.otherId === sq.fallen.find(f => f.name === fallen.name)?.id)
+            if (wasBonded && G.villages.length) {
+              const antagonist = pk(G.villages)
+              formGrudge(survivor, antagonist.n, antagonist.n, 'kia_partner', { year: G.year, month: G.month })
+              if (fallen) pushNarrative(genGrudgeBlurb(survivor.fn + ' ' + survivor.ln, fallen.name, 'Fallen Comrade', 3))
+            }
+          })
+        } else {
+          survivorIds.forEach(id => {
+            const survivor = G.shinobi.find(x => x.id === id)
+            if (survivor) updateConfidence(survivor, _mev.quality)
           })
         }
         sq.cohesion = Math.max(0, (sq.cohesion ?? 0) + (hadKIA ? -15 : -4))
@@ -1111,6 +1142,8 @@ export function adv() {
         const _sqFailNarr = pickSquadNarrative(m.rk, 'failure', sq.n)
         const _sqFailTag = _mev.quality === 'disaster' ? '💥 Disaster — ' : ''
         aL(_sqFailTag + '"' + m.n + '" squad mission failed. ' + _sqFailNarr, 'bad')
+        recordPlayerTactic(G.rivalTendencies, m.rk, _mev.quality, true)
+        if (_mev.quality === 'disaster') pushNarrative(genMissionBlurb(sq.n, 2, m.n, 'disaster'))
         pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, narrative: _sqFailNarr, quality: _mev.quality })
         G.morale = clamp(G.morale - 5 + _mq.morale, 0, 100)
         G.lastMissionReport = _buildMissionReport(sq, m, false)
@@ -1125,7 +1158,7 @@ export function adv() {
       const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
       const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
       const bMB = bondMissionBonus(s, G.shinobi)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod(), 0.08, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk), 0.08, successCeiling(m.rk))
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)
@@ -1152,6 +1185,8 @@ export function adv() {
         const _soloTag = _mev.quality === 'decisive' ? '⚔ Decisive — ' : ''
         aL(_soloTag + sn(s) + ' completed "' + m.n + '" — +' + fmt(_bonusRyo) + ' ryo. ' + _soloSuccNarr, 'good')
         pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: _bonusRyo, rep: m.rep + rB, chainName: m.chainName || null, narrative: _soloSuccNarr, quality: _mev.quality })
+        updateConfidence(s, _mev.quality)
+        recordPlayerTactic(G.rivalTendencies, m.rk, _mev.quality, false)
         addLegend((m.rk === 'S' ? 12 : m.rk === 'A' ? 6 : m.rk === 'B' ? 2 : 1) + _mq.legend)
         if (m.rk === 'S') addChronicle('S-Rank Completed', sn(s) + ' completed the S-rank mission "' + m.n + '".', 'legend')
         if (m.chainId) advanceChain(G, m.id, true)
@@ -1172,7 +1207,8 @@ export function adv() {
         if (Math.random() < kR && !jkKIAImmune(s)) {
           const lastWords = pk(LAST_WORDS_POOL)
           aL(sn(s) + ' KIA on "' + m.n + '". ' + lastWords, 'bad')
-          G.memorial.push({ name: sn(s), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
+          G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
+          pushNarrative(genKIABlurb(sn(s), s.ri, m.n))
           if (s.wins >= 50) addChronicle('Fallen Veteran', sn(s) + ' died on "' + m.n + '" after ' + s.wins + ' missions. ' + lastWords, 'shinobi')
           G._mandateKIAThisYear = (G._mandateKIAThisYear || 0) + 1
           const ripple = kiaRipple(s.id, G.shinobi.filter(x => x.id !== s.id))
@@ -1197,6 +1233,8 @@ export function adv() {
             aL(sn(s) + ' re-injured themselves — too soon to return to active duty.', 'warn')
           }
         }
+        updateConfidence(s, _mev.quality)
+        recordPlayerTactic(G.rivalTendencies, m.rk, _mev.quality, false)
         pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, chainName: m.chainName || null, quality: _mev.quality })
         G.morale = clamp(G.morale - 3 + _mq.morale, 0, 100)
         if (m.chainId) advanceChain(G, m.id, false)
@@ -1236,6 +1274,14 @@ export function adv() {
     if (v.roster.length < 40 && Math.random() < 0.5) {
       const recruit = mS(rnd(0, 1)); recruit.homeVillage = v.n; v.roster.push(recruit)
     }
+    // Adaptive AI — rivals re-evaluate tactics each season (once per year minimum)
+    if (G.month === 1 || !v.counterStrategy) {
+      const tendency = getPlayerTendency(G.rivalTendencies || {})
+      const { changed, strategy } = applyCounterStrategy(v, tendency)
+      if (changed && strategy.id !== 'balanced') pushNarrative(genCounterStrategyBlurb(v.n, strategy.label, strategy.desc))
+    }
+    // Apply counter-strategy strength tick multiplier
+    v._ctBonus = v.counterTickBonus ?? 1
     tickRivalStrength(v)
     // Soft decay above 150 — prevents aggressive villages from permanently walling at 200
     if (v.strength > 150 && Math.random() < 0.25) v.strength = Math.max(150, v.strength - rnd(2, 4))
@@ -2069,7 +2115,7 @@ export function adv() {
       const loyRoll = s.pMatrix.loyalty || 10
       if (loyRoll < 10 && Math.random() < 0.40) {
         aL(sn(s) + ' has submitted a transfer request and left the village!', 'bad')
-        G.memorial.push({ name: sn(s), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri], clan: s.clan, year: G.year, month: G.month, wins: s.wins, lastWords: 'Submitted a transfer request.', transfer: true })
+        G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, year: G.year, month: G.month, wins: s.wins, lastWords: 'Submitted a transfer request.', transfer: true })
         addChronicle('Transfer Departure', sn(s) + ' left the village after losing all commitment.', 'event')
         addNotice(sn(s) + ' has left the village for good.', 'bad')
         G.morale = clamp(G.morale - 4, 0, 100)

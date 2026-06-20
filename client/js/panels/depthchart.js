@@ -1,9 +1,9 @@
 import { G, sPow, sn } from '../state.js'
-import { SQUAD_ROLES } from '../constants.js'
+import { RANKS, SQUAD_ROLES } from '../constants.js'
 import { ensureDepthEntry, assignDepthSlot, toggleDepthLock, evalDepth, resolveActiveShinobi } from '../depthEngine.js'
 import { aL, ntf, upUI } from '../ui.js'
 
-const RANK_LABELS = ['Genin', 'Chunin', 'Jonin', 'ANBU', 'S-Rank']
+const RANK_LABELS = RANKS
 const RANK_RI     = [0, 1, 2, 3, 4]
 
 export function rDep() {

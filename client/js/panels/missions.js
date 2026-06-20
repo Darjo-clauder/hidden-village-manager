@@ -434,7 +434,7 @@ export function rUnderground() {
             canAssign.length === 0 ? '<div style="font-size:7px;color:#555">No eligible shinobi available.</div>' : `
             <select id="bm-sel-${bm.id}" style="font-size:8px;padding:3px;background:#111;color:#e8e0cc;border:1px solid #3a2800;margin-right:6px">
               <option value="">— assign shinobi —</option>
-              ${canAssign.map(s => `<option value="${s.id}">${sn(s)} [${['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri]}]</option>`).join('')}
+              ${canAssign.map(s => `<option value="${s.id}">${sn(s)} [${RANKS[s.ri]}]</option>`).join('')}
             </select>
             <button onclick="assignBM('${bm.id}')" style="font-size:8px;padding:3px 8px;background:#3a2800;color:#c9a84c;border:1px solid #5a4010;cursor:pointer">Send</button>
           `}

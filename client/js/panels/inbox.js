@@ -341,6 +341,32 @@ function buildItems() {
     })
   }
 
+  // ── Narrative inbox (Pillars 1–3 blurbs) ─────────────────────────────────
+  const TAG_ICONS = { success: '⚔', failure: '💥', kia: '🪦', injury: '🏥', transfer: '📜',
+                      bond: '🤝', grudge: '⚡', promotion: '🎖', war: '🔥', exam: '🏟',
+                      prestige: '✨', intel: '🕵', 'default': 'ℹ' }
+  const TAG_CAT   = { success: 'Chronicle', failure: 'Chronicle', kia: 'Chronicle',
+                      injury: 'Injuries', transfer: 'Transfers', bond: 'Bonds', grudge: 'Tensions',
+                      promotion: 'People', war: 'Chronicle', exam: 'Chronicle',
+                      prestige: 'Legacy', intel: 'Intel', 'default': 'Chronicle' }
+  ;(G.narrativeInbox || []).filter(n => !n.dismissed).forEach(n => {
+    const icon = TAG_ICONS[n.tag] ?? TAG_ICONS.default
+    const cat  = TAG_CAT[n.tag]  ?? TAG_CAT.default
+    const actions = []
+    if (n.link) actions.push({ label: 'Go →', fn: `sp('${n.link}')` })
+    actions.push({ label: 'Dismiss', fn: `dismissNarrative('${n.id}')` })
+    items.push({
+      id:       'narr_' + n.id,
+      priority: (n.tag === 'kia' || n.tag === 'grudge') ? 'standard' : 'info',
+      cat,
+      icon,
+      title:    n.title,
+      desc:     `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`,
+      actions,
+      archived: false,
+    })
+  })
+
   // Sort by priority
   items.sort((a, b) => PRIORITY[a.priority] - PRIORITY[b.priority])
   return items

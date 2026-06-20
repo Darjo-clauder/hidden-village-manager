@@ -67,7 +67,7 @@ export function rFi() {
     { n:'Chunin',  ri:1, sal:900 },
     { n:'Jonin',   ri:2, sal:1300 },
     { n:'ANBU',    ri:3, sal:1700 },
-    { n:'S-Rank',  ri:4, sal:2100 },
+    { n:'Sannin',  ri:4, sal:2100 },
   ].filter(r => G.shinobi.filter(s => s.ri === r.ri).length > 0)
     .map(r => {
       const grp = G.shinobi.filter(s => s.ri === r.ri)

@@ -1,5 +1,5 @@
 import { G, sn, fmt, clamp, addChronicle, addLegend, pk } from '../state.js'
-import { PRESTIGE_TIERS, LEGACY_DECISIONS } from '../constants.js'
+import { RANKS, PRESTIGE_TIERS, LEGACY_DECISIONS } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { dynastyProgress, computeDynastyGrade, inheritedBonuses, DYNASTY_YEARS } from '../../../shared/utils/dynasty.js'
 import { leagueLeaders } from '../../../shared/utils/seasonStats.js'
@@ -104,7 +104,7 @@ function _hall() {
       `<div style="display:grid;gap:8px">${hall.map(l => `
         <div class="ke-card">
           <div style="font-size:11px;color:#c9a84c;margin-bottom:4px">🏛 ${l.name}</div>
-          <div style="font-size:9px;color:#7a7060">${['Genin','Chunin','Jonin','Special Jonin','S-Class'][l.ri] || 'Unknown'} · ${l.months} months served · ${l.wins} wins · ${l.winsS} S-rank</div>
+          <div style="font-size:9px;color:#7a7060">${['Genin','Chunin','Jonin','Special Jonin','Sannin'][l.ri] || 'Unknown'} · ${l.months} months served · ${l.wins} wins · ${l.winsS} S-rank</div>
         </div>`).join('')}
       </div>`}
   </div>`
@@ -200,7 +200,7 @@ function _successor() {
         <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:#0a0a0a;border-radius:3px;${curId === s.id ? 'border:1px solid #8fbc8f' : ''}">
           <div>
             <span style="font-size:10px;color:#e8e0cc">${sn(s)}</span>
-            <span style="font-size:8px;color:#7a7060;margin-left:6px">${['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri]} · Age ${s.age}</span>
+            <span style="font-size:8px;color:#7a7060;margin-left:6px">${RANKS[s.ri]} · Age ${s.age}</span>
           </div>
           ${curId !== s.id ? `<button class="gb" onclick="designateSuccessor('${s.id}','shinobi')" style="font-size:8px">Designate</button>` : '<span style="font-size:8px;color:#8fbc8f">★ Active</span>'}
         </div>`).join('') || '<div style="color:#555;font-size:9px">No eligible Jonin+ shinobi.</div>'}

@@ -3,6 +3,7 @@ import {
   TAILED_BEASTS, VILLAGES_DEF, MISS_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
   REGIONS, PM_DESC, REGION_EVENTS, DEV_CURVES, AGENT_AGENDAS,
 } from './constants.js'
+import { ARCHETYPE_POOL } from '../../shared/utils/personality.js'
 
 // ── utilities ──────────────────────────────────────────────────────────────
 export const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a
@@ -85,6 +86,10 @@ export function mS(ri = 0) {
     naturalRoles: ['flex'],          // roles this shinobi is comfortable in (1–3)
     restMonth: false,                // if true: skip mission deployment, recover workload
     pairChemistry: {},               // { otherId: missionsTogether } — pair-level chemistry tracker
+    // Narrative layer (Pillar 1)
+    narrativeArchetype: ARCHETYPE_POOL[Math.floor(Math.random() * ARCHETYPE_POOL.length)],
+    confidence: 50,                  // 0–100; feeds ±0.05 to mission sc
+    grudges: [],                     // [{ targetId, targetName, reasonId, reasonLabel, intensity, formed, lastEvent }]
   }
 }
 
@@ -291,6 +296,9 @@ export function initState() {
     worldCalendar: {},                 // keyed by event notice flags + pendingEvent/activeEvent
     clanApproval: {},                  // { [clanId]: 0–100 } — drift toward 60 monthly
     draftPool: [],                     // prospect leads from safehouse network (see rollProspectLead)
+    // Narrative layer (Pillars 1–3)
+    rivalTendencies: { totalMissions: 0, eliteDeployments: 0, successRun: 0, squadMissions: 0, lastAdaptYear: 0 },
+    narrativeInbox: [],              // [{ id, title, body, tag, link, year, month }] — generated blurbs
   });
   // Starting roster — a workable core of ~15 (grows toward 23 via academy/transfers).
   ;[3, 2, 2, 2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0].forEach(r => {

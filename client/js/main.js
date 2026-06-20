@@ -32,6 +32,8 @@ import { launchDeepCover } from './panels/safehouses.js'
 import { endTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose, setTimeout_, setMaxPlayers, voteAdvance, setAdvFn } from './room.js'
 import { copyInvite } from './panels/lobby.js'
 import { inboxTab, inboxFilter } from './panels/inbox.js'
+import { G as _G } from './state.js'
+function dismissNarrative(id) { if (_G.narrativeInbox) { const n = _G.narrativeInbox.find(x => x.id === id); if (n) n.dismissed = true } }
 import { chrFilter, chrSearch } from './panels/chronicles.js'
 import { roleBonus } from './depthEngine.js'
 
@@ -90,6 +92,7 @@ Object.assign(window, {
   // world choice events + press
   resolveChoiceEvent, openWorldChoice, resolveCouncilProposal, assignBlackMarket, resolveClanChain,
   resolvePressConference,
+  dismissNarrative,
   // staff
   openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff,
   staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting,
