@@ -2,6 +2,7 @@ import { G, fmt } from '../state.js'
 import { FINANCE_TIERS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, STAFF_ROLES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS } from '../constants.js'
 import { nationMods } from '../../../shared/constants/nations.js'
 import { villageRevenue } from '../../../shared/utils/economy.js'
+import { capStatus, SALARY_CAP } from '../../../shared/constants/salaryCap.js'
 
 function tierColor(name) {
   const t = FINANCE_TIERS.find(x => x.n === name)
@@ -133,6 +134,9 @@ export function rFi() {
 
     </div>
 
+    <!-- Salary cap -->
+    ${_capHtml(shinobiSal + staffSal)}
+
     <!-- Net -->
     <div style="background:#0d0b08;border:1px solid ${netNow>=0?'#8fbc8f':'#f66'};padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
       <div>
@@ -198,6 +202,30 @@ export function rFi() {
     <!-- End of year report -->
     ${_yearEndHtml()}
   `
+}
+
+function _capHtml(payroll) {
+  const cs = capStatus(G.prestigeTier || 'D', payroll)
+  const pctW = Math.min(100, Math.round(cs.pct * 100))
+  const nextTier = { D:'C', C:'B', B:'A', A:'S', S:null }[G.prestigeTier || 'D']
+  const nextCap = nextTier ? SALARY_CAP[nextTier] : null
+  return `<div style="background:#1a1814;border:1px solid ${cs.color}44;padding:12px;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-size:8px;letter-spacing:2px;color:${cs.color};text-transform:uppercase">Salary Cap · Prestige ${G.prestigeTier||'D'}</div>
+      <div style="font-size:9px;color:${cs.color};font-weight:bold">${cs.label}</div>
+    </div>
+    <div style="background:#111;border-radius:3px;overflow:hidden;height:8px;margin-bottom:6px">
+      <div style="height:100%;width:${pctW}%;background:${cs.color};transition:width .3s"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:8px;color:#7a7060;margin-bottom:4px">
+      <span>Payroll: <b style="color:#e8e0cc">${fmt(payroll)}</b></span>
+      <span>Cap: <b style="color:#e8e0cc">${fmt(cs.cap)}</b></span>
+      <span>${pctW}% used</span>
+    </div>
+    ${cs.overBy > 0 ? `<div style="font-size:8px;color:#f99;margin-top:4px">Over cap by ${fmt(cs.overBy)} ryo → luxury tax: <b>-${fmt(cs.luxuryTax)}/mo</b></div>` : ''}
+    ${cs.hardBlock ? `<div style="font-size:8px;color:#f44;margin-top:4px;font-weight:bold">⛔ Hard cap exceeded — new signings blocked until payroll drops below ${fmt(Math.round(cs.cap * 1.30))}.</div>` : ''}
+    ${nextCap ? `<div style="font-size:7px;color:#444;margin-top:4px">Raise prestige to ${nextTier} to unlock ${fmt(nextCap)} cap.</div>` : ''}
+  </div>`
 }
 
 function _projectionHtml(hist, netNow) {

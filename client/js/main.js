@@ -9,7 +9,7 @@ import { rUp, buyUp, buildDistrict } from './panels/upgrades.js'
 import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship } from './panels/economy.js'
 import { rBe, lCap, beastTab, releaseJinchuriki, resolveEscape } from './panels/beasts.js'
-import { rKa, resKE, sGift, propAl, rattle } from './panels/kage.js'
+import { rKa, resKE, sGift, propAl, rattle, resNCV } from './panels/kage.js'
 import { rEx, tEC, startEx, runRound } from './panels/exam.js'
 import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP, dipAccept, dipDecline } from './world.js'
 import { resolveChoiceEvent, resolveCouncilProposal, assignBlackMarket, resolveClanChain, establishSafehouse, assignDeepCoverOp, resolveWorldEventChoice, activateBloodline } from './adv.js'
@@ -81,7 +81,7 @@ Object.assign(window, {
   // beasts
   lCap, beastTab, releaseJinchuriki, resolveEscape, activateBloodline,
   // kage
-  resKE, sGift, propAl, rattle,
+  resKE, sGift, propAl, rattle, resNCV,
   // exam
   tEC, startEx, runRound, schEx,
   // world / diplomacy

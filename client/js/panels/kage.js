@@ -1,6 +1,8 @@
 import { G, ui, clamp, sn, fmt } from '../state.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { strengthRatio, rankStandings } from '../../../shared/utils/rivalSim.js'
+import { MANDATE_BY_ID, DISMISSAL_THRESHOLD } from '../../../shared/utils/ownerMandate.js'
+import { resolveNoConfidence } from '../adv.js'
 
 export function rKa() {
   const el = document.getElementById('kgl')
@@ -23,7 +25,7 @@ export function rKa() {
   </div>`
   el.innerHTML = (ui.pKE
     ? `<div class="ke-card" style="border-color:#c9a84c;margin-bottom:14px"><div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">⚡ Kage Event</div><div style="font-size:12px;color:#e8e0cc;font-weight:bold;margin-bottom:5px">${ui.pKE.n}</div><div style="font-size:10px;color:#7a7060;margin-bottom:12px;line-height:1.5">${ui.pKE.desc}</div><div style="display:flex;flex-direction:column;gap:6px">${ui.pKE.choices.map((c, i) => `<button class="gb" onclick="resKE(${i})">${c.l}</button>`).join('')}</div></div>`
-    : '') + standingsHtml + vH
+    : '') + _noConfidenceHtml() + _mandateHtml() + standingsHtml + vH
 }
 
 export function resKE(i) {
@@ -48,3 +50,59 @@ export function rattle(n) {
   const v = G.villages.find(x => x.n === n); v.rel = clamp(v.rel - 15, 0, 100); v.threat = clamp((v.threat || 0) + 20, 0, 100)
   aL('Rattled sabres at ' + n + '.', 'warn'); upUI()
 }
+
+function _mandateHtml() {
+  const m = G.ownerMandate
+  if (!m || !m.ids?.length) return ''
+  const conf = m.confidence ?? 75
+  const confColor = conf >= 60 ? '#8fbc8f' : conf >= DISMISSAL_THRESHOLD ? '#fa0' : '#f44'
+  const confPct = conf
+  const mandateRows = m.ids.map(id => {
+    const def = MANDATE_BY_ID[id]
+    if (!def) return ''
+    return `<div style="padding:5px 0;border-bottom:1px solid #111">
+      <div style="font-size:9px;color:#e8e0cc">${def.n}</div>
+      <div style="font-size:8px;color:#7a7060">${def.desc}</div>
+      <div style="font-size:8px;color:#555;margin-top:2px">+${def.confidenceGain} if met · -${def.confidenceLoss} if missed</div>
+    </div>`
+  }).join('')
+  const history = (m.history || []).slice(-3).reverse().map(h => {
+    const net = h.delta >= 0 ? `+${h.delta}` : `${h.delta}`
+    const c = h.delta >= 0 ? '#8fbc8f' : '#f66'
+    const icons = h.results.map(r => r.met ? '✓' : '✗').join(' ')
+    return `<div style="font-size:8px;color:#7a7060;padding:2px 0">Y${h.year}: ${icons} → confidence <span style="color:${c}">${net}</span> → ${h.confidenceAfter}</div>`
+  }).join('')
+
+  return `<div class="ke-card" style="border-color:${confColor}44;margin-bottom:14px">
+    <div style="font-size:9px;letter-spacing:2px;color:${confColor};text-transform:uppercase;margin-bottom:8px">Council Mandate · Year ${G.year}</div>
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:8px;color:#7a7060;margin-bottom:4px">
+        <span>Council Confidence</span>
+        <span style="color:${confColor};font-weight:bold">${conf}/100</span>
+      </div>
+      <div style="background:#111;border-radius:3px;overflow:hidden;height:8px">
+        <div style="height:100%;width:${confPct}%;background:${confColor};transition:width .3s"></div>
+      </div>
+      ${conf < DISMISSAL_THRESHOLD
+        ? `<div style="font-size:8px;color:#f44;margin-top:4px">⚠ Confidence critically low. Two consecutive bad years triggers a no-confidence vote.</div>`
+        : `<div style="font-size:8px;color:#555;margin-top:4px">Evaluated each December. Drops below ${DISMISSAL_THRESHOLD} for 2+ years → no-confidence vote.</div>`}
+    </div>
+    ${mandateRows}
+    ${history ? `<div style="margin-top:8px;border-top:1px solid #222;padding-top:6px"><div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Recent history</div>${history}</div>` : ''}
+  </div>`
+}
+
+function _noConfidenceHtml() {
+  if (!G.noConfidenceVote) return ''
+  return `<div class="ke-card" style="border-color:#f44;background:rgba(255,68,68,0.06);margin-bottom:14px">
+    <div style="font-size:10px;letter-spacing:2px;color:#f44;text-transform:uppercase;margin-bottom:8px">⚠ No-Confidence Vote</div>
+    <div style="font-size:11px;color:#e8e0cc;margin-bottom:8px">The council demands a change of leadership after consecutive mandate failures.</div>
+    <div style="font-size:9px;color:#7a7060;margin-bottom:12px">You may resign with honour or spend 15,000 ryo to rally council support and fight the vote.</div>
+    <div style="display:flex;gap:8px">
+      <button class="gb gb-r" onclick="resNCV('resign')">Resign (end dynasty)</button>
+      <button class="gb gb-g" onclick="resNCV('fight')" ${(G.ryo||0) < 15000 ? 'disabled title="Need 15,000 ryo"' : ''}>Fight the vote (15k ryo)</button>
+    </div>
+  </div>`
+}
+
+export function resNCV(choice) { resolveNoConfidence(choice) }

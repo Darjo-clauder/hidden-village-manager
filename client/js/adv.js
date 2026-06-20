@@ -31,6 +31,8 @@ import { pickSupportEvent } from '../../shared/bonds/supportEvents.js'
 import { applyDebt } from '../../shared/utils/debt.js'
 import { nationMods } from '../../shared/constants/nations.js'
 import { activeBloodlineBonus, netBloodlineMod, canActivate, BLOODLINE_MULTIPLIER, ACTIVATION_COST, ACTIVATION_MIN_STAGE, ACTIVE_DURATION, COOLDOWN, AGGRO_INCREASE, DEBUFF_DURATION } from '../../shared/utils/bloodline.js'
+import { capStatus } from '../../shared/constants/salaryCap.js'
+import { pickMandates, evaluateMandates, MANDATE_BY_ID, CONFIDENCE_START, DISMISSAL_THRESHOLD } from '../../shared/utils/ownerMandate.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
@@ -1080,6 +1082,7 @@ export function adv() {
             G.memorial.push({ name: sn(s), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
             G.shinobi = G.shinobi.filter(x => x.id !== s.id)
             hadKIA = true; sq.kills++
+            G._mandateKIAThisYear = (G._mandateKIAThisYear || 0) + 1
           } else {
             const injType = pickInjuryType(m.rk)
             if (injType) applyInjury(s, injType, hL, dp.injDayReduction)
@@ -1158,6 +1161,7 @@ export function adv() {
           aL(sn(s) + ' KIA on "' + m.n + '". ' + lastWords, 'bad')
           G.memorial.push({ name: sn(s), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
           if (s.wins >= 50) addChronicle('Fallen Veteran', sn(s) + ' died on "' + m.n + '" after ' + s.wins + ' missions. ' + lastWords, 'shinobi')
+          G._mandateKIAThisYear = (G._mandateKIAThisYear || 0) + 1
           const ripple = kiaRipple(s.id, G.shinobi.filter(x => x.id !== s.id))
           ripple.forEach(r => {
             const affected = G.shinobi.find(x => x.id === r.shinobiId)
@@ -1424,6 +1428,52 @@ export function adv() {
     G.daimyoObjectiveHistory.push({ year: G.year, met, budgetMult: G.daimyoBudgetMult })
   }
 
+  // ── Owner mandate (annual accountability + job security) ────────────────────
+  if (!G.ownerMandate) G.ownerMandate = { confidence: CONFIDENCE_START, consecutiveBadYears: 0, ids: [], history: [] }
+  if (G.month === 1) {
+    // New year — reset per-year trackers and set mandates
+    G._mandateKIAThisYear   = 0
+    G._mandateLuxTaxMonths  = 0
+    G._mandateStartRep      = G.reputation
+    const lastIds = G.ownerMandate.ids || []
+    G.ownerMandate.ids = pickMandates(lastIds)
+    const names = G.ownerMandate.ids.map(id => MANDATE_BY_ID[id]?.n || id).join(', ')
+    aL(`Council mandate for Year ${G.year}: ${names}. See Kage tab.`, 'ev')
+    addChronicle('Council Mandate', `Year ${G.year} mandates: ${names}.`, 'event')
+  }
+  if (G.month === 12 && G.ownerMandate.ids.length) {
+    const { results, delta } = evaluateMandates(G.ownerMandate.ids, G)
+    const prev = G.ownerMandate.confidence
+    G.ownerMandate.confidence = clamp(prev + delta, 0, 100)
+    const metCount = results.filter(r => r.met).length
+    const allMet = metCount === results.length
+    const badYear = delta < 0
+    G.ownerMandate.consecutiveBadYears = badYear ? (G.ownerMandate.consecutiveBadYears || 0) + 1 : 0
+    G.ownerMandate.history.push({
+      year: G.year, results, delta,
+      confidenceBefore: prev, confidenceAfter: G.ownerMandate.confidence,
+    })
+    if (G.ownerMandate.history.length > 10) G.ownerMandate.history.shift()
+    const summary = results.map(r => (r.met ? '✓' : '✗') + ' ' + (MANDATE_BY_ID[r.id]?.n || r.id)).join(' · ')
+    if (allMet) {
+      aL(`Council review: all mandates met — confidence ${prev}→${G.ownerMandate.confidence}. ${summary}`, 'good')
+      addChronicle('Mandate Review', `Year ${G.year}: all mandates met. Confidence ${G.ownerMandate.confidence}.`, 'milestone')
+    } else {
+      aL(`Council review: ${metCount}/${results.length} mandates met — confidence ${prev}→${G.ownerMandate.confidence}. ${summary}`, badYear ? 'bad' : 'neutral')
+      addChronicle('Mandate Review', `Year ${G.year}: ${metCount}/${results.length} mandates met. Confidence ${G.ownerMandate.confidence}.`, 'event')
+    }
+    // No-confidence trigger
+    if (G.ownerMandate.confidence < DISMISSAL_THRESHOLD && G.ownerMandate.consecutiveBadYears >= 2) {
+      G.noConfidenceVote = true
+      aL('⚠ The council has lost confidence in your leadership — a no-confidence vote has been called! See Kage tab.', 'bad')
+      ntf('No-confidence vote called!')
+      addChronicle('No-Confidence Vote', `After ${G.ownerMandate.consecutiveBadYears} consecutive poor years, the council demands a change of leadership.`, 'legend')
+    } else if (G.ownerMandate.confidence < DISMISSAL_THRESHOLD) {
+      aL(`⚠ Council confidence is critically low (${G.ownerMandate.confidence}). One more bad year risks dismissal.`, 'bad')
+      addNotice(`Council confidence: ${G.ownerMandate.confidence}/100. Meet mandates next year or face a vote.`, 'bad')
+    }
+  }
+
   // ── Sponsorship deals ────────────────────────────────────────────────────────
   if (!G.sponsorship && !G.sponsorshipOffer && Math.random() < 0.06) {
     const eligible = SPONSORSHIP_OFFERS.filter(o => G.shinobi.some(s => s.ri >= o.minRi))
@@ -1483,6 +1533,20 @@ export function adv() {
   // Apply economy flows
   G.ryo += totalIncome  // nation-adjusted (see _natIncMult)
   G.ryo -= shinobiSal + staffSal + maintenance
+
+  // ── Salary cap check ─────────────────────────────────────────────────────
+  const _cs = capStatus(G.prestigeTier || 'D', shinobiSal + staffSal)
+  G.capStatus = _cs
+  G._capHardBlock = _cs.hardBlock
+  if (_cs.overBy > 0) {
+    G._mandateLuxTaxMonths = (G._mandateLuxTaxMonths || 0) + 1
+    G.ryo = Math.max(0, G.ryo - _cs.luxuryTax)
+    if (_cs.hardBlock) {
+      aL(`⚠ Hard cap exceeded (${Math.round(_cs.pct * 100)}% of cap) — signings BLOCKED until payroll drops. Luxury tax: -${fmt(_cs.luxuryTax)} ryo.`, 'bad')
+    } else {
+      aL(`Payroll over cap — luxury tax: -${fmt(_cs.luxuryTax)} ryo (${_cs.label}).`, 'warn')
+    }
+  }
 
   // #12 Optional debt/overdraft (flag-gated): accrue interest instead of an implicit hole
   if (G._ff_debt && G.ryo < 0) {
@@ -2658,4 +2722,33 @@ function _tickAnalyticsSnapshot(G) {
     missionWinRate,
   })
   if (G.analyticsHistory.length > 60) G.analyticsHistory.shift()  // keep 5 years max
+}
+
+// ── No-confidence vote resolution (called from kage panel) ───────────────────
+export function resolveNoConfidence(choice) {
+  if (!G.noConfidenceVote) return
+  G.noConfidenceVote = false
+  if (choice === 'resign') {
+    const { grade, score } = computeDynastyGrade(G)
+    aL(`You resign as Kage. Dynasty Grade: ${grade} (${score} pts). Your legacy endures.`, 'neutral')
+    addChronicle('Kage Resigned', `${G.kN || 'The Kage'} stepped down after a no-confidence vote. Dynasty Grade: ${grade}.`, 'legend')
+    G.gameOver = { reason: 'resignation', grade, score, year: G.year }
+    upUI(); return
+  }
+  // Fight the vote — costs ryo and morale, resets consecutive bad years counter
+  const cost = 15000
+  if (G.ryo >= cost) {
+    G.ryo -= cost
+    G.ownerMandate.confidence = clamp(G.ownerMandate.confidence + 20, 0, 100)
+    G.ownerMandate.consecutiveBadYears = 0
+    G.morale = clamp(G.morale - 10, 0, 100)
+    aL(`You successfully defend your position — confidence restored to ${G.ownerMandate.confidence}. Cost: -${fmt(cost)} ryo, -10 morale.`, 'good')
+    addChronicle('Vote Survived', `${G.kN || 'The Kage'} survived a no-confidence vote by rallying council support.`, 'legend')
+  } else {
+    aL('Not enough ryo to rally support — forced to resign.', 'bad')
+    const { grade, score } = computeDynastyGrade(G)
+    addChronicle('Kage Ousted', `${G.kN || 'The Kage'} was removed after losing a no-confidence vote. Dynasty Grade: ${grade}.`, 'legend')
+    G.gameOver = { reason: 'ousted', grade, score, year: G.year }
+  }
+  upUI()
 }
