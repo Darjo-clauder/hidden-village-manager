@@ -1,6 +1,7 @@
 import { G, ui, sPow, rnd, sn, pk, clamp, fmt, addChronicle, addLegend, computeMarketValue } from '../state.js'
 import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS, INJURY_TYPES } from '../constants.js'
 import { aL, ntf, upUI, schEx } from '../ui.js'
+import { initSeasonTable, sortedTable, seedsFromTable } from '../../../shared/utils/season.js'
 
 window._exTab = 'exam'
 
@@ -21,6 +22,24 @@ export function rEx() {
 
 export function exTab(t) { window._exTab = t; rEx() }
 
+// Season standings card — the league race that seeds the exam bracket.
+function _seasonStandingsCard() {
+  if (!G.season?.table) return ''
+  const rows = sortedTable(G.season.table)
+  if (!rows.length) return ''
+  return `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:9px;margin-bottom:10px">
+    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">Season Standings — seeds the bracket</div>
+    <table style="width:100%;border-collapse:collapse;font-size:8px">
+      <thead><tr style="color:#7a7060;text-align:left"><th style="padding:1px 4px">#</th><th>Village</th><th style="text-align:center">W</th><th style="text-align:center">D</th><th style="text-align:center">L</th><th style="text-align:right;padding-right:4px">Pts</th></tr></thead>
+      <tbody>${rows.map((row, i) => `<tr style="${row.name === G.vName ? 'color:#c9a84c;font-weight:bold' : 'color:#9a9080'}">
+        <td style="padding:2px 4px">${i + 1}</td><td>${row.name}${row.name === G.vName ? ' (you)' : ''}</td>
+        <td style="text-align:center">${row.w}</td><td style="text-align:center">${row.d}</td><td style="text-align:center">${row.l}</td>
+        <td style="text-align:right;padding-right:4px;color:#e8e0cc">${row.pts}</td></tr>`).join('')}</tbody>
+    </table>
+    <div style="font-size:7px;color:#555;margin-top:5px">Top seeds carry a survival edge into the Qualifier.</div>
+  </div>`
+}
+
 function _renderExamSetup(el, tabHtml) {
   const isHost = G.examHosting === true
   const fmt_ = G.examFormat
@@ -34,13 +53,14 @@ function _renderExamSetup(el, tabHtml) {
         <div style="font-size:8px;color:#8fbc8f;margin-top:3px">Bonus: Nominees strong in <b>${fmt_.bonusStats.join(', ')}</b> gain +15% performance.</div>
       </div>`
     : `<div style="font-size:8px;color:#555;margin-bottom:8px">Format will be revealed when you start.</div>`
+  const seasonCard = _seasonStandingsCard()
   if (!G.examSched) {
-    el.innerHTML = tabHtml + hostInfo + formatBanner + '<div style="color:#7a7060;font-size:10px">No exam scheduled.<br><br><button class="gb" onclick="schEx()">Request exam</button></div>'
+    el.innerHTML = tabHtml + hostInfo + formatBanner + seasonCard + '<div style="color:#7a7060;font-size:10px">No exam scheduled.<br><br><button class="gb" onclick="schEx()">Request exam</button></div>'
     return
   }
   const cands = G.shinobi.filter(s => (s.ri === 0 || s.ri === 1) && s.status === 'available' && !(G.transferMarket?.loanIn || []).some(l => l.shinobiId === s.id))
   const maxCands = G.worldFlags?.examExpanded ? 8 : 6
-  el.innerHTML = tabHtml + hostInfo + formatBanner +
+  el.innerHTML = tabHtml + hostInfo + formatBanner + seasonCard +
     `<div style="font-size:9px;color:#7a7060;margin-bottom:12px">Select nominees (max ${maxCands}). Loan-in shinobi are ineligible.</div>` +
     '<div style="margin-bottom:12px">' +
     (cands.map(s => {
@@ -78,17 +98,25 @@ function _rivalCombatants(v) {
 
 // Build the full tournament field: player village + every rival village.
 function _buildExamField() {
+  // Seeds earned from the season standings — top seeds get a qualifier edge.
+  const seeds = G.season?.table ? seedsFromTable(G.season.table) : {}
+  const nVillages = (G.villages?.length || 0) + 1
+  const seedBonus = name => {
+    const seed = seeds[name]
+    if (!seed || nVillages < 2) return 0
+    return Math.round((1 - (seed - 1) / (nVillages - 1)) * 10) / 100  // top seed +0.10 → bottom +0
+  }
   const playerEntry = {
-    vid: 'player', name: G.vName, ico: G.vIcon, isPlayer: true,
+    vid: 'player', name: G.vName, ico: G.vIcon, isPlayer: true, seed: seeds[G.vName] || null,
     alive: G.examCands.map(id => {
       const s = G.shinobi.find(x => x.id === id)
-      return { id, shinobiId: id, name: sn(s), pow: sPow(s), isPlayer: true }
+      return { id, shinobiId: id, name: sn(s), pow: sPow(s), isPlayer: true, seedBonus: seedBonus(G.vName) }
     }).filter(c => c.id),
     out: [],
   }
   const rivalEntries = (G.villages || []).map(v => ({
-    vid: v.n, name: v.n, ico: v.ico, isPlayer: false,
-    alive: _rivalCombatants(v), out: [],
+    vid: v.n, name: v.n, ico: v.ico, isPlayer: false, seed: seeds[v.n] || null,
+    alive: _rivalCombatants(v).map(c => ({ ...c, seedBonus: seedBonus(v.n) })), out: [],
   }))
   return [playerEntry, ...rivalEntries]
 }
@@ -133,7 +161,7 @@ function rExA(el, tabHtml) {
     <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${standing.length} villages in contention · ${totalAlive} combatants remaining</div>
     <div style="display:grid;gap:8px;margin-bottom:10px">
       ${standing.map((e, i) => `<div style="border:1px solid ${e.isPlayer ? '#c9a84c' : '#2e2a22'};padding:7px;background:${e.isPlayer ? 'rgba(201,168,76,0.06)' : '#0a0a0a'}">
-        <div style="font-size:9px;color:${e.isPlayer ? '#c9a84c' : '#9a9080'};margin-bottom:4px">${i === 0 ? '◆ ' : ''}${e.ico || '🏳'} ${e.name}${e.isPlayer ? ' (you)' : ''} <span style="color:#7a7060">— ${e.alive.length} alive${e.scrolls != null ? ` · ${e.scrolls} 📜` : ''}</span></div>
+        <div style="font-size:9px;color:${e.isPlayer ? '#c9a84c' : '#9a9080'};margin-bottom:4px">${i === 0 ? '◆ ' : ''}${e.seed ? `<span style="color:#7a7060">#${e.seed}</span> ` : ''}${e.ico || '🏳'} ${e.name}${e.isPlayer ? ' (you)' : ''} <span style="color:#7a7060">— ${e.alive.length} alive${e.scrolls != null ? ` · ${e.scrolls} 📜` : ''}</span></div>
         ${e.alive.map(c => `<div style="font-size:8px;padding:2px 0;color:${c.isPlayer ? '#e8e0cc' : '#7a7060'}">${c.name} · Pwr ${c.pow}${c._wounded ? ' <span style="color:#f88">⚕ wounded</span>' : ''}${c.isPlayer && _formatBonusById(c.shinobiId) > 0 ? ' <span style="color:#8fbc8f">★+15%</span>' : ''}</div>`).join('')}
       </div>`).join('')}
     </div>
@@ -203,13 +231,15 @@ export function runRound() {
   const biasMod = (G.examJudgeBias?.isBiased && !G.examJudgeProtested) ? G.examJudgeBias.biasMod : 0
 
   if (r === 0) {
-    // Qualifier — written test (intelligence for player, power proxy for rivals)
+    // Qualifier — written test (intelligence for player, power proxy for rivals).
+    // Seeds earned in the season standings add a survival edge here.
     _stageSurvival(field, c => {
+      const sb = c.seedBonus || 0
       if (c.isPlayer) {
         const s = G.shinobi.find(x => x.id === c.shinobiId)
-        return clamp(0.5 + (s?.stats.intelligence || 30) / 200 + _formatBonusById(c.shinobiId), 0.1, 0.95)
+        return clamp(0.5 + (s?.stats.intelligence || 30) / 200 + _formatBonusById(c.shinobiId) + sb, 0.1, 0.95)
       }
-      return clamp(0.45 + c.pow / 200, 0.1, 0.9)
+      return clamp(0.45 + c.pow / 200 + sb, 0.1, 0.9)
     }, 'Passed the written test', 'Failed the written test', res)
   } else if (r === 1) {
     return _runForest(field, res)
@@ -420,6 +450,14 @@ function _runFinals(field, biasMod) {
     if ((s.injDays || 0) > 0) { s.status = 'injured'; woundedCount++ } else s.status = 'available'
   })
   if (woundedCount > 0) aL(`${woundedCount} nominee${woundedCount > 1 ? 's' : ''} returned from the exam injured.`, 'warn')
+
+  // The exam was the playoff — archive the final season table and start a fresh season.
+  if (G.season?.table) {
+    G.seasonHistory = G.seasonHistory || []
+    G.seasonHistory.push({ year: G.year, champion: champ?.name || null, table: sortedTable(G.season.table) })
+    const names = [G.vName, ...(G.villages || []).map(v => v.n)]
+    G.season = { year: G.year, round: 0, table: initSeasonTable(names), lastResults: [] }
+  }
   if (G.examHosting) { G.ryo += 8000; aL('Hosting income from Chunin Exam: +8,000 ryo.', 'good'); G.examHosting = false }
   G.examFormat = null; G.examJudgeBias = null
   G.examResults.push(...res.map(x => ({ id: '', name: x.name, result: x.result, promoted: x.promoted })))

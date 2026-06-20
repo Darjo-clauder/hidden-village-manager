@@ -142,6 +142,7 @@ export function initState() {
     avM: [], upgrades: { academy: 0, hospital: 0, wall: 0, intel: 0, training: 0, seal: 0 },
     raid: null, raidW: 0, defSh: null, tempDef: 0,
     examSched: false, examMonth: null, examActive: false, examResults: [], examCands: [], examChampion: null,
+    season: null, seasonHistory: [],
     tradeRoutes: JSON.parse(JSON.stringify(TRADE_ROUTES)),
     contracts: JSON.parse(JSON.stringify(CONTRACTS)),
     keQ: [...KAGE_EVENTS].sort(() => Math.random() - 0.5), keCD: 0,

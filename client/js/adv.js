@@ -15,6 +15,7 @@ import { jutsuLoadoutBonus } from '../../shared/jutsu/loadout.js'
 import { DISTRICTS, getDistrictPassives } from '../../shared/constants/districts.js'
 import { COUNCIL_FACTIONS, COUNCIL_PROPOSALS, getCouncilPerks } from '../../shared/constants/council.js'
 import { tickRivalStrength, shouldFireRivalEvent, pickRivalEvent, computePlayerStrength } from '../../shared/utils/rivalSim.js'
+import { initSeasonTable, playMatchday } from '../../shared/utils/season.js'
 import { DYNASTY_YEARS, computeDynastyGrade } from '../../shared/utils/dynasty.js'
 import { bondMissionBonus, mentorGrowthBonus, kiaRipple, BOND_TYPES } from '../../shared/bonds/bondTypes.js'
 import { BM_MISSION_BY_ID, getUnderworldTier, discoveryChance, UNDERWORLD_TIERS } from '../../shared/constants/blackMarket.js'
@@ -1202,6 +1203,19 @@ export function adv() {
     }
   })
   G._playerStrength = computePlayerStrength(G)
+
+  // ── Season league table — the regular-season spine that seeds the exam ────
+  {
+    const playerName = G.vName
+    const names = [playerName, ...G.villages.map(v => v.n)]
+    if (!G.season || !G.season.table || Object.keys(G.season.table).length !== names.length) {
+      G.season = { year: G.year, round: 0, table: initSeasonTable(names), lastResults: [] }
+    }
+    const strOf = name => name === playerName
+      ? (G._playerStrength || 50)
+      : ((G.villages.find(v => v.n === name)?.strength) || 50)
+    playMatchday(G.season, names, strOf)
+  }
 
   // ── Staff tick ────────────────────────────────────────────────────────────
   if (!G.staff) G.staff = [];
