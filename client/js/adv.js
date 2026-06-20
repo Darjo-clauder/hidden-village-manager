@@ -185,7 +185,12 @@ function rollInjuryOnSuccess(s, m, hL, injDayReduction = 0) {
 
 function addWorkload(s, mRk) {
   s.workload = clamp((s.workload || 0) + (RANK_WORKLOAD[mRk] || 10), 0, 100)
+  s.fatigue = clamp((s.fatigue || 0) + ({ S: 25, A: 18, B: 12, C: 8, D: 4 }[mRk] || 8), 0, 100)
   s.consecutiveMissions = (s.consecutiveMissions || 0) + 1
+}
+function fatiguePenalty(s) {
+  const f = s.fatigue || 0
+  return f >= 80 ? -0.15 : f >= 60 ? -0.09 : f >= 40 ? -0.04 : 0
 }
 
 // ── Finance helpers ────────────────────────────────────────────────────────────
@@ -662,6 +667,55 @@ export function adv() {
   G._kiaThisMonth = 0
   // Citizen morale multiplies village revenue
   G._citizenRevMult = 0.7 + (G.citizenMorale / 100) * 0.6  // 0.7x at 0 morale, 1.3x at 100
+  // ── Monthly quick-decision events (Pillar 4) ──────────────────────────────
+  if (!G.pendingQuickDecision && Math.random() < 0.55) {
+    const QUICK_EVENTS = [
+      { id:'merchant', title:'Merchant Caravan Passing', body:'A wealthy caravan requests safe passage through your territory. You can tax them or wave them through as goodwill.', options:[
+        { id:'tax', label:'Collect road tax', effect: g => { g.ryo += 2500; aL('Road tax collected — 2,500 ryo.', 'good') } },
+        { id:'goodwill', label:'Wave them through', effect: g => { g.villages.forEach(v => { v.rel = clamp((v.rel||50)+3,0,100) }); g.reputation = clamp((g.reputation||0)+2,0,999); aL('Goodwill gesture noted — rep +2.', 'neutral') } },
+      ]},
+      { id:'gifted_child', title:'Gifted Child at the Gates', body:'A child prodigy with no clan has appeared, seeking training. Recruit them now or wait for the next academy intake.', options:[
+        { id:'recruit_now', label:'Accept immediately', effect: g => { const s = mS(0); s.potential = clamp(s.potential + 15, 0, 99); s.homegrown = true; s.salary = 300; g.shinobi.push(s); aL(sn(s) + ' recruited — prodigy with +15 potential.', 'good') } },
+        { id:'academy_track', label:'Direct to academy', effect: g => { const st = genStudent(g.upgrades.academy || 0, 0); st.potential = clamp(st.potential + 10, 0, 99); g.intakeClass.push(st); aL('Prodigy enrolled in the academy.', 'neutral') } },
+      ]},
+      { id:'festival', title:'Village Festival Proposal', body:'The civilian council wants to fund a celebration. It lifts morale but costs ryo.', options:[
+        { id:'fund', label:'Fund the festival', effect: g => { g.ryo = Math.max(0, g.ryo - 3000); g.morale = clamp((g.morale||50)+12,0,100); g.citizenMorale = clamp((g.citizenMorale||60)+8,0,100); aL('Festival funded — morale +12, citizen morale +8.', 'good') } },
+        { id:'skip', label:'Save the ryo', effect: g => { g.morale = clamp((g.morale||50)-4,0,100); aL('Festival skipped — civilians disappointed.', 'warn') } },
+      ]},
+      { id:'defector', title:'Rival Village Defector', body:'An enemy chunin appeared at the gates claiming to have intelligence on a rival village\'s plans. Accept the risk or turn them away.', options:[
+        { id:'accept', label:'Accept their intel', effect: g => { g.reputation = clamp((g.reputation||0)+5,0,999); if (!g.intelLog) g.intelLog = []; g.intelLog.push({ text:'Defector intel: rival village plans revealed.', year:g.year, month:g.month }); aL('Defector intel accepted — rep +5.', 'good') } },
+        { id:'turnaway', label:'Turn them away', effect: g => { const rv = pk(g.villages); rv.rel = clamp((rv.rel||50)+5,0,100); aL('Defector turned away — ' + rv.n + ' relations improve.', 'neutral') } },
+      ]},
+      { id:'sparring_incident', title:'Sparring Incident', body:'Two genin pushed too hard in training — one is bruised. Handle it officially or let them sort it between themselves.', options:[
+        { id:'official', label:'Official reprimand', effect: g => { g.morale = clamp((g.morale||50)-3,0,100); const s = g.shinobi.find(x => x.ri === 0 && x.status === 'available'); if (s) { s.injDays = 2; s.status = 'injured'; aL(sn(s) + ' benched 2 months — official reprimand.', 'warn') } } },
+        { id:'let_go', label:'Let them settle it', effect: g => { g.morale = clamp((g.morale||50)+3,0,100); aL('Sparring spirit respected — morale +3.', 'good') } },
+      ]},
+      { id:'scroll', title:'Ancient Scroll Recovered', body:'A scout returned with a forgotten jutsu scroll. Study it to boost training or sell it to a collector for quick ryo.', options:[
+        { id:'study', label:'Research the scroll', effect: g => { g.shinobi.filter(s => s.status === 'available').slice(0,3).forEach(s => { const k = pk(['ninjutsu','taijutsu','genjutsu','chakra']); s.stats[k] = clamp((s.stats[k]||0)+3,0,99) }); aL('Scroll studied — 3 shinobi gained +3 in a stat.', 'good') } },
+        { id:'sell', label:'Sell the scroll', effect: g => { g.ryo += 4500; aL('Scroll sold — 4,500 ryo.', 'good') } },
+      ]},
+      { id:'border_scare', title:'Border Skirmish Alert', body:'Scouts report unusual activity near the border. Deploy a patrol now or issue a diplomatic warning first.', options:[
+        { id:'patrol', label:'Deploy patrol', effect: g => { const s = g.shinobi.find(x => x.ri >= 1 && x.status === 'available'); if (s) { s.workload = clamp((s.workload||0)+15,0,100); s.fatigue = clamp((s.fatigue||0)+10,0,100) }; g.reputation = clamp((g.reputation||0)+3,0,999); aL('Patrol deployed — rep +3.', 'neutral') } },
+        { id:'diplomacy', label:'Diplomatic warning', effect: g => { const rv = pk(g.villages); rv.rel = clamp((rv.rel||50)-8,0,100); aL('Diplomatic warning issued to ' + rv.n + '.', 'warn') } },
+      ]},
+    ]
+    const ev = pk(QUICK_EVENTS)
+    const eid = Math.random().toString(36).slice(2)
+    G.pendingQuickDecision = { id: eid, eventId: ev.id, title: ev.title, body: ev.body, options: ev.options.map(o => ({ id: o.id, label: o.label })), year: G.year, month: G.month }
+    G.narrativeInbox.push({ id: eid, type: 'quick_decision', tag: 'event', title: '⚡ Decision: ' + ev.title, body: ev.body, eventId: ev.id, options: ev.options.map(o => ({ id: o.id, label: o.label })), year: G.year, month: G.month })
+    if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
+  }
+  // Store event pool on state for resolveQuickDecision to look up
+  if (!G._quickEventPool) G._quickEventPool = [
+    { id:'merchant', options:[{ id:'tax', effect: g => { g.ryo += 2500; aL('Road tax collected — 2,500 ryo.', 'good') } }, { id:'goodwill', effect: g => { g.villages.forEach(v => { v.rel = clamp((v.rel||50)+3,0,100) }); g.reputation = clamp((g.reputation||0)+2,0,999); aL('Goodwill gesture — rep +2.', 'neutral') } }] },
+    { id:'gifted_child', options:[{ id:'recruit_now', effect: g => { const s = mS(0); s.potential = clamp(s.potential+15,0,99); s.homegrown=true; s.salary=300; g.shinobi.push(s); aL(sn(s)+' recruited — prodigy +15 potential.', 'good') } }, { id:'academy_track', effect: g => { const st = genStudent(g.upgrades.academy||0,0); st.potential=clamp(st.potential+10,0,99); g.intakeClass.push(st); aL('Prodigy enrolled in academy.','neutral') } }] },
+    { id:'festival', options:[{ id:'fund', effect: g => { g.ryo=Math.max(0,g.ryo-3000); g.morale=clamp((g.morale||50)+12,0,100); g.citizenMorale=clamp((g.citizenMorale||60)+8,0,100); aL('Festival funded.','good') } }, { id:'skip', effect: g => { g.morale=clamp((g.morale||50)-4,0,100); aL('Festival skipped.','warn') } }] },
+    { id:'defector', options:[{ id:'accept', effect: g => { g.reputation=clamp((g.reputation||0)+5,0,999); aL('Defector intel — rep +5.','good') } }, { id:'turnaway', effect: g => { const rv=pk(g.villages); rv.rel=clamp((rv.rel||50)+5,0,100); aL('Defector turned away.','neutral') } }] },
+    { id:'sparring_incident', options:[{ id:'official', effect: g => { g.morale=clamp((g.morale||50)-3,0,100); const s=g.shinobi.find(x=>x.ri===0&&x.status==='available'); if(s){s.injDays=2;s.status='injured';aL(sn(s)+' benched.','warn')} } }, { id:'let_go', effect: g => { g.morale=clamp((g.morale||50)+3,0,100); aL('Sparring spirit respected.','good') } }] },
+    { id:'scroll', options:[{ id:'study', effect: g => { g.shinobi.filter(s=>s.status==='available').slice(0,3).forEach(s=>{const k=pk(['ninjutsu','taijutsu','genjutsu','chakra']);s.stats[k]=clamp((s.stats[k]||0)+3,0,99)}); aL('Scroll studied.','good') } }, { id:'sell', effect: g => { g.ryo+=4500; aL('Scroll sold — 4,500 ryo.','good') } }] },
+    { id:'border_scare', options:[{ id:'patrol', effect: g => { const s=g.shinobi.find(x=>x.ri>=1&&x.status==='available'); if(s){s.workload=clamp((s.workload||0)+15,0,100);s.fatigue=clamp((s.fatigue||0)+10,0,100)}; g.reputation=clamp((g.reputation||0)+3,0,999); aL('Patrol deployed.','neutral') } }, { id:'diplomacy', effect: g => { const rv=pk(g.villages); rv.rel=clamp((rv.rel||50)-8,0,100); aL('Diplomatic warning to '+rv.n+'.','warn') } }] },
+  ]
+
   // Underworld passive income (Phantom tier)
   const uwTier = getUnderworldTier(G.blackMarketRep || 0)
   if (uwTier.passiveRyo) G.ryo += uwTier.passiveRyo
@@ -822,6 +876,7 @@ export function adv() {
 
     // Ensure new fields on existing shinobi
     if (s.workload === undefined) s.workload = 0
+    if (s.fatigue === undefined) s.fatigue = 0
     if (s.consecutiveMissions === undefined) s.consecutiveMissions = 0
     if (s.traumaStatus === undefined) s.traumaStatus = null
     if (s.traumaCount === undefined) s.traumaCount = 0
@@ -837,8 +892,9 @@ export function adv() {
       }
     }
     if (s.status === 'available') {
-      // Workload recovery
+      // Workload + fatigue recovery
       s.workload = Math.max(0, s.workload - 10)
+      s.fatigue = Math.max(0, (s.fatigue || 0) - (s.restMonth ? 20 : 8))
       s.consecutiveMissions = 0  // reset on rest month
 
       // Trauma tick-down
@@ -1109,7 +1165,8 @@ export function adv() {
         ensureCareerFields(ms)
         return acc + (ms.declineMod || 0) * 0.5  // half-weight per member so one declining vet doesn't cripple a squad
       }, 0)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod() + (am._scMod || 0), 0.1, successCeiling(m.rk))
+      const sqFatigueMod = sq.members.reduce((acc, id) => { const mb = G.shinobi.find(x => x.id === id); return acc + (mb ? fatiguePenalty(mb) : 0) }, 0) / Math.max(1, sq.members.length)
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod() + (am._scMod || 0) + sqFatigueMod, 0.1, successCeiling(m.rk))
 
       const _mev = resolveMission(sc)
       const _mq = qualityEffects(_mev.quality)
@@ -1279,7 +1336,7 @@ export function adv() {
       const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
       const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
       const bMB = bondMissionBonus(s, G.shinobi)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0), 0.08, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0) + fatiguePenalty(s), 0.08, successCeiling(m.rk))
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)
@@ -3221,5 +3278,16 @@ export function resolveRivalOffer(offerId, accept) {
     G.rivalOffers = G.rivalOffers.filter(o => o.id !== offerId)
   }
   if (G.narrativeInbox) G.narrativeInbox.forEach(n => { if (n.id === offerId) n.dismissed = true })
+  upUI()
+}
+
+export function resolveQuickDecision(eventId, choiceId) {
+  if (!G.pendingQuickDecision) return
+  const pool = G._quickEventPool || []
+  const ev = pool.find(e => e.id === eventId)
+  const opt = ev?.options?.find(o => o.id === choiceId)
+  if (opt?.effect) opt.effect(G)
+  if (G.narrativeInbox) G.narrativeInbox.forEach(n => { if (n.id === G.pendingQuickDecision?.id) n.dismissed = true })
+  G.pendingQuickDecision = null
   upUI()
 }

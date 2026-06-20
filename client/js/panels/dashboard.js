@@ -94,6 +94,16 @@ export function rDash() {
       ${G.nationId ? (() => { const m = nationMods(G.nationId); const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%'; const parts = [m.successMod !== 0 && `${pct(m.successMod)} success`, m.ryoMod !== 0 && `${pct(m.ryoMod)} income`].filter(Boolean); return `<span style="font-size:8px;color:var(--text-dim)">${parts.length ? parts.join(' · ') : '— no stat bonus'}</span>` })() : '<span style="font-size:8px;color:var(--text-dim)">— pick a nation for bonuses</span>'}
     </div>` : ''}
 
+    <!-- Tactics quick-bar -->
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+      <span style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-right:2px">Stance</span>
+      ${[['aggressive','⚔','#c9a84c','suc +8% kia +4%'],['balanced','⚖','#8fbc8f','default'],['defensive','🛡','#87ceeb','suc −6% kia −3%']].map(([id,icon,col,hint]) =>
+        `<button onclick="setMissionPrep('${id}')" style="font-size:8px;padding:3px 10px;cursor:pointer;border:1px solid ${G.missionPrep===id ? col : '#3a3630'};background:${G.missionPrep===id ? col+'22' : 'transparent'};color:${G.missionPrep===id ? col : '#7a7060'}">${icon} ${id.charAt(0).toUpperCase()+id.slice(1)}<span style="font-size:7px;color:#555;margin-left:4px">${hint}</span></button>`
+      ).join('')}
+      ${G.citizenMorale !== undefined ? `<span style="font-size:8px;color:#7a7060;margin-left:8px">Citizens <b style="color:${G.citizenMorale>=70?'#8fbc8f':G.citizenMorale>=40?'#fa0':'#f66'}">${G.citizenMorale}%</b></span>` : ''}
+      ${G.isOffSeason ? `<span style="font-size:8px;color:#c9a84c;margin-left:8px">⛄ Off-season</span>` : ''}
+    </div>
+
     <!-- Health snapshot -->
     <div class="dash-grid">
       <div class="dash-card ${G.ryo < 5000 ? 'alert' : G.ryo > 50000 ? 'good' : ''}">

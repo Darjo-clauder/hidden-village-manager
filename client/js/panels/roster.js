@@ -336,6 +336,7 @@ export function oDos(id) {
     </div>
     <div style="font-size:7px;color:#3a3630;margin-top:2px">High workload (60%+) increases injury risk.</div>
     ${(s.consecutiveMissions||0) >= 2 ? `<div style="font-size:7px;color:#fa0;margin-top:2px">⚠ ${s.consecutiveMissions} consecutive missions — overuse risk +10%</div>` : ''}
+    ${(() => { const f = s.fatigue||0; const fc = f >= 80 ? '#f44' : f >= 60 ? '#f99' : f >= 40 ? '#fa0' : '#555'; return `<div style="display:flex;align-items:center;gap:8px;margin-top:5px"><div style="font-size:7px;color:#7a7060;text-transform:uppercase;width:60px">Fatigue</div><div style="flex:1;background:#222;height:4px;border-radius:2px;overflow:hidden"><div style="width:${f}%;height:100%;background:${fc};transition:width .3s"></div></div><div style="font-size:8px;color:${fc};min-width:28px;text-align:right">${f}%</div></div>${f >= 40 ? `<div style="font-size:7px;color:${fc};margin-top:2px">${f >= 80 ? '⚠ Exhausted — mission penalty −15%' : f >= 60 ? '⚠ Very tired — mission penalty −9%' : 'Fatigued — mission penalty −4%'}</div>` : ''}` })()}
   </div>
   ${(s.injuryHistory||[]).length > 0 ? `<div style="margin-bottom:10px">
     <div style="font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Injury History (${s.injuryHistory.length})</div>
