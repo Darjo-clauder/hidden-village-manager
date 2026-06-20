@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-20 · **HEAD:** `9d9d43b` · **Branch:** `master` · **Tests:** 577 passing / 48 files
+**Last updated:** 2026-06-20 · **HEAD:** `00d57d0` · **Branch:** `master` · **Tests:** 604 passing / 49 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -76,6 +76,7 @@ REGULAR SEASON  →  PLAYOFFS  →  OFFSEASON
 
 | System | Commit | Files | Notes |
 |---|---|---|---|
+| **Mentorship + Story Threads UI** | `00d57d0` | `shared/utils/mentorship.js`, `adv.js`, `main.js`, `panels/roster.js`, `panels/inbox.js` | Mentorship: Jonin+ mentor→Genin/Chunin student; month 3 memory, month 6 morale, month 12 stat bonus. Inbox: Story Threads tab with state badges, collapsible event history. |
 | **Memory + Threads + Rival Profiling + NPC Quotes** | `9d9d43b` | `shared/utils/memorySystem.js`, `narrativeThreads.js`, `personality.js`, `adaptiveAI.js`, `adv.js`, `state.js`, `panels/roster.js` | Deep Pillars 1–3 (see §5b below) |
 | **Personality + Narrative + Adaptive AI** | `be4e7a4` | `shared/utils/personality.js`, `narrativeEngine.js`, `adaptiveAI.js`, `adv.js`, `state.js`, `panels/inbox.js` | Pillars 1–3 (see §5a below for detail) |
 | **Rank canonicalization** | `be4e7a4` | `constants.js` + 4 panels | RANKS[4]: S-Rank → Sannin; village kageRank → Kazekage/Hyōkage/Gankage/Raikage; all hardcoded arrays replaced with RANKS[s.ri] |
@@ -164,7 +165,7 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 
 Pillars 1–3 shipped including deep layer (`9d9d43b`). Remaining candidates:
 
-1. **Mentorship + prospect pipelines** — mentor-bond memory type exists; need the actual mechanic: senior shinobi assigned as mentor boosts junior's dev speed; pipeline view showing progression
+1. **Prospect pipelines** — mentorship mechanic is done; expose a pipeline view showing mentor→student pairs, progress months, projected graduation stat
 2. **Press conference mini-game expansion** — current system is 3-choice tone picker; expand with rival callouts, memory-informed questions
 3. **Pillar 4 — Live HUD micro-decisions** — shift timers, fatigue meters, tactics quick-bar; replayable events
 4. **Pillar 5 — Social systems** — fan morale, alumni network, shareable highlights
