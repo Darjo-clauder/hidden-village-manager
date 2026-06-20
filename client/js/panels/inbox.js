@@ -322,6 +322,25 @@ function buildItems() {
     })
   }
 
+  // ── Press conference ───────────────────────────────────────────────────
+  if (G.pendingPress) {
+    const p = G.pendingPress
+    items.push({
+      id:       'press_' + p.id,
+      priority: 'standard',
+      cat:      'Media',
+      icon:     '📰',
+      title:    'Press Conference Request',
+      desc:     (p.intro ? p.intro + '<br><br>' : '') + '<em>"' + p.question + '"</em><br><br>Choose your tone:',
+      actions:  [
+        { label: 'Confident (+10 rep, +5 morale)',  fn: `resolvePressConference('confident')`  },
+        { label: 'Humble (+5 rep, +3 morale)',      fn: `resolvePressConference('humble')`     },
+        { label: 'Dismissive (−5 rep, −3 morale)', fn: `resolvePressConference('dismissive')` },
+      ],
+      archived: false,
+    })
+  }
+
   // Sort by priority
   items.sort((a, b) => PRIORITY[a.priority] - PRIORITY[b.priority])
   return items

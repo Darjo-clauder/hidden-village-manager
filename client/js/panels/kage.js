@@ -3,6 +3,7 @@ import { aL, ntf, upUI } from '../ui.js'
 import { strengthRatio, rankStandings } from '../../../shared/utils/rivalSim.js'
 import { MANDATE_BY_ID, DISMISSAL_THRESHOLD } from '../../../shared/utils/ownerMandate.js'
 import { resolveNoConfidence } from '../adv.js'
+import { COACHING_PHILOSOPHIES, PHILOSOPHY_BY_ID } from '../../../shared/constants/coachingPhilosophy.js'
 
 export function rKa() {
   const el = document.getElementById('kgl')
@@ -25,7 +26,7 @@ export function rKa() {
   </div>`
   el.innerHTML = (ui.pKE
     ? `<div class="ke-card" style="border-color:#c9a84c;margin-bottom:14px"><div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">⚡ Kage Event</div><div style="font-size:12px;color:#e8e0cc;font-weight:bold;margin-bottom:5px">${ui.pKE.n}</div><div style="font-size:10px;color:#7a7060;margin-bottom:12px;line-height:1.5">${ui.pKE.desc}</div><div style="display:flex;flex-direction:column;gap:6px">${ui.pKE.choices.map((c, i) => `<button class="gb" onclick="resKE(${i})">${c.l}</button>`).join('')}</div></div>`
-    : '') + _noConfidenceHtml() + _mandateHtml() + standingsHtml + vH
+    : '') + _noConfidenceHtml() + _mandateHtml() + _philosophyHtml() + standingsHtml + vH
 }
 
 export function resKE(i) {
@@ -106,3 +107,32 @@ function _noConfidenceHtml() {
 }
 
 export function resNCV(choice) { resolveNoConfidence(choice) }
+
+export function setCoachingPhilosophy(id) {
+  if (!PHILOSOPHY_BY_ID[id]) return
+  G.coachingPhilosophy = id
+  ntf('Coaching philosophy: ' + PHILOSOPHY_BY_ID[id].n)
+  upUI()
+}
+
+function _philosophyHtml() {
+  const current = G.coachingPhilosophy || 'balanced'
+  const p = PHILOSOPHY_BY_ID[current] || PHILOSOPHY_BY_ID.balanced
+  const m = p.mods
+  const modLine = [
+    m.missionSuccess !== 0 ? `Mission ${m.missionSuccess > 0 ? '+' : ''}${Math.round(m.missionSuccess * 100)}%` : null,
+    m.kiaRisk !== 0 ? `KIA risk ${m.kiaRisk > 0 ? '+' : ''}${Math.round(m.kiaRisk * 100)}%` : null,
+    m.morale !== 0 ? `Morale ${m.morale > 0 ? '+' : ''}${m.morale}/mo` : null,
+    m.prospectGrowth !== 0 ? `Dev ${m.prospectGrowth > 0 ? '+' : ''}${Math.round(m.prospectGrowth * 100)}%` : null,
+    m.academyCostMult !== 1 ? `Academy cost ×${m.academyCostMult}` : null,
+  ].filter(Boolean).join(' · ')
+  const buttons = COACHING_PHILOSOPHIES.map(ph =>
+    `<button class="btn${ph.id === current ? ' act' : ''}" style="font-size:8px;padding:3px 8px" onclick="setCoachingPhilosophy('${ph.id}')">${ph.n}</button>`
+  ).join('')
+  return `<div class="ke-card" style="margin-bottom:14px">
+    <div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">Coaching Philosophy</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">${buttons}</div>
+    <div style="font-size:9px;color:#e8e0cc;margin-bottom:3px">${p.n} — ${p.desc}</div>
+    ${modLine ? `<div style="font-size:8px;color:#7a7060">${modLine}</div>` : `<div style="font-size:8px;color:#555">No stat modifiers.</div>`}
+  </div>`
+}

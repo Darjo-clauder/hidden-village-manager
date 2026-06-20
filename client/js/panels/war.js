@@ -2,6 +2,7 @@ import { G, ui, sPow, sn, rnd, pk, clamp, fmt, addChronicle, addLegend } from '.
 import { RANKS } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { seedsFromTable } from '../../../shared/utils/season.js'
+import { queuePressConference } from '../adv.js'
 
 // ── Nation War ──────────────────────────────────────────────────────────────
 // The annual "big leagues": a 5-village elite bracket where Jonin+ squads clash
@@ -51,7 +52,8 @@ function _buildWarField() {
       const sq = G.squads.find(q => q.id === sqId); if (!sq) return null
       const members = (sq.members || []).map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
       if (!members.length) return null
-      return { id: sqId, name: sq.n, sqRef: sq, members, pow: _squadPow(members, sq.cohesion), isPlayer: true, seedBonus: seedBonus(G.vName) }
+      const _warPrepBonus = ((G.budgetPriority?.warPrep || 33) - 33) / 100 * 0.4  // ±26% pow shift
+      return { id: sqId, name: sq.n, sqRef: sq, members, pow: Math.round(_squadPow(members, sq.cohesion) * (1 + _warPrepBonus)), isPlayer: true, seedBonus: seedBonus(G.vName) }
     }).filter(Boolean),
     out: [],
   }
@@ -195,10 +197,12 @@ function _runWarFinal(field, res) {
       addLegend(30); G.reputation = clamp((G.reputation || 0) + 25, 0, 999); G.morale = clamp((G.morale || 50) + 10, 0, 100)
       aL('🏯 ' + G.vName + ' WINS the Nation War! The age belongs to us. +30 legend, +25 reputation.', 'good')
       addChronicle('Nation War Champion', `${G.vName} triumphed over the great powers to win the Year ${G.year} Nation War.`, 'legend')
+      if (!G.pendingPress) queuePressConference('war_win')
     } else {
       G.morale = clamp((G.morale || 50) - 8, 0, 100)
       aL('🏯 ' + champ.name + ' wins the Nation War. ' + G.vName + ' counts its dead.', 'bad')
       addChronicle('Nation War', `${champ.name} won the Year ${G.year} Nation War.`, 'legend')
+      if (!G.pendingPress) queuePressConference('war_loss')
     }
   }
 

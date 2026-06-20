@@ -2,18 +2,18 @@ import { G } from './state.js'
 import { sp, cm, upUI, schEx, setNation, toggleColorblind } from './ui.js'
 import { showSetup, selIcon, beginGame, restoreGame } from './setup.js'
 import { adv } from './adv.js'
-import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout } from './panels/roster.js'
+import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM } from './panels/missions.js'
 import { rUp, buyUp, buildDistrict } from './panels/upgrades.js'
 import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship } from './panels/economy.js'
 import { rBe, lCap, beastTab, releaseJinchuriki, resolveEscape } from './panels/beasts.js'
-import { rKa, resKE, sGift, propAl, rattle, resNCV } from './panels/kage.js'
+import { rKa, resKE, sGift, propAl, rattle, resNCV, setCoachingPhilosophy } from './panels/kage.js'
 import { rEx, tEC, startEx, runRound } from './panels/exam.js'
 import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP, dipAccept, dipDecline } from './world.js'
-import { resolveChoiceEvent, resolveCouncilProposal, assignBlackMarket, resolveClanChain, establishSafehouse, assignDeepCoverOp, resolveWorldEventChoice, activateBloodline } from './adv.js'
-import { rFi } from './panels/finances.js'
+import { resolveChoiceEvent, resolveCouncilProposal, assignBlackMarket, resolveClanChain, establishSafehouse, assignDeepCoverOp, resolveWorldEventChoice, activateBloodline, resolvePressConference } from './adv.js'
+import { rFi, setBudgetPriority } from './panels/finances.js'
 import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff, staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting } from './panels/staff.js'
 import { rSco, assignScout, setScoutBudget, toggleWatchlist, trialDay, signProspect, draftSort } from './panels/scouting.js'
 import { retainScout, dismissScout } from './scoutEngine.js'
@@ -21,7 +21,7 @@ import { setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule } from 
 import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab } from './panels/youthacademy.js'
 import { rMeet, doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction, consultSeniorGroup } from './panels/meetings.js'
 import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms, confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide, sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter } from './panels/transfers.js'
-import { rLeg, legTab, designateSuccessor, resolveLegacyDecision, triggerDynastyHandoff } from './panels/legacy.js'
+import { rLeg, legTab, designateSuccessor, resolveLegacyDecision, triggerDynastyHandoff, sellDraftPick } from './panels/legacy.js'
 import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel } from './panels/intel.js'
 import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc } from './panels/exam.js'
 import { musterWar, startWar, runWarRound } from './panels/war.js'
@@ -81,14 +81,15 @@ Object.assign(window, {
   // beasts
   lCap, beastTab, releaseJinchuriki, resolveEscape, activateBloodline,
   // kage
-  resKE, sGift, propAl, rattle, resNCV,
+  resKE, sGift, propAl, rattle, resNCV, setCoachingPhilosophy,
   // exam
   tEC, startEx, runRound, schEx,
   // world / diplomacy
   declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP,
   dipAccept, dipDecline,
-  // world choice events
+  // world choice events + press
   resolveChoiceEvent, openWorldChoice, resolveCouncilProposal, assignBlackMarket, resolveClanChain,
+  resolvePressConference,
   // staff
   openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff,
   staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting,
@@ -96,10 +97,11 @@ Object.assign(window, {
   secondOpinion, specialistTreatment,
   retireShinobi, retireToCoach, extendCareer,
   setTrainingFocus, toggleRestMonth, openContractRenewal,
+  toggleNoTrade, toggleTwoWay, executeBuyout,
   // missions
   setMissionPrep, simTemplate,
   // scouting
-  assignScout, setScoutBudget, toggleWatchlist, trialDay, signProspect, draftSort,
+  assignScout, setScoutBudget, setBudgetPriority, toggleWatchlist, trialDay, signProspect, draftSort,
   retainScout, dismissScout,
   // depth chart
   setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule,
@@ -111,8 +113,8 @@ Object.assign(window, {
   trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms,
   confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide,
   sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter,
-  // legacy
-  legTab, designateSuccessor, resolveLegacyDecision, triggerDynastyHandoff,
+  // legacy + records
+  legTab, designateSuccessor, resolveLegacyDecision, triggerDynastyHandoff, sellDraftPick,
   // intel
   intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel,
   // exam tabs

@@ -2,14 +2,15 @@ import { G, sn, fmt, clamp, addChronicle, addLegend, pk } from '../state.js'
 import { PRESTIGE_TIERS, LEGACY_DECISIONS } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { dynastyProgress, computeDynastyGrade, inheritedBonuses, DYNASTY_YEARS } from '../../../shared/utils/dynasty.js'
+import { leagueLeaders } from '../../../shared/utils/seasonStats.js'
 
 window._legTab = 'prestige'
 
 export function rLeg() {
   const el = document.getElementById('legl')
   if (!el) return
-  const tabs = ['prestige', 'relations', 'hall', 'dynasty', 'successor', 'legacy']
-  const tabLabels = { prestige:'PRESTIGE', relations:'KAGE REL.', hall:'LEGENDS', dynasty:'DYNASTY', successor:'SUCCESSOR', legacy:'LEGACY' }
+  const tabs = ['prestige', 'relations', 'hall', 'dynasty', 'successor', 'legacy', 'records']
+  const tabLabels = { prestige:'PRESTIGE', relations:'KAGE REL.', hall:'LEGENDS', dynasty:'DYNASTY', successor:'SUCCESSOR', legacy:'LEGACY', records:'RECORDS' }
   el.innerHTML = `<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
     ${tabs.map(t => `<button class="btn${window._legTab === t ? ' act' : ''}" onclick="legTab('${t}')" style="font-size:9px;padding:3px 8px">${tabLabels[t]}</button>`).join('')}
   </div>` + _legBody()
@@ -25,6 +26,7 @@ function _legBody() {
   if (t === 'dynasty') return _dynasty()
   if (t === 'successor') return _successor()
   if (t === 'legacy') return _legacyReport()
+  if (t === 'records') return _records()
   return ''
 }
 
@@ -316,4 +318,80 @@ export function resolveLegacyDecision(decId, choiceId) {
   G.legacyDecisionPending = null
   addChronicle('Legacy Decision', `${dec.n}: chose "${choice.n}".`, 'milestone')
   rLeg()
+}
+
+// ── Records tab ─────────────────────────────────────────────────────────────
+function _records() {
+  const stats = G.seasonStats || {}
+  const awards = G.seasonAwards || {}
+  const years = Object.keys(stats).map(Number).sort((a, b) => b - a)
+
+  if (years.length === 0) {
+    return `<div style="color:#7a7060;font-size:9px;padding:12px 0">No seasonal records yet. Records populate at the end of each year (December).</div>`
+  }
+
+  const draftHtml = G.draftOrder?.length
+    ? `<div class="ke-card" style="margin-bottom:14px">
+        <div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">Draft Order — Year ${G.year}</div>
+        <div style="font-size:8px;color:#7a7060;margin-bottom:6px">Academy intake priority seeded by inverse standings. Your pick: <span style="color:#e8e0cc;font-weight:bold">#${G._draftPlayerPick || '?'}</span></div>
+        ${G.draftOrder.map((n, i) => {
+          const isYou = n === G.vName
+          return `<div style="display:flex;gap:8px;align-items:center;padding:3px 0;border-bottom:1px solid #111">
+            <span style="font-size:10px;color:${isYou?'#c9a84c':'#444'};width:20px">#${i+1}</span>
+            <span style="font-size:9px;color:${isYou?'#e8e0cc':'#7a7060'}">${n}${isYou?' (you)':''}</span>
+          </div>`
+        }).join('')}
+        ${G.ryo >= 8000
+          ? `<button class="gb gb-b" style="margin-top:8px;font-size:8px" onclick="sellDraftPick()">Sell pick #${G._draftPlayerPick} to rival (8k ryo)</button>`
+          : `<div style="font-size:8px;color:#555;margin-top:6px">Need 8k ryo to trade pick</div>`}
+      </div>`
+    : ''
+
+  const yearsHtml = years.map(yr => {
+    const snap = stats[yr]
+    const aw = awards[yr] || {}
+    const ll = leagueLeaders(snap)
+
+    const awardRows = Object.values(aw).filter(Boolean).map(a =>
+      `<div style="font-size:8px;padding:2px 0;border-bottom:1px solid #111"><span style="color:#c9a84c">${a.label}:</span> <span style="color:#e8e0cc">${a.name}</span> — <span style="color:#7a7060">${a.reason}</span></div>`
+    ).join('') || `<div style="font-size:8px;color:#555">No awards data.</div>`
+
+    const standHtml = snap.standings.slice(0, 5).map((r, i) => {
+      const isYou = r.name === G.vName
+      return `<tr style="${isYou?'color:#c9a84c;font-weight:bold':'color:#7a7060'}">
+        <td style="padding:2px 5px">${i+1}</td><td>${r.name}${isYou?' ★':''}</td>
+        <td style="text-align:right;padding:2px 5px">${r.pts||0}pts</td>
+        <td style="text-align:right;padding:2px 5px">${r.w||0}W/${r.l||0}L</td>
+      </tr>`
+    }).join('')
+
+    const leaderHtml = ll.topWins.slice(0, 3).map((p, i) =>
+      `<div style="font-size:8px;color:#7a7060;padding:1px 0">${i+1}. ${p.name} — ${p.winsThisSeason} wins</div>`
+    ).join('')
+
+    return `<div class="ke-card" style="margin-bottom:10px">
+      <div style="font-size:10px;color:#c9a84c;font-weight:bold;margin-bottom:8px">Year ${yr} · Prestige ${snap.prestige} · Standing #${snap.playerStanding}</div>
+      <div style="font-size:9px;color:#7a7060;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Standings</div>
+      <table style="width:100%;border-collapse:collapse;font-size:9px;margin-bottom:10px">
+        <tbody>${standHtml}</tbody>
+      </table>
+      <div style="font-size:9px;color:#7a7060;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Win Leaders</div>
+      <div style="margin-bottom:10px">${leaderHtml || '<div style="font-size:8px;color:#555">No data</div>'}</div>
+      <div style="font-size:9px;color:#7a7060;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Awards</div>
+      <div>${awardRows}</div>
+    </div>`
+  }).join('')
+
+  return draftHtml + yearsHtml
+}
+
+export function sellDraftPick() {
+  if (!G.draftOrder || !G._draftPlayerPick) return
+  if (G.ryo < 8000) { ntf('Not enough ryo!'); return }
+  G.ryo += 8000
+  const oldPick = G._draftPlayerPick
+  G.draftOrder = G.draftOrder.filter(n => n !== G.vName)
+  G._draftPlayerPick = null
+  addChronicle('Draft Pick Traded', `Sold academy intake pick #${oldPick} to rivals for 8,000 ryo.`, 'economy')
+  ntf('Pick #' + oldPick + ' sold for 8k ryo.'); upUI()
 }

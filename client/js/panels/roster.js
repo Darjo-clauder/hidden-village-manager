@@ -227,6 +227,21 @@ export function oDos(id) {
         ${contractYearsLeft <= 1 && !s.contractRenewing ? `<button onclick="openContractRenewal('${s.id}')" style="font-size:7px;margin-top:3px;background:#1a1a2e;border:1px solid #4a4a8a;color:#9cf;padding:2px 7px;cursor:pointer">Offer Renewal ▸</button>` : ''}
         ${s.contractRenewing ? `<div style="font-size:7px;color:#f0a030;margin-top:2px">⏳ Renewal pending</div>` : ''}
       </div>` : ''}
+      <div>
+        <div style="font-size:8px;color:#7a7060;margin-bottom:3px">Contract Clauses</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:3px">
+          <button onclick="toggleNoTrade('${s.id}')" style="font-size:7px;padding:2px 6px;background:${s.noTrade?'#1a2a1a':'#111'};border:1px solid ${s.noTrade?'#8fbc8f':'#444'};color:${s.noTrade?'#8fbc8f':'#555'};cursor:pointer">
+            ${s.noTrade?'✓ ':''} No-Trade
+          </button>
+          <button onclick="toggleTwoWay('${s.id}')" style="font-size:7px;padding:2px 6px;background:${s.twoWay?'#1a1a2e':'#111'};border:1px solid ${s.twoWay?'#87ceeb':'#444'};color:${s.twoWay?'#87ceeb':'#555'};cursor:pointer">
+            ${s.twoWay?'✓ ':''} Two-Way
+          </button>
+        </div>
+        ${s.buyoutCost ? `<div style="font-size:7px;color:#7a7060">Buyout: <span style="color:#c9a84c">${s.buyoutCost.toLocaleString()} ryo</span>
+          <button onclick="executeBuyout('${s.id}')" style="margin-left:4px;font-size:7px;padding:1px 5px;background:#1a0505;border:1px solid #744;color:#f99;cursor:pointer" ${(window.G?.ryo||0)<s.buyoutCost?'disabled':''}>Release (buyout)</button>
+        </div>` : ''}
+        ${s.twoWay ? `<div style="font-size:7px;color:#87ceeb;margin-top:2px">Two-way: not counted against salary cap</div>` : ''}
+      </div>
     </div>
 
     ${provenPairs.length > 0 ? `<div style="margin-top:6px">
@@ -372,6 +387,33 @@ export function mkJK(sId, bN) {
   b.escapeHistory = b.escapeHistory || []
   aL(`${sn(s)} chosen as Jinchuriki of ${bN}. Stage 1: Rejection begins.`, 'warn')
   cm('dossier'); upUI(); ntf(`${s.fn} is now Jinchuriki of ${bN} — Stage 1 begins.`)
+}
+
+// ── Contract depth actions ───────────────────────────────────────────────────
+
+export function toggleNoTrade(sId) {
+  const s = G.shinobi.find(x => x.id === sId); if (!s) return
+  s.noTrade = !s.noTrade
+  ntf(s.noTrade ? 'No-trade clause added.' : 'No-trade clause removed.')
+  upUI()
+}
+
+export function toggleTwoWay(sId) {
+  const s = G.shinobi.find(x => x.id === sId); if (!s) return
+  s.twoWay = !s.twoWay
+  ntf(s.twoWay ? 'Two-way clause: excluded from cap payroll.' : 'Two-way clause removed.')
+  upUI()
+}
+
+export function executeBuyout(sId) {
+  const s = G.shinobi.find(x => x.id === sId); if (!s) return
+  const cost = s.buyoutCost || 0
+  if (G.ryo < cost) { ntf('Not enough ryo for buyout!'); return }
+  G.ryo -= cost
+  G.shinobi = G.shinobi.filter(x => x.id !== sId)
+  G.memorial.push({ name: (s.fn || '') + ' ' + (s.ln || ''), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri||0], clan: s.clan, year: G.year, month: G.month, wins: s.wins||0, lastWords: 'Released via buyout clause.', transfer: true })
+  aL((s.fn||'') + ' ' + (s.ln||'') + ' released — buyout cost ' + fmt(cost) + ' ryo.', 'warn')
+  ntf('Buyout executed.'); upUI()
 }
 
 // ── Retirement actions ────────────────────────────────────────────────────────

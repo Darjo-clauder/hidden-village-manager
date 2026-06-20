@@ -33,6 +33,10 @@ import { nationMods } from '../../shared/constants/nations.js'
 import { activeBloodlineBonus, netBloodlineMod, canActivate, BLOODLINE_MULTIPLIER, ACTIVATION_COST, ACTIVATION_MIN_STAGE, ACTIVE_DURATION, COOLDOWN, AGGRO_INCREASE, DEBUFF_DURATION } from '../../shared/utils/bloodline.js'
 import { capStatus } from '../../shared/constants/salaryCap.js'
 import { pickMandates, evaluateMandates, MANDATE_BY_ID, CONFIDENCE_START, DISMISSAL_THRESHOLD } from '../../shared/utils/ownerMandate.js'
+import { getPhilosophyMods } from '../../shared/constants/coachingPhilosophy.js'
+import { snapshotSeasonStats, leagueLeaders } from '../../shared/utils/seasonStats.js'
+import { computeAwards } from '../../shared/utils/awards.js'
+import { PRESS_QUESTIONS, PRESS_TONES, TONE_BY_ID } from '../../shared/utils/pressConference.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
@@ -543,6 +547,9 @@ function _nationSuccessMod() {
   return nationMods(G.nationId).successMod
 }
 
+function _philosophySuccessMod() { return getPhilosophyMods(G).missionSuccess }
+function _philosophyKIAMod()     { return getPhilosophyMods(G).kiaRisk }
+
 export function activateBloodline(beastName) {
   if (!G._ff_bloodlineActive) return
   const b = (G.beasts || []).find(x => x.n === beastName && x.sealed && x.jk)
@@ -988,7 +995,7 @@ export function adv() {
         ensureCareerFields(ms)
         return acc + (ms.declineMod || 0) * 0.5  // half-weight per member so one declining vet doesn't cripple a squad
       }, 0)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod(), 0.1, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod(), 0.1, successCeiling(m.rk))
 
       const _mev = resolveMission(sc)
       const _mq = qualityEffects(_mev.quality)
@@ -1005,10 +1012,12 @@ export function adv() {
           const s = G.shinobi.find(x => x.id === id); if (!s) return
           addWorkload(s, m.rk)
           s.missId = null; s.wins++; s.streak = (s.streak || 0) + 1
+          s._seasonWins = (s._seasonWins || 0) + 1
+          s._seasonMissions = (s._seasonMissions || 0) + 1
           s.status = 'available'
           rollInjuryOnSuccess(s, m, hL, dp.injDayReduction)  // may flip back to 'injured'
           if (m.rk === 'B' || m.rk === 'C') s.winsB = (s.winsB || 0) + 1
-          if (m.rk === 'S') s.winsS = (s.winsS || 0) + 1
+          if (m.rk === 'S') { s.winsS = (s.winsS || 0) + 1; s._seasonSRankWins = (s._seasonSRankWins || 0) + 1 }
           checkJutsu(s)
         })
         // Pair chemistry tracking
@@ -1067,7 +1076,7 @@ export function adv() {
       } else {
         G._formThisMonth.losses++
         const hasPr = sq.members.some(id => G.shinobi.find(s => s.id === id)?.pers.n === 'Protective')
-        const kR = clamp((hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08) + dp.kiaRiskMod + _formationRisk(sq), 0.005, 0.15)
+        const kR = clamp((hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08) + dp.kiaRiskMod + _formationRisk(sq) + _philosophyKIAMod(), 0.005, 0.15)
         let hadKIA = false
         const survivorIds = []
         sq.members.forEach(id => {
@@ -1083,6 +1092,7 @@ export function adv() {
             G.shinobi = G.shinobi.filter(x => x.id !== s.id)
             hadKIA = true; sq.kills++
             G._mandateKIAThisYear = (G._mandateKIAThisYear || 0) + 1
+            if (!G.pendingPress) queuePressConference('kia')
           } else {
             const injType = pickInjuryType(m.rk)
             if (injType) applyInjury(s, injType, hL, dp.injDayReduction)
@@ -1115,7 +1125,7 @@ export function adv() {
       const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
       const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
       const bMB = bondMissionBonus(s, G.shinobi)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod(), 0.08, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod(), 0.08, successCeiling(m.rk))
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)
@@ -1132,6 +1142,8 @@ export function adv() {
         G.ryo += _bonusRyo; G.reputation = clamp(G.reputation + m.rep + rB, 0, 999); G.morale = clamp(G.morale + 2 + _mq.morale, 0, 100)
         recordMissionCommission(m.rk)
         s.missId = null; s.wins++; s.streak = (s.streak || 0) + 1
+        s._seasonWins = (s._seasonWins || 0) + 1
+        s._seasonMissions = (s._seasonMissions || 0) + 1
         s.status = 'available'
         if (m.rk === 'B' || m.rk === 'C') s.winsB = (s.winsB || 0) + 1
         if (m.rk === 'S') { s.winsS = (s.winsS || 0) + 1 }
@@ -1155,7 +1167,8 @@ export function adv() {
         rollInjuryOnSuccess(s, m, hL, dp.injDayReduction)
       } else {
         s.streak = 0
-        const kR = clamp((hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08) + dp.kiaRiskMod, 0.005, 0.15)
+        s._seasonMissions = (s._seasonMissions || 0) + 1
+        const kR = clamp((hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08) + dp.kiaRiskMod + _philosophyKIAMod(), 0.005, 0.15)
         if (Math.random() < kR && !jkKIAImmune(s)) {
           const lastWords = pk(LAST_WORDS_POOL)
           aL(sn(s) + ' KIA on "' + m.n + '". ' + lastWords, 'bad')
@@ -1224,6 +1237,8 @@ export function adv() {
       const recruit = mS(rnd(0, 1)); recruit.homeVillage = v.n; v.roster.push(recruit)
     }
     tickRivalStrength(v)
+    // Soft decay above 150 — prevents aggressive villages from permanently walling at 200
+    if (v.strength > 150 && Math.random() < 0.25) v.strength = Math.max(150, v.strength - rnd(2, 4))
     if (shouldFireRivalEvent(v)) {
       const ev = pickRivalEvent(v)
       const msg = ev.template.replace('{village}', v.n)
@@ -1251,6 +1266,18 @@ export function adv() {
       ? Math.max(10, (G._playerStrength || 50) + formBonus)
       : ((G.villages.find(v => v.n === name)?.strength) || 50)
     playMatchday(G.season, names, strOf)
+
+    // Track monthly form streak for press triggers
+    const _fm = G._formThisMonth || { wins: 0, losses: 0 }
+    if (_fm.wins > _fm.losses) {
+      G._pressWinStreak  = (G._pressWinStreak  || 0) + 1
+      G._pressLossStreak = 0
+    } else if (_fm.losses > _fm.wins) {
+      G._pressLossStreak = (G._pressLossStreak || 0) + 1
+      G._pressWinStreak  = 0
+    }
+    if (G._pressWinStreak  >= 3 && !G.pendingPress) { queuePressConference('win_streak');  G._pressWinStreak  = 0 }
+    if (G._pressLossStreak >= 3 && !G.pendingPress) { queuePressConference('loss_streak'); G._pressLossStreak = 0 }
   }
 
   // ── Staff tick ────────────────────────────────────────────────────────────
@@ -1518,8 +1545,12 @@ export function adv() {
     + (G._kurenigykiBonus ? 5000 : 0) // Kureni+Hachitsuno trade bonus
   const daimyoB = Math.round(computeDaimyoBonus() * (G.daimyoBudgetMult || 1))
   const villageRev = Math.round(computeVillageRevenue() * (G.daimyoBudgetMult || 1))
-  const maintenance = computeMaintenance()
+  if (!G.budgetPriority) G.budgetPriority = { training: 33, warPrep: 33, infra: 34 }
+  const _infraPct = (G.budgetPriority.infra || 34) / 100
+  const maintenance = Math.round(computeMaintenance() * (1 - _infraPct * 0.3))
+  // twoWay players (farm-assigned) don't count against the salary cap payroll
   const shinobiSal = G.shinobi.reduce((a, s) => a + s.salary, 0)
+  const capPayroll = G.shinobi.filter(s => !s.twoWay).reduce((a, s) => a + s.salary, 0)
   const staffSal = (G.staff || []).reduce((a, st) => a + st.salary, 0)
   const commI = Object.entries(G.finances?.missionCommissions || {}).reduce((a,[,v]) => a + v * 0, 0) // commissions already applied to G.ryo
   const examFeeAmt = G.finances?.examFees || 0
@@ -1535,7 +1566,7 @@ export function adv() {
   G.ryo -= shinobiSal + staffSal + maintenance
 
   // ── Salary cap check ─────────────────────────────────────────────────────
-  const _cs = capStatus(G.prestigeTier || 'D', shinobiSal + staffSal)
+  const _cs = capStatus(G.prestigeTier || 'D', capPayroll + staffSal)
   G.capStatus = _cs
   G._capHardBlock = _cs.hardBlock
   if (_cs.overBy > 0) {
@@ -1623,6 +1654,37 @@ export function adv() {
     G.yearEndReports.push({ year: G.year, totalIncome: yearIncome, totalExpend: yearExpend, net: yearNet, streams, daimyoReaction })
     if (G.yearEndReports.length > 10) G.yearEndReports.shift()
     addChronicle('Year ' + G.year + ' Financial Report', `Income ${fmt(yearIncome)} / Expenditure ${fmt(yearExpend)} / Net ${yearNet>=0?'+':''}${fmt(yearNet)}. ${daimyoReaction}`, 'milestone')
+
+    // ── Season stats snapshot ────────────────────────────────────────────────
+    const _snap = snapshotSeasonStats(G)
+    G.seasonStats = G.seasonStats || {}
+    G.seasonStats[G.year] = _snap
+    if (Object.keys(G.seasonStats).length > 10) {
+      const oldest = Math.min(...Object.keys(G.seasonStats).map(Number))
+      delete G.seasonStats[oldest]
+    }
+    const _leaders = leagueLeaders(_snap)
+    if (_leaders.topWins[0]?.winsThisSeason > 0) {
+      const mvpPre = _leaders.topWins[0]
+      addChronicle('Year ' + G.year + ' Season Stats', `League leaders — Wins: ${mvpPre.name} (${mvpPre.winsThisSeason}). Missions: ${_leaders.topMissions[0]?.name} (${_leaders.topMissions[0]?.missionsThisSeason}). Career leader: ${_leaders.topCareer[0]?.name} (${_leaders.topCareer[0]?.wins} all-time).`, 'milestone')
+    }
+
+    // ── Awards ceremony ──────────────────────────────────────────────────────
+    const _awards = computeAwards(G, _snap)
+    G.seasonAwards = G.seasonAwards || {}
+    G.seasonAwards[G.year] = _awards
+    for (const award of Object.values(_awards)) {
+      if (award?.name) addChronicle('Award: ' + award.label, award.name + ' — ' + award.reason, 'milestone')
+    }
+
+    // ── Reset per-season shinobi accumulators ────────────────────────────────
+    G.shinobi.forEach(s => { s._seasonWins = 0; s._seasonMissions = 0; s._seasonSRankWins = 0 })
+
+    // ── Draft order: seed by inverse standings (worst first gets pick #1) ────
+    const _table = G.season?.table || {}
+    const _sorted = Object.values(_table).sort((a, b) => (a.pts || 0) - (b.pts || 0))
+    G.draftOrder = _sorted.map(r => r.name)
+    G._draftPlayerPick = G.draftOrder.findIndex(n => n === G.vName) + 1
   }
 
   // Reset monthly accumulators
@@ -1694,10 +1756,13 @@ export function adv() {
     const acLv = G.upgrades.academy || 0
     const headSensei = (G.staff || []).find(st => st.role === 'head_sensei')
     const hsRating = headSensei?.rating || 0
+    // Draft pick bonus: pick #1 gets full class, last pick gets slightly smaller class and lower base quality
+    const _draftPick = G._draftPlayerPick || 3
+    const _pickBonus = Math.max(0, (3 - _draftPick) * 0.08)  // #1 pick = +16%, #2 = +8%, #3+ = 0
     const classSize = rnd(8, 12) + Math.floor(acLv * 1.5)
-    const prodigyIdx = Math.random() < 0.01 * classSize ? rnd(0, classSize - 1) : -1
+    const prodigyIdx = Math.random() < (0.01 + _pickBonus * 0.5) * classSize ? rnd(0, classSize - 1) : -1
     for (let i = 0; i < classSize; i++) {
-      const student = genStudent(acLv, hsRating)
+      const student = genStudent(acLv + (_pickBonus > 0 ? 1 : 0), hsRating)
       if (i === prodigyIdx) {
         student.potential = Math.min(99, student.potential + rnd(15, 25))
         student.trait = 'Prodigy'
@@ -1733,8 +1798,11 @@ export function adv() {
     peerMult = clamp(peerMult, 0.6, 1.3)
     let statGain = 0
     // Growth
+    const _philProspectMult = 1 + getPhilosophyMods(G).prospectGrowth
+    const _trainingPct = ((G.budgetPriority?.training || 33) - 33) / 100  // 0 at 33%, ±0.67 at extremes
+    const _trainingMult = 1 + _trainingPct * 0.5  // training=100% → +33.5% growth
     if (!student.burnout) {
-      const growAmount = Math.round(intensity.mult * sensMult * peerMult)
+      const growAmount = Math.round(intensity.mult * sensMult * peerMult * _philProspectMult * _trainingMult)
       // Bonus stats from track
       Object.entries(track.growBonus).forEach(([k, v]) => {
         if (student.stats[k] !== undefined) {
@@ -2123,7 +2191,7 @@ export function adv() {
     return stillValid
   })
   if (Math.random() < 0.10 && G.shinobi.length > 0) {
-    const targets = G.shinobi.filter(s => (s.ri >= 2 || s.wins >= 20) && !G.sellPressure.find(sp => sp.shinobiId === s.id))
+    const targets = G.shinobi.filter(s => (s.ri >= 2 || s.wins >= 20) && !s.noTrade && !G.sellPressure.find(sp => sp.shinobiId === s.id))
     if (targets.length > 0) {
       const target = pk(targets)
       const village = pk(G.villages)
@@ -2750,5 +2818,39 @@ export function resolveNoConfidence(choice) {
     addChronicle('Kage Ousted', `${G.kN || 'The Kage'} was removed after losing a no-confidence vote. Dynasty Grade: ${grade}.`, 'legend')
     G.gameOver = { reason: 'ousted', grade, score, year: G.year }
   }
+  upUI()
+}
+
+// ── Press Conference ─────────────────────────────────────────────────────────
+
+export function queuePressConference(triggerId) {
+  const q = PRESS_QUESTIONS.find(p => p.trigger === triggerId)
+  if (!q) return
+  if (G.pendingPress) return  // one at a time
+  G.pendingPress = { id: q.id, trigger: triggerId, question: q.question, intro: q.intro }
+  G.inbox = G.inbox || []
+  G.inbox.unshift({
+    id: 'press_' + triggerId + '_' + G.year + '_' + G.month,
+    cat: 'press',
+    subject: 'Press Conference Request',
+    body: q.intro + '\n\n"' + q.question + '"',
+    year: G.year, month: G.month,
+    action: 'press',
+    pressId: q.id,
+    read: false,
+  })
+  ntf('Press conference requested — check Inbox.')
+}
+
+export function resolvePressConference(toneId) {
+  const p = G.pendingPress; if (!p) return
+  const tone = TONE_BY_ID[toneId]; if (!tone) return
+  const m = tone.mods
+  G.morale     = clamp((G.morale || 50) + m.morale, 0, 100)
+  G.reputation = clamp((G.reputation || 0) + m.rep, 0, 999)
+  G.villages.forEach(v => { v.rel = clamp((v.rel || 50) + m.rivalRel, 0, 100) })
+  addChronicle('Press Conference', `Kage responded ${tone.label.toLowerCase()} to: "${p.question}"`, 'event')
+  aL(`Press conference — ${tone.label} response. Morale ${m.morale >= 0 ? '+' : ''}${m.morale}, Rep ${m.rep >= 0 ? '+' : ''}${m.rep}.`, m.morale >= 0 ? 'good' : 'warn')
+  G.pendingPress = null
   upUI()
 }

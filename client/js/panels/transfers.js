@@ -420,6 +420,10 @@ export function confirmTransfer() {
     G.transferMarket.loanIn.push({ shinobiId: p.id, shinobiName: p.fn + ' ' + p.ln, monthsRemaining: loanDur, monthlyCost: Math.round(p.salary * 1.2) })
     p.loanIn = true
   }
+  // Contract depth fields — set at signing
+  p.noTrade = false
+  p.twoWay  = false
+  p.buyoutCost = Math.round((p.salary || 500) * 4)
   G.shinobi.push(p)
   G.transferMarket.pool = (G.transferMarket.pool || []).filter(x => x.id !== p.id)
   G.transferMarket.completedDeals = G.transferMarket.completedDeals || []

@@ -3,6 +3,7 @@ import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS, INJURY_TYPES } f
 import { aL, ntf, upUI, schEx } from '../ui.js'
 import { initSeasonTable, sortedTable, seedsFromTable } from '../../../shared/utils/season.js'
 import { renderWar } from './war.js'
+import { queuePressConference } from '../adv.js'
 
 window._exTab = 'exam'
 
@@ -435,9 +436,11 @@ function _runFinals(field, biasMod) {
       addLegend(15); G.reputation = clamp((G.reputation || 0) + 15, 0, 999)
       aL('🏆 ' + G.vName + ' WINS the Chunin Exam Championship! +15 legend, +15 reputation.', 'good')
       addChronicle('Exam Champion', `${G.vName} stood above all five villages to claim the Year ${G.year} Chunin Exam championship.`, 'milestone')
+      if (!G.pendingPress) queuePressConference('exam_win')
     } else {
       aL('🏆 ' + champ.name + ' wins the Chunin Exam championship. ' + G.vName + ' did not take the title.', 'neutral')
       addChronicle('Exam Champion', `${champ.name} claimed the Year ${G.year} Chunin Exam championship.`, 'milestone')
+      if (!G.pendingPress) queuePressConference('exam_loss')
     }
   }
 

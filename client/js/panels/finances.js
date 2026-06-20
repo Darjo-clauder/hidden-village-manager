@@ -136,6 +136,7 @@ export function rFi() {
 
     <!-- Salary cap -->
     ${_capHtml(shinobiSal + staffSal)}
+    ${_budgetPriorityHtml()}
 
     <!-- Net -->
     <div style="background:#0d0b08;border:1px solid ${netNow>=0?'#8fbc8f':'#f66'};padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
@@ -202,6 +203,39 @@ export function rFi() {
     <!-- End of year report -->
     ${_yearEndHtml()}
   `
+}
+
+function _budgetPriorityHtml() {
+  const bp = G.budgetPriority || { training: 33, warPrep: 33, infra: 34 }
+  const total = (bp.training || 0) + (bp.warPrep || 0) + (bp.infra || 0)
+  const totalColor = total === 100 ? '#8fbc8f' : '#f66'
+  const descs = {
+    training: `Dev speed ×${(1 + ((bp.training - 33) / 100) * 0.5).toFixed(2)}`,
+    warPrep:  `War pow ×${(1 + ((bp.warPrep  - 33) / 100) * 0.4).toFixed(2)}`,
+    infra:    `Maintenance ×${(1 - (bp.infra / 100) * 0.3).toFixed(2)}`,
+  }
+  return `<div style="background:#1a1814;border:1px solid #2e2a22;padding:12px 14px;margin-bottom:14px">
+    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">Budget Priority</div>
+    ${['training','warPrep','infra'].map(k => {
+      const labels = { training:'Training', warPrep:'War Prep', infra:'Infrastructure' }
+      return `<div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:8px;color:#7a7060;margin-bottom:3px">
+          <span>${labels[k]}</span>
+          <span style="color:#e8e0cc">${bp[k]}% <span style="color:#555;font-size:7px">— ${descs[k]}</span></span>
+        </div>
+        <input type="range" min="0" max="100" value="${bp[k]}"
+          oninput="setBudgetPriority('${k}', this.value)"
+          style="width:100%;accent-color:#c9a84c">
+      </div>`
+    }).join('')}
+    <div style="font-size:7px;color:${totalColor}">Total: ${total}% ${total !== 100 ? '(must equal 100%)' : '✓'}</div>
+  </div>`
+}
+
+export function setBudgetPriority(key, value) {
+  if (!G.budgetPriority) G.budgetPriority = { training: 33, warPrep: 33, infra: 34 }
+  G.budgetPriority[key] = Number(value)
+  rFi()
 }
 
 function _capHtml(payroll) {
