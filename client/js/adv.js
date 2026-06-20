@@ -16,6 +16,7 @@ import { DISTRICTS, getDistrictPassives } from '../../shared/constants/districts
 import { COUNCIL_FACTIONS, COUNCIL_PROPOSALS, getCouncilPerks } from '../../shared/constants/council.js'
 import { tickRivalStrength, shouldFireRivalEvent, pickRivalEvent, computePlayerStrength } from '../../shared/utils/rivalSim.js'
 import { initSeasonTable, playMatchday } from '../../shared/utils/season.js'
+import { resolveMission, qualityEffects } from '../../shared/utils/missionEngine.js'
 import { DYNASTY_YEARS, computeDynastyGrade } from '../../shared/utils/dynasty.js'
 import { bondMissionBonus, mentorGrowthBonus, kiaRipple, BOND_TYPES } from '../../shared/bonds/bondTypes.js'
 import { BM_MISSION_BY_ID, getUnderworldTier, discoveryChance, UNDERWORLD_TIERS } from '../../shared/constants/blackMarket.js'
@@ -895,6 +896,8 @@ export function adv() {
   const beastPassives = getBeastPassives(G)
   G._beastMissionLuck = beastPassives.missionLuck
   G.aM.forEach(am => am.daysLeft--)
+  // Monthly mission form — accrued from real outcomes, fed into the league matchday.
+  G._formThisMonth = { wins: 0, losses: 0, marginSum: 0 }
   G.aM.filter(am => am.daysLeft <= 0).forEach(am => {
     if (am.isScout) {
       const scout = G.shinobi.find(x => x.id === am.assignedTo)
@@ -980,8 +983,13 @@ export function adv() {
       }, 0)
       const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod(), 0.1, successCeiling(m.rk))
 
-      if (Math.random() < sc) {
-        G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3, 0, 100)
+      const _mev = resolveMission(sc)
+      const _mq = qualityEffects(_mev.quality)
+      G._formThisMonth.marginSum += _mev.margin
+      if (_mev.success) {
+        G._formThisMonth.wins++
+        const _bonusRyo = Math.round(m.ryo * _mq.ryoMult)
+        G.ryo += _bonusRyo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3 + _mq.morale, 0, 100)
         const prevCohesion = sq.cohesion ?? 0
         sq.cohesion = Math.min(100, prevCohesion + rnd(3, 7))
         sq.wins++
@@ -1010,9 +1018,10 @@ export function adv() {
           }
         }
         const _sqSuccessNarr = pickSquadNarrative(m.rk, 'success', sq.n)
-        aL(sq.n + ' completed "' + m.n + '" — +' + fmt(m.ryo) + ' ryo. ' + _sqSuccessNarr, 'good')
-        pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: m.ryo, rep: m.rep, chainName: m.chainName || null, narrative: _sqSuccessNarr })
-        addLegend(m.rk === 'S' ? 15 : m.rk === 'A' ? 8 : m.rk === 'B' ? 3 : 1)
+        const _sqTag = _mev.quality === 'decisive' ? '⚔ Decisive victory — ' : ''
+        aL(_sqTag + sq.n + ' completed "' + m.n + '" — +' + fmt(_bonusRyo) + ' ryo. ' + _sqSuccessNarr, 'good')
+        pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: _bonusRyo, rep: m.rep, chainName: m.chainName || null, narrative: _sqSuccessNarr, quality: _mev.quality })
+        addLegend((m.rk === 'S' ? 15 : m.rk === 'A' ? 8 : m.rk === 'B' ? 3 : 1) + _mq.legend)
         // Post-mission contribution scores (Phase 4)
         G.lastMissionReport = _buildMissionReport(sq, m, true)
         // Squad identity unlock at cohesion 75
@@ -1049,6 +1058,7 @@ export function adv() {
           }
         }
       } else {
+        G._formThisMonth.losses++
         const hasPr = sq.members.some(id => G.shinobi.find(s => s.id === id)?.pers.n === 'Protective')
         const kR = clamp((hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08) + dp.kiaRiskMod + _formationRisk(sq), 0.005, 0.15)
         let hadKIA = false
@@ -1081,9 +1091,10 @@ export function adv() {
         sq.cohesion = Math.max(0, (sq.cohesion ?? 0) + (hadKIA ? -15 : -4))
         sq.losses++
         const _sqFailNarr = pickSquadNarrative(m.rk, 'failure', sq.n)
-        aL('"' + m.n + '" squad mission failed. ' + _sqFailNarr, 'bad')
-        pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, narrative: _sqFailNarr })
-        G.morale = clamp(G.morale - 5, 0, 100)
+        const _sqFailTag = _mev.quality === 'disaster' ? '💥 Disaster — ' : ''
+        aL(_sqFailTag + '"' + m.n + '" squad mission failed. ' + _sqFailNarr, 'bad')
+        pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, narrative: _sqFailNarr, quality: _mev.quality })
+        G.morale = clamp(G.morale - 5 + _mq.morale, 0, 100)
         G.lastMissionReport = _buildMissionReport(sq, m, false)
       }
     } else {
@@ -1104,8 +1115,13 @@ export function adv() {
       const chomeiActive = hasUniqueAbility(s.id, 'Hanaku') && !G._hanakuLuckyUsed
       const rollResult = Math.random()
       const missionPassed = rollResult < sc || (rollResult >= sc && chomeiActive && (() => { G._hanakuLuckyUsed = true; aL(`${sn(s)}'s Hanaku Lucky Scales turned failure to success!`, 'good'); return true })())
+      const _mev = resolveMission(sc, Math.random, { success: missionPassed })
+      const _mq = qualityEffects(_mev.quality)
+      G._formThisMonth.marginSum += _mev.margin
+      if (missionPassed) G._formThisMonth.wins++; else G._formThisMonth.losses++
       if (missionPassed) {
-        G.ryo += m.ryo; G.reputation = clamp(G.reputation + m.rep + rB, 0, 999); G.morale = clamp(G.morale + 2, 0, 100)
+        const _bonusRyo = Math.round(m.ryo * _mq.ryoMult)
+        G.ryo += _bonusRyo; G.reputation = clamp(G.reputation + m.rep + rB, 0, 999); G.morale = clamp(G.morale + 2 + _mq.morale, 0, 100)
         recordMissionCommission(m.rk)
         s.missId = null; s.wins++; s.streak = (s.streak || 0) + 1
         s.status = 'available'
@@ -1113,9 +1129,10 @@ export function adv() {
         if (m.rk === 'S') { s.winsS = (s.winsS || 0) + 1 }
         checkJutsu(s)
         const _soloSuccNarr = pickNarrative(m.rk, 'success', sn(s), s.pers.n, { wins: s.wins, streak: s.streak, season })
-        aL(sn(s) + ' completed "' + m.n + '" — +' + fmt(m.ryo) + ' ryo. ' + _soloSuccNarr, 'good')
-        pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: m.ryo, rep: m.rep + rB, chainName: m.chainName || null, narrative: _soloSuccNarr })
-        addLegend(m.rk === 'S' ? 12 : m.rk === 'A' ? 6 : m.rk === 'B' ? 2 : 1)
+        const _soloTag = _mev.quality === 'decisive' ? '⚔ Decisive — ' : ''
+        aL(_soloTag + sn(s) + ' completed "' + m.n + '" — +' + fmt(_bonusRyo) + ' ryo. ' + _soloSuccNarr, 'good')
+        pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: _bonusRyo, rep: m.rep + rB, chainName: m.chainName || null, narrative: _soloSuccNarr, quality: _mev.quality })
+        addLegend((m.rk === 'S' ? 12 : m.rk === 'A' ? 6 : m.rk === 'B' ? 2 : 1) + _mq.legend)
         if (m.rk === 'S') addChronicle('S-Rank Completed', sn(s) + ' completed the S-rank mission "' + m.n + '".', 'legend')
         if (m.chainId) advanceChain(G, m.id, true)
         // Career milestone notices
@@ -1158,8 +1175,8 @@ export function adv() {
             aL(sn(s) + ' re-injured themselves — too soon to return to active duty.', 'warn')
           }
         }
-        pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, chainName: m.chainName || null })
-        G.morale = clamp(G.morale - 3, 0, 100)
+        pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, chainName: m.chainName || null, quality: _mev.quality })
+        G.morale = clamp(G.morale - 3 + _mq.morale, 0, 100)
         if (m.chainId) advanceChain(G, m.id, false)
       }
     }
@@ -1211,8 +1228,13 @@ export function adv() {
     if (!G.season || !G.season.table || Object.keys(G.season.table).length !== names.length) {
       G.season = { year: G.year, round: 0, table: initSeasonTable(names), lastResults: [] }
     }
+    // Real mission form feeds the player's matchday — a good month on missions
+    // makes you likelier to win your league fixture (±2 effective strength per net phase-margin).
+    const form = G._formThisMonth || { marginSum: 0 }
+    const formBonus = clamp(form.marginSum * 2, -20, 20)
+    G._seasonFormBonus = formBonus  // surfaced in UI
     const strOf = name => name === playerName
-      ? (G._playerStrength || 50)
+      ? Math.max(10, (G._playerStrength || 50) + formBonus)
       : ((G.villages.find(v => v.n === name)?.strength) || 50)
     playMatchday(G.season, names, strOf)
   }

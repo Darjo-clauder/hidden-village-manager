@@ -36,7 +36,7 @@ function _seasonStandingsCard() {
         <td style="text-align:center">${row.w}</td><td style="text-align:center">${row.d}</td><td style="text-align:center">${row.l}</td>
         <td style="text-align:right;padding-right:4px;color:#e8e0cc">${row.pts}</td></tr>`).join('')}</tbody>
     </table>
-    <div style="font-size:7px;color:#555;margin-top:5px">Top seeds carry a survival edge into the Qualifier.</div>
+    <div style="font-size:7px;color:#555;margin-top:5px">Top seeds carry a survival edge into the Qualifier.${G._seasonFormBonus ? ` Last month's mission form: <span style="color:${G._seasonFormBonus > 0 ? '#8fbc8f' : '#f88'}">${G._seasonFormBonus > 0 ? '+' : ''}${G._seasonFormBonus}</span> to your fixture.` : ''}</div>
   </div>`
 }
 
