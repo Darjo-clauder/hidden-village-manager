@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-20 · **HEAD:** `be4e7a4` · **Branch:** `master` · **Tests:** 529 passing / 46 files
+**Last updated:** 2026-06-20 · **HEAD:** `9d9d43b` · **Branch:** `master` · **Tests:** 577 passing / 48 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -76,6 +76,7 @@ REGULAR SEASON  →  PLAYOFFS  →  OFFSEASON
 
 | System | Commit | Files | Notes |
 |---|---|---|---|
+| **Memory + Threads + Rival Profiling + NPC Quotes** | `9d9d43b` | `shared/utils/memorySystem.js`, `narrativeThreads.js`, `personality.js`, `adaptiveAI.js`, `adv.js`, `state.js`, `panels/roster.js` | Deep Pillars 1–3 (see §5b below) |
 | **Personality + Narrative + Adaptive AI** | `be4e7a4` | `shared/utils/personality.js`, `narrativeEngine.js`, `adaptiveAI.js`, `adv.js`, `state.js`, `panels/inbox.js` | Pillars 1–3 (see §5a below for detail) |
 | **Rank canonicalization** | `be4e7a4` | `constants.js` + 4 panels | RANKS[4]: S-Rank → Sannin; village kageRank → Kazekage/Hyōkage/Gankage/Raikage; all hardcoded arrays replaced with RANKS[s.ri] |
 | **FHM roster UI** | `3640592` | `panels/roster.js`, `main.js` | Split-panel: compact table (RANK\|NAME\|AGE\|ABILITY★\|POTENTIAL★\|STATUS\|SALARY) left + Active Assignments + quick-detail right. Click row → inline stat grid, contract clause buttons, "Full Dossier" overlay. `rosSelect(id)` exported and wired to window. |
@@ -119,6 +120,34 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 - `applyCounterStrategy` mutates each rival village each January; strategy change fires a narrative intel blurb
 - `rivalScPenalty` → summed scMod penalty from active rival strategies (wired into solo sc)
 
+### §5b — Deep Pillar 1–3 layer (`9d9d43b`)
+
+**Memory system (`shared/utils/memorySystem.js`):**
+- 14 memory types: `saved_comrade`, `witness_kia`, `mission_triumph`, `mission_disaster`, `public_shame`, `betrayal`, `mentor_bond`, `rival_defeat`, `promotion_earned`, `war_hero`, `squad_kia`, `prestige_rise`, `grudge_escalated`, `reconciled`
+- `addMemory(s, type, source, when)` — pushes to `s.memories[]`, cap 20
+- `decayMemories(s, monthsElapsed)` — `intensity *= e^(−t/τ)`, prunes < 0.05
+- `memoryMoraleMod(s)` → flat integer morale nudge each month (wired into monthly tick)
+- `memoryStateBlurb(s)` → dossier flavor string; `mostSalientMemory(s)` → highest-intensity entry
+- Emotional states (7): `angry/inspired/homesick/grieving/triumphant/fearful/focused` — `setEmotionalState` / `tickEmotionalState` / `emotionalScMod`
+- Role identity tags (6): `Playmaker/Grinder/Enforcer/Tactician/Lone Wolf/Anchor` — assigned lazily after first mission
+
+**Narrative threads (`shared/utils/narrativeThreads.js`):**
+- Thread object: `{ id, type, title, actorIds, events[], state: open|escalating|resolved|tragedy, priority }`
+- `linkToThread(threads, eventId, tag, actorIds, title, when)` — find-or-create, escalates open grudge/kia threads
+- `pruneOldThreads` — removes resolved/tragedy threads older than 12 months
+- All `pushNarrative` calls now thread-link automatically; `G.narrativeThreads[]` added to state
+
+**Per-village rival profiling (extended `adaptiveAI.js`):**
+- `ensureRivalProfile(v)` — lazy-init `v.rivalProfile` with `tacticFreq`, `aiPersonality`, `stanceHistory`
+- `observePlayerTactic(v, rank, isSquad)` — EMA update (lr=0.15) per mission
+- `explainStanceChange(v, strategy)` → specific blurb naming which tactic pattern triggered the shift
+- 3 AI personalities: `conservative / opportunistic / reckless`
+- `rollMetaEvent` — ~8%/yr June roll that forces a league-wide stance reset + narrative
+
+**UI surfaces:**
+- Dossier Career tab: NPC archetype quote, memory state blurb, salient memory, emotional state chip, role tag
+- Dossier Profile tab: narrative archetype chip + confidence bar with color coding
+
 ---
 
 ## 6. Known open items
@@ -133,14 +162,15 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 
 ## 7. Next targets
 
-Pillars 1–3 shipped. Remaining candidates:
+Pillars 1–3 shipped including deep layer (`9d9d43b`). Remaining candidates:
 
-1. **Pillar 4 — Live HUD micro-decisions** — shift timers, fatigue meters, tactics quick-bar; replayable events
-2. **Pillar 5 — Social systems** — fan morale, alumni network, shareable highlights
-3. **Surface grudge/confidence in UI** — roster dossier should show archetype, confidence bar, active grudges
-4. **Rep/morale decay tuning** — see §6
-5. **Hard salary cap by village tier** — ceiling not yet tiered by village level
-6. **Aging/regression curve** — shinobi peak ~28–30, decline after
+1. **Mentorship + prospect pipelines** — mentor-bond memory type exists; need the actual mechanic: senior shinobi assigned as mentor boosts junior's dev speed; pipeline view showing progression
+2. **Press conference mini-game expansion** — current system is 3-choice tone picker; expand with rival callouts, memory-informed questions
+3. **Pillar 4 — Live HUD micro-decisions** — shift timers, fatigue meters, tactics quick-bar; replayable events
+4. **Pillar 5 — Social systems** — fan morale, alumni network, shareable highlights
+5. **Rep/morale decay tuning** — see §6
+6. **Hard salary cap by village tier** — ceiling not yet tiered by village level
+7. **Thread UI** — inbox panel currently shows flat list; group threaded events as collapsible arcs (G.narrativeThreads is populated, just not surfaced in inbox panel yet)
 
 ---
 
