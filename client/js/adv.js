@@ -636,6 +636,8 @@ export function adv() {
   // Apply perks
   if (cp.monthlyRyo > 0) G.ryo += cp.monthlyRyo
   if (cp.monthlyRep > 0) G.reputation = clamp(G.reputation + cp.monthlyRep, 0, 999)
+  // Passive rep floor — prevents permanent zero in idle villages
+  if ((G.reputation || 0) < 10) G.reputation = Math.min(10, (G.reputation || 0) + 1)
   // Underworld passive income (Phantom tier)
   const uwTier = getUnderworldTier(G.blackMarketRep || 0)
   if (uwTier.passiveRyo) G.ryo += uwTier.passiveRyo
@@ -761,8 +763,16 @@ export function adv() {
       s.age++
       applyAgeDecline(s)
       // Retirement at 55+ (probability rises)
+      if (s.age >= 70) {
+        // Hard retirement ceiling — no shinobi active past 70
+        const retLine = sn(s) + ' has reached the age limit and retired at ' + s.age + '.'
+        aL(retLine, 'neutral')
+        addChronicle('Mandatory Retirement — ' + sn(s), retLine, 'shinobi')
+        s.status = 'retired'
+        return
+      }
       if (s.age >= 55) {
-        const retChance = s.age >= 65 ? 0.30 : s.age >= 60 ? 0.18 : 0.08
+        const retChance = s.age >= 65 ? 0.55 : s.age >= 60 ? 0.30 : 0.10
         if (Math.random() < retChance) {
           const isVet = s.wins >= 30
           const retLine = isVet
@@ -2446,7 +2456,10 @@ export function adv() {
   // ── Kage reputation tick ────────────────────────────────────────────────────
   if (!G.kageRep) G.kageRep = 1
   const repScore = (G.reputation || 0)
-  const targetRep = repScore >= 250 ? 5 : repScore >= 150 ? 4 : repScore >= 80 ? 3 : repScore >= 30 ? 2 : 1
+  const legendScore = (G.legend || 0)
+  // Kage rep target: weighted blend of rep score + legend tier (so a Legendary village can't stay at ★☆☆☆☆)
+  const legendBonus = legendScore >= 500 ? 2 : legendScore >= 300 ? 1 : legendScore >= 150 ? 1 : 0
+  const targetRep = clamp((repScore >= 250 ? 5 : repScore >= 150 ? 4 : repScore >= 80 ? 3 : repScore >= 30 ? 2 : 1) + legendBonus, 1, 5)
   if (G.kageRep < targetRep && Math.random() < 0.3) G.kageRep = Math.min(5, G.kageRep + 1)
   if (G.kageRep > targetRep && Math.random() < 0.15) G.kageRep = Math.max(1, G.kageRep - 1)
 
