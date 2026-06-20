@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-20 · **HEAD:** `00d57d0` · **Branch:** `master` · **Tests:** 604 passing / 49 files
+**Last updated:** 2026-06-20 · **HEAD:** `f95d179` · **Branch:** `master` · **Tests:** 604 passing / 49 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -76,6 +76,7 @@ REGULAR SEASON  →  PLAYOFFS  →  OFFSEASON
 
 | System | Commit | Files | Notes |
 |---|---|---|---|
+| **Prospect Pipeline + Press Expansion** | `f95d179` | `pressConference.js`, `adv.js`, `panels/inbox.js`, `panels/academy.js`, `index.html` | Pipeline: Academy tab shows mentor→student cards with progress bar + milestones. Press: 6 tones, 12 questions, callout/emotional/deflect tones, follow-up copy, hydrateQuestion with live names, 4 new triggers. |
 | **Mentorship + Story Threads UI** | `00d57d0` | `shared/utils/mentorship.js`, `adv.js`, `main.js`, `panels/roster.js`, `panels/inbox.js` | Mentorship: Jonin+ mentor→Genin/Chunin student; month 3 memory, month 6 morale, month 12 stat bonus. Inbox: Story Threads tab with state badges, collapsible event history. |
 | **Memory + Threads + Rival Profiling + NPC Quotes** | `9d9d43b` | `shared/utils/memorySystem.js`, `narrativeThreads.js`, `personality.js`, `adaptiveAI.js`, `adv.js`, `state.js`, `panels/roster.js` | Deep Pillars 1–3 (see §5b below) |
 | **Personality + Narrative + Adaptive AI** | `be4e7a4` | `shared/utils/personality.js`, `narrativeEngine.js`, `adaptiveAI.js`, `adv.js`, `state.js`, `panels/inbox.js` | Pillars 1–3 (see §5a below for detail) |
@@ -163,15 +164,13 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 
 ## 7. Next targets
 
-Pillars 1–3 shipped including deep layer (`9d9d43b`). Remaining candidates:
+All Pillars 1–3 shipped (deep layer + UI). Remaining candidates:
 
-1. **Prospect pipelines** — mentorship mechanic is done; expose a pipeline view showing mentor→student pairs, progress months, projected graduation stat
-2. **Press conference mini-game expansion** — current system is 3-choice tone picker; expand with rival callouts, memory-informed questions
-3. **Pillar 4 — Live HUD micro-decisions** — shift timers, fatigue meters, tactics quick-bar; replayable events
-4. **Pillar 5 — Social systems** — fan morale, alumni network, shareable highlights
-5. **Rep/morale decay tuning** — see §6
-6. **Hard salary cap by village tier** — ceiling not yet tiered by village level
-7. **Thread UI** — inbox panel currently shows flat list; group threaded events as collapsible arcs (G.narrativeThreads is populated, just not surfaced in inbox panel yet)
+1. **Pillar 4 — Live HUD micro-decisions** — shift timers, fatigue meters, tactics quick-bar; replayable events
+2. **Pillar 5 — Social systems** — fan morale, alumni network, shareable highlights
+3. **Rep/morale decay tuning** — see §6
+4. **Hard salary cap by village tier** — ceiling not yet tiered by village level
+5. **Press conference playtest verification** — tones + follow-up render correctly but a live press event needs a win/loss streak in a real session to confirm end-to-end (can't inject G from preview_eval)
 
 ---
 
