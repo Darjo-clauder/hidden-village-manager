@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-19 · **HEAD:** `2dcd940` · **Branch:** `master` · **Tests:** 388 passing / 36 files
+**Last updated:** 2026-06-20 · **HEAD:** `3640592` · **Branch:** `master` · **Tests:** 450 passing / 43 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -18,9 +18,9 @@ This is a **private Naruto-IP build** — **keep all Naruto namesakes and IP** (
 
 - **Canonical repo:** `C:\Users\Tyler\ninja\hidden-village-manager` — do all work here.
 - **Stale mirror:** `C:\Users\Tyler\hidden-village-manager` (the "Darjo" copy) — **never edit**; fast-forward only.
-- **GitHub:** `github.com/Darjo-clauder/hidden-village-manager`.
+- **GitHub:** `github.com/Darjo-clauder/hidden-village-manager` (Railway auto-deploys master).
 - **Every commit:** push origin from `ninja`, then in the mirror: `git fetch origin && git merge --ff-only origin/master`.
-- Commit messages end with: `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
+- Commit messages end with: `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`.
 - Platform is **Windows / PowerShell** primary; a Bash tool is also available (Git Bash). `dist/` is gitignored.
 
 ### Build vs. dev — READ THIS
@@ -28,25 +28,20 @@ This is a **private Naruto-IP build** — **keep all Naruto namesakes and IP** (
 - The **vitest suite runs real source** and is the authoritative correctness check: `npx vitest run`.
 
 ### Browser playtest technique
-1. Add a temp debug hook in `client/js/main.js` after `setAdvFn(adv)`: `window.__G = G`
-2. `npx vite build`
+1. `npx vite build`
+2. Start server (preview tool uses `.claude/launch.json`, port 3000).
 3. Drive via preview_eval. Bootstrap a game:
    ```js
-   window.showSetup();
-   document.getElementById('sp-vname').value='Konoha';
-   document.getElementById('sp-kname').value='Tester';
-   [...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='🍃').click();
-   window.beginGame();
-   const G = window.__G;
+   beginGame({ name: 'Konoha', kage: 'Tester', icon: '🍃', nation: 'fire' })
+   sp('roster') // or any panel id
    ```
-   Then call `window.adv()` to advance months, `window.sp('panelId')` to switch panels, inspect `G`.
-4. **Revert the `window.__G` line and rebuild before committing.**
+   Then call `adv()` to advance months, `sp('panelId')` to switch panels.
 
 ---
 
-## 3. The strategic arc (why the recent work happened)
+## 3. The strategic arc
 
-The user audited the game against FHM and decided: **before adding more flavor, build a functioning sports loop.** Strategy = **repurpose existing systems**, don't rebuild. The mental model that now drives everything:
+The user audited the game against FHM and decided: **before adding more flavor, build a functioning sports loop.** Strategy = **repurpose existing systems**, don't rebuild. The mental model:
 
 ```
 REGULAR SEASON  →  PLAYOFFS  →  OFFSEASON
@@ -62,11 +57,12 @@ REGULAR SEASON  →  PLAYOFFS  →  OFFSEASON
 
 ## 4. Architecture map
 
-- **`client/js/adv.js`** (~2500 lines) — the master monthly tick (`adv()`). All economy, missions, rival sim, season matchday, schedulers live here. Game state is the global `G` object (built by `initState()` in `state.js`).
+- **`client/js/adv.js`** (~2800 lines) — the master monthly tick (`adv()`). All economy, missions, rival sim, season matchday, schedulers live here. Game state is the global `G` object (built by `initState()` in `state.js`).
 - **`client/js/state.js`** — `G` init, the shinobi generator `mS(ri)`, rival roster generator `genVillageRoster(v)`, squad/finance helpers, `seedPhase1` data wiring.
 - **`client/js/main.js`** — imports every panel, exposes functions on `window` for inline `onclick` handlers. **New panel functions must be exposed here.**
 - **`client/js/panels/*.js`** — one file per UI panel; each exports a render fn + action fns.
-- **`shared/utils/*.js`** — **pure, tested** logic (season, missionEngine, economy, bloodline, formation, debt, etc.). Prefer putting new logic here with tests.
+- **`shared/utils/*.js`** — **pure, tested** logic (season, missionEngine, economy, bloodline, formation, debt, seasonStats, awards, pressConference, etc.). Prefer putting new logic here with tests.
+- **`shared/constants/coachingPhilosophy.js`** — 4 philosophies with modifier objects.
 - **`tests/*.test.js`** — vitest; deterministic RNG harness in `tests/helpers/rng.js` (`withSeed`, `stubRandom`).
 
 ### The core loop in code
@@ -78,50 +74,65 @@ REGULAR SEASON  →  PLAYOFFS  →  OFFSEASON
 
 ## 5. What's been built (recent → older)
 
-| System | Files | Notes |
-|---|---|---|
-| **Economy fix** (`2dcd940`) | `shared/utils/economy.js`, `adv.js`, `panels/finances.js`, `panels/dashboard.js` | `villageRevenue(rep,prestige)` = baseline "ticket revenue". Was bankrupt in 2 months; now passive ~-7k/mo (8mo runway), active solvent+growing. Displays now accurate. |
-| **Nation War** (`437efbf`) | `panels/war.js`, `adv.js` (M12 trigger) | Annual Jonin+ elite bracket; KIA with jinchuriki ×0.35 / bloodline ×0.6 survival edge; champion + war veterans; memorial/chronicle for fallen; rival roster replenishment. NATION WAR tab in competitions panel. |
-| **23→50 rosters + cap** (`eb264c9`) | `state.js` | Every village 50-ninja roster (war-ready pyramid). Chunin Exam cap = 24 (8 squads). |
-| **Squad-based Chunin Exam** (`417fce0`) | `panels/exam.js` | Exam pits squads vs squads (was solo); rivals field cells from rosters; promotions to surviving squad members. |
-| **23-ninja rosters** (`417fce0`) | `state.js` `genVillageRoster` | (superseded to 50 above). Player starts ~15, grows. |
-| **Event-based missions + form→standings** (`ab850f7`) | `shared/utils/missionEngine.js`, `adv.js` | 3-phase resolution (Infiltration/Engagement/Extraction); quality bands decisive/narrow/costly/disaster (balance preserved — `sc` still decides success). Monthly mission margin biases the player's league matchday. |
-| **Season league table** (`99476ac`) | `shared/utils/season.js`, `adv.js`, `panels/exam.js` | Monthly round-robin matchday → W/D/L/pts table; seeds the bracket; archived + reset when champion crowned. |
-| **Exam → 5-village bracket + stage depth** (`43db9b0`, `fd9d4b0`) | `panels/exam.js` | 4 stages (Qualifier/Forest/Semifinal/Final); judge bias, sabotage, marquee duels, forest injuries, champion crowning. |
+| System | Commit | Files | Notes |
+|---|---|---|---|
+| **FHM roster UI** | `3640592` | `panels/roster.js`, `main.js` | Split-panel: compact table (RANK\|NAME\|AGE\|ABILITY★\|POTENTIAL★\|STATUS\|SALARY) left + Active Assignments + quick-detail right. Click row → inline stat grid, contract clause buttons, "Full Dossier" overlay. `rosSelect(id)` exported and wired to window. |
+| **FHM parity batch** | `01de722` | many | 8 features (below): |
+| └ Rival decay fix | `01de722` | `adv.js` | Soft decay above 150 strength: −2–4/mo at 25% chance. |
+| └ Coaching philosophy | `01de722` | `shared/constants/coachingPhilosophy.js`, `panels/kage.js` | 4 philosophies (balanced/aggressive/defensive/youth_focus) with mods on missionSuccess, kiaRisk, morale, prospectGrowth, academyCostMult. Selector in Kage panel. |
+| └ Season stats + league leaders | `01de722` | `shared/utils/seasonStats.js` | `snapshotSeasonStats(G)` + `leagueLeaders(snapshot)`; December snapshot + reset. |
+| └ Awards ceremony | `01de722` | `shared/utils/awards.js` | MVP (most wins), Rookie of Year, War Hero (kills), Iron Wall (zero KIA). Shown in Legacy › Records tab. |
+| └ Contract depth | `01de722` | `panels/roster.js`, `panels/transfers.js`, `adv.js` | `noTrade`, `twoWay`, `buyoutCost` on shinobi. Cap excludes twoWay. noTrade blocks sell pressure. Buyout executes for 4× salary. New transfers get clauses auto-set. |
+| └ Draft order + pick trading | `01de722` | `panels/legacy.js`, `adv.js` | `G.draftOrder` seeded by inverse standings each December. Legacy › Records tab shows draft order. `sellDraftPick()` removes slot, adds 8k ryo. |
+| └ Budget priority sliders | `01de722` | `panels/finances.js`, `adv.js`, `state.js` | `G.budgetPriority {training, warPrep, infra}` — 3 sliders in Finances. training → dev speed mult, warPrep → war squad power bonus, infra → maintenance reduction. |
+| └ Press conference / media sim | `01de722` | `shared/utils/pressConference.js`, `adv.js`, `panels/inbox.js`, `panels/war.js`, `panels/exam.js` | `G.pendingPress` queued on exam win/loss, war win/loss, win/loss streaks, KIA. Shows in inbox with 3 tone choices (confident/humble/dismissive) each with rep/morale/rivalRel effects. |
+| **Economy fix** | `2dcd940` | `shared/utils/economy.js`, `adv.js`, `panels/finances.js` | `villageRevenue(rep,prestige)` baseline revenue. Was bankrupt in 2 months; now passive ~−7k/mo (8mo runway), active solvent+growing. |
+| **Nation War** | `437efbf` | `panels/war.js`, `adv.js` | Annual Jonin+ elite bracket; KIA with jinchuriki/bloodline survival edge; memorial/chronicle; rival replenishment. |
+| **50-ninja rosters + cap** | `eb264c9` | `state.js` | Every village 50-ninja roster; Chunin Exam cap = 24. |
+| **Squad-based Chunin Exam** | `417fce0` | `panels/exam.js` | Squad vs squad (was solo); rivals field cells from rosters; promotions to surviving squad members. |
+| **Event-based missions + form→standings** | `ab850f7` | `shared/utils/missionEngine.js`, `adv.js` | 3-phase resolution; quality bands decisive/narrow/costly/disaster; monthly mission margin biases league matchday. |
+| **Season league table** | `99476ac` | `shared/utils/season.js`, `adv.js` | Monthly round-robin matchday → W/D/L/pts table; seeds bracket; archived + reset on champion. |
 
 Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-1/O-2, M-CAP-1, B-RISK-1 success ceilings), v2 systems behind flags (bloodline active layer, nation HUD, formation, support events, debt) — **all flags default ON for playtest**.
 
 ---
 
-## 6. Known open items / findings
+## 6. Known open items
 
-- **Rep/morale decay too steep (open):** a year of zero missions decays reputation→0 and morale 75→30. Intended "you must play" pressure, but the rate likely needs softening. Found in the full-year economy playtest.
-- **War/Exam stage logic lives in panels**, verified by browser playtest, not unit tests. Worth extracting stage math to a shared pure util with tests.
-- **Nation War KIA on rivals** permanently removes roster ninja; replenishment exists (`adv.js` village tick, recruits toward 40) but is light — watch for rival roster depletion over many years.
-- **Month-12 war trigger** fires during the tick that also rolls to month 1 of the next year (cosmetic ordering quirk; works).
+- **Rep/morale decay too steep (open):** a year of zero missions decays reputation→0 and morale 75→30. Intended "you must play" pressure, but the rate likely needs softening.
+- **War/Exam stage logic lives in panels**, not unit-tested. Worth extracting stage math to shared pure utils.
+- **Nation War KIA on rivals** permanently removes roster ninja; replenishment (recruits toward 40) is light — watch for rival roster depletion over many years.
+- **Month-12 war trigger** fires during the same tick that rolls to year+1 (cosmetic ordering quirk; works).
+- **Preview always needs a build:** `npx vite build` required before any browser verify — Vite HMR (5173) and the preview server (3000) are separate processes.
 
-## 7. Remaining FHM gaps (ranked, NOT yet built)
+---
 
-The user paused late-game content to polish the core loop. Candidate next steps:
-1. **Loop polish** (current focus): rep/morale decay tuning, **standings visible in the main loop/dashboard** (currently only in Exam panel), **season-phase clarity** (yearly rhythm/countdowns), **mission-as-game feedback** (surface decisive/disaster outcomes).
-2. **Hard salary cap** (payroll ceiling by village tier — the central FHM roster-construction tension).
-3. **Owner/council mandate + dismissal** (annual goals, no-confidence).
-4. **Statistical record layer** (season stat lines, league leaders, awards).
-5. Aging/regression curve, contract depth (two-way/clauses/buyouts), budget-allocation sliders, draft order/pick trading.
+## 7. Remaining FHM gaps / next polish targets
+
+The FHM parity features are done. Remaining candidate work:
+
+1. **Loop feedback polish** — standings visible on main dashboard (currently only in Exam panel), season-phase clarity (yearly rhythm countdowns), surface decisive/disaster mission outcomes better.
+2. **Rep/morale decay tuning** — see §6.
+3. **Hard salary cap by village tier** — cap math exists but ceiling isn't tiered by village level yet.
+4. **Owner/council mandate + dismissal** — annual goals, no-confidence vote consequences.
+5. **Aging/regression curve** — shinobi peak ~28–30, decline after.
+6. **Nice-to-have:** richer free-agency market, trade deadline, multi-season dynasty mode.
 
 ---
 
 ## 8. Operating style (how the user works)
 
-- **Senior-dev-partner micro-milestone mode:** one focused goal at a time; after each commit, run a quick QA pass + re-anchor; pivot when a system is solved (avoid circular polish).
+- **Senior-dev-partner micro-milestone mode:** one focused goal at a time; after each commit, run a quick QA pass + re-anchor; pivot when a system is solved.
 - **No trailing summaries / recaps.** End responses with: one-line status + one-line next step.
 - **"go" / "proceed" = full autonomy** for that task — don't ask sub-questions mid-implementation.
 - Confirm genuine forks with a quick question; otherwise act and report.
 - The user playtests with partners — **playtest readiness is a recurring gate**.
 
+---
+
 ## 9. First moves for the new session
 
 1. Read this doc + the auto-memory (`MEMORY.md` index loads automatically).
-2. `git -C C:\Users\Tyler\ninja\hidden-village-manager status` (expect clean) and confirm HEAD matches.
-3. `npx vitest run` (expect 388 passing).
-4. Ask the user which polish target to take next (see §7.1), or continue whatever they were mid-stream on.
+2. `git -C C:\Users\Tyler\ninja\hidden-village-manager log --oneline -5` — confirm HEAD matches above.
+3. `npx vitest run` — expect 450 passing / 43 files.
+4. Ask the user which target to take next (see §7), or continue whatever they were mid-stream on.
