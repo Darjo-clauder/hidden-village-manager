@@ -1131,6 +1131,24 @@ export function adv() {
     }
   }
 
+  // ── Economy: black-market heat decay + rival route piracy ──────────────────
+  {
+    // Underworld heat cools ~6 points/month
+    if ((G.blackMarketHeat || 0) > 0) G.blackMarketHeat = Math.max(0, G.blackMarketHeat - 6)
+    // Quarterly chance a rival disrupts an active trade route (income halved until secured)
+    if (G.month % 3 === 0) {
+      const liveRoutes = G.tradeRoutes.filter(r => r.active && !r.disrupted)
+      if (liveRoutes.length && Math.random() < 0.35) {
+        const r = pk(liveRoutes)
+        r._fullIncome = r.income
+        r.income = Math.round(r.income / 2)
+        r.disrupted = true
+        aL(`⚠ "${r.n}" disrupted by rival interference — income halved until secured.`, 'warn')
+        addNotice(`Trade route "${r.n}" disrupted — secure it from the Economy panel.`, 'warn')
+      }
+    }
+  }
+
   // ── Squad monthly tick (monthsActive, anniversary) ───────────────────────
   G.squads.forEach(sq => {
     sq.monthsActive = (sq.monthsActive || 0) + 1

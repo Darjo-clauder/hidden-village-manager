@@ -7,9 +7,11 @@ import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM } from './panels/missions.js'
 import { rUp, buyUp, buildDistrict } from './panels/upgrades.js'
 import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab } from './panels/academy.js'
-import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship } from './panels/economy.js'
+import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, secureRoute } from './panels/economy.js'
+import { logFilter, logSearch } from './panels/log.js'
+import { honorFallen } from './panels/memorial.js'
 import { rBe, lCap, beastTab, releaseJinchuriki, resolveEscape } from './panels/beasts.js'
-import { rKa, resKE, sGift, propAl, rattle, resNCV, setCoachingPhilosophy } from './panels/kage.js'
+import { rKa, resKE, sGift, propAl, rattle, resNCV, setCoachingPhilosophy, payRivalDemand, refuseRivalDemand, demandTribute, appease } from './panels/kage.js'
 import { rEx, tEC, startEx, runRound } from './panels/exam.js'
 import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP, dipAccept, dipDecline } from './world.js'
 import { resolveChoiceEvent, resolveCouncilProposal, assignBlackMarket, resolveClanChain, establishSafehouse, assignDeepCoverOp, resolveWorldEventChoice, activateBloodline, resolvePressConference, resolveComplication, resolveRivalOffer, resolveQuickDecision, runTrainingCamp, gradeShinobi } from './adv.js'
@@ -26,9 +28,9 @@ import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCoun
 import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc } from './panels/exam.js'
 import { musterWar, startWar, runWarRound } from './panels/war.js'
 import { showLobby, createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode } from './setup.js'
-import { rClans, clanGift, launchClanChain } from './panels/clans.js'
+import { rClans, clanGift, launchClanChain, resolveClanCouncil } from './panels/clans.js'
 import { dismissOnboarding } from './panels/dashboard.js'
-import { launchDeepCover } from './panels/safehouses.js'
+import { launchDeepCover, abortDeepCover } from './panels/safehouses.js'
 import { endTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose, setTimeout_, setMaxPlayers, voteAdvance, setAdvFn } from './room.js'
 import { copyInvite } from './panels/lobby.js'
 import { inboxTab, inboxFilter, toggleThread, dismissAllInfo, dismissNarrativeById } from './panels/inbox.js'
@@ -100,11 +102,14 @@ Object.assign(window, {
   rec, oScout, doScout, oSensei, doSensei, setTrainingPlan,
   matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab,
   // economy
-  eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship,
+  eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, secureRoute,
+  // log + memorial
+  logFilter, logSearch, honorFallen,
   // beasts
   lCap, beastTab, releaseJinchuriki, resolveEscape, activateBloodline,
   // kage
   resKE, sGift, propAl, rattle, resNCV, setCoachingPhilosophy,
+  payRivalDemand, refuseRivalDemand, demandTribute, appease,
   // exam
   tEC, startEx, runRound, schEx,
   // world / diplomacy
@@ -152,11 +157,11 @@ Object.assign(window, {
   // nation war
   musterWar, startWar, runWarRound,
   // clans
-  clanGift, launchClanChain,
+  clanGift, launchClanChain, resolveClanCouncil,
   // onboarding
   dismissOnboarding,
   // safehouses
-  establishSafehouse, assignDeepCoverOp, launchDeepCover,
+  establishSafehouse, assignDeepCoverOp, launchDeepCover, abortDeepCover,
   // world calendar
   resolveWorldEventChoice,
 })

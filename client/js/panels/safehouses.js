@@ -14,15 +14,50 @@ export function rSafehouses() {
   const active = (G.safehouses || []).filter(s => s.status === 'active')
   const available = G.shinobi.filter(s => s.status === 'available')
 
+  // Active deep-cover operations currently running (tracked in G.aM)
+  const activeOps = (G.aM || []).filter(a => a.isDeepCover)
+  const activeOpsHtml = activeOps.length === 0 ? '' : `
+    <div style="background:#0d0a04;border:1px solid #3a2a0a;padding:10px;margin-bottom:12px">
+      <div style="font-size:7px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">Active Operations (${activeOps.length})</div>
+      <div style="display:grid;gap:6px">
+        ${activeOps.map(am => {
+          const op = DC_OP_BY_ID[am.opId]
+          const s  = G.shinobi.find(x => x.id === am.assignedTo)
+          const sh = active.find(x => x.id === am.safehouseId)
+          const total = op?.daysActive || 1
+          const elapsed = total - (am.daysLeft || 0)
+          const pct = Math.max(0, Math.min(100, Math.round((elapsed / total) * 100)))
+          const risk = op?.rk === 'S' ? 'High' : op?.rk === 'A' ? 'Elevated' : 'Low'
+          const riskCol = op?.rk === 'S' ? '#f66' : op?.rk === 'A' ? '#fa0' : '#8fbc8f'
+          return `<div style="background:#0a0a0a;border:1px solid #222;padding:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <div>
+                <span style="font-size:9px;color:#e8e0cc">${op?.n || am.opId}</span>
+                <span style="font-size:7px;color:#7a7060;margin-left:6px">${s ? sn(s) : '?'} · ${SH_LOCATION_BY_ID[sh?.locationId]?.name || 'field'}</span>
+              </div>
+              <div style="text-align:right">
+                <span style="font-size:8px;color:#c9a84c">${am.daysLeft}mo left</span>
+                <span style="font-size:7px;color:${riskCol};margin-left:6px">${risk} exposure</span>
+              </div>
+            </div>
+            <div style="background:#111;height:4px;border-radius:2px;overflow:hidden"><div style="background:#c9a84c;height:4px;width:${pct}%"></div></div>
+            <div style="text-align:right;margin-top:4px"><button class="gb gb-r" style="font-size:7px;padding:2px 7px" onclick="abortDeepCover('${am.id}')">Abort (recall agent)</button></div>
+          </div>`
+        }).join('')}
+      </div>
+    </div>`
+
   el.innerHTML = `
     <div style="background:#0a0a0a;border:1px solid #222;padding:10px;margin-bottom:12px">
       <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:6px">Network Status</div>
       <div style="display:flex;gap:12px;font-size:8px">
         <span style="color:#e8e0cc">Safehouses: ${active.length} / ${MAX_SAFEHOUSES}</span>
+        <span style="color:#c9a84c">Active ops: ${activeOps.length}</span>
         ${shP.prospectBonus ? `<span style="color:#8fbc8f">+${(shP.prospectBonus*100).toFixed(0)}% prospect leads</span>` : ''}
         ${shP.opSuccessBonus ? `<span style="color:#8fbc8f">+${(shP.opSuccessBonus*100).toFixed(0)}% op success</span>` : ''}
       </div>
     </div>
+    ${activeOpsHtml}
 
     <div style="font-size:8px;color:#7a7060;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Establish Safehouse (${SAFEHOUSE_COST.toLocaleString()} ryo)</div>
     <div style="display:grid;gap:6px;margin-bottom:16px">
@@ -79,6 +114,18 @@ export function rSafehouses() {
         }).join('')}
         </div>`
     }`
+}
+
+export function abortDeepCover(amId) {
+  const am = (G.aM || []).find(x => x.id === amId && x.isDeepCover)
+  if (!am) return
+  const s = G.shinobi.find(x => x.id === am.assignedTo)
+  if (s) { s.status = 'available'; s.missId = null }
+  G.aM = G.aM.filter(x => x.id !== amId)
+  aL(`${s ? sn(s) : 'Agent'} recalled from deep cover — operation aborted, no payout.`, 'warn')
+  ntf('Operation aborted.')
+  upUI()
+  rSafehouses()
 }
 
 export function launchDeepCover(opId) {

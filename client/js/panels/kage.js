@@ -14,7 +14,7 @@ export function rKa() {
     const ratio = strengthRatio(playerStr, vs)
     const strColor = ratio >= 1.3 ? '#8fbc8f' : ratio >= 0.8 ? '#fa0' : '#f66'
     const strLabel = ratio >= 1.5 ? 'Dominant' : ratio >= 1.2 ? 'Stronger' : ratio >= 0.8 ? 'Matched' : ratio >= 0.5 ? 'Weaker' : 'Outmatched'
-    return `<div class="ke-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="font-size:20px">${v.ico}</div><div><div style="font-size:11px;color:#e8e0cc;font-weight:bold">${v.n}</div><div style="font-size:8px;color:#7a7060">${v.kageRank} ${v.kage} · <span style="color:${rc}">${v.rel > 60 ? 'Allied' : v.rel > 30 ? 'Neutral' : 'Hostile'}</span>${v.allied ? ' ✓ Allied' : ''}</div></div></div><div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><div style="font-size:7px;color:#7a7060;width:60px;text-transform:uppercase;letter-spacing:1px">Relations</div><div class="bar" style="flex:1"><div class="fill" style="width:${v.rel}%;background:${rc}"></div></div><div style="font-size:9px;color:#7a7060">${v.rel}</div></div><div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><div style="font-size:7px;color:#7a7060;width:60px;text-transform:uppercase;letter-spacing:1px">Strength</div><div class="bar" style="flex:1"><div class="fill" style="width:${Math.min(100,vs/2)}%;background:${strColor}"></div></div><div style="font-size:8px;color:${strColor}">${strLabel} (${Math.round(vs)})</div></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="gb gb-b" onclick="sGift('${v.n}')" ${G.ryo < 5000 ? 'disabled' : ''}>Send gifts +10 (5k ryo)</button>${v.rel > 60 && !v.allied ? `<button class="gb gb-g" onclick="propAl('${v.n}')" ${G.ryo < 10000 ? 'disabled' : ''}>Propose alliance (10k)</button>` : ''}${v.rel < 30 ? `<button class="gb gb-r" onclick="rattle('${v.n}')">Rattle sabres</button>` : ''}</div></div>`
+    return `<div class="ke-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="font-size:20px">${v.ico}</div><div><div style="font-size:11px;color:#e8e0cc;font-weight:bold">${v.n}</div><div style="font-size:8px;color:#7a7060">${v.kageRank} ${v.kage} · <span style="color:${rc}">${v.rel > 60 ? 'Allied' : v.rel > 30 ? 'Neutral' : 'Hostile'}</span>${v.allied ? ' ✓ Allied' : ''}</div></div></div><div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><div style="font-size:7px;color:#7a7060;width:60px;text-transform:uppercase;letter-spacing:1px">Relations</div><div class="bar" style="flex:1"><div class="fill" style="width:${v.rel}%;background:${rc}"></div></div><div style="font-size:9px;color:#7a7060">${v.rel}</div></div><div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><div style="font-size:7px;color:#7a7060;width:60px;text-transform:uppercase;letter-spacing:1px">Strength</div><div class="bar" style="flex:1"><div class="fill" style="width:${Math.min(100,vs/2)}%;background:${strColor}"></div></div><div style="font-size:8px;color:${strColor}">${strLabel} (${Math.round(vs)})</div></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="gb gb-b" onclick="sGift('${v.n}')" ${G.ryo < 5000 ? 'disabled' : ''}>Send gifts +10 (5k ryo)</button>${v.rel > 60 && !v.allied ? `<button class="gb gb-g" onclick="propAl('${v.n}')" ${G.ryo < 10000 ? 'disabled' : ''}>Propose alliance (10k)</button>` : ''}${v.rel < 60 && !v.allied ? `<button class="gb" onclick="demandTribute('${v.n}')" title="Strength-gated. Success extracts ryo; failure angers them.">Demand tribute</button>` : ''}${(v.threat || 0) > 0 ? `<button class="gb gb-b" onclick="appease('${v.n}')" ${G.ryo < 4000 ? 'disabled' : ''}>Appease −threat (4k)</button>` : ''}${v.rel < 30 ? `<button class="gb gb-r" onclick="rattle('${v.n}')">Rattle sabres</button>` : ''}</div></div>`
   }).join('')
   const standings = rankStandings(playerStr, (G.vName || 'Your Village'), G.villages)
   const standingsHtml = `<div class="ke-card" style="margin-bottom:14px">
@@ -26,7 +26,78 @@ export function rKa() {
   </div>`
   el.innerHTML = (ui.pKE
     ? `<div class="ke-card" style="border-color:#c9a84c;margin-bottom:14px"><div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">⚡ Kage Event</div><div style="font-size:12px;color:#e8e0cc;font-weight:bold;margin-bottom:5px">${ui.pKE.n}</div><div style="font-size:10px;color:#7a7060;margin-bottom:12px;line-height:1.5">${ui.pKE.desc}</div><div style="display:flex;flex-direction:column;gap:6px">${ui.pKE.choices.map((c, i) => `<button class="gb" onclick="resKE(${i})">${c.l}</button>`).join('')}</div></div>`
-    : '') + _noConfidenceHtml() + _mandateHtml() + _philosophyHtml() + standingsHtml + vH
+    : '') + _rivalDemandHtml() + _noConfidenceHtml() + _mandateHtml() + _philosophyHtml() + standingsHtml + vH
+}
+
+// ── Rival-initiated demand (quarterly) ────────────────────────────────────────
+function _diploQuarter() { return `Y${G.year}Q${Math.ceil(G.month / 3)}` }
+
+function _rivalDemandHtml() {
+  // Surface an existing pending demand, or generate one this quarter from a strong hostile rival.
+  if (!G.rivalDemand || G.rivalDemand.resolvedQuarter) {
+    if (G.rivalDemand?.quarter === _diploQuarter()) return ''  // already handled this quarter
+    const playerStr = G._playerStrength || 50
+    const aggressors = (G.villages || []).filter(v => v.rel < 40 && (v.strength || 50) > playerStr * 1.05 && !v.allied)
+    if (!aggressors.length) return ''
+    const v = aggressors.sort((a, b) => (b.strength || 50) - (a.strength || 50))[0]
+    const amount = Math.round(3000 + (v.strength || 50) * 120)
+    G.rivalDemand = { villageName: v.n, icon: v.ico, amount, quarter: _diploQuarter(), resolvedQuarter: null }
+  }
+  const d = G.rivalDemand
+  if (!d || d.resolvedQuarter) return ''
+  return `<div class="ke-card" style="border-color:#8b1a1a;background:#160808;margin-bottom:14px">
+    <div style="font-size:9px;letter-spacing:2px;color:#f66;text-transform:uppercase;margin-bottom:6px">⚠ Tribute Demand — ${_diploQuarter()}</div>
+    <div style="font-size:11px;color:#e8e0cc;margin-bottom:8px">${d.icon || ''} <b>${d.villageName}</b> demands <b style="color:#fa0">${fmt(d.amount)} ryo</b> in tribute, or relations sour and their war footing grows.</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="gb gb-b" onclick="payRivalDemand()" ${G.ryo < d.amount ? 'disabled' : ''}>Pay tribute (${fmt(d.amount)} ryo, +12 rel)</button>
+      <button class="gb gb-r" onclick="refuseRivalDemand()">Refuse (−15 rel, +25 their threat)</button>
+    </div>
+  </div>`
+}
+
+export function payRivalDemand() {
+  const d = G.rivalDemand; if (!d || d.resolvedQuarter) return
+  if (G.ryo < d.amount) { ntf('Not enough ryo.'); return }
+  G.ryo -= d.amount
+  const v = G.villages.find(x => x.n === d.villageName)
+  if (v) v.rel = clamp(v.rel + 12, 0, 100)
+  d.resolvedQuarter = _diploQuarter()
+  aL(`Paid ${fmt(d.amount)} ryo tribute to ${d.villageName}. Tensions ease.`, 'neutral')
+  ntf('Tribute paid.'); upUI()
+}
+
+export function refuseRivalDemand() {
+  const d = G.rivalDemand; if (!d || d.resolvedQuarter) return
+  const v = G.villages.find(x => x.n === d.villageName)
+  if (v) { v.rel = clamp(v.rel - 15, 0, 100); v.threat = clamp((v.threat || 0) + 25, 0, 100) }
+  d.resolvedQuarter = _diploQuarter()
+  aL(`Refused ${d.villageName}'s tribute demand. They will not forget this.`, 'warn')
+  ntf('Demand refused.'); upUI()
+}
+
+export function demandTribute(n) {
+  const v = G.villages.find(x => x.n === n); if (!v) return
+  const playerStr = G._playerStrength || 50
+  const edge = playerStr / ((v.strength || 50) || 1)
+  if (edge >= 1.1 && Math.random() < clamp(0.35 + (edge - 1) * 0.6, 0.2, 0.85)) {
+    const gain = Math.round(2500 + (v.strength || 50) * 90)
+    G.ryo += gain; v.rel = clamp(v.rel - 8, 0, 100)
+    aL(`${n} yielded to your demand — extracted ${fmt(gain)} ryo. They resent it.`, 'good')
+    ntf(`Tribute extracted: +${fmt(gain)} ryo`)
+  } else {
+    v.rel = clamp(v.rel - 12, 0, 100); v.threat = clamp((v.threat || 0) + 18, 0, 100)
+    aL(`${n} rebuffed your demand — relations worsen and their hostility grows.`, 'bad')
+    ntf('Demand rebuffed.')
+  }
+  upUI()
+}
+
+export function appease(n) {
+  if (G.ryo < 4000) { ntf('Not enough ryo!'); return }
+  const v = G.villages.find(x => x.n === n); if (!v) return
+  G.ryo -= 4000
+  v.threat = clamp((v.threat || 0) - 30, 0, 100); v.rel = clamp(v.rel + 5, 0, 100)
+  aL(`Appeased ${n} — their war footing eases.`, 'good'); ntf('Tensions reduced.'); upUI()
 }
 
 export function resKE(i) {

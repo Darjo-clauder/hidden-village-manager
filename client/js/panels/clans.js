@@ -2,6 +2,38 @@ import { G, sn, fmt, clamp } from '../state.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { CLANS, CLAN_BY_ID, CLAN_CHAINS, getClanPassives, availableClanChains, clanCouncilInfluence } from '../../../shared/constants/clans.js'
 
+// Human-readable name for each passive effect key.
+const _PASSIVE_LABEL = {
+  successMod:           v => `+${Math.round(v*100)}% mission success`,
+  growthBonus:          v => `+${Math.round(v*100)}% shinobi growth`,
+  missionRiskReduction: v => `−${Math.round(v*100)}% mission risk`,
+  kiaRiskMod:           v => `${v < 0 ? '−' : '+'}${Math.abs(v*100).toFixed(0)}% KIA risk`,
+  anbuSuccessBonus:     v => `+${Math.round(v*100)}% ANBU success`,
+  scoutConfidenceBonus: v => `+${Math.round(v*100)}% scout confidence`,
+}
+function _passiveStr(passive) {
+  return Object.entries(passive || {}).map(([k, v]) => (_PASSIVE_LABEL[k] ? _PASSIVE_LABEL[k](v) : k)).join(' · ')
+}
+
+// ── Clan Council: quarterly arbitration between rival houses ──────────────────
+function _quarterKey() { return `Y${G.year}Q${Math.ceil(G.month / 3)}` }
+
+function _activeClanCouncilEvent() {
+  G.clanCouncil = G.clanCouncil || { resolvedQuarter: null }
+  if (G.clanCouncil.resolvedQuarter === _quarterKey()) return null
+
+  // Need at least two clans with active members to have a dispute.
+  const active = CLANS.map(c => ({
+    clan: c,
+    count: (G.shinobi || []).filter(s => s.clan?.toLowerCase() === c.id && s.status !== 'retired').length,
+    approval: (G.clanApproval || {})[c.id] ?? 80,
+  })).filter(x => x.count > 0)
+  if (active.length < 2) return null
+
+  const byApproval = [...active].sort((a, b) => b.approval - a.approval)
+  return { high: byApproval[0], low: byApproval[byApproval.length - 1] }
+}
+
 export function rClans() {
   const el = document.getElementById('clan-main')
   if (!el) return
@@ -10,9 +42,25 @@ export function rClans() {
   const influence = clanCouncilInfluence(G)
   const activeClanIds = new Set((G.shinobi || []).filter(s => s.status !== 'retired').map(s => s.clan).filter(Boolean))
 
-  el.innerHTML = `
+  // ── Clan Council arbitration banner ──────────────────────────────────────
+  const council = _activeClanCouncilEvent()
+  const councilHtml = council ? `
+    <div style="background:#0d0a04;border:1px solid #5a4800;border-left:3px solid #c9a84c;padding:11px 13px;margin-bottom:12px">
+      <div style="font-size:7px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">⚖ Clan Council — ${_quarterKey()}</div>
+      <div style="font-size:9px;color:#e8e0cc;margin-bottom:8px">
+        ${council.high.clan.icon} <b>${council.high.clan.name}</b> (approval ${council.high.approval}%) and
+        ${council.low.clan.icon} <b>${council.low.clan.name}</b> (approval ${council.low.approval}%) clash over council representation. Your ruling will be remembered.
+      </div>
+      <div style="display:grid;gap:5px">
+        <button class="gb" style="text-align:left;font-size:8px;padding:5px 9px" onclick="resolveClanCouncil('high')">Back the ${council.high.clan.name} — reward your power base (+8 their approval, −5 ${council.low.clan.name})</button>
+        <button class="gb" style="text-align:left;font-size:8px;padding:5px 9px" onclick="resolveClanCouncil('low')">Elevate the ${council.low.clan.name} — balance the houses (+8 their approval, −5 ${council.high.clan.name}, −2 morale)</button>
+        <button class="gb" style="text-align:left;font-size:8px;padding:5px 9px" onclick="resolveClanCouncil('neutral')">Rule impartially — seen as fair (−3 both, +3 morale)</button>
+      </div>
+    </div>` : ''
+
+  el.innerHTML = councilHtml + `
     <div style="background:#0a0a0a;border:1px solid #222;padding:10px;margin-bottom:12px">
-      <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:6px">Active Bloodline Passives</div>
+      <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:6px">Active Bloodline Passives — Village Total</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:8px">
         ${clP.successMod     ? `<span style="color:#8fbc8f">+${(clP.successMod*100).toFixed(0)}% mission success</span>` : ''}
         ${clP.growthBonus    ? `<span style="color:#8fbc8f">+${(clP.growthBonus*100).toFixed(0)}% growth</span>` : ''}
@@ -46,6 +94,10 @@ export function rClans() {
             </div>
           </div>
           <div style="font-size:7px;color:#7a5030;margin-bottom:6px">${clan.desc}</div>
+          <div style="background:#0a0a0a;border-left:2px solid ${passiveActive?'#8fbc8f':'#333'};padding:4px 7px;margin-bottom:6px">
+            <div style="font-size:7px;color:${passiveActive?'#8fbc8f':'#7a7060'};font-weight:bold">${clan.bloodline} Bloodline ${passiveActive ? '— Active' : '— Dormant'}</div>
+            <div style="font-size:7px;color:${passiveActive?'#a8c0a8':'#555'};margin-top:1px">${_passiveStr(clan.passive)}</div>
+          </div>
           <div style="font-size:7px;color:${passiveActive?'#8fbc8f':'#555'};margin-bottom:6px">
             ${passiveActive ? '✓ Bloodline active' : members.length ? `⚠ Need ${clan.approvalNeeded}% approval or active member` : 'No members recruited'}
           </div>
@@ -80,6 +132,29 @@ export function rClans() {
         </div>`
     }).join('')}
     </div>`
+}
+
+export function resolveClanCouncil(ruling) {
+  const council = _activeClanCouncilEvent()
+  if (!council) { ntf('No council matter pending.'); return }
+  G.clanApproval = G.clanApproval || {}
+  const hi = council.high.clan.id, lo = council.low.clan.id
+  const setA = (id, d) => { G.clanApproval[id] = clamp((G.clanApproval[id] ?? 80) + d, 0, 100) }
+  if (ruling === 'high') {
+    setA(hi, 8); setA(lo, -5)
+    aL(`Council ruling: backed the ${council.high.clan.name}. Your power base is rewarded.`, 'neutral')
+  } else if (ruling === 'low') {
+    setA(lo, 8); setA(hi, -5)
+    G.morale = clamp((G.morale || 75) - 2, 0, 100)
+    aL(`Council ruling: elevated the ${council.low.clan.name}. The ${council.high.clan.name} are displeased.`, 'warn')
+  } else {
+    setA(hi, -3); setA(lo, -3)
+    G.morale = clamp((G.morale || 75) + 3, 0, 100)
+    aL('Council ruling: impartial. The village respects your fairness.', 'good')
+  }
+  G.clanCouncil.resolvedQuarter = _quarterKey()
+  ntf('Council matter resolved.')
+  upUI()
 }
 
 export function clanGift(clanId) {
