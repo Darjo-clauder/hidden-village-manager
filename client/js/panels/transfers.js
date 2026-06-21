@@ -1,6 +1,42 @@
 import { G, sn, sPow, clamp, fmt, rnd, pk, pDesc, personalityJudge, genTransferPool, computeMarketValue } from '../state.js'
 import { TRANSFER_CATS, TRANSFER_WINDOWS, BINGO_TIERS, RANKS, VILLAGES_DEF } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
+import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort } from '../uikit.js'
+
+// Market sort (P1 kit reuse — card grid, so a sort bar instead of table headers).
+const _TR_SORTS = [
+  { key: 'power', label: 'Power', val: p => sPow(p) },
+  { key: 'potential', label: 'Potential', val: p => p.potential || 0 },
+  { key: 'fee', label: 'Fee', val: p => p.askingFee || 0 },
+  { key: 'avail', label: 'Avail', val: p => p.monthsAvailable || 1 },
+]
+const _TR_DEFAULT = { key: 'power', dir: 'desc' }
+
+export function trSort(key) { tblToggleSort('transfers', key, _TR_DEFAULT); rTr() }
+
+export function trCtx(e, id) {
+  e.preventDefault()
+  const p = (G.transferMarket?.pool || []).find(x => x.id === id); if (!p) return false
+  const isFree = ['free_agent', 'missing_nin', 'retired_return', 'foreign_specialist'].includes(p.transferCategory)
+  const items = isFree
+    ? [{ label: 'Sign Direct…', fn: () => window.openPersonalTerms && window.openPersonalTerms(id) }]
+    : [{ label: 'Open Negotiation…', fn: () => window.openNegotiation && window.openNegotiation(id) },
+       { label: 'Poach (risky)', danger: true, fn: () => window.poachAttempt && window.poachAttempt(id) }]
+  openContextMenu(e.clientX, e.clientY, items)
+  return false
+}
+
+export function trHover(e, id) {
+  const p = (G.transferMarket?.pool || []).find(x => x.id === id); if (!p) return
+  const mv = computeMarketValue(p)
+  const row = (k, v) => `<div class="hp-row"><span>${k}</span><b>${v}</b></div>`
+  showHoverPreview(e.clientX, e.clientY, `
+    <div class="hp-name">${p.fn} ${p.ln}</div>
+    <div class="hp-sub">${RANKS[p.ri]} · ${p.clan || p.spec || '—'} · Age ${p.age}</div>
+    ${row('Power', sPow(p))}${row('Potential', p.potential || 0)}
+    ${row('Asking', fmt(p.askingFee))}${row('Market value', fmt(mv))}
+    ${row('Available', (p.monthsAvailable || 1) + 'mo')}`)
+}
 
 // ── Pending negotiation state ─────────────────────────────────────────────────
 let _negTarget = null   // { pool shinobi object }
@@ -66,8 +102,16 @@ function renderMarket(tm, judgeLevel) {
   if (pool.length === 0) {
     return `<div style="color:#555;text-align:center;padding:30px;font-size:.85rem">Window is open but pool is empty — try refreshing.</div>`
   }
-  return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px">
-    ${pool.map(p => marketCard(p, judgeLevel)).join('')}
+  const sort = tblSort('transfers', _TR_DEFAULT)
+  const sdef = _TR_SORTS.find(s => s.key === sort.key) || _TR_SORTS[0]
+  const sorted = [...pool].sort((a, b) => (sdef.val(a) - sdef.val(b)) * (sort.dir === 'asc' ? 1 : -1))
+  const sortBar = `<div style="display:flex;gap:5px;align-items:center;margin-bottom:10px;font-size:8px;color:#555">
+    <span style="text-transform:uppercase;letter-spacing:1px">Sort</span>
+    ${_TR_SORTS.map(s => { const a = sort.key === s.key; return `<button class="tbl-colbtn"${a ? ' style="color:var(--accent);border-color:var(--accent-border)"' : ''} onclick="trSort('${s.key}')">${s.label}${a ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}</button>` }).join('')}
+    <span style="margin-left:auto;color:#3a3630">right-click a card for actions</span>
+  </div>`
+  return sortBar + `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px">
+    ${sorted.map(p => marketCard(p, judgeLevel)).join('')}
   </div>`
 }
 
@@ -86,9 +130,9 @@ function marketCard(p, judgeLevel) {
 
   const marketVal = computeMarketValue(p)
   const valueDelta = marketVal - p.askingFee
-  return `<div style="background:#1a1a1a;border:1px solid ${catDef.color}33;border-radius:6px;padding:12px;border-top:2px solid ${catDef.color}">
+  return `<div style="background:#1a1a1a;border:1px solid ${catDef.color}33;border-radius:6px;padding:12px;border-top:2px solid ${catDef.color}" oncontextmenu="return trCtx(event,'${p.id}')">
     <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:6px">
-      <div>
+      <div onmousemove="trHover(event,'${p.id}')" onmouseleave="hideHoverPreview()">
         <div style="color:#e8d5a3;font-weight:bold">${p.fn} ${p.ln}</div>
         <div style="font-size:.72rem;color:#888">${RANKS[p.ri]} · ${p.clan || p.spec} · Age ${p.age}</div>
       </div>

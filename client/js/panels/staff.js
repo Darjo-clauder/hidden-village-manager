@@ -1,6 +1,38 @@
 import { G, fmt, sn, rnd, pk, clamp, mStaff, genStaffCandidates } from '../state.js'
 import { STAFF_ROLES, RANKS, FNAMES, LNAMES, STAFF_CONFLICT_RESPONSES } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
+import { openContextMenu, showHoverPreview, hideHoverPreview } from '../uikit.js'
+
+// Right-click a staff card → verb menu (P1 entity grammar).
+export function staffCtx(e, id) {
+  e.preventDefault()
+  const st = (G.staff || []).find(x => x.id === id); if (!st) return false
+  const canBeAK = (st.monthsServed || 0) >= 12 && !st.asstKage && !(G.staff || []).some(x => x.asstKage)
+  const canMeet = (st.monthsServed || 0) >= 6 && st.hiddenFlaw && !st.flawRevealed
+  const items = []
+  if (canBeAK) items.push({ label: 'Designate Asst. Kage', fn: () => window.designateAsstKage && window.designateAsstKage(id) })
+  if (st.asstKage) items.push({ label: 'Remove Asst. Kage', fn: () => window.designateAsstKage && window.designateAsstKage(null) })
+  if (canMeet) items.push({ label: '1-on-1 Meeting', fn: () => window.staffPersonalMeeting && window.staffPersonalMeeting(id) })
+  if (items.length) items.push({ separator: true })
+  items.push({ label: 'Release', danger: true, fn: () => { if (confirm(`Release ${st.fn} ${st.ln}? This cannot be undone.`)) window.releaseStaff && window.releaseStaff(id) } })
+  openContextMenu(e.clientX, e.clientY, items)
+  return false
+}
+
+export function staffHover(e, id) {
+  const st = (G.staff || []).find(x => x.id === id); if (!st) return
+  const role = STAFF_ROLES.find(r => r.id === st.role)
+  const yrs = Math.floor((st.monthsServed || 0) / 12)
+  const row = (k, v) => `<div class="hp-row"><span>${k}</span><b>${v}</b></div>`
+  const stats = Object.entries(st.stats || {}).map(([k, v]) => `${k.slice(0, 3)} ${v}`).join(' · ')
+  showHoverPreview(e.clientX, e.clientY, `
+    <div class="hp-name">${st.fn} ${st.ln}${st.asstKage ? ' ★' : ''}</div>
+    <div class="hp-sub">${role?.n || st.role} · ${yrs > 0 ? yrs + 'yr ' : ''}${st.monthsServed}mo</div>
+    ${row('Rating', st.rating)}${row('Salary', fmt(st.salary) + '/mo')}
+    ${row('Ambition', (st.ambition || 0) >= 14 ? 'High' : (st.ambition || 0) >= 10 ? 'Moderate' : 'Low')}
+    ${st.hiddenFlaw && st.flawRevealed ? row('Flaw', st.hiddenFlaw) : ''}
+    <div class="hp-row" style="margin-top:4px"><span style="font-size:7px;color:#555">${stats}</span></div>`)
+}
 
 let _hireRoleId = null
 let _hireCandidates = []
@@ -95,9 +127,9 @@ function _rosterTab() {
           const yearsServed = Math.floor((st.monthsServed || 0) / 12)
           const canBeAK = (st.monthsServed || 0) >= 12 && !isAsstKage && !(G.staff||[]).some(x => x.asstKage)
 
-          html += `<div style="border:1px solid #2e2820;padding:8px;margin-top:6px;background:#111">
+          html += `<div style="border:1px solid #2e2820;padding:8px;margin-top:6px;background:#111" oncontextmenu="return staffCtx(event,'${st.id}')">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
-              <div>
+              <div onmousemove="staffHover(event,'${st.id}')" onmouseleave="hideHoverPreview()">
                 <div style="font-size:10px;color:#e8e0cc;font-weight:bold">${st.fn} ${st.ln}${isAsstKage ? ' <span style="color:#87ceeb;font-size:8px">★ Asst. Kage</span>' : ''}</div>
                 <div style="font-size:8px;color:#7a7060">Rating: <span style="color:#c9a84c;font-weight:bold">${st.rating}</span> · ${yearsServed > 0 ? yearsServed + 'yr ' : ''}${st.monthsServed}mo · ${fmt(st.salary)}/mo</div>
                 <div style="font-size:7px;color:${ambColor};margin-top:2px">${ambLabel}${(st.ambition||0)>=14&&roleId==='team_sensei'?' — watching for head sensei opening':''}${st.hiddenFlaw&&st.flawRevealed?' · ⚠ '+st.hiddenFlaw:''}</div>

@@ -16,13 +16,13 @@ import { rEx, tEC, startEx, runRound } from './panels/exam.js'
 import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP, dipAccept, dipDecline } from './world.js'
 import { resolveChoiceEvent, resolveCouncilProposal, assignBlackMarket, resolveClanChain, establishSafehouse, assignDeepCoverOp, resolveWorldEventChoice, activateBloodline, resolvePressConference, resolveComplication, resolveRivalOffer, resolveQuickDecision, runTrainingCamp, gradeShinobi } from './adv.js'
 import { rFi, setBudgetPriority } from './panels/finances.js'
-import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff, staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting } from './panels/staff.js'
+import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff, staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting, staffCtx, staffHover } from './panels/staff.js'
 import { rSco, assignScout, setScoutBudget, toggleWatchlist, trialDay, signProspect, draftSort } from './panels/scouting.js'
 import { retainScout, dismissScout } from './scoutEngine.js'
 import { setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule } from './panels/depthchart.js'
 import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab } from './panels/youthacademy.js'
 import { rMeet, doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction, consultSeniorGroup } from './panels/meetings.js'
-import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms, confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide, sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter } from './panels/transfers.js'
+import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms, confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide, sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter, trSort, trCtx, trHover } from './panels/transfers.js'
 import { rLeg, legTab, designateSuccessor, resolveLegacyDecision, triggerDynastyHandoff, sellDraftPick } from './panels/legacy.js'
 import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel, intelCtx } from './panels/intel.js'
 import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc, setExamPosture } from './panels/exam.js'
@@ -127,7 +127,7 @@ Object.assign(window, {
   toggleThread,
   // staff
   openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff,
-  staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting,
+  staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting, staffCtx, staffHover,
   // roster injury actions
   secondOpinion, specialistTreatment,
   retireShinobi, retireToCoach, extendCareer,
@@ -147,6 +147,7 @@ Object.assign(window, {
   doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction, consultSeniorGroup,
   // transfer market
   trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms,
+  trSort, trCtx, trHover,
   confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide,
   sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter,
   // legacy + records
