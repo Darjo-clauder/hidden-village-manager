@@ -2,6 +2,30 @@ import { G, fmt } from '../state.js'
 import { RANKS } from '../constants.js'
 import { NATIONS, nationMods } from '../../../shared/constants/nations.js'
 import { villageRevenue } from '../../../shared/utils/economy.js'
+import { getInboxDigest, getInboxCount } from './inbox.js'
+
+// P2 turn loop — Home surfaces the top pending decisions with a route to resolve.
+function _decisionDigest() {
+  const blocking = !!G.pendingChoiceEvent || !!G.pendingQuickDecision || G.examActive || G.warActive
+  const items = getInboxDigest(4)
+  const n = getInboxCount()
+  if (!items.length && !blocking) {
+    return `<div class="hd-digest is-clear"><div class="hd-digest-h">✓ No decisions pending</div>
+      <div style="font-size:9px;color:var(--text-dim)">The village runs smoothly. End the turn when ready.</div></div>`
+  }
+  const blockRow = blocking
+    ? `<div class="hd-item"><span class="hd-item-ico">⛔</span><span class="hd-item-t" style="color:var(--red)">${G.examActive ? 'Chunin Exam in progress' : G.warActive ? 'Nation War in progress' : 'A field decision must be resolved'}</span><button class="hd-item-go" onclick="sp('${G.examActive || G.warActive ? 'exam' : 'inbox'}')">Resolve ▸</button></div>`
+    : ''
+  return `<div class="hd-digest">
+    <div class="hd-digest-h">⚑ Pending Decisions <span style="color:var(--text-dim)">— ${n}</span></div>
+    ${blockRow}
+    ${items.map(it => `<div class="hd-item">
+      <span class="hd-item-ico">${it.icon || '•'}</span>
+      <span class="hd-item-t">${it.title}</span>
+      <button class="hd-item-go" onclick="sp('inbox')">Go ▸</button>
+    </div>`).join('')}
+  </div>`
+}
 
 export function dismissOnboarding() {
   G._onboardingDismissed = true
@@ -84,6 +108,8 @@ export function rDash() {
 
   el.innerHTML = `
     <div class="pt">Dashboard — Y${G.year} M${G.month}</div>
+
+    ${_decisionDigest()}
 
     ${G._ff_nationHud ? `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">

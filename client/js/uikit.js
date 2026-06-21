@@ -39,6 +39,22 @@ if (typeof window !== 'undefined') {
   window.addEventListener('scroll', () => closeContextMenu(), true)
 }
 
+// ── Hover-preview portal ───────────────────────────────────────────────────────
+let _hpEl = null
+export function showHoverPreview(x, y, html) {
+  hideHoverPreview()
+  const el = document.createElement('div')
+  el.className = 'hover-preview'
+  el.innerHTML = html
+  document.body.appendChild(el)
+  const r = el.getBoundingClientRect()
+  el.style.left = Math.min(x + 14, window.innerWidth  - r.width  - 8) + 'px'
+  el.style.top  = Math.min(y + 14, window.innerHeight - r.height - 8) + 'px'
+  _hpEl = el
+}
+export function hideHoverPreview() { if (_hpEl) { _hpEl.remove(); _hpEl = null } }
+if (typeof window !== 'undefined') { window.hideHoverPreview = hideHoverPreview }
+
 // ── Table kit (sort + column visibility, persisted per table id) ────────────────
 function _load(id) { try { return JSON.parse(localStorage.getItem('tbl_' + id) || '{}') } catch { return {} } }
 function _save(id, st) { try { localStorage.setItem('tbl_' + id, JSON.stringify(st)) } catch {} }

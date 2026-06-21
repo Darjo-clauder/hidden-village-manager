@@ -172,6 +172,27 @@ body{
 .tbl-colmgr-h{font-size:7px;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim,#7a7060);margin-bottom:5px}
 .tbl-colmgr-row{display:flex;align-items:center;gap:6px;font-size:9px;color:var(--text,#c9c0a8);padding:2px 0;cursor:pointer}
 .tbl-colmgr-row input{accent-color:var(--accent,#c9a84c)}
+/* ── Hover-preview card ────────────────────────────────────────────────── */
+.hover-preview{
+  position:fixed;z-index:9998;pointer-events:none;min-width:170px;max-width:230px;
+  background:var(--surface,#1a1814);border:1px solid var(--accent-border,rgba(201,168,76,.3));
+  box-shadow:0 6px 20px rgba(0,0,0,.55);padding:9px 11px;border-radius:3px;
+  font-family:var(--font-ui,'Segoe UI',system-ui,sans-serif);
+}
+.hp-name{font-size:11px;color:var(--text-hi,#e8e0cc);font-weight:bold;margin-bottom:2px}
+.hp-sub{font-size:8px;color:var(--text-dim,#7a7060);margin-bottom:7px}
+.hp-row{display:flex;justify-content:space-between;font-size:8px;color:var(--text-mid,#9a9080);padding:1px 0}
+.hp-row b{color:var(--text-hi,#e8e0cc);font-family:var(--font-num,'Courier New',monospace)}
+/* ── Home pending-decisions digest (P2) ────────────────────────────────── */
+.hd-digest{background:var(--surface,#1a1814);border:1px solid var(--accent-border,rgba(201,168,76,.3));border-left:3px solid var(--orange,#f0a030);padding:11px 13px;margin-bottom:14px}
+.hd-digest.is-clear{border-left-color:var(--green,#8fbc8f)}
+.hd-digest-h{font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--accent,#c9a84c);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.hd-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border-dim,rgba(110,100,80,.12))}
+.hd-item:last-child{border-bottom:none}
+.hd-item-ico{font-size:12px;width:16px;text-align:center}
+.hd-item-t{flex:1;font-size:9px;color:var(--text-hi,#e8e0cc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hd-item-go{font-size:8px;color:var(--text-dim,#7a7060);background:transparent;border:1px solid var(--border,#2e2a22);padding:2px 8px;cursor:pointer;border-radius:2px;flex-shrink:0}
+.hd-item-go:hover{color:var(--accent,#c9a84c);border-color:var(--accent-border,rgba(201,168,76,.3))}
 .ab.ready{background:var(--green);color:#fff}
 .ab.waiting{background:transparent;border:1px solid var(--orange);color:var(--orange)}
 /* Legacy .tb */

@@ -457,6 +457,15 @@ export function getInboxCount() {
   return buildItems().filter(i => !i.archived && i.priority !== 'info').length
 }
 
+// Home digest — top pending decisions, urgent first (P2 turn loop).
+export function getInboxDigest(n = 4) {
+  return buildItems()
+    .filter(i => !i.archived && i.priority !== 'info')
+    .sort((a, b) => (a.priority === 'urgent' ? 0 : 1) - (b.priority === 'urgent' ? 0 : 1))
+    .slice(0, n)
+    .map(i => ({ id: i.id, icon: i.icon, title: i.title, cat: i.cat, priority: i.priority }))
+}
+
 export function rInbox() {
   const el = document.getElementById('p-inbox')
   if (!el) return

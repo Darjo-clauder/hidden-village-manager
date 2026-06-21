@@ -1,6 +1,23 @@
 import { G, sn, clamp, rnd, pk, fmt, addChronicle } from '../state.js'
 import { ANBU_OPS } from '../constants.js'
 import { aL, ntf } from '../ui.js'
+import { openContextMenu } from '../uikit.js'
+
+// Right-click a rival village → intel verb menu (reuses the P1 portal).
+export function intelCtx(e, villageId) {
+  e.preventDefault()
+  const v = (G.villages || []).find(x => x.id === villageId || x.n === villageId); if (!v) return false
+  openContextMenu(e.clientX, e.clientY, [
+    { label: 'View Dossier', fn: () => { window._intelTab = 'dossiers'; rIn() } },
+    { label: 'Shadow Scout', fn: () => window.shadowScout && window.shadowScout(v.id) },
+    { label: 'Dispatch ANBU Op', fn: () => window.dispatchAnbu && window.dispatchAnbu(v.id) },
+    { separator: true },
+    { label: 'Send Gifts (5k)', fn: () => window.sGift && window.sGift(v.n) },
+    { label: 'Demand Tribute', fn: () => window.demandTribute && window.demandTribute(v.n) },
+    ...((v.threat || 0) > 0 ? [{ label: 'Appease (4k)', fn: () => window.appease && window.appease(v.n) }] : []),
+  ])
+  return false
+}
 
 window._intelTab = 'threats'
 
@@ -57,7 +74,7 @@ function _threats() {
         const recon = (G.intelReports || []).find(r => r.villageId === v.id && r.type === 'recon')
         const deep  = (G.intelReports || []).find(r => r.villageId === v.id && r.type === 'deep_cover')
         const rcCol = v.rel > 60 ? '#8fbc8f' : v.rel > 30 ? '#fa0' : '#f66'
-        return `<div style="background:#0f0e0c;border:1px solid #2a2520;border-left:3px solid ${t.col};padding:10px 12px">
+        return `<div style="background:#0f0e0c;border:1px solid #2a2520;border-left:3px solid ${t.col};padding:10px 12px;cursor:context-menu" oncontextmenu="return intelCtx(event,'${(v.id || v.n)}')" title="Right-click for actions">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
             <span style="font-size:18px">${v.ico}</span>
             <div style="flex:1">

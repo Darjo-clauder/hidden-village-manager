@@ -9,7 +9,7 @@ import { BOND_TYPES } from '../../../shared/bonds/bondTypes.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { PHASE_META, ensureCareerFields } from '../careerEngine.js'
 import { computeStrain, strainBand } from '../../../shared/utils/strain.js'
-import { openContextMenu, tblSort, tblToggleSort, tblHidden, tblToggleCol, tblSortRows, tblHeaderHtml, tblColumnManagerHtml, tblToggleColumnManager } from '../uikit.js'
+import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort, tblHidden, tblToggleCol, tblSortRows, tblHeaderHtml, tblColumnManagerHtml, tblToggleColumnManager } from '../uikit.js'
 
 const _ROSTER_DEFAULT_SORT = { key: 'power', dir: 'desc' }
 const _GRADE_ORDER = { S: 6, A: 5, B: 4, C: 3, D: 2, E: 1, F: 0 }
@@ -179,7 +179,8 @@ export function rRo() {
   const tableRows = _rosterRows.map((s, i) => {
     const isSelected = window._rosSelId === s.id
     return `<tr style="background:${isSelected ? '#1e1c16' : i%2===0 ? '#0f0e0c' : '#000'};cursor:pointer;border-bottom:1px solid #111"
-      onclick="rosSelect('${s.id}')" oncontextmenu="return rosterCtx(event,'${s.id}')">
+      onclick="rosSelect('${s.id}')" oncontextmenu="return rosterCtx(event,'${s.id}')"
+      onmousemove="rosterHover(event,'${s.id}')" onmouseleave="hideHoverPreview()">
       ${_visCols.map(c => `<td style="padding:5px 6px;text-align:${c.align || 'left'}">${c.render(s)}</td>`).join('')}
     </tr>`
   }).join('')
@@ -233,6 +234,30 @@ export function rosSelect(id) {
 export function rosterSortBy(key) { tblToggleSort('roster', key, _ROSTER_DEFAULT_SORT); rRo() }
 export function rosterToggleCol(key) { tblToggleCol('roster', key); rRo() }
 export function rosterColMgr() { tblToggleColumnManager('roster') }
+
+let _hoverId = null
+export function rosterHover(e, id) {
+  if (_hoverId === id && document.querySelector('.hover-preview')) { _moveHover(e); return }
+  _hoverId = id
+  const s = G.shinobi.find(x => x.id === id); if (!s) return
+  const st = s.stats || {}
+  const g = gradeShinobi(s)
+  const age = s.age || 20
+  const traj = age < 22 ? 'Ascending' : age < 27 ? 'Prime' : age < 31 ? 'Late Career' : 'Declining'
+  const row = (k, v) => `<div class="hp-row"><span>${k}</span><b>${v}</b></div>`
+  const html = `
+    <div class="hp-name">${sn(s)}${s.jk ? ' ⚡' : ''}</div>
+    <div class="hp-sub">${RANKS[s.ri]} · ${s.clan || s.spec || '—'} · Age ${age}</div>
+    ${row('Ability', sPow(s))}
+    ${row('Potential', _potential(s))}
+    ${row('Grade', g.label)}
+    ${row('Trajectory', traj)}
+    ${row('Nin / Tai / Gen', `${st.ninjutsu||0}/${st.taijutsu||0}/${st.genjutsu||0}`)}
+    ${row('Cha / Int / Spd', `${st.chakra||0}/${st.intelligence||0}/${st.speed||0}`)}
+    ${row('Salary', fmt(s.salary))}`
+  showHoverPreview(e.clientX, e.clientY, html)
+}
+function _moveHover(e) { const el = document.querySelector('.hover-preview'); if (el) { el.style.left = Math.min(e.clientX + 14, window.innerWidth - el.offsetWidth - 8) + 'px'; el.style.top = Math.min(e.clientY + 14, window.innerHeight - el.offsetHeight - 8) + 'px' } }
 
 export function rosterCtx(e, id) {
   e.preventDefault()
