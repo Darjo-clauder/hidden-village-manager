@@ -96,12 +96,8 @@ export function upUI() {
   _set('sb-vname', G.vName || 'Your Village')
   _set('sb-icon',  G.vIcon || '🍃')
 
-  // ── Nation HUD tint (v2, behind G._ff_nationHud — no-op when flag off) ──────
-  if (G._ff_nationHud) {
-    const ident = nationIdentity(G.nationId)
-    const vn = document.getElementById('sb-vname'); if (vn) vn.style.color = ident.accent
-    const ic = document.getElementById('sb-icon');  if (ic) ic.style.color = ident.accent
-  }
+  // ── Nation theme ──────────────────────────────────────────────────────────
+  _applyNationTheme(G._ff_nationHud ? G.nationId : null)
 
   // ── People badge ───────────────────────────────────────────────────────
   const meetBadge = document.getElementById('meet-badge')
@@ -121,6 +117,29 @@ export function upUI() {
 function _set(id, val) {
   const el = document.getElementById(id)
   if (el) el.textContent = val
+}
+
+// ── Nation theme applicator ──────────────────────────────────────────────────
+// Converts a nation accent hex to rgba for use as tinted backgrounds.
+function _hexAlpha(hex, a) {
+  const h = hex.replace('#', '')
+  const r = parseInt(h.slice(0,2), 16)
+  const g = parseInt(h.slice(2,4), 16)
+  const b = parseInt(h.slice(4,6), 16)
+  return `rgba(${r},${g},${b},${a})`
+}
+
+function _applyNationTheme(nationId) {
+  const ident   = nationIdentity(nationId || '')
+  const accent  = nationId ? ident.accent : '#c9a84c'   // default gold
+  const root    = document.documentElement
+  root.style.setProperty('--accent',        accent)
+  root.style.setProperty('--accent-bg',     _hexAlpha(accent, 0.08))
+  root.style.setProperty('--accent-border', _hexAlpha(accent, 0.30))
+  root.style.setProperty('--accent-sb',     _hexAlpha(accent, 0.04))  // sidebar tint
+  // Village name + icon in sidebar
+  const vn = document.getElementById('sb-vname'); if (vn) vn.style.color = accent
+  const ic = document.getElementById('sb-icon');  if (ic) ic.style.color = accent
 }
 
 export function sp(id) {
