@@ -333,18 +333,29 @@ function _runForest(field, res) {
     const kept = []
     entry.scrolls = 0
     entry.alive.forEach(c => {
-      const prob = clamp(0.4 + (_avgStat(c, 'speed') + _avgStat(c, 'chakra')) / 400 + (isHost && c.isPlayer ? 0.08 : 0) + _squadFormatBonus(c) + _postureAdv(c), 0.1, 0.95)
-      const survived = Math.random() < prob
+      // Two contested phases: Navigation (speed/intel) then the Scroll Clash (taijutsu/ninjutsu).
+      const navProb = clamp(0.46 + (_avgStat(c, 'speed') + _avgStat(c, 'intelligence')) / 400 + (isHost && c.isPlayer ? 0.08 : 0) + _squadFormatBonus(c) + _postureAdv(c), 0.12, 0.95)
+      const navOk = Math.random() < navProb
+      let clashOk = false
+      if (navOk) {
+        const clashProb = clamp(0.46 + (_avgStat(c, 'taijutsu') + _avgStat(c, 'ninjutsu')) / 400 + _squadFormatBonus(c) + _postureAdv(c), 0.12, 0.95)
+        clashOk = Math.random() < clashProb
+      }
+      const survived = navOk && clashOk
       if (survived) { kept.push(c); entry.scrolls++; _applyPostureWorkload(c) } else entry.out.push(c)
-      // Player squads risk a real injury to one member — higher when eliminated.
+      // Player squads risk a real injury — failing the scroll clash (combat) hurts most.
       let injNote = ''
       if (c.isPlayer) {
-        const injChance = clamp((survived ? 0.12 : 0.35) + _posture().woundMod, 0, 0.9)
+        const baseInj = survived ? 0.10 : (navOk ? 0.38 : 0.22)  // beaten in the clash is the bloodiest outcome
+        const injChance = clamp(baseInj + _posture().woundMod, 0, 0.9)
         if (Math.random() < injChance && (c.members || []).length) {
           const victim = pk(c.members)
           if (victim) { const inj = _examInjure(victim); injNote = ` — ${sn(victim)} wounded: ${inj.n} (${inj.dur}mo)`; c._wounded = true }
         }
-        res.push({ name: c.name, result: (survived ? 'Secured a scroll, advances' : 'Eliminated in the forest') + injNote, promoted: false, good: survived })
+        const txt = survived ? 'Secured a scroll, advances'
+                  : !navOk ? 'Lost in the forest — eliminated'
+                  : 'Reached the clearing but lost the scroll clash — eliminated'
+        res.push({ name: c.name, result: txt + injNote, promoted: false, good: survived })
       }
     })
     entry.alive = kept
@@ -361,12 +372,16 @@ function _runSemifinal(field, res, biasMod) {
   pool.sort((a, b) => b.c.pow - a.c.pow)
   pool.forEach((p, i) => { p.seed = i + 1 })
   const effPow = c => c.pow * (1 + _squadFormatBonus(c)) - (c.isPlayer ? biasMod * 100 : 0) + (c.isPlayer ? _posture().adv * 60 : 0)
+  // Each duel contests a random discipline — a squad strong in it can upset higher raw power.
+  const DISCIPLINES = [['taijutsu', 'Taijutsu'], ['ninjutsu', 'Ninjutsu'], ['genjutsu', 'Genjutsu'], ['speed', 'Speed'], ['intelligence', 'Tactics']]
   const duels = []
   const losers = new Set()
   let lo = 0, hi = pool.length - 1
   while (lo < hi) {
     const A = pool[lo], B = pool[hi]
-    const aScore = effPow(A.c) + rnd(-8, 8), bScore = effPow(B.c) + rnd(-8, 8)
+    const [discKey, discName] = pk(DISCIPLINES)
+    const discBonus = c => (_avgStat(c, discKey) - 30) * 0.6   // ±~30 swing — enough to flip a matchup
+    const aScore = effPow(A.c) + discBonus(A.c) + rnd(-8, 8), bScore = effPow(B.c) + discBonus(B.c) + rnd(-8, 8)
     const aWins = aScore >= bScore
     const win = aWins ? A : B, lose = aWins ? B : A
     losers.add(lose.c)
@@ -376,10 +391,10 @@ function _runSemifinal(field, res, biasMod) {
     duels.push({
       winName: win.c.name, winVil: win.entry.name, winPlayer: !!win.c.isPlayer,
       loseName: lose.c.name, loseVil: lose.entry.name, losePlayer: !!lose.c.isPlayer,
-      marginLabel, upset,
+      marginLabel, upset, discipline: discName,
     })
-    if (win.c.isPlayer) res.push({ name: win.c.name, result: `Won a ${marginLabel} duel vs ${lose.c.name} (${lose.entry.name})`, promoted: false, good: true })
-    if (lose.c.isPlayer) res.push({ name: lose.c.name, result: `Lost a ${marginLabel} duel to ${win.c.name} (${win.entry.name})`, promoted: false, good: false })
+    if (win.c.isPlayer) res.push({ name: win.c.name, result: `Won a ${marginLabel} ${discName} duel vs ${lose.c.name} (${lose.entry.name})`, promoted: false, good: true })
+    if (lose.c.isPlayer) res.push({ name: lose.c.name, result: `Lost a ${marginLabel} ${discName} duel to ${win.c.name} (${win.entry.name})`, promoted: false, good: false })
     if (win.c.isPlayer && upset) {
       addChronicle('Semifinal Upset', `${win.c.name} upset the higher-seeded ${lose.c.name} of ${lose.entry.name} to reach the final.`, 'shinobi')
       addLegend(2)
@@ -410,7 +425,7 @@ function _renderSemifinalOverlay(duels, bye, field) {
           <span style="color:#7a7060"> def. </span>
           <span style="color:${d.losePlayer ? '#f88' : '#7a7060'}">${d.loseName}</span><span style="color:#555"> (${d.loseVil})</span>
         </div>
-        <div style="font-size:7px;color:#7a7060;margin-top:2px">${d.marginLabel} decision${d.upset ? ' · <span style="color:#f0a030">UPSET</span>' : ''}</div>
+        <div style="font-size:7px;color:#7a7060;margin-top:2px">${d.discipline ? `<span style="color:#9bc">${d.discipline}</span> · ` : ''}${d.marginLabel} decision${d.upset ? ' · <span style="color:#f0a030">UPSET</span>' : ''}</div>
       </div>`).join('') : '<div style="font-size:9px;color:#7a7060">No duels this round.</div>') +
     (bye ? `<div style="font-size:8px;color:#7a7060;padding:4px">${bye.c.name} (${bye.entry.name}) advances on a bye.</div>` : '') +
     `</div><div style="margin-top:8px;font-size:9px;color:#7a7060">${villagesIn} villages reach the final · ${totalAlive} finalists.</div>`

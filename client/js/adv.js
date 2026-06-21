@@ -252,6 +252,43 @@ export function recordScoutCost(amount) {
   G.finances.scoutCostThisMonth = (G.finances.scoutCostThisMonth || 0) + amount
 }
 
+// ── Mid-mission field events ───────────────────────────────────────────────────
+// Each event offers a real tradeoff. Effects applied to the assignment:
+// scMod (success), ryoMod (reward %), riskMod (risk; raises KIA/fail), plus
+// immediate repMod/moraleMod/ryoCost. Spec-tagged events bias toward matching
+// missions; spec:[] events can fire anywhere.
+const MISSION_EVENTS = [
+  { id:'ambush', spec:['combat','siege'], title:'⚔ Ambush', body:'Enemy reinforcements have cut off your team\'s route out.', options:[
+    { id:'fight',  label:'Fight through — +reward, higher risk', scMod:0.04, ryoMod:0.25, riskMod:0.08 },
+    { id:'evade',  label:'Evade quietly — safer, less reward',   scMod:0.0,  ryoMod:-0.15, riskMod:-0.08 },
+  ]},
+  { id:'intel', spec:['intel','stealth'], title:'🕵 Intel Windfall', body:'Your team captured sensitive enemy documents mid-operation.', options:[
+    { id:'exploit', label:'Exploit immediately — +success, +risk', scMod:0.12, ryoMod:0.10, riskMod:0.06 },
+    { id:'extract', label:'Extract them to sell — +reward, steady', scMod:0.0,  ryoMod:0.30, riskMod:-0.04 },
+  ]},
+  { id:'wounded', spec:[], title:'⚕ Wounded Teammate', body:'A team member is hurt. Press on, or pull back to treat them?', options:[
+    { id:'press',  label:'Press on — +success, +injury risk',     scMod:0.08, ryoMod:0.0, riskMod:0.10 },
+    { id:'treat',  label:'Withdraw to treat — −success, −risk',    scMod:-0.10, ryoMod:0.0, riskMod:-0.12 },
+  ]},
+  { id:'civilian', spec:['escort','recovery'], title:'🙇 Civilians in Danger', body:'Trapped civilians are caught in the line of fire.', options:[
+    { id:'save',      label:'Save them — +reputation, mission harder', scMod:-0.06, repMod:6, riskMod:0.04 },
+    { id:'objective', label:'Objective first — +success, morale cost',  scMod:0.06, moraleMod:-4 },
+  ]},
+  { id:'cache', spec:[], title:'💰 Hidden Cache', body:'Your team stumbled on an unguarded supply cache.', options:[
+    { id:'loot',  label:'Loot it — +reward, +exposure', scMod:0.0,  ryoMod:0.30, riskMod:0.06 },
+    { id:'leave', label:'Stay focused — small edge',     scMod:0.03 },
+  ]},
+  { id:'backup', spec:[], title:'📣 Call for Backup?', body:'The objective is more contested than expected. Request village support?', options:[
+    { id:'call', label:'Call backup — 3,000 ryo, lowers risk', scMod:0.05, riskMod:-0.10, ryoCost:3000 },
+    { id:'solo', label:'Handle it ourselves — +reward, +risk', scMod:-0.02, ryoMod:0.15, riskMod:0.05 },
+  ]},
+]
+
+function pickMissionEvent(spec) {
+  const eligible = MISSION_EVENTS.filter(e => !e.spec.length || (spec && e.spec.includes(spec)))
+  return pk(eligible.length ? eligible : MISSION_EVENTS)
+}
+
 export function recordExamFee(amount) {
   if (!G.finances) return
   G.finances.examFees = (G.finances.examFees || 0) + amount
@@ -1203,34 +1240,37 @@ export function adv() {
     }
   }
 
-  // ── Mission complications — mid-mission inbox choices ─────────────────────
+  // ── Mid-mission field events — fire around the midpoint so the player's ────
+  // choice lands BEFORE resolution (never on the resolving tick).
   if (!G.pendingComplications) G.pendingComplications = []
-  G.aM.filter(am => !am.isScout && !am.isBM && !am.isClanChain && am.daysLeft === 1 && !am._complicationFired).forEach(am => {
-    if (Math.random() > 0.30) return
-    am._complicationFired = true
+  G.aM.filter(am => !am.isScout && !am.isBM && !am.isClanChain && !am.isDeepCover && !am.isBeastCapture && !am._complicationFired).forEach(am => {
     const m = G.avM?.find(x => x.id === am.missionId)
-    const mName = m?.n || 'the mission'
-    const COMPLICATIONS = [
-      { id:'push_hard', label:'Push harder', desc:'The target is within reach — press the advantage.', scMod:+0.12, ryoMod:0.25, risk:'Higher KIA risk', riskMod:+0.08 },
-      { id:'hold_back', label:'Play it safe', desc:'Pull back and complete the objective methodically.', scMod:-0.08, ryoMod:-0.15, risk:'Lower reward', riskMod:-0.05 },
-      { id:'call_backup', label:'Call for backup', desc:'Request support from the village. Costs ryo, reduces risk.', scMod:+0.05, ryoMod:-0.10, risk:'Costs 3,000 ryo', riskMod:-0.10 },
-    ]
-    const comp = pk(COMPLICATIONS)
+    if (!m) return
+    const dur = m.dur || 1
+    const fireAt = Math.max(2, Math.ceil(dur / 2))   // guarantees ≥1 month before resolution; dur=1 never fires
+    if ((am.daysLeft || 1) !== fireAt) return
+    am._complicationFired = true
+    if (Math.random() > 0.42) return                 // ~42% of eligible missions get an event
+    const ev = pickMissionEvent(m.spec)
     const compId = Math.random().toString(36).slice(2)
-    G.pendingComplications.push({ id: compId, assignmentId: am.id, missionName: mName, choice: null, options: COMPLICATIONS, created: { year: G.year, month: G.month } })
-    G.narrativeInbox.push({ id: compId, type: 'complication', tag: 'mission', title: 'Field Decision: ' + mName, body: 'Your team reports an unexpected development. A choice must be made before they can proceed.', assignmentId: am.id, missionName: mName, options: COMPLICATIONS, year: G.year, month: G.month })
+    G.pendingComplications.push({ id: compId, assignmentId: am.id, missionName: m.n, choice: null, options: ev.options, created: { year: G.year, month: G.month } })
+    G.narrativeInbox.push({ id: compId, type: 'complication', tag: 'mission', title: ev.title + ' — ' + m.n, body: ev.body, assignmentId: am.id, missionName: m.n, options: ev.options, year: G.year, month: G.month })
     if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
-    ntf('Field decision needed — ' + mName + '!')
+    ntf('Field decision needed — ' + m.n + '!')
   })
-  // Apply pending complication choices to assignments
+  // Apply resolved complication choices to the assignment + immediate effects.
   G.pendingComplications.forEach(pc => {
-    if (!pc.choice) return
-    const am = G.aM.find(x => x.id === pc.assignmentId); if (!am) return
-    const opt = pc.options.find(o => o.id === pc.choice); if (!opt) return
-    am._scMod = (am._scMod || 0) + opt.scMod
-    am._ryoMod = (am._ryoMod || 0) + opt.ryoMod
-    am._riskMod = (am._riskMod || 0) + opt.riskMod
-    if (opt.id === 'call_backup') G.ryo = Math.max(0, G.ryo - 3000)
+    if (!pc.choice || pc.applied) return
+    const am = G.aM.find(x => x.id === pc.assignmentId)
+    const opt = pc.options.find(o => o.id === pc.choice)
+    if (am && opt) {
+      am._scMod = (am._scMod || 0) + (opt.scMod || 0)
+      am._ryoMod = (am._ryoMod || 0) + (opt.ryoMod || 0)
+      am._riskMod = (am._riskMod || 0) + (opt.riskMod || 0)
+      if (opt.ryoCost) G.ryo = Math.max(0, G.ryo - opt.ryoCost)
+      if (opt.repMod) G.reputation = clamp((G.reputation || 0) + opt.repMod, 0, 999)
+      if (opt.moraleMod) G.morale = clamp((G.morale || 75) + opt.moraleMod, 0, 100)
+    }
     pc.applied = true
   })
   G.pendingComplications = G.pendingComplications.filter(pc => !pc.applied && ((G.year * 12 + G.month) - (pc.created.year * 12 + pc.created.month)) < 3)
@@ -1326,14 +1366,14 @@ export function adv() {
         return acc + (ms.declineMod || 0) * 0.5  // half-weight per member so one declining vet doesn't cripple a squad
       }, 0)
       const sqFatigueMod = sq.members.reduce((acc, id) => { const mb = G.shinobi.find(x => x.id === id); return acc + (mb ? fatiguePenalty(mb) : 0) }, 0) / Math.max(1, sq.members.length)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod() + (am._scMod || 0) + sqFatigueMod + _appMod.sc - _appMod.risk, 0.1, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod() + (am._scMod || 0) + sqFatigueMod + _appMod.sc - _appMod.risk - (am._riskMod || 0), 0.1, successCeiling(m.rk))
 
       const _mev = resolveMission(sc)
       const _mq = qualityEffects(_mev.quality)
       G._formThisMonth.marginSum += _mev.margin
       if (_mev.success) {
         G._formThisMonth.wins++
-        const _bonusRyo = Math.round(m.ryo * _mq.ryoMult)
+        const _bonusRyo = Math.round(m.ryo * _mq.ryoMult * (1 + (am._ryoMod || 0)))
         G.ryo += _bonusRyo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3 + _mq.morale, 0, 100)
         const prevCohesion = sq.cohesion ?? 0
         sq.cohesion = Math.min(100, prevCohesion + rnd(3, 7))
@@ -1504,7 +1544,7 @@ export function adv() {
       const _soloAppMod = missionApproachMod(am.approach, m.spec)  // tactical approach vs mission spec
       const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
       const bMB = bondMissionBonus(s, G.shinobi)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0) + fatiguePenalty(s) + getMissionSpecBonus(s, m) + _soloAppMod.sc - _soloAppMod.risk, 0.08, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0) + fatiguePenalty(s) + getMissionSpecBonus(s, m) + _soloAppMod.sc - _soloAppMod.risk - (am._riskMod || 0), 0.08, successCeiling(m.rk))
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)
@@ -1517,7 +1557,7 @@ export function adv() {
       G._formThisMonth.marginSum += _mev.margin
       if (missionPassed) G._formThisMonth.wins++; else G._formThisMonth.losses++
       if (missionPassed) {
-        const _bonusRyo = Math.round(m.ryo * _mq.ryoMult)
+        const _bonusRyo = Math.round(m.ryo * _mq.ryoMult * (1 + (am._ryoMod || 0)))
         G.ryo += _bonusRyo; G.reputation = clamp(G.reputation + m.rep + rB, 0, 999); G.morale = clamp(G.morale + 2 + _mq.morale, 0, 100)
         recordMissionCommission(m.rk)
         s.missId = null; s.wins++; s.streak = (s.streak || 0) + 1
