@@ -319,7 +319,9 @@ export function initSocket(name, kageName, icon) {
 
 function _updateRoomBadge(code) {
   const badge = document.getElementById('lob-room-code')
-  if (badge) badge.textContent = code || ''
+  if (!badge) return
+  badge.textContent = code || ''
+  badge.style.display = code ? 'inline-block' : 'none'
 }
 
 // ── Server browser renderer ───────────────────────────────────────────────────

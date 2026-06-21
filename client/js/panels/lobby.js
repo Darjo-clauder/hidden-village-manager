@@ -67,7 +67,7 @@ export function rLob() {
     <!-- Ready status bar -->
     <div style="font-size:9px;color:#7a7060;margin-bottom:8px">
       ${readyCount} / ${totalOnline} online players ready
-      ${readyCount < totalOnline && offlinePlayers.length > 0 ? `
+      ${readyCount >= totalOnline && totalOnline > 0 && offlinePlayers.length > 0 ? `
         <button class="gb" style="font-size:8px;padding:2px 6px;margin-left:8px" onclick="voteAdvance()">Vote to advance without offline players</button>
       ` : ''}
     </div>
@@ -77,7 +77,7 @@ export function rLob() {
     <div style="border-top:1px solid #2e2820;padding-top:10px;margin-top:4px">
       <div style="font-size:9px;color:#c9a84c;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Host Controls</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
-        <button class="gb" onclick="pauseRoom()">${paused ? 'Resume' : 'Pause'}</button>
+        <button class="gb" onclick="${paused ? 'resumeRoom()' : 'pauseRoom()'}"> ${paused ? 'Resume' : 'Pause'}</button>
         <button class="gb" onclick="toggleClose()">${snap.closedToJoiners ? 'Open to joiners' : 'Close to joiners'}</button>
         <div style="display:flex;align-items:center;gap:4px">
           <span style="font-size:8px;color:#7a7060">Timeout:</span>

@@ -109,7 +109,7 @@ export function playerSnap(p) {
 
 export function publicRoomList() {
   return [...rooms.values()]
-    .filter(r => !r.isPrivate && r.status !== 'closed')
+    .filter(r => !r.isPrivate && !r.closedToJoiners)
     .map(r => {
       const host = r.players.get(r.hostSocketId) || [...r.players.values()][0]
       return {
