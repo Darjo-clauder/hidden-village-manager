@@ -3,8 +3,8 @@ import { sp, cm, upUI, schEx, setNation, toggleColorblind, ntf } from './ui.js'
 import { showSetup, selIcon, beginGame, restoreGame, selScenario } from './setup.js'
 import { adv } from './adv.js'
 import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath } from './panels/roster.js'
-import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation } from './panels/squads.js'
-import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM } from './panels/missions.js'
+import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation, setSqApproach } from './panels/squads.js'
+import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM, setMissionApproach } from './panels/missions.js'
 import { rUp, buyUp, buildDistrict, chooseDoctrine } from './panels/upgrades.js'
 import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, secureRoute } from './panels/economy.js'
@@ -93,9 +93,9 @@ Object.assign(window, {
   // roster
   oDos, mkJK, treatTrauma, dosTab, toggleJutsuLoadout,
   // squads
-  oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation,
+  oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation, setSqApproach,
   // missions
-  mTab, oA, doA, pickSq, G_defShSet, G_defShClear, missionLogFilter, assignBM,
+  mTab, oA, doA, pickSq, G_defShSet, G_defShClear, missionLogFilter, assignBM, setMissionApproach,
   // upgrades
   buyUp, buildDistrict, chooseDoctrine,
   // academy

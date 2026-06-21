@@ -60,3 +60,24 @@ export const QUALITY_EFFECTS = {
 export function qualityEffects(quality) {
   return QUALITY_EFFECTS[quality] || QUALITY_EFFECTS.narrow
 }
+
+/**
+ * Tactical approach — chosen per assignment, matched against the mission spec.
+ * A matching approach boosts success; a mismatched one penalises it. Makes
+ * squad/shinobi selection a puzzle that uses the mission intel (terrain/spec).
+ */
+export const MISSION_APPROACHES = [
+  { id: 'stealth',  label: 'Stealth',  icon: '🥷', favors: ['stealth', 'intel', 'recovery'], scBonus: 0.07, riskMod: -0.03, desc: 'Favors stealth / intel / recovery. Lower risk.' },
+  { id: 'balanced', label: 'Balanced', icon: '⚖',  favors: [],                                scBonus: 0,    riskMod: 0,     desc: 'No matchup edge — steady and safe.' },
+  { id: 'assault',  label: 'Assault',  icon: '⚔',  favors: ['combat', 'siege'],               scBonus: 0.07, riskMod: 0.03,  desc: 'Favors combat / siege. Higher risk.' },
+]
+export const APPROACH_BY_ID = Object.fromEntries(MISSION_APPROACHES.map(a => [a.id, a]))
+
+/** @returns {{sc:number, risk:number}} success + risk deltas for an approach vs a mission spec. */
+export function missionApproachMod(approachId, spec) {
+  const a = APPROACH_BY_ID[approachId] || APPROACH_BY_ID.balanced
+  if (!spec) return { sc: 0, risk: a.riskMod }            // no spec → posture only
+  if (a.favors.includes(spec)) return { sc: a.scBonus, risk: a.riskMod }
+  if (a.id !== 'balanced') return { sc: -a.scBonus, risk: a.riskMod }
+  return { sc: 0, risk: 0 }
+}

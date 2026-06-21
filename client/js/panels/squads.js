@@ -4,6 +4,7 @@ import { aL, ntf, upUI, cm } from '../ui.js'
 import { sqSynergy, cohesionLabel, calcChemistry } from '../synergy.js'
 import { bondThresholdInfo } from '../../../shared/bonds/bondTypes.js'
 import { FORMATIONS } from '../../../shared/utils/formation.js'
+import { MISSION_APPROACHES } from '../../../shared/utils/missionEngine.js'
 
 export function setFormation(squadId, formation) {
   if (!G._ff_tacticalFormation) return
@@ -177,13 +178,33 @@ export function oSqA(sqId) {
   if (bonusEl) bonusEl.innerHTML = bonusHtml
   else header.insertAdjacentHTML('afterend', `<div id="msa-bonus">${bonusHtml}</div>`)
 
+  if (!ui.sqApproach) ui.sqApproach = 'balanced'
+  const SPEC_LABEL = { stealth:'Stealth', combat:'Combat', intel:'Intel', escort:'Escort', siege:'Siege', recovery:'Recovery' }
+  const approachHtml = `<div style="margin-bottom:10px">
+    <div style="font-size:7px;letter-spacing:1px;color:#7a7060;text-transform:uppercase;margin-bottom:4px">Tactical Approach — matched per mission's specialty</div>
+    <div style="display:flex;gap:5px">
+      ${MISSION_APPROACHES.map(a => {
+        const sel = a.id === ui.sqApproach
+        return `<div onclick="setSqApproach('${a.id}')" style="flex:1;text-align:center;padding:5px 4px;cursor:pointer;border:1px solid ${sel ? '#c9a84c' : '#2e2a22'};background:${sel ? 'rgba(201,168,76,.10)' : 'transparent'}">
+          <div style="font-size:12px">${a.icon}</div>
+          <div style="font-size:8px;color:${sel ? '#c9a84c' : '#9a9080'};font-weight:${sel ? 'bold' : 'normal'}">${a.label}</div>
+          <div style="font-size:6px;color:#555;margin-top:1px">${a.favors.length ? a.favors.map(f => SPEC_LABEL[f]).join('/') : 'any'}</div>
+        </div>`
+      }).join('')}
+    </div>
+  </div>`
+
   const sqMs = G.avM.filter(m => m.sq && !G.aM.find(a => a.missionId === m.id))
-  document.getElementById('msa-l').innerHTML = sqMs.map(m => {
+  const _appSel = MISSION_APPROACHES.find(a => a.id === ui.sqApproach) || MISSION_APPROACHES[1]
+  document.getElementById('msa-l').innerHTML = approachHtml + sqMs.map(m => {
     const ok = pw >= m.mp, rc = 'mr-' + m.rk.toLowerCase()
-    const effectiveSc = Math.round((1 - m.risk + rB.missionBonus - rB.riskReduction) * 100)
+    const fav = m.spec && _appSel.favors.includes(m.spec)
+    const mis = m.spec && _appSel.id !== 'balanced' && !_appSel.favors.includes(m.spec)
+    const matchTag = fav ? ' <span style="font-size:7px;color:#8fbc8f">▲</span>' : mis ? ' <span style="font-size:7px;color:#f88">▼</span>' : ''
+    const effectiveSc = Math.round((1 - m.risk + rB.missionBonus - rB.riskReduction + (fav ? 0.07 : mis ? -0.07 : 0)) * 100)
     return `<div class="pi" onclick="${ok ? `doSqA('${m.id}')` : ''}" style="${ok ? '' : 'opacity:0.4;cursor:not-allowed'}">
       <div>
-        <div style="font-size:10px;color:#e8e0cc">${m.n} <span class="mrb ${rc}">${m.rk}</span></div>
+        <div style="font-size:10px;color:#e8e0cc">${m.n} <span class="mrb ${rc}">${m.rk}</span>${m.spec ? ` <span style="font-size:7px;color:#9bc">${SPEC_LABEL[m.spec]}${matchTag}</span>` : ''}</div>
         <div style="font-size:8px;color:#7a7060">${fmt(m.ryo)} ryo · ${m.dur}m · Min ${m.mp}${ok ? '' : ` (need ${m.mp - pw} more)`}</div>
         ${ok && bonusLines.length ? `<div style="font-size:7px;color:#4a9a4a">Est. success: ~${Math.min(97, effectiveSc)}%</div>` : ''}
       </div>
@@ -193,10 +214,12 @@ export function oSqA(sqId) {
   document.getElementById('ov-sqassign').classList.add('open')
 }
 
+export function setSqApproach(id) { ui.sqApproach = id; if (ui.sqAT) oSqA(ui.sqAT) }
+
 export function doSqA(mId) {
   const sq = G.squads.find(q => q.id === ui.sqAT), m = G.avM.find(x => x.id === mId)
   if (!sq || !m) return
   sq.members.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s) { s.status = 'mission'; s.missId = mId } })
-  G.aM.push({ id: Math.random().toString(36).slice(2), missionId: mId, assignedTo: null, squadId: sq.id, daysLeft: m.dur, isSquad: true })
+  G.aM.push({ id: Math.random().toString(36).slice(2), missionId: mId, assignedTo: null, squadId: sq.id, daysLeft: m.dur, isSquad: true, approach: ui.sqApproach || 'balanced' })
   cm('sqassign'); aL(sq.n + ' deployed on "' + m.n + '".', 'neutral'); ntf(sq.n + ' on mission!'); upUI()
 }

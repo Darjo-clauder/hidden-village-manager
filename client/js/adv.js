@@ -17,7 +17,7 @@ import { COUNCIL_FACTIONS, COUNCIL_PROPOSALS, getCouncilPerks } from '../../shar
 import { tickRivalStrength, shouldFireRivalEvent, pickRivalEvent, computePlayerStrength } from '../../shared/utils/rivalSim.js'
 import { initSeasonTable, playMatchday } from '../../shared/utils/season.js'
 import { villageRevenue } from '../../shared/utils/economy.js'
-import { resolveMission, qualityEffects } from '../../shared/utils/missionEngine.js'
+import { resolveMission, qualityEffects, missionApproachMod } from '../../shared/utils/missionEngine.js'
 import { DYNASTY_YEARS, computeDynastyGrade } from '../../shared/utils/dynasty.js'
 import { bondMissionBonus, mentorGrowthBonus, kiaRipple, BOND_TYPES } from '../../shared/bonds/bondTypes.js'
 import { BM_MISSION_BY_ID, getUnderworldTier, discoveryChance, UNDERWORLD_TIERS } from '../../shared/constants/blackMarket.js'
@@ -1310,6 +1310,7 @@ export function adv() {
       const _fOverride = G._ff_tacticalFormation && !!sq.formation
       const prepMod = _fOverride ? 0 : (G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0)
       const prepRiskMod = _fOverride ? 0 : (G.missionPrepMode === 'aggressive' ? 0.04 : G.missionPrepMode === 'cautious' ? -0.03 : 0)
+      const _appMod = missionApproachMod(am.approach, m.spec)  // tactical approach vs mission spec
       const sqJutsuMod = sq.members.reduce((acc, id) => {
         const ms = G.shinobi.find(x => x.id === id); if (!ms) return acc
         const jb = jutsuLoadoutBonus(ms, JUTSU_LIST)
@@ -1325,7 +1326,7 @@ export function adv() {
         return acc + (ms.declineMod || 0) * 0.5  // half-weight per member so one declining vet doesn't cripple a squad
       }, 0)
       const sqFatigueMod = sq.members.reduce((acc, id) => { const mb = G.shinobi.find(x => x.id === id); return acc + (mb ? fatiguePenalty(mb) : 0) }, 0) / Math.max(1, sq.members.length)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod() + (am._scMod || 0) + sqFatigueMod, 0.1, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod() + (am._scMod || 0) + sqFatigueMod + _appMod.sc - _appMod.risk, 0.1, successCeiling(m.rk))
 
       const _mev = resolveMission(sc)
       const _mq = qualityEffects(_mev.quality)
@@ -1500,9 +1501,10 @@ export function adv() {
       const beastLuck = G._beastMissionLuck || 0
       ensureCareerFields(s)
       const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
+      const _soloAppMod = missionApproachMod(am.approach, m.spec)  // tactical approach vs mission spec
       const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
       const bMB = bondMissionBonus(s, G.shinobi)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0) + fatiguePenalty(s) + getMissionSpecBonus(s, m), 0.08, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0) + fatiguePenalty(s) + getMissionSpecBonus(s, m) + _soloAppMod.sc - _soloAppMod.risk, 0.08, successCeiling(m.rk))
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)

@@ -6,6 +6,27 @@ import { oSqA } from './squads.js'
 import { isEnabled } from '../../../config/features.js'
 import { resolveMission } from '../../../shared/types/MissionTemplate.js'
 import { BLACK_MARKET_MISSIONS, BM_MISSION_BY_ID, getUnderworldTier, UNDERWORLD_TIERS } from '../../../shared/constants/blackMarket.js'
+import { MISSION_APPROACHES } from '../../../shared/utils/missionEngine.js'
+
+// Tactical approach picker — favored/mismatch highlighted against a mission's spec.
+export function _approachPickerHtml(spec, selId, setterFn) {
+  return `<div style="margin-bottom:10px">
+    <div style="font-size:7px;letter-spacing:1px;color:#7a7060;text-transform:uppercase;margin-bottom:4px">Tactical Approach</div>
+    <div style="display:flex;gap:5px">
+      ${MISSION_APPROACHES.map(a => {
+        const fav = spec && a.favors.includes(spec)
+        const mis = spec && a.id !== 'balanced' && !a.favors.includes(spec)
+        const sel = a.id === selId
+        const tag = fav ? '<span style="color:#8fbc8f">▲ favored</span>' : mis ? '<span style="color:#f88">▼ mismatch</span>' : '<span style="color:#555">—</span>'
+        return `<div onclick="${setterFn}('${a.id}')" style="flex:1;text-align:center;padding:5px 4px;cursor:pointer;border:1px solid ${sel ? '#c9a84c' : '#2e2a22'};background:${sel ? 'rgba(201,168,76,.10)' : 'transparent'}">
+          <div style="font-size:12px">${a.icon}</div>
+          <div style="font-size:8px;color:${sel ? '#c9a84c' : '#9a9080'};font-weight:${sel ? 'bold' : 'normal'}">${a.label}</div>
+          <div style="font-size:6px;margin-top:1px">${tag}</div>
+        </div>`
+      }).join('')}
+    </div>
+  </div>`
+}
 
 export function mTab(t) {
   ui.MT = t
@@ -497,7 +518,9 @@ export function oA(mId) {
     ? `<button onclick="doA('${bestFitId}')" style="width:100%;margin-bottom:10px;background:#1a2a1a;border:1px solid #4a9a4a;color:#8fbc8f;padding:5px;border-radius:3px;cursor:pointer;font-size:8px">★ Best Fit — auto-assign highest chance</button>`
     : ''
 
-  document.getElementById('ma-l').innerHTML = bestFitBtn + candidates.map(({ s, pw, ok, ref, sc, specMatch }) => {
+  if (!ui.aApproach) ui.aApproach = 'balanced'
+  const approachHtml = _approachPickerHtml(m.spec, ui.aApproach, 'setMissionApproach')
+  document.getElementById('ma-l').innerHTML = approachHtml + bestFitBtn + candidates.map(({ s, pw, ok, ref, sc, specMatch }) => {
     const eligible = ok && !ref
     const specBadge = specMatch ? `<span style="font-size:6px;color:#9bc;margin-left:3px">▲${m.spec}</span>` : ''
     return `<div class="pi" onclick="${eligible ? `doA('${s.id}')` : ''}" style="${eligible ? '' : 'opacity:0.4;cursor:not-allowed'}">
@@ -514,11 +537,13 @@ export function oA(mId) {
   document.getElementById('ov-assign').classList.add('open')
 }
 
+export function setMissionApproach(id) { ui.aApproach = id; if (ui.aT) oA(ui.aT) }
+
 export function doA(sId) {
   const m = G.avM.find(x => x.id === ui.aT), s = G.shinobi.find(x => x.id === sId)
   if (!m || !s) return
   s.status = 'mission'; s.missId = m.id
-  G.aM.push({ id: Math.random().toString(36).slice(2), missionId: m.id, assignedTo: sId, squadId: null, daysLeft: m.dur, isSquad: false })
+  G.aM.push({ id: Math.random().toString(36).slice(2), missionId: m.id, assignedTo: sId, squadId: null, daysLeft: m.dur, isSquad: false, approach: ui.aApproach || 'balanced' })
   cm('assign'); aL(sn(s) + ' dispatched on "' + m.n + '".', 'neutral'); ntf(s.fn + ' deployed!'); upUI()
 }
 
