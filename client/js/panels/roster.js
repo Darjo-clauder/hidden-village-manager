@@ -30,6 +30,51 @@ function _starsHtml(val, max = 100) {
   return `<span style="color:${col};letter-spacing:-1px;font-size:10px">${'★'.repeat(count)}${'☆'.repeat(5-count)}</span>`
 }
 
+// ── Route E: Clan Concentration ──────────────────────────────────────────────
+function _clanBar() {
+  const counts = {}
+  G.shinobi.forEach(s => { if (s.clan) counts[s.clan] = (counts[s.clan] || 0) + 1 })
+  const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1])
+  if (!ranked.length) return ''
+  const [topClan, topCount] = ranked[0]
+  const tier = topCount >= 7 ? { label:'LEGENDARY', col:'var(--accent)' }
+             : topCount >= 5 ? { label:'IDENTITY',   col:'#8fbc8f' }
+             : topCount >= 3 ? { label:'SYNERGY',     col:'#87ceeb' }
+             : null
+  return `<div style="background:#0d0c0a;border:1px solid var(--accent-border);padding:8px 10px;margin-bottom:10px">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:${tier?'4px':'0'}">
+      <span style="font-size:7px;letter-spacing:1px;color:#555;text-transform:uppercase">Clan Composition</span>
+      ${ranked.slice(0, 5).map(([n, c]) => `<span style="font-size:8px;color:#8a8070">${n} <b style="color:#e8e0cc">${c}</b></span>`).join('<span style="color:#333;font-size:8px"> · </span>')}
+      ${ranked.length > 5 ? `<span style="font-size:8px;color:#444">+${ranked.length - 5} more</span>` : ''}
+    </div>
+    ${tier ? `<div style="font-size:8px;color:${tier.col}">▲ ${topClan} at <b>${tier.label}</b> threshold (${topCount} members) — monthly passive bonus active</div>` : ''}
+  </div>`
+}
+
+// ── Route C: Dev Path Selector ────────────────────────────────────────────────
+const _DEV_PATHS = [
+  { id:'anbu',    label:'ANBU Track',          icon:'🗡', desc:'↑ Ninjutsu/Genjutsu growth · S-rank specialist', focus:['ninjutsu','genjutsu'] },
+  { id:'anchor',  label:'Squad Anchor',         icon:'🛡', desc:'↑ Taijutsu/Chakra growth · Squad synergy bonus',  focus:['taijutsu','chakra'] },
+  { id:'machine', label:'Mission Specialist',   icon:'⚙', desc:'↑ Intelligence/Speed · Faster rank advancement',  focus:['intelligence','speed'] },
+]
+
+function _devPathSelector(s) {
+  const cur = s.devPath || null
+  return `<div style="margin-top:8px">
+    <div style="font-size:7px;letter-spacing:1px;color:#555;text-transform:uppercase;margin-bottom:5px">Development Path</div>
+    <div style="display:grid;gap:3px">
+      ${_DEV_PATHS.map(p => `<div onclick="setDevPath('${s.id}','${p.id}')" style="padding:5px 8px;border:1px solid ${cur===p.id?'var(--accent)':'#2a2520'};background:${cur===p.id?'var(--accent-bg)':'transparent'};cursor:pointer;display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px">${p.icon}</span>
+        <div style="flex:1">
+          <div style="font-size:8px;color:${cur===p.id?'var(--accent)':'#a09080'};font-weight:${cur===p.id?'bold':'normal'}">${p.label}</div>
+          <div style="font-size:7px;color:#444">${p.desc}</div>
+        </div>
+        ${cur===p.id?`<span style="font-size:9px;color:var(--accent)">✓</span>`:''}
+      </div>`).join('')}
+    </div>
+  </div>`
+}
+
 // ── Potential: capped stat average as proxy for ceiling ──────────────────────
 function _potential(s) {
   const st = s.stats || {}
@@ -146,6 +191,7 @@ export function rRo() {
 
       <!-- Left: roster table -->
       <div>
+        ${_clanBar()}
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase">Roster — ${G.shinobi.length} shinobi</div>
           <div style="margin-left:auto;display:flex;gap:12px;font-size:8px;color:#555">
@@ -230,7 +276,18 @@ function _renderRosDetail(id) {
         ${(s.winsS||0) > 0 ? `<span style="font-size:7px;color:#c9a84c">★ ${s.winsS} S-rank</span>` : ''}
         ${sq ? `<span style="color:#7a7060">Squad <b style="color:#87ceeb">${sq.n}</b></span>` : ''}
       </div>
-      <div style="display:flex;gap:5px;flex-wrap:wrap">
+      ${(() => {
+        const age = s.age || 20
+        const trajectory = age < 22 ? 'Ascending' : age < 27 ? 'Prime' : age < 31 ? 'Late Career' : 'Declining'
+        const trajCol = age < 22 ? '#87ceeb' : age < 27 ? '#8fbc8f' : age < 31 ? '#fa0' : '#f66'
+        const peakCeil = Math.round((s.potential || 50) * 0.92)
+        return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-top:1px solid #1a1814;margin-top:5px;font-size:8px">
+          <span style="color:#555">Peak Ceiling <b style="color:#e8e0cc">${peakCeil}</b></span>
+          <span style="color:#555">Trajectory <b style="color:${trajCol}">${trajectory}</b></span>
+        </div>`
+      })()}
+      ${_devPathSelector(s)}
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px">
         ${s.noTrade ? `<span style="font-size:7px;color:#f99;border:1px solid #744;padding:1px 5px">No-Trade</span>` : ''}
         ${s.twoWay  ? `<span style="font-size:7px;color:#87ceeb;border:1px solid #468;padding:1px 5px">Two-Way</span>` : ''}
         ${s.buyoutCost ? `<span style="font-size:7px;color:#555">Buyout: ${fmt(s.buyoutCost)}</span>` : ''}
@@ -644,6 +701,19 @@ export function mkJK(sId, bN) {
   b.escapeHistory = b.escapeHistory || []
   aL(`${sn(s)} chosen as Jinchuriki of ${bN}. Stage 1: Rejection begins.`, 'warn')
   cm('dossier'); upUI(); ntf(`${s.fn} is now Jinchuriki of ${bN} — Stage 1 begins.`)
+}
+
+// ── Route C: Dev Path ────────────────────────────────────────────────────────
+
+export function setDevPath(sId, pathId) {
+  const s = G.shinobi.find(x => x.id === sId); if (!s) return
+  if (s.devPath === pathId) { s.devPath = null; ntf('Development path cleared.') }
+  else {
+    s.devPath = pathId
+    const path = _DEV_PATHS.find(p => p.id === pathId)
+    ntf(`Dev path set: ${path?.label || pathId}`)
+  }
+  rRo()
 }
 
 // ── Contract depth actions ───────────────────────────────────────────────────

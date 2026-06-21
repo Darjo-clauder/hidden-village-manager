@@ -2,7 +2,7 @@ import { G } from './state.js'
 import { sp, cm, upUI, schEx, setNation, toggleColorblind, ntf } from './ui.js'
 import { showSetup, selIcon, beginGame, restoreGame } from './setup.js'
 import { adv } from './adv.js'
-import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect } from './panels/roster.js'
+import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM } from './panels/missions.js'
 import { rUp, buyUp, buildDistrict } from './panels/upgrades.js'
@@ -127,7 +127,7 @@ Object.assign(window, {
   secondOpinion, specialistTreatment,
   retireShinobi, retireToCoach, extendCareer,
   setTrainingFocus, toggleRestMonth, openContractRenewal,
-  toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect,
+  toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath,
   // missions
   setMissionPrep, simTemplate,
   // scouting

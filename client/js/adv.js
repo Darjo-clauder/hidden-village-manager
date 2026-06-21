@@ -959,6 +959,13 @@ export function adv() {
         s.stats[k] = clamp(s.stats[k] + 1, 0, 99)
       }
 
+      // ── Route C: Dev path stat bias ────────────────────────────────────
+      if (s.devPath && Math.random() < 0.22 && sPow(s) < s.potential) {
+        const _pathFocus = { anbu:['ninjutsu','genjutsu'], anchor:['taijutsu','chakra'], machine:['intelligence','speed'] }
+        const fk = _pathFocus[s.devPath]
+        if (fk) s.stats[pk(fk)] = clamp(s.stats[pk(fk)] + 1, 0, 99)
+      }
+
       // ── Training focus boost (Phase 4) ────────────────────────────────
       if (s.trainingFocus && s.trainingFocus in s.stats) {
         if (sPow(s) < s.potential) {
@@ -1100,6 +1107,27 @@ export function adv() {
       G.emergencyRecruitWindow = false
       G.emergencyWindowEnd = null
       aL('Emergency recruitment window has closed.', 'neutral')
+    }
+  }
+
+  // ── Route E: Clan synergy passive ─────────────────────────────────────────
+  {
+    const _cc = {}
+    G.shinobi.forEach(s => { if (s.clan) _cc[s.clan] = (_cc[s.clan] || 0) + 1 })
+    const _top = Object.entries(_cc).sort((a, b) => b[1] - a[1])[0]
+    if (_top) {
+      const [topClan, topCount] = _top
+      if (topCount >= 7) {
+        G.ryo += 500
+        G.morale = clamp((G.morale || 75) + 1, 0, 100)
+        if (G.month === 1) aL(`${topClan} clan legendary synergy — +500 ryo/month, +1 morale.`, 'good')
+      } else if (topCount >= 5) {
+        G.ryo += 250
+        if (G.month === 1) aL(`${topClan} clan identity synergy — +250 ryo/month.`, 'good')
+      } else if (topCount >= 3) {
+        G.morale = clamp((G.morale || 75) + 1, 0, 100)
+        if (G.month === 1) aL(`${topClan} clan synergy — +1 morale/month.`, 'neutral')
+      }
     }
   }
 
@@ -1301,7 +1329,14 @@ export function adv() {
           s.status = 'available'
           rollInjuryOnSuccess(s, m, hL, dp.injDayReduction)  // may flip back to 'injured'
           if (m.rk === 'B' || m.rk === 'C') s.winsB = (s.winsB || 0) + 1
-          if (m.rk === 'S') { s.winsS = (s.winsS || 0) + 1; s._seasonSRankWins = (s._seasonSRankWins || 0) + 1 }
+          if (m.rk === 'S') {
+            s.winsS = (s.winsS || 0) + 1; s._seasonSRankWins = (s._seasonSRankWins || 0) + 1
+            if (s.winsS === 1) {
+              aL(`${sn(s)} completed their first S-rank mission — a new legend rises.`, 'good')
+              G.narrativeInbox = G.narrativeInbox || []
+              G.narrativeInbox.push({ id: Math.random().toString(36).slice(2), type: 'milestone', tag: 'career', title: `First S-Rank: ${sn(s)}`, body: `${sn(s)} has cleared their first S-rank mission. This is the moment careers are made of.`, year: G.year, month: G.month })
+            }
+          }
           checkJutsu(s)
         })
         // Pair chemistry tracking

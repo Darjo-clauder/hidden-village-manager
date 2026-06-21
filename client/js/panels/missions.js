@@ -108,6 +108,28 @@ function _chainBadge(m) {
   return `<span style="font-size:7px;color:#4a9eca;border:1px solid #4a9eca;padding:1px 4px;margin-left:5px" title="Chain: ${m.chainName}">⛓ ${m.chainName} ${m.chainStep + 1}/${m.chainTotal}</span>`
 }
 
+// ── Route B: Mission Intel Phase ─────────────────────────────────────────────
+const _TERRAIN_MAP  = { stealth:'Forest / Urban', combat:'Open Field / Ruins', intel:'Enemy Territory', escort:'Road Network', siege:'Fortification', recovery:'Hostile Zone' }
+const _CLAN_POOL    = ['Kageha (Fire)','Shiromi (Taijutsu)','Kagero (Shadow)','Tsuchida (Body)','Tamashii (Genjutsu)','Okamura (Pack)','Mushiba (Hive)','Fuma (Seal)','Mori (Nature)']
+const _SPEC_ADV_LBL = { stealth:'Stealth specialists', combat:'Combat-heavy squads', intel:'Intel specialists', escort:'High-speed units', siege:'Heavy jutsu users', recovery:'Medical/support shinobi' }
+
+function _missionIntel(m) {
+  const terrain   = _TERRAIN_MAP[m.spec] || 'Varied Terrain'
+  const seed      = m.id ? m.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0) : 7
+  const clan      = _CLAN_POOL[seed % _CLAN_POOL.length]
+  const adv       = m.spec ? `${_SPEC_ADV_LBL[m.spec]} +15% success` : 'No unit-type advantage'
+  const dangerCol = m.rk === 'S' ? '#f66' : m.rk === 'A' ? '#fa0' : m.rk === 'B' ? '#a09080' : '#555'
+  const danger    = m.rk === 'S' ? 'Extreme' : m.rk === 'A' ? 'High' : m.rk === 'B' ? 'Medium' : 'Low'
+  return `<div style="background:rgba(0,0,0,.3);border-left:2px solid #2a2520;padding:5px 8px;margin-bottom:7px;font-size:8px">
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:2px">
+      <span style="color:#555">🗺 <span style="color:#8a8070">${terrain}</span></span>
+      <span style="color:#555">⚔ <span style="color:#8a8070">${clan}</span></span>
+      <span style="color:#555">☠ <span style="color:${dangerCol}">${danger}</span></span>
+    </div>
+    <div style="color:#5a7a50">▲ ${adv}</div>
+  </div>`
+}
+
 export function rSoloM() {
   const el = document.getElementById('ms-solo'), av = G.shinobi.filter(s => s.status === 'available')
   if (G.isOffSeason) { el.innerHTML = _offSeasonBlock(); return }
@@ -153,6 +175,7 @@ export function rSoloM() {
         <span>Risk: <span style="color:#e8e0cc">${Math.round(m.risk * 100)}%</span></span>
         <span>Min pwr: <span style="color:#e8e0cc">${m.mp}</span></span>
       </div>
+      ${_missionIntel(m)}
       ${aM
         ? `<div style="font-size:9px;color:#fa0">⟳ ${sn(G.shinobi.find(s => s.id === aM.assignedTo) || {fn:'?',ln:''})} — ${aM.daysLeft}m left</div>`
         : `<div style="display:flex;gap:4px;flex-wrap:wrap">${bestFitBtn}<button class="gb" onclick="oA('${m.id}')" ${av.length ? '' : 'disabled'}>Assign ►</button></div>`

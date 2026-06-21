@@ -2,12 +2,12 @@ import { G, sn, clamp, rnd, pk, fmt, addChronicle } from '../state.js'
 import { ANBU_OPS } from '../constants.js'
 import { aL, ntf } from '../ui.js'
 
-window._intelTab = 'dossiers'
+window._intelTab = 'threats'
 
 export function rIn() {
   const el = document.getElementById('itl')
   if (!el) return
-  const tabs = ['dossiers', 'anbu', 'caught', 'counter']
+  const tabs = ['threats', 'dossiers', 'anbu', 'caught', 'counter']
   const tabHtml = `<div style="display:flex;gap:6px;margin-bottom:12px">
     ${tabs.map(t => `<button class="btn${window._intelTab === t ? ' act' : ''}" onclick="intelTab('${t}')" style="font-size:9px;padding:3px 8px">${t.toUpperCase()}</button>`).join('')}
   </div>`
@@ -16,11 +16,72 @@ export function rIn() {
 
 function _intelBody() {
   const t = window._intelTab
+  if (t === 'threats')  return _threats()
   if (t === 'dossiers') return _dossiers()
   if (t === 'anbu') return _anbu()
   if (t === 'caught') return _caught()
   if (t === 'counter') return _counter()
   return ''
+}
+
+// ── Route F: Rival Threat Board ──────────────────────────────────────────────
+function _threats() {
+  const villages = G.villages || []
+  if (!villages.length) return `<div style="color:#555;font-size:11px;padding:20px 0">No rival village data available.</div>`
+
+  const _tier = v => {
+    if (v.rel < 25 && v.str > 65) return { label:'CRITICAL', col:'#f44' }
+    if (v.rel < 40 || v.str > 70)  return { label:'HIGH',     col:'#f88' }
+    if (v.rel < 60 || v.str > 50)  return { label:'MEDIUM',   col:'#fa0' }
+    return { label:'LOW', col:'#8fbc8f' }
+  }
+  const _momentum = v => {
+    if (v.threat)     return { icon:'↑', col:'#f66', txt:'Threatening' }
+    if (v.allied)     return { icon:'↔', col:'#8fbc8f', txt:'Allied' }
+    if (v.str > 60)   return { icon:'↑', col:'#fa0', txt:'Growing' }
+    return { icon:'→', col:'#7a7060', txt:'Stable' }
+  }
+
+  const sorted = [...villages].sort((a, b) => {
+    const scoreA = (100 - a.rel) * 0.6 + a.str * 0.4
+    const scoreB = (100 - b.rel) * 0.6 + b.str * 0.4
+    return scoreB - scoreA
+  })
+
+  return `<div>
+    <div style="font-size:10px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Threat Assessment — Y${G.year} M${G.month}</div>
+    <div style="display:grid;gap:8px">
+      ${sorted.map(v => {
+        const t    = _tier(v)
+        const mom  = _momentum(v)
+        const recon = (G.intelReports || []).find(r => r.villageId === v.id && r.type === 'recon')
+        const deep  = (G.intelReports || []).find(r => r.villageId === v.id && r.type === 'deep_cover')
+        const rcCol = v.rel > 60 ? '#8fbc8f' : v.rel > 30 ? '#fa0' : '#f66'
+        return `<div style="background:#0f0e0c;border:1px solid #2a2520;border-left:3px solid ${t.col};padding:10px 12px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="font-size:18px">${v.ico}</span>
+            <div style="flex:1">
+              <div style="font-size:11px;color:#e8e0cc;font-weight:bold">${v.n}</div>
+              <div style="font-size:8px;color:#555">${v.kageRank || ''} ${v.kage || ''}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:9px;font-weight:bold;color:${t.col}">${t.label}</div>
+              <div style="font-size:8px;color:${mom.col}">${mom.icon} ${mom.txt}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:16px;font-size:8px;flex-wrap:wrap">
+            <span style="color:#555">Relations <b style="color:${rcCol}">${v.rel}/100</b></span>
+            <span style="color:#555">Strength <b style="color:#e8e0cc">${v.str}/100</b></span>
+            ${v.allied ? '<span style="color:#8fbc8f">✓ Allied</span>' : ''}
+            ${v.threat ? `<span style="color:#f66">⚠ ${v.threat}</span>` : ''}
+          </div>
+          ${recon ? `<div style="font-size:8px;color:var(--accent);margin-top:5px">👁 Intel: ~${recon.data.rosterSize} shinobi, economy ${recon.data.economyLevel}/5</div>` : ''}
+          ${deep  ? `<div style="font-size:8px;color:var(--accent);margin-top:2px">🕵 Defense ${deep.data.defenseRating}/20 · ${deep.data.activeSquads} active squads</div>` : ''}
+          ${!recon && !deep ? `<div style="font-size:8px;color:#333;margin-top:5px;font-style:italic">No field data — dispatch ANBU to reveal</div>` : ''}
+        </div>`
+      }).join('')}
+    </div>
+  </div>`
 }
 
 // ── Dossiers ────────────────────────────────────────────────────────────────
