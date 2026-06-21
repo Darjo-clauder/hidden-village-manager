@@ -1,7 +1,36 @@
-import { G, pDesc, personalityJudge } from '../state.js'
+import { G, pDesc, personalityJudge, fmt } from '../state.js'
 import { REGIONS, REGION_EVENTS } from '../constants.js'
 import { aL, ntf } from '../ui.js'
 import { conductTrialDay } from '../scoutEngine.js'
+import { openContextMenu, showHoverPreview, hideHoverPreview } from '../uikit.js'
+
+// Right-click / hover grammar for prospect cards (P1 kit).
+export function scoutCtx(e, id) {
+  e.preventDefault()
+  const p = (G.prospects || []).find(x => x.id === id); if (!p) return false
+  const watching = (G.scoutWatchlist || []).includes(id)
+  openContextMenu(e.clientX, e.clientY, [
+    { label: watching ? 'Remove from Watchlist' : 'Add to Watchlist', fn: () => window.toggleWatchlist && window.toggleWatchlist(id) },
+    ...(p.trialDayDone ? [] : [{ label: 'Trial Day (2,000 ryo)', fn: () => window.trialDay && window.trialDay(id) }]),
+    { separator: true },
+    { label: 'Sign Prospect…', fn: () => window.signProspect && window.signProspect(id) },
+  ])
+  return false
+}
+
+export function scoutHover(e, id) {
+  const p = (G.prospects || []).find(x => x.id === id); if (!p) return
+  const region = REGIONS.find(r => r.id === p.fromRegion)
+  const pot = p.potential != null ? p.potential : (p.potentialRange ? `${p.potentialRange.min}-${p.potentialRange.max}` : '?')
+  const row = (k, v) => `<div class="hp-row"><span>${k}</span><b>${v}</b></div>`
+  showHoverPreview(e.clientX, e.clientY, `
+    <div class="hp-name">${p.fn} ${p.ln}</div>
+    <div class="hp-sub">${region ? region.icon + ' ' + region.n : 'Unknown region'}${p.clan ? ' · ' + p.clan : ''}</div>
+    ${row('Potential', pot)}
+    ${p.scoutConfidence != null ? row('Confidence', p.scoutConfidence + '%') : ''}
+    ${p.urgencyMonths > 0 ? row('Rival interest', p.urgencyMonths + 'mo left') : ''}
+    ${p.askingFee != null ? row('Asking', fmt(p.askingFee)) : ''}`)
+}
 
 export function rSco() {
   const el = document.getElementById('scol')
@@ -273,10 +302,10 @@ function prospectCard(p, inWatchlist) {
   const persReady = p.personalityRevealed
   const history = p.scoutHistory || []
   const conflicts = p.conflictingRanges || []
-  return `<div style="background:#1a1a1a;border:1px solid ${urgency&&p.urgencyMonths<=2?'#f66':'#333'};border-radius:6px;padding:10px;font-size:.8rem">
+  return `<div style="background:#1a1a1a;border:1px solid ${urgency&&p.urgencyMonths<=2?'#f66':'#333'};border-radius:6px;padding:10px;font-size:.8rem" oncontextmenu="return scoutCtx(event,'${p.id}')">
     ${urgency && p.urgencyMonths <= 2 ? `<div style="color:#f66;font-size:.72rem;margin-bottom:4px">⚠ Rival interest! ${p.urgencyMonths}m left</div>` : ''}
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <div style="color:#e8d5a3;font-weight:bold;margin-bottom:4px">${p.fn} ${p.ln}</div>
+      <div style="color:#e8d5a3;font-weight:bold;margin-bottom:4px" onmousemove="scoutHover(event,'${p.id}')" onmouseleave="hideHoverPreview()">${p.fn} ${p.ln}</div>
       <button onclick="toggleWatchlist('${p.id}')" style="background:none;border:none;cursor:pointer;font-size:.95rem;color:${watching?'#c9a84c':'#444'}" title="${watching?'Remove from':'Add to'} watchlist">★</button>
     </div>
     <div style="color:#999;margin-bottom:4px">${regionObj?.icon||''} ${regionObj?.n||p.fromRegion} · via ${p.scoutName||'?'}</div>
