@@ -351,22 +351,27 @@
           </div>
           <div id="ms-report"></div>
           <div id="ms-prep"></div>
-          <div class="tabs">
-            <div class="tab active" onclick="mTab('solo')" id="mt-solo">Solo</div>
-            <div class="tab" onclick="mTab('squad')" id="mt-squad">Squad</div>
-            <div class="tab" onclick="mTab('def')" id="mt-def">Defense</div>
-            <div class="tab" onclick="mTab('chains')" id="mt-chains">⛓ Chains</div>
-            <div class="tab" onclick="mTab('templates')" id="mt-templates">📋 Templates</div>
-            <div class="tab" onclick="mTab('log')" id="mt-log">📜 Log</div>
-            <div class="tab" onclick="mTab('underground')" id="mt-underground" style="color:#c9a84c">🗡 Underground</div>
+          <div style="display:grid;grid-template-columns:1fr 300px;gap:14px;align-items:start">
+            <div>
+              <div class="tabs">
+                <div class="tab active" onclick="mTab('solo')" id="mt-solo">Solo</div>
+                <div class="tab" onclick="mTab('squad')" id="mt-squad">Squad</div>
+                <div class="tab" onclick="mTab('def')" id="mt-def">Defense</div>
+                <div class="tab" onclick="mTab('chains')" id="mt-chains">⛓ Chains</div>
+                <div class="tab" onclick="mTab('templates')" id="mt-templates">📋 Templates</div>
+                <div class="tab" onclick="mTab('log')" id="mt-log">📜 Log</div>
+                <div class="tab" onclick="mTab('underground')" id="mt-underground" style="color:#c9a84c">🗡 Underground</div>
+              </div>
+              <div id="ms-solo"></div>
+              <div id="ms-squad" style="display:none"></div>
+              <div id="ms-def" style="display:none"></div>
+              <div id="ms-chains" style="display:none"></div>
+              <div id="ms-templates" style="display:none"></div>
+              <div id="ms-log" style="display:none"></div>
+              <div id="ms-underground" style="display:none"></div>
+            </div>
+            <div id="ms-inspector"></div>
           </div>
-          <div id="ms-solo"></div>
-          <div id="ms-squad" style="display:none"></div>
-          <div id="ms-def" style="display:none"></div>
-          <div id="ms-chains" style="display:none"></div>
-          <div id="ms-templates" style="display:none"></div>
-          <div id="ms-log" style="display:none"></div>
-          <div id="ms-underground" style="display:none"></div>
         </div>
 
         <!-- upgrades -->

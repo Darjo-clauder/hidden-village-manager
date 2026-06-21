@@ -38,7 +38,46 @@ export function mTab(t) {
   })
 }
 
-export function rMi() { rRB(); rWCE(); rTacticalPrep(); rSoloM(); rSqM(); rDef(); rChains(); rMissionReport(); rTemplates(); rMissionLog(); rUnderground() }
+export function rMi() { rRB(); rWCE(); rTacticalPrep(); rSoloM(); rSqM(); rDef(); rChains(); rMissionReport(); rTemplates(); rMissionLog(); rUnderground(); rMissionInspector() }
+
+// ── P3: Mission briefing inspector (right-side panel) ───────────────────────────
+export function selectMission(id) { ui.msSel = id; rMissionInspector() }
+export function setInspectorApproach(id) { ui.aApproach = id; rMissionInspector() }
+export function deployFromInspector(sId) { ui.aT = ui.msSel; doA(sId) }
+
+export function rMissionInspector() {
+  const el = document.getElementById('ms-inspector'); if (!el) return
+  const m = (G.avM || []).find(x => x.id === ui.msSel && !x.sq)
+  if (!m) {
+    el.innerHTML = `<div style="border:1px solid #2e2a22;background:#0d0c0a;padding:14px;font-size:8px;color:#555;text-align:center;line-height:1.6">Select a mission to see its briefing, intel and best-fit squad.</div>`
+    return
+  }
+  if (!ui.aApproach) ui.aApproach = 'balanced'
+  const av = G.shinobi.filter(s => s.status === 'available')
+  const ranked = av.map(s => ({ s, sc: _previewSc(s, m), pw: sPow(s) }))
+    .filter(c => c.pw >= m.mp).sort((a, b) => b.sc - a.sc).slice(0, 4)
+  const aM = G.aM.find(a => a.missionId === m.id && !a.isSquad)
+  el.innerHTML = `
+    <div style="border:1px solid var(--accent-border);background:#0d0c0a;padding:12px">
+      <div style="font-size:7px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">Mission Briefing</div>
+      <div style="font-size:11px;color:#e8e0cc;font-weight:bold;margin-bottom:3px">${m.n}</div>
+      <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${m.rk}-Rank · ${fmt(m.ryo)} ryo · +${m.rep} rep · ${m.dur}m · Risk ${Math.round(m.risk * 100)}% · Min pwr ${m.mp}</div>
+      ${_missionIntel(m)}
+      ${aM
+        ? `<div style="font-size:9px;color:#fa0;margin-top:8px">⟳ ${sn(G.shinobi.find(s => s.id === aM.assignedTo) || { fn: '?', ln: '' })} deployed — ${aM.daysLeft}m left</div>`
+        : `<div style="font-size:7px;letter-spacing:1px;color:#7a7060;text-transform:uppercase;margin:8px 0 4px">Tactical Approach</div>
+           ${_approachPickerHtml(m.spec, ui.aApproach, 'setInspectorApproach')}
+           <div style="font-size:7px;letter-spacing:1px;color:#7a7060;text-transform:uppercase;margin:8px 0 4px">Best-Fit Squad</div>
+           ${ranked.length ? ranked.map(c => {
+             const col = c.sc >= 0.65 ? '#4caf50' : c.sc >= 0.4 ? '#f0a030' : '#f66'
+             return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #1a1814">
+               <div style="flex:1"><div style="font-size:9px;color:#e8e0cc">${sn(c.s)}</div><div style="font-size:7px;color:#555">${RANKS[c.s.ri]} · Pwr ${c.pw}</div></div>
+               <span style="font-size:9px;color:${col};font-family:var(--font-num,'Courier New',monospace)">${Math.round(c.sc * 100)}%</span>
+               <button class="gb" style="font-size:7px;padding:2px 7px" onclick="deployFromInspector('${c.s.id}')">Deploy</button>
+             </div>`
+           }).join('') : `<div style="font-size:8px;color:#f66">No eligible shinobi (need power ${m.mp}+).</div>`}`}
+    </div>`
+}
 
 export function rTacticalPrep() {
   const el = document.getElementById('ms-prep')
@@ -185,7 +224,7 @@ export function rSoloM() {
       <div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:6px">
         <span class="mrb ${rc}">${m.rk}</span>
         <div style="flex:1">
-          <div style="font-size:11px;color:#e8e0cc;font-weight:bold">${m.n}</div>
+          <div style="font-size:11px;color:#e8e0cc;font-weight:bold;cursor:pointer" onclick="selectMission('${m.id}')" title="View briefing ▸">${m.n}</div>
           <div style="margin-top:3px">${crisisTag}${seasonalTag}${followUpTag}${specTag} ${_expiryBadge(m)}${_chainBadge(m)}</div>
         </div>
       </div>
