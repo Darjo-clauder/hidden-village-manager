@@ -3,7 +3,7 @@ import { FINANCE_TIERS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, 
 import { nationMods } from '../../../shared/constants/nations.js'
 import { villageRevenue } from '../../../shared/utils/economy.js'
 import { capStatus, SALARY_CAP } from '../../../shared/constants/salaryCap.js'
-import { lineChartSvg } from '../uikit.js'
+import { lineChartSvg, barRowsSvg } from '../uikit.js'
 
 function tierColor(name) {
   const t = FINANCE_TIERS.find(x => x.n === name)
@@ -184,6 +184,14 @@ export function rFi() {
         <span style="color:${h.net>=0?'#8fbc8f':'#f66'};font-weight:bold">${h.net>=0?'+':''}${fmt(h.net)}</span>
       </div>`).join('')}
       ${sparkline}
+      <div style="font-size:8px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin:12px 0 6px">Income Mix</div>
+      ${barRowsSvg([
+        { label: 'Village rev', value: villageRev, color: '#8fbc8f' },
+        { label: 'Trade routes', value: trI, color: '#8fbc8f' },
+        { label: 'Contracts', value: coI, color: '#8fbc8f' },
+        ...(jkI > 0 ? [{ label: 'Jinchuriki', value: jkI, color: '#c9a84c' }] : []),
+        ...(daimyoB > 0 ? [{ label: 'Daimyo bonus', value: daimyoB, color: '#c9a84c' }] : []),
+      ].filter(b => b.value > 0), { format: v => '+' + fmt(v) })}
     </div>` : ''}
 
     <!-- 6-month financial projection -->
