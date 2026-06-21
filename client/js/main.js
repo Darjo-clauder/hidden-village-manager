@@ -25,7 +25,7 @@ import { rMeet, doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAct
 import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms, confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide, sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter, trSort, trCtx, trHover } from './panels/transfers.js'
 import { rLeg, legTab, designateSuccessor, resolveLegacyDecision, triggerDynastyHandoff, sellDraftPick } from './panels/legacy.js'
 import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel, intelCtx } from './panels/intel.js'
-import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc, setExamPosture } from './panels/exam.js'
+import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc, setExamPosture, exLeadersSort } from './panels/exam.js'
 import { musterWar, startWar, runWarRound, setWarCommand } from './panels/war.js'
 import { showLobby, createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode } from './setup.js'
 import { rClans, clanGift, launchClanChain, resolveClanCouncil } from './panels/clans.js'
@@ -156,7 +156,7 @@ Object.assign(window, {
   // intel
   intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel, intelCtx,
   // exam tabs
-  exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc, setExamPosture,
+  exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc, setExamPosture, exLeadersSort,
   // nation war
   musterWar, startWar, runWarRound, setWarCommand,
   // clans

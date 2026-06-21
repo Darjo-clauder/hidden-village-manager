@@ -3,6 +3,7 @@ import { FINANCE_TIERS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, 
 import { nationMods } from '../../../shared/constants/nations.js'
 import { villageRevenue } from '../../../shared/utils/economy.js'
 import { capStatus, SALARY_CAP } from '../../../shared/constants/salaryCap.js'
+import { lineChartSvg } from '../uikit.js'
 
 function tierColor(name) {
   const t = FINANCE_TIERS.find(x => x.n === name)
@@ -75,17 +76,17 @@ export function rFi() {
       return `<div style="padding:2px 0 2px 12px;font-size:8px;color:#7a7060">└ ${grp.length}× ${r.n} = <span style="color:#f66">-${fmt(total)}</span></div>`
     }).join('')
 
-  // History sparkline (last 6 months net)
-  const hist = fin.history.slice(-6)
-  const maxAbs = Math.max(1, ...hist.map(h => Math.abs(h.net)))
+  // History — 12-month net line chart (P4 chart kit)
+  const hist = fin.history.slice(-12)
   const sparkline = hist.length > 1
-    ? `<div style="display:flex;align-items:flex-end;gap:3px;height:30px;margin-top:8px">
-        ${hist.map(h => {
-          const pct = Math.abs(h.net) / maxAbs
-          const ht = Math.max(2, Math.round(pct * 28))
-          const c = h.net >= 0 ? '#8fbc8f' : '#f66'
-          return `<div style="flex:1;background:${c};height:${ht}px;min-width:8px" title="Y${h.year}M${h.month}: ${h.net>=0?'+':''}${fmt(h.net)}"></div>`
-        }).join('')}
+    ? `<div style="margin-top:8px">
+        ${lineChartSvg(hist.map(h => h.net), {
+          height: 64,
+          color: 'var(--accent)',
+          labels: [`Y${hist[0].year}M${hist[0].month}`, `Y${hist[hist.length - 1].year}M${hist[hist.length - 1].month}`],
+          format: v => (v >= 0 ? '+' : '') + fmt(v),
+        })}
+        <div style="font-size:7px;color:#555;margin-top:2px">Monthly net, last ${hist.length} months · latest <span style="color:${hist[hist.length - 1].net >= 0 ? '#8fbc8f' : '#f66'}">${hist[hist.length - 1].net >= 0 ? '+' : ''}${fmt(hist[hist.length - 1].net)}</span></div>
       </div>`
     : ''
 

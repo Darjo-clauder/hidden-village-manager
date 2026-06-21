@@ -112,3 +112,42 @@ export function tblToggleColumnManager(id) {
   const el = document.getElementById('colmgr-' + id)
   if (el) el.classList.toggle('open')
 }
+
+// ── Charts (P4) — dependency-free inline SVG ───────────────────────────────────
+/** Line + area chart with a zero baseline. values: number[]. */
+export function lineChartSvg(values, opts = {}) {
+  const { width = 280, height = 72, color = 'var(--accent)', labels = [], format = v => v } = opts
+  if (!values || values.length < 2) return `<div style="font-size:8px;color:#555;padding:8px 0">Not enough data yet.</div>`
+  const pad = 4
+  const max = Math.max(...values, 0)
+  const min = Math.min(...values, 0)
+  const range = (max - min) || 1
+  const x = i => pad + (i / (values.length - 1)) * (width - pad * 2)
+  const y = v => (height - pad) - ((v - min) / range) * (height - pad * 2)
+  const pts = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')
+  const area = `${pad},${(height - pad).toFixed(1)} ${pts} ${(width - pad).toFixed(1)},${(height - pad).toFixed(1)}`
+  const zy = y(0).toFixed(1)
+  const lastV = values[values.length - 1]
+  const lastColor = lastV >= 0 ? 'var(--green,#8fbc8f)' : 'var(--red,#f0605a)'
+  return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" preserveAspectRatio="none" role="img" aria-label="Trend chart, latest ${format(lastV)}">
+    <polygon points="${area}" fill="${color}" opacity="0.10"></polygon>
+    <line x1="${pad}" y1="${zy}" x2="${width - pad}" y2="${zy}" stroke="#555" stroke-width="0.5" stroke-dasharray="2 2"></line>
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"></polyline>
+    <circle cx="${x(values.length - 1).toFixed(1)}" cy="${y(lastV).toFixed(1)}" r="2.5" fill="${lastColor}"></circle>
+  </svg>${labels.length ? `<div style="display:flex;justify-content:space-between;font-size:7px;color:#555;margin-top:2px"><span>${labels[0]}</span><span>${labels[labels.length - 1]}</span></div>` : ''}`
+}
+
+/** Horizontal proportional bars. items: [{label, value, color}]. */
+export function barRowsSvg(items, opts = {}) {
+  const { format = v => v } = opts
+  if (!items || !items.length) return ''
+  const max = Math.max(1, ...items.map(i => Math.abs(i.value)))
+  return `<div style="display:flex;flex-direction:column;gap:4px">${items.map(it => {
+    const pct = Math.round((Math.abs(it.value) / max) * 100)
+    return `<div style="display:flex;align-items:center;gap:6px;font-size:8px">
+      <span style="width:84px;color:var(--text-dim,#7a7060);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.label}</span>
+      <div style="flex:1;background:#0d0d0d;height:8px;border-radius:2px;overflow:hidden"><div style="height:8px;width:${pct}%;background:${it.color || 'var(--accent)'}"></div></div>
+      <span style="width:62px;text-align:right;color:var(--text-hi,#e8e0cc);font-family:var(--font-num,'Courier New',monospace)">${format(it.value)}</span>
+    </div>`
+  }).join('')}</div>`
+}

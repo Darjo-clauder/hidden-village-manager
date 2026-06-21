@@ -2,6 +2,7 @@ import { G, ui, sPow, rnd, sn, pk, clamp, fmt, addChronicle, addLegend, computeM
 import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS, INJURY_TYPES } from '../constants.js'
 import { aL, ntf, upUI, schEx } from '../ui.js'
 import { initSeasonTable, sortedTable, seedsFromTable } from '../../../shared/utils/season.js'
+import { tblSort, tblToggleSort, tblHeaderHtml, tblSortRows } from '../uikit.js'
 import { renderWar } from './war.js'
 import { queuePressConference } from '../adv.js'
 
@@ -675,26 +676,33 @@ function _recordsTab() {
 }
 
 // ── League leaders tab ────────────────────────────────────────────────────────
+const _LEADER_COLS = [
+  { key: 'name', label: 'Name', align: 'left', sortVal: s => `${s.fn} ${s.ln}`, render: s => `<span style="color:${s.isPlayer ? '#c9a84c' : '#e8e0cc'}">${s.fn || ''} ${s.ln || ''}</span>` },
+  { key: 'village', label: 'Village', align: 'left', sortVal: s => s.village || '', render: s => `<span style="color:#7a7060">${s.village || ''}</span>` },
+  { key: 'power', label: 'Pwr', align: 'center', sortVal: s => sPow(s), render: s => sPow(s) },
+  { key: 'wins', label: 'Wins', align: 'center', sortVal: s => s.wins || 0, render: s => `<b style="color:#8fbc8f">${s.wins || 0}</b>` },
+  { key: 'winsS', label: 'S-Rank', align: 'center', sortVal: s => s.winsS || 0, render: s => s.winsS || 0 },
+  { key: 'age', label: 'Age', align: 'center', sortVal: s => s.age || 0, render: s => s.age || '?' },
+]
+export function exLeadersSort(key) { tblToggleSort('leaders', key, { key: 'wins', dir: 'desc' }); rEx() }
+
 function _leadersTab() {
   const allShinobi = [
     ...G.shinobi.map(s => ({ ...s, village: G.vName, isPlayer: true })),
     ...(G.villages || []).flatMap(v => (v.roster || []).map(s => ({ ...s, village: v.n, isPlayer: false })))
   ]
-  const byWins = [...allShinobi].sort((a, b) => (b.wins || 0) - (a.wins || 0)).slice(0, 8)
-  const bySWins = [...allShinobi].filter(s => (s.winsS || 0) > 0).sort((a, b) => (b.winsS || 0) - (a.winsS || 0)).slice(0, 8)
-  const byAge = [...G.shinobi].sort((a, b) => (b.age || 0) - (a.age || 0)).slice(0, 5)
-  const row = (s, val, valLabel) => `<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px;background:#0a0a0a;border-radius:3px;margin-bottom:3px">
-    <div>
-      <span style="font-size:9px;color:${s.isPlayer ? '#c9a84c' : '#e8e0cc'}">${s.fn || ''} ${s.ln || ''}</span>
-      <span style="font-size:8px;color:#555;margin-left:6px">${s.village || ''}</span>
-    </div>
-    <span style="font-size:10px;color:#8fbc8f;font-weight:bold">${val} <span style="font-size:8px;color:#555">${valLabel}</span></span>
-  </div>`
+  const sort = tblSort('leaders', { key: 'wins', dir: 'desc' })
+  const rows = tblSortRows(allShinobi, sort, _LEADER_COLS).slice(0, 15)
   const section = (title, rows) => `<div style="font-size:10px;color:#c9a84c;margin:12px 0 6px;text-transform:uppercase;letter-spacing:1px">${title}</div>${rows}`
+  const leaderTable = `<table style="width:100%;border-collapse:collapse">
+    <thead><tr style="background:#0a0908;border-bottom:1px solid #2e2a22">${tblHeaderHtml(_LEADER_COLS, sort, 'exLeadersSort')}</tr></thead>
+    <tbody>${rows.map((s, i) => `<tr style="background:${i % 2 === 0 ? '#0f0e0c' : '#000'};border-bottom:1px solid #111">
+      ${_LEADER_COLS.map(c => `<td style="padding:4px 6px;font-size:9px;text-align:${c.align};color:#e8e0cc">${c.render(s)}</td>`).join('')}
+    </tr>`).join('')}</tbody>
+  </table>`
   return `<div>
-    ${section('Career mission wins', byWins.map(s => row(s, s.wins || 0, 'wins')).join(''))}
-    ${bySWins.length ? section('S-rank kills', bySWins.map(s => row(s, s.winsS || 0, 'S-rank')).join('')) : ''}
-    ${section('Veterans (your roster)', byAge.map(s => row({ ...s, isPlayer: true }, s.age || '?', 'yrs')).join(''))}
+    <div style="font-size:7px;color:#3a3630;margin-bottom:4px">League leaders — click a column to sort</div>
+    ${leaderTable}
     ${G.seasonAwards && Object.keys(G.seasonAwards).length ? (() => {
       const lastYear = Math.max(...Object.keys(G.seasonAwards).map(Number))
       const awards = G.seasonAwards[lastYear]
