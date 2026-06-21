@@ -65,7 +65,7 @@ function _renderExamSetup(el, tabHtml) {
     return
   }
   // Squads are the competitors — compositions, cohesion and formation all matter.
-  const maxCands = 8  // up to 24 nominees (8 three-ninja squads)
+  const maxCands = 12  // up to 36 nominees (12 three-ninja squads)
   const squads = (G.squads || []).map(sq => {
     const members = (sq.members || []).map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
     return { sq, members }
@@ -93,6 +93,24 @@ export function tEC(id) {
 
 // Stage labels — now framed as a competitive bracket.
 export const EXAM_STAGES = ['Qualifier — Written Test', 'Quarterfinal — Forest of Death', 'Semifinal — Preliminary Duels', 'Final — Championship']
+
+// Per-stage posture the player sets before each round — a real risk/reward dial.
+export const EXAM_POSTURES = [
+  { id: 'push',     label: 'Push Hard', icon: '⚔', adv: 0.10,  woundMod: 0.12,  workload: 8,  desc: '+10% advance, but more wounds & fatigue on your shinobi.' },
+  { id: 'steady',   label: 'Steady',    icon: '⚖', adv: 0,     woundMod: 0,     workload: 0,  desc: 'Balanced — no edge, no extra cost.' },
+  { id: 'conserve', label: 'Conserve',  icon: '🛡', adv: -0.06, woundMod: -0.20, workload: -6, desc: '−6% advance, but protects your shinobi (fewer wounds, rest).' },
+]
+function _posture() { return EXAM_POSTURES.find(p => p.id === (ui.exSt?.posture || 'steady')) || EXAM_POSTURES[1] }
+function _postureAdv(c) { return c.isPlayer ? _posture().adv : 0 }
+// Apply posture fatigue/rest to a player squad's members (called when they advance).
+function _applyPostureWorkload(c) {
+  if (!c.isPlayer) return
+  const w = _posture().workload
+  if (!w) return
+  ;(c.members || []).forEach(s => { if (s) s.workload = clamp((s.workload || 0) + w, 0, 100) })
+}
+
+export function setExamPosture(id) { if (ui.exSt) { ui.exSt.posture = id; rEx() } }
 
 // Squad power = average member power, lifted by cohesion (rewards squad-building).
 function _squadPow(members, cohesion = 0) {
@@ -199,6 +217,19 @@ function rExA(el, tabHtml) {
         ${e.alive.map(c => `<div style="font-size:8px;padding:2px 0;color:${c.isPlayer ? '#e8e0cc' : '#7a7060'}">${c.name} · ${(c.members || []).length}-ninja · Pwr ${c.pow}${c._wounded ? ' <span style="color:#f88">⚕ wounded</span>' : ''}${_squadFormatBonus(c) > 0 ? ' <span style="color:#8fbc8f">★+15%</span>' : ''}</div>`).join('')}
       </div>`).join('')}
     </div>
+    <div style="margin:10px 0 8px">
+      <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:4px">Stage Posture — your squads only</div>
+      <div style="display:flex;gap:5px">
+        ${EXAM_POSTURES.map(p => {
+          const sel = (ui.exSt.posture || 'steady') === p.id
+          return `<div onclick="setExamPosture('${p.id}')" title="${p.desc}" style="flex:1;text-align:center;padding:5px 4px;cursor:pointer;border:1px solid ${sel ? '#c9a84c' : '#2e2a22'};background:${sel ? 'rgba(201,168,76,.10)' : 'transparent'}">
+            <div style="font-size:12px">${p.icon}</div>
+            <div style="font-size:8px;color:${sel ? '#c9a84c' : '#9a9080'};font-weight:${sel ? 'bold' : 'normal'}">${p.label}</div>
+            <div style="font-size:6px;color:#555;margin-top:1px">${p.adv > 0 ? '+' : ''}${Math.round(p.adv * 100)}% adv</div>
+          </div>`
+        }).join('')}
+      </div>
+    </div>
     ${!ui.exSt.sabotaged && r === 1 ? `<button class="btn" onclick="sabotageSquad()" style="font-size:9px;margin-bottom:8px;color:#f88">Sabotage a rival squad (risk relations)</button> ` : ''}
     <button class="gb" onclick="runRound()">Run ${EXAM_STAGES[r] ? EXAM_STAGES[r].split(' — ')[0] : 'Round'} ►</button>
   </div>`
@@ -264,8 +295,9 @@ export function runRound() {
     // Seeds earned in the season standings add a survival edge here.
     _stageSurvival(field, c => {
       const sb = c.seedBonus || 0
-      return clamp(0.46 + _avgStat(c, 'intelligence') / 200 + _squadFormatBonus(c) + sb, 0.1, 0.95)
+      return clamp(0.46 + _avgStat(c, 'intelligence') / 200 + _squadFormatBonus(c) + sb + _postureAdv(c), 0.1, 0.95)
     }, 'Passed the written test', 'Failed the written test', res)
+    field.forEach(e => e.alive.forEach(c => _applyPostureWorkload(c)))
   } else if (r === 1) {
     return _runForest(field, res)
   } else if (r === 2) {
@@ -301,13 +333,13 @@ function _runForest(field, res) {
     const kept = []
     entry.scrolls = 0
     entry.alive.forEach(c => {
-      const prob = clamp(0.4 + (_avgStat(c, 'speed') + _avgStat(c, 'chakra')) / 400 + (isHost && c.isPlayer ? 0.08 : 0) + _squadFormatBonus(c), 0.1, 0.95)
+      const prob = clamp(0.4 + (_avgStat(c, 'speed') + _avgStat(c, 'chakra')) / 400 + (isHost && c.isPlayer ? 0.08 : 0) + _squadFormatBonus(c) + _postureAdv(c), 0.1, 0.95)
       const survived = Math.random() < prob
-      if (survived) { kept.push(c); entry.scrolls++ } else entry.out.push(c)
+      if (survived) { kept.push(c); entry.scrolls++; _applyPostureWorkload(c) } else entry.out.push(c)
       // Player squads risk a real injury to one member — higher when eliminated.
       let injNote = ''
       if (c.isPlayer) {
-        const injChance = survived ? 0.12 : 0.35
+        const injChance = clamp((survived ? 0.12 : 0.35) + _posture().woundMod, 0, 0.9)
         if (Math.random() < injChance && (c.members || []).length) {
           const victim = pk(c.members)
           if (victim) { const inj = _examInjure(victim); injNote = ` — ${sn(victim)} wounded: ${inj.n} (${inj.dur}mo)`; c._wounded = true }
@@ -328,7 +360,7 @@ function _runSemifinal(field, res, biasMod) {
   field.forEach(entry => entry.alive.forEach(c => pool.push({ c, entry })))
   pool.sort((a, b) => b.c.pow - a.c.pow)
   pool.forEach((p, i) => { p.seed = i + 1 })
-  const effPow = c => c.pow * (1 + _squadFormatBonus(c)) - (c.isPlayer ? biasMod * 100 : 0)
+  const effPow = c => c.pow * (1 + _squadFormatBonus(c)) - (c.isPlayer ? biasMod * 100 : 0) + (c.isPlayer ? _posture().adv * 60 : 0)
   const duels = []
   const losers = new Set()
   let lo = 0, hi = pool.length - 1
@@ -358,6 +390,7 @@ function _runSemifinal(field, res, biasMod) {
   field.forEach(entry => {
     entry.out.push(...entry.alive.filter(c => losers.has(c)))
     entry.alive = entry.alive.filter(c => !losers.has(c))
+    entry.alive.forEach(c => _applyPostureWorkload(c))
   })
   ui.exSt.round++
   G.examResults.push(...res.map(x => ({ id: '', name: x.name, result: x.result, promoted: false })))
@@ -407,7 +440,7 @@ function _runFinals(field, biasMod) {
       if (!s || s.ri >= 4) return  // only Genin→ANBU range is promotable here
       const hostBonus = G.examHosting ? 0.10 : 0
       const fmtB = _formatBonus(s)
-      const prom = Math.random() < clamp(0.55 + hostBonus + fmtB - biasMod, 0.05, 0.97)
+      const prom = Math.random() < clamp(0.55 + hostBonus + fmtB - biasMod + _posture().adv, 0.05, 0.97)
       if (prom) {
         s.ri++; s.salary = 500 + s.ri * 400; examPromotions++
         res.push({ name: sn(s), result: `Promoted to ${RANKS[s.ri]}! (${c.name})`, promoted: true })

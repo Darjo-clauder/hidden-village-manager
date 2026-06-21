@@ -13,6 +13,17 @@ export const WAR_STAGES = ['Mobilization', 'The Front', 'Decisive Engagement', '
 const WAR_MAX_SQUADS = 8  // up to 24 elite deployed
 const ELITE_MIN_RI = 2    // Jonin and above
 
+// Per-stage command order the player issues before each war round — risk vs lives.
+export const WAR_COMMANDS = [
+  { id: 'press',    label: 'Press Attack',       icon: '⚔', adv: 0.10,  kiaMult: 1.3, desc: '+advance, but heavier casualties when a squad falls.' },
+  { id: 'hold',     label: 'Hold Formation',     icon: '⚖', adv: 0,     kiaMult: 1.0, desc: 'Balanced command.' },
+  { id: 'withdraw', label: 'Tactical Withdrawal', icon: '🛡', adv: -0.07, kiaMult: 0.55, desc: '−advance, but far fewer deaths — preserve your elite.' },
+]
+function _command() { return WAR_COMMANDS.find(c => c.id === (ui.warSt?.command || 'hold')) || WAR_COMMANDS[1] }
+function _cmdAdv(c) { return c.isPlayer ? _command().adv : 0 }
+function _cmdKia(c, base) { return base * (c.isPlayer ? _command().kiaMult : 1) }
+export function setWarCommand(id) { if (ui.warSt) { ui.warSt.command = id; upUI() } }
+
 // Survival multiplier on KIA rolls: jinchuriki are hardest to kill, bloodline clans tougher.
 function survivalMult(s) {
   const isJk = (G.beasts || []).some(b => b.sealed && b.jk === s.id)
@@ -122,7 +133,7 @@ export function runWarRound() {
     field.forEach(entry => {
       const kept = []
       entry.alive.forEach(c => {
-        const prob = clamp(0.5 + c.pow / 220 + (c.seedBonus || 0), 0.15, 0.95)
+        const prob = clamp(0.5 + c.pow / 220 + (c.seedBonus || 0) + _cmdAdv(c), 0.15, 0.95)
         const ready = Math.random() < prob
         if (ready) kept.push(c); else entry.out.push(c)
         if (c.isPlayer) res.push({ name: c.name, result: ready ? 'Mobilized for the front' : 'Failed to mobilize in time', good: ready })
@@ -134,10 +145,10 @@ export function runWarRound() {
     field.forEach(entry => {
       const kept = []
       entry.alive.forEach(c => {
-        const prob = clamp(0.45 + c.pow / 240, 0.1, 0.9)
+        const prob = clamp(0.45 + c.pow / 240 + _cmdAdv(c), 0.1, 0.9)
         const held = Math.random() < prob
         if (held) { kept.push(c); if (c.isPlayer) res.push({ name: c.name, result: 'Held the line', good: true }) }
-        else { entry.out.push(c); _resolveCasualties(c, entry, 0.22, stageName, res); if (c.isPlayer) res.push({ name: c.name, result: 'Routed at the front', good: false }) }
+        else { entry.out.push(c); _resolveCasualties(c, entry, _cmdKia(c, 0.22), stageName, res); if (c.isPlayer) res.push({ name: c.name, result: 'Routed at the front', good: false }) }
       })
       entry.alive = kept
     })
@@ -151,7 +162,7 @@ export function runWarRound() {
     let lo = 0, hi = pool.length - 1
     while (lo < hi) {
       const A = pool[lo], B = pool[hi]
-      const aWins = (A.c.pow + rnd(-10, 10)) >= (B.c.pow + rnd(-10, 10))
+      const aWins = (A.c.pow + rnd(-10, 10) + _cmdAdv(A.c) * 60) >= (B.c.pow + rnd(-10, 10) + _cmdAdv(B.c) * 60)
       const win = aWins ? A : B, lose = aWins ? B : A
       losers.add(lose.c)
       if (win.c.isPlayer) res.push({ name: win.c.name, result: `Broke ${lose.c.name} (${lose.entry.name})`, good: true })
@@ -159,7 +170,7 @@ export function runWarRound() {
       lo++; hi--
     }
     field.forEach(entry => {
-      entry.alive.filter(c => losers.has(c)).forEach(c => { entry.out.push(c); _resolveCasualties(c, entry, 0.30, stageName, res) })
+      entry.alive.filter(c => losers.has(c)).forEach(c => { entry.out.push(c); _resolveCasualties(c, entry, _cmdKia(c, 0.30), stageName, res) })
       entry.alive = entry.alive.filter(c => !losers.has(c))
     })
   } else {
@@ -282,6 +293,19 @@ function _renderActiveWar(el, tabHtml) {
         <div style="font-size:9px;color:${e.isPlayer ? '#c9a84c' : '#9a9080'};margin-bottom:4px">${i === 0 ? '◆ ' : ''}${e.seed ? `<span style="color:#7a7060">#${e.seed}</span> ` : ''}${e.ico || '🏳'} ${e.name}${e.isPlayer ? ' (you)' : ''} <span style="color:#7a7060">— ${e.alive.length} squads${e.fallen?.length ? ` · <span style="color:#f88">${e.fallen.length} dead</span>` : ''}</span></div>
         ${e.alive.map(c => `<div style="font-size:8px;padding:2px 0;color:${c.isPlayer ? '#e8e0cc' : '#7a7060'}">${c.name} · ${(c.members || []).length}-ninja · Pwr ${c.pow}</div>`).join('')}
       </div>`).join('')}
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:4px">Command Order — your squads only</div>
+      <div style="display:flex;gap:5px">
+        ${WAR_COMMANDS.map(cmd => {
+          const sel = (ui.warSt.command || 'hold') === cmd.id
+          return `<div onclick="setWarCommand('${cmd.id}')" title="${cmd.desc}" style="flex:1;text-align:center;padding:5px 4px;cursor:pointer;border:1px solid ${sel ? '#c9a84c' : '#2e2a22'};background:${sel ? 'rgba(201,168,76,.10)' : 'transparent'}">
+            <div style="font-size:12px">${cmd.icon}</div>
+            <div style="font-size:8px;color:${sel ? '#c9a84c' : '#9a9080'};font-weight:${sel ? 'bold' : 'normal'}">${cmd.label}</div>
+            <div style="font-size:6px;color:#555;margin-top:1px">${cmd.adv > 0 ? '+' : ''}${Math.round(cmd.adv * 100)}% · ${cmd.kiaMult < 1 ? '−' : cmd.kiaMult > 1 ? '+' : ''}${Math.abs(Math.round((cmd.kiaMult - 1) * 100))}% KIA</div>
+          </div>`
+        }).join('')}
+      </div>
     </div>
     <button class="gb" onclick="runWarRound()" style="background:#3a1a1a;border-color:#a05050">Run ${WAR_STAGES[r] || 'Final Stand'} ►</button>
   </div>`
