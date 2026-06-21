@@ -1,6 +1,6 @@
 import {
   CLANS, RANKS, FNAMES, LNAMES, SPECS, PERSONALITIES, BACKSTORIES, ARCHETYPES,
-  TAILED_BEASTS, VILLAGES_DEF, RIVAL_VILLAGE_POOL, RIVAL_KAGE_NAMES, RIVAL_PERSONALITIES, START_SCENARIOS, MISS_POOL, SEASONAL_MISSIONS, CRISIS_MISSION_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
+  TAILED_BEASTS, VILLAGES_DEF, RIVAL_VILLAGE_POOL, RIVAL_KAGE_NAMES, RIVAL_PERSONALITIES, START_SCENARIOS, WORLD_CLIMATES, MISS_POOL, SEASONAL_MISSIONS, CRISIS_MISSION_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
   REGIONS, PM_DESC, REGION_EVENTS, DEV_CURVES, AGENT_AGENDAS,
 } from './constants.js'
 import { ARCHETYPE_POOL } from '../../shared/utils/personality.js'
@@ -209,12 +209,17 @@ export function initState() {
   // Procedural world: beasts first (so rivals can claim some), then rivals.
   const _beasts = JSON.parse(JSON.stringify(TAILED_BEASTS))
   const _villages = genRivalVillages(_beasts)
+  // Per-world climate (economic + threat) — rolled fresh each game.
+  const _eco = pk(WORLD_CLIMATES.economy), _thr = pk(WORLD_CLIMATES.threat)
+  const _climate = { economy: _eco.id, economyMod: _eco.incomeMod, threat: _thr.id, raidMod: _thr.raidMod }
   Object.assign(G, {
     vName: 'Hidden Village', kName: 'Kage', vIcon: '🍃',
     year: 1, month: 1, ryo: 60000, reputation: 10, morale: 75,
     shinobi: [], squads: [], aM: [], log: [], prospects: [],
     villages: _villages,
     beasts: _beasts,
+    worldClimate: _climate,
+    villageDoctrine: null,   // chosen once from the Upgrades panel
     avM: [], upgrades: { academy: 0, hospital: 0, wall: 0, intel: 0, training: 0, seal: 0 },
     raid: null, raidW: 0, defSh: null, tempDef: 0,
     examSched: false, examMonth: null, examActive: false, examResults: [], examCands: [], examChampion: null,

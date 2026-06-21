@@ -1,5 +1,5 @@
 import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice, computeMarketValue, mS, genVillageRoster, getMissionSpecBonus } from './state.js'
-import { RANKS, RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS, EXAM_FORMATS, LEGACY_DECISIONS, PRESTIGE_TIERS } from './constants.js'
+import { RANKS, RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS, EXAM_FORMATS, LEGACY_DECISIONS, PRESTIGE_TIERS, DOCTRINE_BY_ID } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
 import { tickBeast, applyBeastPairEffects, getBeastPassives, BEAST_DATA, getSyncStage, captureChance } from './beastEngine.js'
 import { tickKageRels, getWorldReputationFlavor, shiftKageRel, ensureKageRels } from './rivalKage.js'
@@ -948,7 +948,7 @@ export function adv() {
       }
 
       // Stat growth
-      const mentorBoost = 1 + mentorGrowthBonus(s, G.shinobi) + (cp.growthBonus || 0) + (dp.statGrowthBonus || 0)
+      const mentorBoost = 1 + mentorGrowthBonus(s, G.shinobi) + (cp.growthBonus || 0) + (dp.statGrowthBonus || 0) + ((DOCTRINE_BY_ID[G.villageDoctrine]?.growthMod) || 0)
       if (Math.random() < 0.25 * tgM * mentorBoost) {
         const k = pk(['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed'])
         const kG = k === 'intelligence' && s.pers.n === 'Bookworm' ? 2 : 1
@@ -1627,7 +1627,8 @@ export function adv() {
     // Aggressive villages raise raid chance
     const aggressiveV = G.villages.filter(v => v.personality === 'Aggressive' && v.rel < 40)
     const aggressiveBonus = aggressiveV.length * 0.02
-    if (Math.random() < 0.12 + aggressiveBonus) {
+    const _climateRaid = Math.max(0, 1 + ((G.worldClimate?.raidMod) || 0))  // calm halves, volatile near-doubles
+    if (Math.random() < (0.12 + aggressiveBonus) * _climateRaid) {
       const ev = pk(RAID_POOL), warn = G.upgrades.intel >= 2 ? 2 : G.upgrades.intel >= 1 ? 1 : 0
       G.raid = { ...ev, resolved: false }; G.raidW = warn
       aL('⚠ Threat: ' + ev.n + '! ' + (warn > 0 ? 'Arrives in ' + warn + 'm.' : 'Arriving now!'), 'warn')
@@ -2071,7 +2072,11 @@ export function adv() {
   const loanFeeAmt = G.finances?.loanFees || 0
 
   const _natIncMult = G._ff_nationHud ? (1 + nationMods(G.nationId).ryoMod) : 1
-  const totalIncome = Math.round((trI + coI + jkI + daimyoB + villageRev + examFeeAmt + loanFeeAmt + sponsorshipIncome) * _natIncMult)
+  // Climate + doctrine economic modifiers (variable playthroughs)
+  const _docInc = (DOCTRINE_BY_ID[G.villageDoctrine]?.incomeMod) || 0
+  const _climateInc = (G.worldClimate?.economyMod) || 0
+  const _econMult = Math.max(0.3, 1 + _climateInc + _docInc)
+  const totalIncome = Math.round((trI + coI + jkI + daimyoB + villageRev + examFeeAmt + loanFeeAmt + sponsorshipIncome) * _natIncMult * _econMult)
   const totalExpend = shinobiSal + staffSal + maintenance
   const monthlyNet = totalIncome - totalExpend
 
@@ -3105,6 +3110,37 @@ export function adv() {
       if (ev.type === 'lore')   addChronicle(ev.title, ev.body, 'lore', ev.narrative || null)
     })
   })
+  // ── Jinchuriki control / instability (host risk-reward) ────────────────────
+  G.beasts.filter(b => b.sealed && b.jk).forEach(b => {
+    const host = G.shinobi.find(s => s.id === b.jk)
+    if (!host) return
+    if (b.control === undefined) b.control = 55
+    const stage = getSyncStage(b)
+    // Control gravitates toward a ceiling set by sync stage + host commitment.
+    const target = clamp(stage * 18 + ((host.commitment ?? 50) - 50) * 0.4, 10, 100)
+    b.control = clamp(Math.round(b.control + (target - b.control) * 0.25), 0, 100)
+    // Channeling the beast strains the seal.
+    if ((b.activeUntil || 0) > G.month) b.control = clamp(b.control - 6, 0, 100)
+    // Low control risks an instability incident (scales with tails).
+    if (b.control < 35) {
+      const incidentChance = (35 - b.control) / 100 + b.tails * 0.01
+      if (Math.random() < incidentChance) {
+        const morHit = 4 + Math.floor(b.tails / 2)
+        G.morale = clamp((G.morale || 75) - morHit, 0, 100)
+        b.control = clamp(b.control + 8, 0, 100)  // partial settle after the outburst
+        let detail = `${b.n}'s chakra surged beyond ${sn(host)}'s control. Village morale −${morHit}.`
+        if (host.status === 'available' && Math.random() < 0.35) {
+          host.status = 'injured'; host.injDays = rnd(1, 2); host.injuryType = 'chakra_burn'
+          detail += ` ${sn(host)} was hurt containing it and is sidelined ${host.injDays}mo.`
+        }
+        ;(b.escapeHistory = b.escapeHistory || []).push({ year: G.year, month: G.month, kind: 'instability' })
+        aL(`⚠ Seal instability — ${detail}`, 'bad')
+        addNotice(`${b.n} instability — reinforce the seal in the Beasts panel.`, 'bad')
+        addChronicle('Seal Instability', detail, 'event')
+      }
+    }
+  })
+
   // Bloodline active-window expiry → post-use debuff (v2, flag-gated)
   if (G._ff_bloodlineActive) {
     G.beasts.forEach(b => {
@@ -3209,7 +3245,7 @@ export function resRaid() {
   const hL = G.upgrades.hospital
   const isobu = G.beasts?.find(b => b.n === 'Tairyuu' && b.sealed && b.jk)
   const isobuBonus = (isobu && getSyncStage(isobu) >= (BEAST_DATA['Tairyuu']?.uniqueAbility?.stage ?? 99)) ? 30 : 0
-  const wD = (G.upgrades.wall === 1 ? 15 : G.upgrades.wall === 2 ? 35 : 0) + (G.upgrades.seal === 1 ? 10 : G.upgrades.seal === 2 ? 25 : 0) + (G.tempDef || 0) + isobuBonus
+  const wD = (G.upgrades.wall === 1 ? 15 : G.upgrades.wall === 2 ? 35 : 0) + (G.upgrades.seal === 1 ? 10 : G.upgrades.seal === 2 ? 25 : 0) + (G.tempDef || 0) + isobuBonus + ((DOCTRINE_BY_ID[G.villageDoctrine]?.defBonus) || 0)
   const def = G.defSh ? G.shinobi.find(s => s.id === G.defSh) : null
   const jkB = G.beasts.filter(b => b.sealed && b.jk && G.shinobi.find(s => s.id === b.jk && s.status !== 'mission')).reduce((a, b) => a + Math.round(b.pow * 0.3), 0)
   const dP = (def ? sPow(def) * 3 : 0) + wD + jkB

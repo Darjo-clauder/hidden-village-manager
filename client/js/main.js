@@ -5,12 +5,12 @@ import { adv } from './adv.js'
 import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM } from './panels/missions.js'
-import { rUp, buyUp, buildDistrict } from './panels/upgrades.js'
+import { rUp, buyUp, buildDistrict, chooseDoctrine } from './panels/upgrades.js'
 import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, secureRoute } from './panels/economy.js'
 import { logFilter, logSearch } from './panels/log.js'
 import { honorFallen } from './panels/memorial.js'
-import { rBe, lCap, beastTab, releaseJinchuriki, resolveEscape } from './panels/beasts.js'
+import { rBe, lCap, beastTab, releaseJinchuriki, resolveEscape, reinforceSeal } from './panels/beasts.js'
 import { rKa, resKE, sGift, propAl, rattle, resNCV, setCoachingPhilosophy, payRivalDemand, refuseRivalDemand, demandTribute, appease } from './panels/kage.js'
 import { rEx, tEC, startEx, runRound } from './panels/exam.js'
 import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP, dipAccept, dipDecline } from './world.js'
@@ -97,7 +97,7 @@ Object.assign(window, {
   // missions
   mTab, oA, doA, pickSq, G_defShSet, G_defShClear, missionLogFilter, assignBM,
   // upgrades
-  buyUp, buildDistrict,
+  buyUp, buildDistrict, chooseDoctrine,
   // academy
   rec, oScout, doScout, oSensei, doSensei, setTrainingPlan,
   matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab,
@@ -106,7 +106,7 @@ Object.assign(window, {
   // log + memorial
   logFilter, logSearch, honorFallen,
   // beasts
-  lCap, beastTab, releaseJinchuriki, resolveEscape, activateBloodline,
+  lCap, beastTab, releaseJinchuriki, resolveEscape, reinforceSeal, activateBloodline,
   // kage
   resKE, sGift, propAl, rattle, resNCV, setCoachingPhilosophy,
   payRivalDemand, refuseRivalDemand, demandTribute, appease,

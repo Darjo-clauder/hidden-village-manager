@@ -37,6 +37,27 @@ export const RIVAL_VILLAGE_POOL=[
 ]
 export const RIVAL_KAGE_NAMES=['Sabaku','Kaito','Ganseki','Raiden','Mizuhara','Kuroyama','Tendo','Hayashi','Arashi','Yukimura','Tsukino','Iwagane','Kazami','Shirogane','Reizei','Akatsuchi','Nagumo','Daichi']
 export const RIVAL_PERSONALITIES=['Aggressive','Honorable','Mercantile','Isolationist','Militant']
+// ── World climate — per-world economic + threat conditions (rolled at gen) ─────
+export const WORLD_CLIMATES={
+  economy:[
+    {id:'boom',     n:'Economic Boom',  icon:'📈',incomeMod: 0.15,desc:'Coffers swell — village income +15%.'},
+    {id:'stable',   n:'Stable Economy', icon:'➖',incomeMod: 0,   desc:'Steady markets — no income modifier.'},
+    {id:'recession',n:'Recession',      icon:'📉',incomeMod:-0.15,desc:'Lean times — village income −15%.'},
+  ],
+  threat:[
+    {id:'calm',    n:'Era of Peace',   icon:'🕊',raidMod:-0.5,desc:'Rivals are subdued — raids are rare.'},
+    {id:'tense',   n:'Tense Standoff', icon:'⚖',raidMod: 0,  desc:'Normal regional tension.'},
+    {id:'volatile',n:'Volatile Region',icon:'🔥',raidMod: 0.8,desc:'The region is a powder keg — frequent aggression.'},
+  ],
+}
+// ── Village doctrine — one-time mutually-exclusive specialization ──────────────
+export const VILLAGE_DOCTRINES=[
+  {id:'fortress',n:'Fortress Doctrine',icon:'🛡',defBonus:20,incomeMod:-0.08,growthMod:0,   desc:'+20 village defense, −8% income. The walls come first.'},
+  {id:'commerce',n:'Commerce Doctrine',icon:'💰',defBonus:-10,incomeMod:0.12,growthMod:0,   desc:'+12% income, −10 defense. Wealth over walls.'},
+  {id:'sage',    n:'Way of the Sage',  icon:'📖',defBonus:0,  incomeMod:0,    growthMod:0.12,desc:'+12% shinobi growth. Mastery over money and walls.'},
+]
+export const DOCTRINE_BY_ID=Object.fromEntries(VILLAGE_DOCTRINES.map(d=>[d.id,d]))
+
 // ── Start scenarios — reshape the opening board for variable playthroughs ──────
 export const START_SCENARIOS=[
   {id:'standard',   n:'Standard',          icon:'⚖',  desc:'A balanced founding — the classic path. 60k ryo, full roster, neutral world.'},

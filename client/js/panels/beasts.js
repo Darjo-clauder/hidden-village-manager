@@ -197,6 +197,25 @@ function _renderSealedCard(b) {
         </div>
       `}
 
+      <!-- Seal Control (host risk-reward) -->
+      ${jkS ? (() => {
+        const ctrl = b.control === undefined ? 55 : b.control
+        const cCol = ctrl >= 70 ? 'var(--green)' : ctrl >= 35 ? 'var(--gold)' : 'var(--red)'
+        const cLabel = ctrl >= 70 ? 'Stable' : ctrl >= 35 ? 'Strained' : 'Critical — instability risk'
+        const cost = 2000 + b.tails * 1000
+        return `<div style="margin-bottom:12px;padding:10px;background:var(--surface-2);border:1px solid ${ctrl < 35 ? 'var(--red)' : 'var(--border)'}">
+          <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-dim);margin-bottom:4px">
+            <span>Seal Control — <b style="color:${cCol}">${cLabel}</b></span>
+            <span style="color:${cCol}">${ctrl}/100</span>
+          </div>
+          <div style="height:6px;background:var(--surface-3);border-radius:2px;overflow:hidden;margin-bottom:8px">
+            <div style="height:100%;width:${ctrl}%;background:${cCol};transition:width .3s"></div>
+          </div>
+          <div style="font-size:7px;color:var(--text-dim);margin-bottom:6px">Control rises with sync stage and host commitment; channelling the beast strains it. Below 35 risks instability (morale loss, host injury).</div>
+          <button class="gb" style="font-size:7px;border-color:var(--gold);color:var(--gold)" onclick="reinforceSeal('${b.n}')" ${G.ryo < cost || ctrl >= 95 ? 'disabled' : ''}>Reinforce Seal — ${fmt(cost)} ryo (+18)</button>
+        </div>`
+      })() : ''}
+
       <!-- Lore & Escapes Row -->
       <div style="display:flex;gap:10px;font-size:8px;color:var(--text-dim)">
         <span>Lore: <b style="color:${loreCount>=loreTot?'var(--gold)':'var(--text)'}">${loreCount}/${loreTot}</b></span>
@@ -398,6 +417,19 @@ export function resolveEscape(beastName, action) {
     aL(`${beastName} escape notice dismissed.`, 'neutral')
   }
   G.notices = (G.notices || []).filter(n => !(n.type === 'beast_escape' && n.beastName === beastName))
+  rBe(); upUI()
+}
+
+export function reinforceSeal(bN) {
+  const b = G.beasts.find(x => x.n === bN)
+  if (!b || !b.jk) return
+  const cost = 2000 + b.tails * 1000
+  if ((b.control ?? 55) >= 95) { ntf('Seal already at peak control.'); return }
+  if (G.ryo < cost) { ntf(`Need ${fmt(cost)} ryo to reinforce the seal.`); return }
+  G.ryo -= cost
+  b.control = Math.min(100, (b.control ?? 55) + 18)
+  aL(`Seal masters reinforced ${bN}'s containment. Control now ${b.control}/100.`, 'good')
+  ntf(`${bN} seal reinforced — control ${b.control}/100.`)
   rBe(); upUI()
 }
 

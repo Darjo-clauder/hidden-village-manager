@@ -1,5 +1,5 @@
 import { G, fmt } from '../state.js'
-import { PRESTIGE_TIERS, UPGRADES_DEF } from '../constants.js'
+import { PRESTIGE_TIERS, UPGRADES_DEF, WORLD_CLIMATES, DOCTRINE_BY_ID } from '../constants.js'
 import { villageRevenue } from '../../../shared/utils/economy.js'
 
 export function rVi() {
@@ -92,6 +92,21 @@ export function rVi() {
       <div style="font-size:8px;color:#7a7060;margin-top:6px">Districts: ${builtDistricts} built${buildingD ? ` · ⚒ ${buildingD.id} (${buildingD.buildMonthsLeft}mo)` : ''}</div>
       <div style="margin-top:8px">${jump('upgrades', 'Upgrades')}</div>
     `, 2) +
+
+    // World climate + doctrine
+    (() => {
+      const eco = WORLD_CLIMATES.economy.find(x => x.id === G.worldClimate?.economy)
+      const thr = WORLD_CLIMATES.threat.find(x => x.id === G.worldClimate?.threat)
+      const doc = DOCTRINE_BY_ID[G.villageDoctrine]
+      return card('World Climate', `
+        <div style="display:flex;gap:18px;flex-wrap:wrap">
+          <div><div style="font-size:7px;color:#7a7060">Economy</div><div style="font-size:11px;color:#e8e0cc">${eco ? eco.icon + ' ' + eco.n : '—'}</div></div>
+          <div><div style="font-size:7px;color:#7a7060">Region</div><div style="font-size:11px;color:#e8e0cc">${thr ? thr.icon + ' ' + thr.n : '—'}</div></div>
+          <div><div style="font-size:7px;color:#7a7060">Doctrine</div><div style="font-size:11px;color:${doc ? 'var(--accent)' : '#7a7060'}">${doc ? doc.icon + ' ' + doc.n : 'None chosen'}</div></div>
+        </div>
+        <div style="font-size:7px;color:#555;margin-top:6px">${eco ? eco.desc : ''} ${thr ? thr.desc : ''}</div>
+      `, 2)
+    })() +
 
     // Jinchuriki
     card('Tailed Beasts', `
