@@ -13,7 +13,8 @@ export function rBe() {
 
   const passives = getBeastPassives(G)
   const sealedBeasts = G.beasts.filter(b => b.sealed)
-  const wildBeasts = G.beasts.filter(b => !b.sealed)
+  const wildBeasts = G.beasts.filter(b => !b.sealed && !b.owner)
+  const rivalHeld  = G.beasts.filter(b => !b.sealed && b.owner)
   const escapeNotices = (G.notices || []).filter(n => n.type === 'beast_escape')
 
   el.innerHTML = `
@@ -40,7 +41,7 @@ export function rBe() {
       `).join('')}
     </div>
 
-    ${_activeTab === 'overview' ? _renderOverview(sealedBeasts, wildBeasts, passives) : ''}
+    ${_activeTab === 'overview' ? _renderOverview(sealedBeasts, wildBeasts, passives, rivalHeld) : ''}
     ${_activeTab === 'lore'     ? _renderLore(sealedBeasts) : ''}
     ${_activeTab === 'passives' ? _renderPassives(passives)  : ''}
   `
@@ -48,7 +49,7 @@ export function rBe() {
 
 // ── Overview tab ────────────────────────────────────────────────────────────
 
-function _renderOverview(sealedBeasts, wildBeasts, passives) {
+function _renderOverview(sealedBeasts, wildBeasts, passives, rivalHeld = []) {
   const dualWarning = sealedBeasts.filter(b => b.jk).length >= 2
 
   return `
@@ -66,6 +67,25 @@ function _renderOverview(sealedBeasts, wildBeasts, passives) {
       <div style="margin-top:20px">
         <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">Wild Beasts</div>
         ${wildBeasts.map(b => _renderWildCard(b)).join('')}
+      </div>
+    ` : ''}
+
+    ${rivalHeld.length > 0 ? `
+      <div style="margin-top:20px">
+        <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">Held by Rival Villages</div>
+        ${rivalHeld.map(b => {
+          const data = BEAST_DATA[b.n] || {}
+          return `<div style="background:var(--surface);border:1px solid var(--border-dim);padding:12px;margin-bottom:8px;opacity:0.85">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between">
+              <div>
+                <div style="font-size:12px;color:var(--text-hi)">${b.n}</div>
+                <div style="font-size:8px;color:var(--text-dim);margin-top:2px">${'◆'.repeat(b.tails)} ${b.tails}-Tails · ${b.element || data.element || ''} · Power ${b.pow || data.pow}</div>
+              </div>
+              <div style="font-size:8px;color:var(--orange);padding:2px 8px;border:1px solid var(--orange)">Held by ${b.owner}</div>
+            </div>
+            <div style="font-size:8px;color:var(--text-dim);margin-top:6px;font-style:italic">This beast is sealed in a rival village. Taking it would require war or extraction — not a simple wild capture.</div>
+          </div>`
+        }).join('')}
       </div>
     ` : ''}
   `

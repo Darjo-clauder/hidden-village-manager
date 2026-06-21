@@ -1881,7 +1881,7 @@ export function adv() {
     const poachTargets = (G.staff || []).filter(st => st.rating >= 14 && !st.asstKage)
     if (poachTargets.length > 0 && Math.random() < 0.04) {
       const target = poachTargets.sort((a, b) => b.rating - a.rating)[0]
-      const poachVillage = pk(['Kazegakure', 'Shimogakure', 'Gangakure', 'Raikurokure'])
+      const poachVillage = (pk(G.villages || []) || {}).n || 'a rival village'
       const matchCost = Math.round(target.salary * rnd(12, 18))
       const expMonth = G.month === 12 ? 1 : G.month + 1
       const expYear = G.month === 12 ? G.year + 1 : G.year

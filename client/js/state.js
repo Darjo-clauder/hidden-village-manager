@@ -1,6 +1,6 @@
 import {
   CLANS, RANKS, FNAMES, LNAMES, SPECS, PERSONALITIES, BACKSTORIES, ARCHETYPES,
-  TAILED_BEASTS, VILLAGES_DEF, MISS_POOL, SEASONAL_MISSIONS, CRISIS_MISSION_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
+  TAILED_BEASTS, VILLAGES_DEF, RIVAL_VILLAGE_POOL, RIVAL_KAGE_NAMES, RIVAL_PERSONALITIES, MISS_POOL, SEASONAL_MISSIONS, CRISIS_MISSION_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
   REGIONS, PM_DESC, REGION_EVENTS, DEV_CURVES, AGENT_AGENDAS,
 } from './constants.js'
 import { ARCHETYPE_POOL } from '../../shared/utils/personality.js'
@@ -34,7 +34,8 @@ export function mS(ri = 0) {
   const m = 1 + ri * 0.28
   Object.keys(base).forEach(k => { base[k] = clamp(Math.round(base[k] * m), 1, 99) })
   const p = pk(PERSONALITIES), sal = Math.round((500 + ri * 400) * (1 + (p.effect.salary || 0)))
-  const origin = Math.random() < 0.05 ? pk(['Kazegakure', 'Shimogakure', 'Gangakure', 'Raikurokure']) : null
+  const _liveRivals = (G.villages || []).map(v => v.n)
+  const origin = Math.random() < 0.05 ? pk(_liveRivals.length ? _liveRivals : RIVAL_VILLAGE_POOL.map(v => v.n)) : null
   return {
     id: Math.random().toString(36).slice(2), fn: pk(FNAMES), ln: pk(LNAMES),
     clan: clan?.n || null, trait: clan?.t || null, spec: pk(SPECS), age, ri,
@@ -159,15 +160,61 @@ export function genVillageRoster(v) {
   })
 }
 
+// ── Procedural rival world generation (variable playthroughs) ─────────────────
+// Draws 4–5 rivals from the pool, each with randomized kage, AI personality,
+// starting strength, relations and roster. A few strong rivals may already hold
+// a tailed beast — pass the beasts array to tag ownership (excludes from wild pool).
+export function genRivalVillages(beasts = []) {
+  const pool = [...RIVAL_VILLAGE_POOL]
+  const count = rnd(4, 5)
+  const chosen = []
+  for (let i = 0; i < count && pool.length; i++) {
+    chosen.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0])
+  }
+  const usedKages = new Set()
+  const villages = chosen.map(c => {
+    let kage = pk(RIVAL_KAGE_NAMES)
+    let guard = 0
+    while (usedKages.has(kage) && guard++ < 10) kage = pk(RIVAL_KAGE_NAMES)
+    usedKages.add(kage)
+    const v = {
+      n: c.n, ico: c.ico, kageRank: c.kageRank, kage,
+      personality: pk(RIVAL_PERSONALITIES),
+      str: rnd(58, 90),
+      rel: rnd(15, 55),
+      threat: 0, grudgeTicks: 0, heldBeasts: [],
+    }
+    v.roster = genVillageRoster(v)
+    return v
+  })
+  // Distribute 1–3 wild beasts to the strongest rivals (~45% each).
+  const wild = beasts.filter(b => !b.sealed && !b.owner)
+  const maxAssign = rnd(1, 3)
+  let assigned = 0
+  for (const v of [...villages].sort((a, b) => b.str - a.str)) {
+    if (assigned >= maxAssign || !wild.length) break
+    if (Math.random() < 0.45) {
+      const b = wild.splice(rnd(0, wild.length - 1), 1)[0]
+      b.owner = v.n
+      v.heldBeasts.push(b.n)
+      assigned++
+    }
+  }
+  return villages
+}
+
 // ── game init & helpers ────────────────────────────────────────────────────
 export function initState() {
   Object.keys(G).forEach(k => delete G[k])
+  // Procedural world: beasts first (so rivals can claim some), then rivals.
+  const _beasts = JSON.parse(JSON.stringify(TAILED_BEASTS))
+  const _villages = genRivalVillages(_beasts)
   Object.assign(G, {
     vName: 'Hidden Village', kName: 'Kage', vIcon: '🍃',
     year: 1, month: 1, ryo: 60000, reputation: 10, morale: 75,
     shinobi: [], squads: [], aM: [], log: [], prospects: [],
-    villages: JSON.parse(JSON.stringify(VILLAGES_DEF)).map(v => ({ ...v, roster: genVillageRoster(v) })),
-    beasts: JSON.parse(JSON.stringify(TAILED_BEASTS)),
+    villages: _villages,
+    beasts: _beasts,
     avM: [], upgrades: { academy: 0, hospital: 0, wall: 0, intel: 0, training: 0, seal: 0 },
     raid: null, raidW: 0, defSh: null, tempDef: 0,
     examSched: false, examMonth: null, examActive: false, examResults: [], examCands: [], examChampion: null,
