@@ -148,6 +148,30 @@ body{
   font-size:9px;font-weight:700;font-family:var(--font-num,'Courier New',monospace);
 }
 @media (prefers-reduced-motion:reduce){.ab{transition:none}}
+/* ── Context-menu portal (FM24 P1) ─────────────────────────────────────── */
+.ctx-menu{
+  position:fixed;z-index:9999;min-width:170px;
+  background:var(--surface,#1a1814);border:1px solid var(--accent-border,rgba(201,168,76,.3));
+  box-shadow:0 6px 22px rgba(0,0,0,.55);padding:4px;border-radius:3px;
+  font-family:var(--font-ui,'Segoe UI',system-ui,sans-serif);
+}
+.ctx-item{padding:5px 10px;font-size:9px;color:var(--text-hi,#e8e0cc);cursor:pointer;border-radius:2px;white-space:nowrap}
+.ctx-item:hover{background:var(--accent-bg,rgba(201,168,76,.1));color:var(--accent,#c9a84c)}
+.ctx-item.ctx-danger{color:var(--red,#f0605a)}
+.ctx-item.ctx-danger:hover{background:rgba(240,96,90,.12);color:var(--red,#f0605a)}
+.ctx-item.ctx-disabled{color:#444;cursor:default}
+.ctx-item.ctx-disabled:hover{background:transparent;color:#444}
+.ctx-sep{height:1px;background:var(--border,rgba(110,100,80,.22));margin:4px 2px}
+/* ── Table column manager ──────────────────────────────────────────────── */
+.tbl-colbtn{font-size:8px;color:var(--text-dim,#7a7060);background:transparent;border:1px solid var(--border,#2e2a22);padding:2px 7px;cursor:pointer;border-radius:2px}
+.tbl-colbtn:hover{color:var(--accent,#c9a84c);border-color:var(--accent-border,rgba(201,168,76,.3))}
+.tbl-colmgr{display:none;position:absolute;z-index:50;margin-top:3px;right:0;
+  background:var(--surface,#1a1814);border:1px solid var(--accent-border,rgba(201,168,76,.3));
+  box-shadow:0 6px 18px rgba(0,0,0,.5);padding:6px;border-radius:3px;min-width:130px}
+.tbl-colmgr.open{display:block}
+.tbl-colmgr-h{font-size:7px;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim,#7a7060);margin-bottom:5px}
+.tbl-colmgr-row{display:flex;align-items:center;gap:6px;font-size:9px;color:var(--text,#c9c0a8);padding:2px 0;cursor:pointer}
+.tbl-colmgr-row input{accent-color:var(--accent,#c9a84c)}
 .ab.ready{background:var(--green);color:#fff}
 .ab.waiting{background:transparent;border:1px solid var(--orange);color:var(--orange)}
 /* Legacy .tb */

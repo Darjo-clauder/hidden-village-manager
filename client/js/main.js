@@ -2,7 +2,7 @@ import { G } from './state.js'
 import { sp, cm, upUI, schEx, setNation, toggleColorblind, ntf, continueTurn } from './ui.js'
 import { showSetup, selIcon, beginGame, restoreGame, selScenario } from './setup.js'
 import { adv } from './adv.js'
-import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath } from './panels/roster.js'
+import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath, rosterSortBy, rosterToggleCol, rosterColMgr, rosterCtx } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation, setSqApproach } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM, setMissionApproach } from './panels/missions.js'
 import { rUp, buyUp, buildDistrict, chooseDoctrine } from './panels/upgrades.js'
@@ -133,6 +133,7 @@ Object.assign(window, {
   retireShinobi, retireToCoach, extendCareer,
   setTrainingFocus, toggleRestMonth, openContractRenewal,
   toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath,
+  rosterSortBy, rosterToggleCol, rosterColMgr, rosterCtx,
   // missions
   setMissionPrep, simTemplate,
   // scouting

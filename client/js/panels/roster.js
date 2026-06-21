@@ -9,6 +9,11 @@ import { BOND_TYPES } from '../../../shared/bonds/bondTypes.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { PHASE_META, ensureCareerFields } from '../careerEngine.js'
 import { computeStrain, strainBand } from '../../../shared/utils/strain.js'
+import { openContextMenu, tblSort, tblToggleSort, tblHidden, tblToggleCol, tblSortRows, tblHeaderHtml, tblColumnManagerHtml, tblToggleColumnManager } from '../uikit.js'
+
+const _ROSTER_DEFAULT_SORT = { key: 'power', dir: 'desc' }
+const _GRADE_ORDER = { S: 6, A: 5, B: 4, C: 3, D: 2, E: 1, F: 0 }
+const _rankColor = ri => ['#7a7060', '#87ceeb', '#8fbc8f', '#cc7fb8', '#c9a84c'][ri] || '#7a7060'
 
 export function sBars(s) {
   const st = s.stats || {}
@@ -142,47 +147,40 @@ export function rRo() {
         </div>`
       }).join('')
 
-  // Main roster table
-  const tableRows = sorted.map((s, i) => {
-    const pw    = sPow(s)
-    const pot   = _potential(s)
-    const sq    = G.squads.find(q => q.members.includes(s.id))
-    const rankLabel = RANKS[s.ri]
-    const rankCol   = ['#7a7060','#87ceeb','#8fbc8f','#cc7fb8','#c9a84c'][s.ri] || '#7a7060'
+  // ── Main roster table — sortable headers + customizable columns (P1 kit) ──
+  const _statusCell = s => s.status === 'available' ? `<span style="color:#8fbc8f;font-size:8px" title="Available">●</span>`
+    : s.status === 'mission' ? `<span style="color:#c9a84c;font-size:8px" title="On mission">▶</span>`
+    : s.status === 'injured' ? `<span style="color:#f66;font-size:8px" title="Injured ${s.injDays}m">✕</span>`
+    : `<span style="color:#87ceeb;font-size:8px" title="Exam">⚑</span>`
+  const _nameCell = s => {
+    const nt = s.noTrade ? `<span style="font-size:6px;color:#f99;border:1px solid #744;padding:0 3px;margin-left:3px">NT</span>` : ''
+    const tw = s.twoWay  ? `<span style="font-size:6px;color:#87ceeb;border:1px solid #468;padding:0 3px;margin-left:2px">2W</span>` : ''
+    const peak = s.peakAge && Math.abs((s.age||0) - s.peakAge) <= 1 ? `<span style="font-size:6px;color:#c9a84c;border:1px solid #c9a84c66;padding:0 3px;margin-left:3px" title="Peak years">★</span>`
+      : s.peakAge && (s.age||0) > s.peakAge + 3 ? `<span style="font-size:6px;color:#f66;border:1px solid #f6644;padding:0 3px;margin-left:3px" title="Past peak">↘</span>` : ''
+    return `<div style="font-size:9px;color:#e8e0cc;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">${sn(s)}${s.jk ? '<span style="font-size:7px;color:#c9a84c"> ⚡</span>' : ''}${nt}${tw}${peak}</div><div style="font-size:7px;color:#555">${s.clan || s.spec || '—'}</div>`
+  }
+  const COLS = [
+    { key: 'rank', label: 'Rank', align: 'left', hideable: false, sortVal: s => s.ri,
+      render: s => `<span style="font-size:8px;font-weight:bold;color:${_rankColor(s.ri)};background:${_rankColor(s.ri)}22;padding:1px 5px;border:1px solid ${_rankColor(s.ri)}44">${RANKS[s.ri].slice(0,3).toUpperCase()}</span>` },
+    { key: 'name', label: 'Name', align: 'left', hideable: false, sortVal: s => sn(s), render: _nameCell },
+    { key: 'age', label: 'Age', align: 'center', sortVal: s => s.age || 0, render: s => `<span style="font-size:8px;color:#7a7060">${s.age}</span>` },
+    { key: 'power', label: 'Ability', align: 'center', sortVal: s => sPow(s), render: s => _starsHtml(sPow(s)) },
+    { key: 'potential', label: 'Potential', align: 'center', sortVal: s => _potential(s), render: s => _starsHtml(_potential(s)) },
+    { key: 'status', label: 'Sts', align: 'center', sortVal: s => s.status, render: _statusCell },
+    { key: 'grade', label: 'Grd', align: 'center', sortVal: s => _GRADE_ORDER[gradeShinobi(s).label] ?? 0,
+      render: s => { const g = gradeShinobi(s); return `<span style="font-size:9px;font-weight:bold;color:${g.color};background:${g.color}22;padding:1px 5px;border:1px solid ${g.color}44">${g.label}</span>` } },
+    { key: 'salary', label: 'Salary', align: 'right', sortVal: s => s.salary || 0, render: s => `<span style="font-size:8px;color:#555">${fmt(s.salary)}</span>` },
+  ]
+  const _sort = tblSort('roster', _ROSTER_DEFAULT_SORT)
+  const _hidden = new Set(tblHidden('roster'))
+  const _visCols = COLS.filter(c => !_hidden.has(c.key))
+  const _rosterRows = tblSortRows(G.shinobi, _sort, COLS)
+
+  const tableRows = _rosterRows.map((s, i) => {
     const isSelected = window._rosSelId === s.id
-
-    let statusCell
-    if (s.status === 'available')
-      statusCell = `<span style="color:#8fbc8f;font-size:8px">●</span>`
-    else if (s.status === 'mission')
-      statusCell = `<span style="color:#c9a84c;font-size:8px">▶</span>`
-    else if (s.status === 'injured')
-      statusCell = `<span style="color:#f66;font-size:8px" title="Injured ${s.injDays}m">✕</span>`
-    else
-      statusCell = `<span style="color:#87ceeb;font-size:8px">⚑</span>`
-
-    const noTradeTag = s.noTrade ? `<span style="font-size:6px;color:#f99;border:1px solid #744;padding:0 3px;margin-left:3px">NT</span>` : ''
-    const twoWayTag  = s.twoWay  ? `<span style="font-size:6px;color:#87ceeb;border:1px solid #468;padding:0 3px;margin-left:2px">2W</span>` : ''
-    const grade = gradeShinobi(s)
-    const peakTag = s.peakAge && Math.abs((s.age||0) - s.peakAge) <= 1 ? `<span style="font-size:6px;color:#c9a84c;border:1px solid #c9a84c66;padding:0 3px;margin-left:3px" title="Peak years">★ PEAK</span>` : s.peakAge && (s.age||0) > s.peakAge + 3 ? `<span style="font-size:6px;color:#f66;border:1px solid #f6644;padding:0 3px;margin-left:3px" title="Past peak">↘</span>` : ''
-
-    return `<tr style="background:${isSelected ? '#1e1c16' : i%2===0?'#0f0e0c':'#000'};cursor:pointer;border-bottom:1px solid #111"
-      onclick="rosSelect('${s.id}')">
-      <td style="padding:5px 6px;width:50px">
-        <span style="font-size:8px;font-weight:bold;color:${rankCol};background:${rankCol}22;padding:1px 5px;border:1px solid ${rankCol}44">${rankLabel.slice(0,3).toUpperCase()}</span>
-      </td>
-      <td style="padding:5px 6px;max-width:140px">
-        <div style="font-size:9px;color:#e8e0cc;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-          ${sn(s)}${s.jk?'<span style="font-size:7px;color:#c9a84c"> ⚡</span>':''}${noTradeTag}${twoWayTag}${peakTag}
-        </div>
-        <div style="font-size:7px;color:#555">${s.clan || s.spec || '—'}</div>
-      </td>
-      <td style="padding:5px 6px;font-size:8px;color:#7a7060;text-align:center">${s.age}</td>
-      <td style="padding:5px 6px;text-align:center">${_starsHtml(pw)}</td>
-      <td style="padding:5px 6px;text-align:center">${_starsHtml(pot)}</td>
-      <td style="padding:5px 6px;text-align:center">${statusCell}</td>
-      <td style="padding:5px 6px;text-align:center"><span style="font-size:9px;font-weight:bold;color:${grade.color};background:${grade.color}22;padding:1px 5px;border:1px solid ${grade.color}44">${grade.label}</span></td>
-      <td style="padding:5px 6px;font-size:8px;color:#555;text-align:right">${fmt(s.salary)}</td>
+    return `<tr style="background:${isSelected ? '#1e1c16' : i%2===0 ? '#0f0e0c' : '#000'};cursor:pointer;border-bottom:1px solid #111"
+      onclick="rosSelect('${s.id}')" oncontextmenu="return rosterCtx(event,'${s.id}')">
+      ${_visCols.map(c => `<td style="padding:5px 6px;text-align:${c.align || 'left'}">${c.render(s)}</td>`).join('')}
     </tr>`
   }).join('')
 
@@ -192,27 +190,21 @@ export function rRo() {
       <!-- Left: roster table -->
       <div>
         ${_clanBar()}
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;position:relative">
           <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase">Roster — ${G.shinobi.length} shinobi</div>
-          <div style="margin-left:auto;display:flex;gap:12px;font-size:8px;color:#555">
-            <span><span style="color:#8fbc8f">●</span> Available</span>
+          <div style="margin-left:auto;display:flex;gap:10px;align-items:center;font-size:8px;color:#555">
+            <span><span style="color:#8fbc8f">●</span> Avail</span>
             <span><span style="color:#c9a84c">▶</span> Mission</span>
             <span><span style="color:#f66">✕</span> Injured</span>
             <span><span style="color:#87ceeb">⚑</span> Exam</span>
+            <button class="tbl-colbtn" onclick="rosterColMgr()" title="Show / hide columns">⚙ Columns</button>
+            ${tblColumnManagerHtml('roster', COLS, 'rosterToggleCol')}
           </div>
         </div>
+        <div style="font-size:7px;color:#3a3630;margin-bottom:4px">Click a column to sort · right-click a shinobi for actions</div>
         <table style="width:100%;border-collapse:collapse">
           <thead>
-            <tr style="background:#0a0908;border-bottom:1px solid #2e2a22">
-              <th style="padding:4px 6px;font-size:7px;color:#555;letter-spacing:1px;text-align:left;text-transform:uppercase">Rank</th>
-              <th style="padding:4px 6px;font-size:7px;color:#555;letter-spacing:1px;text-align:left;text-transform:uppercase">Name</th>
-              <th style="padding:4px 6px;font-size:7px;color:#555;letter-spacing:1px;text-align:center;text-transform:uppercase">Age</th>
-              <th style="padding:4px 6px;font-size:7px;color:#555;letter-spacing:1px;text-align:center;text-transform:uppercase">Ability</th>
-              <th style="padding:4px 6px;font-size:7px;color:#555;letter-spacing:1px;text-align:center;text-transform:uppercase">Potential</th>
-              <th style="padding:4px 6px;font-size:7px;color:#555;letter-spacing:1px;text-align:center;text-transform:uppercase">Sts</th>
-              <th style="padding:4px 6px;font-size:7px;color:#555;letter-spacing:1px;text-align:center;text-transform:uppercase">Grd</th>
-              <th style="padding:4px 6px;font-size:7px;color:#555;letter-spacing:1px;text-align:right;text-transform:uppercase">Salary</th>
-            </tr>
+            <tr style="background:#0a0908;border-bottom:1px solid #2e2a22">${tblHeaderHtml(_visCols, _sort, 'rosterSortBy')}</tr>
           </thead>
           <tbody>${tableRows}</tbody>
         </table>
@@ -235,6 +227,30 @@ export function rRo() {
 export function rosSelect(id) {
   window._rosSelId = (window._rosSelId === id) ? null : id
   rRo()
+}
+
+// ── Table kit wrappers (P1) ────────────────────────────────────────────────────
+export function rosterSortBy(key) { tblToggleSort('roster', key, _ROSTER_DEFAULT_SORT); rRo() }
+export function rosterToggleCol(key) { tblToggleCol('roster', key); rRo() }
+export function rosterColMgr() { tblToggleColumnManager('roster') }
+
+export function rosterCtx(e, id) {
+  e.preventDefault()
+  const s = G.shinobi.find(x => x.id === id); if (!s) return false
+  openContextMenu(e.clientX, e.clientY, [
+    { label: 'Open Dossier', fn: () => window.oDos && window.oDos(id) },
+    { label: 'Select / Inspect', fn: () => window.rosSelect && window.rosSelect(id) },
+    { separator: true },
+    { label: 'Set Path: ANBU Track', fn: () => window.setDevPath && window.setDevPath(id, 'anbu') },
+    { label: 'Set Path: Squad Anchor', fn: () => window.setDevPath && window.setDevPath(id, 'anchor') },
+    { label: 'Set Path: Mission Spec', fn: () => window.setDevPath && window.setDevPath(id, 'machine') },
+    { separator: true },
+    { label: 'Renew Contract', fn: () => window.openContractRenewal && window.openContractRenewal(id) },
+    { label: s.noTrade ? 'Remove No-Trade' : 'Add No-Trade', fn: () => window.toggleNoTrade && window.toggleNoTrade(id) },
+    { separator: true },
+    { label: 'Retire', danger: true, fn: () => window.retireShinobi && window.retireShinobi(id) },
+  ])
+  return false
 }
 
 function _renderRosDetail(id) {
