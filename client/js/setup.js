@@ -1,5 +1,5 @@
-import { G, spIcon, setSpIcon, initState, schEx } from './state.js'
-import { VILLAGE_ICONS } from './constants.js'
+import { G, spIcon, setSpIcon, initState, schEx, applyScenario } from './state.js'
+import { VILLAGE_ICONS, START_SCENARIOS } from './constants.js'
 import { upUI, sp, aL } from './ui.js'
 import { initSocket, socket } from './socket.js'
 import { RS, parseInviteCode } from './room.js'
@@ -23,6 +23,8 @@ export function showSetup() {
   document.getElementById('sp-icons').innerHTML = VILLAGE_ICONS.map(ic =>
     `<button class="sp-ico${ic === spIcon ? ' sel' : ''}" onclick="selIcon('${ic}',this)">${ic}</button>`
   ).join('')
+
+  _renderScenarioPicker()
 
   // Show a "Continue" banner if a previous session exists in localStorage
   const prev = document.getElementById('sp-continue-banner')
@@ -50,10 +52,31 @@ export function selIcon(ic, el) {
   el.classList.add('sel')
 }
 
+// ── Start scenario picker ─────────────────────────────────────────────────────
+let _selScenario = 'standard'
+
+function _renderScenarioPicker() {
+  const host = document.getElementById('sp-scenarios')
+  if (!host) return
+  host.innerHTML = START_SCENARIOS.map(s => `
+    <button class="sp-scn${s.id === _selScenario ? ' sel' : ''}" onclick="selScenario('${s.id}',this)"
+      style="display:block;width:100%;text-align:left;padding:8px 10px;margin-bottom:5px;cursor:pointer;
+             border:1px solid ${s.id === _selScenario ? '#c9a84c' : '#2e2a22'};
+             background:${s.id === _selScenario ? 'rgba(201,168,76,.08)' : 'transparent'};color:#e8e0cc">
+      <div style="font-size:10px;font-weight:600;color:${s.id === _selScenario ? '#c9a84c' : '#e8e0cc'}">${s.icon} ${s.n}</div>
+      <div style="font-size:8px;color:#7a7060;margin-top:2px;line-height:1.4">${s.desc}</div>
+    </button>`).join('')
+}
+
+export function selScenario(id, el) {
+  _selScenario = id
+  _renderScenarioPicker()
+}
+
 export function beginGame() {
   const vname = document.getElementById('sp-vname').value.trim() || 'Hidden Village'
   const kname = document.getElementById('sp-kname').value.trim() || 'Kage'
-  _startGame(vname, kname, spIcon)
+  _startGame(vname, kname, spIcon, _selScenario)
 }
 
 /**
@@ -67,7 +90,7 @@ export function restoreGame() {
   _startGame(vname, kname, icon)
 }
 
-function _startGame(vname, kname, icon) {
+function _startGame(vname, kname, icon, scenario = 'standard') {
   document.getElementById('sb-icon').textContent  = icon
   document.getElementById('sb-vname').textContent = vname
   initState()
@@ -75,6 +98,7 @@ function _startGame(vname, kname, icon) {
   G.kName = kname
   G.vIcon = icon
   seedPhase1(G)
+  applyScenario(G, scenario)
   schEx()
   aL('Your tenure as Kage begins.', 'neutral')
   sp('dashboard')

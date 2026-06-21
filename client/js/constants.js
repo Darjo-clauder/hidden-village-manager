@@ -37,6 +37,14 @@ export const RIVAL_VILLAGE_POOL=[
 ]
 export const RIVAL_KAGE_NAMES=['Sabaku','Kaito','Ganseki','Raiden','Mizuhara','Kuroyama','Tendo','Hayashi','Arashi','Yukimura','Tsukino','Iwagane','Kazami','Shirogane','Reizei','Akatsuchi','Nagumo','Daichi']
 export const RIVAL_PERSONALITIES=['Aggressive','Honorable','Mercantile','Isolationist','Militant']
+// ── Start scenarios — reshape the opening board for variable playthroughs ──────
+export const START_SCENARIOS=[
+  {id:'standard',   n:'Standard',          icon:'⚖',  desc:'A balanced founding — the classic path. 60k ryo, full roster, neutral world.'},
+  {id:'fledgling',  n:'Fledgling Village', icon:'🌱', desc:'Hard start: 25k ryo, a thin green roster, little renown. Build from nothing.'},
+  {id:'established', n:'Established Power',  icon:'🏯', desc:'Inherit wealth at Tier C — 120k ryo, a stronger roster, but rivals resent you.'},
+  {id:'wartorn',    n:'War-Torn Borders',  icon:'⚔',  desc:'Hostile neighbours and early aggression — but fortified walls and hardened shinobi.'},
+  {id:'beastkeeper',n:'Beast Keeper',      icon:'🦊', desc:'Begin with a sealed tailed beast and its host — but every rival covets it.'},
+]
 export const TRADE_ROUTES=[{id:'iron',n:'Iron Country Trade Route',desc:'Export weapons-grade steel.',cost:8000,income:2500,active:false},{id:'herbs',n:'Medicinal Herb Caravan',desc:'Export rare herbs to hospitals.',cost:5000,income:1500,active:false},{id:'silk',n:'Silk Road Partnership',desc:'Facilitate luxury goods.',cost:12000,income:3500,active:false},{id:'intel_t',n:'Intelligence Brokerage',desc:'Sell non-critical intel. Requires intel network.',cost:6000,income:2000,active:false,req:'intel'},{id:'jk_tour',n:'Vessel Demonstration',desc:'Show off vessel power to daimyo. Requires a vessel.',cost:0,income:5000,active:false,req:'jk'}]
 export const CONTRACTS=[{id:'vip',n:'VIP Escort Contract',desc:'Escort the daimyo family monthly.',cost:3000,income:4000,active:false},{id:'border',n:'Border Guard Contract',desc:'Patrol the northern border.',cost:5000,income:5500,active:false},{id:'train',n:'Train Daimyo Samurai',desc:'Monthly training sessions.',cost:2000,income:3200,active:false}]
 export const BLACK_MARKET=[{id:'smuggle',n:'Smuggling Ring Cut',desc:'Take a cut from smugglers.',ryoGain:8000,repLoss:5,risk:0.15},{id:'scroll',n:'Sell Forbidden Scroll',desc:'A collector wants a forbidden jutsu scroll.',ryoGain:15000,repLoss:12,risk:0.25},{id:'hit',n:'Anonymous Assassination',desc:'A shadowy client wants a target eliminated.',ryoGain:12000,repLoss:8,risk:0.20},{id:'intel',n:'Sell Intel to Enemy',desc:'Pass information for cash.',ryoGain:10000,repLoss:15,risk:0.30}]

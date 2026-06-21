@@ -1,6 +1,6 @@
 import {
   CLANS, RANKS, FNAMES, LNAMES, SPECS, PERSONALITIES, BACKSTORIES, ARCHETYPES,
-  TAILED_BEASTS, VILLAGES_DEF, RIVAL_VILLAGE_POOL, RIVAL_KAGE_NAMES, RIVAL_PERSONALITIES, MISS_POOL, SEASONAL_MISSIONS, CRISIS_MISSION_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
+  TAILED_BEASTS, VILLAGES_DEF, RIVAL_VILLAGE_POOL, RIVAL_KAGE_NAMES, RIVAL_PERSONALITIES, START_SCENARIOS, MISS_POOL, SEASONAL_MISSIONS, CRISIS_MISSION_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
   REGIONS, PM_DESC, REGION_EVENTS, DEV_CURVES, AGENT_AGENDAS,
 } from './constants.js'
 import { ARCHETYPE_POOL } from '../../shared/utils/personality.js'
@@ -371,6 +371,67 @@ export function initState() {
     }
   })
   rfM(); rfP()
+}
+
+// ── Start scenario application ────────────────────────────────────────────────
+// Reshapes the freshly-initialised G to create a distinct opening. Called from
+// _startGame after initState(). 'standard' is a no-op.
+export function applyScenario(G, id = 'standard') {
+  G.startScenario = id
+  const rivals = G.villages || []
+
+  if (id === 'fledgling') {
+    G.ryo = 25000
+    G.reputation = 5
+    G.morale = 70
+    // Thin, green roster: drop elites, keep up to 12 of the rest.
+    G.shinobi = G.shinobi.filter(s => (s.ri || 0) <= 2).slice(0, 12)
+    rivals.forEach(v => { v.rel = clamp((v.rel || 30) + 8, 0, 100) })  // less hostile early
+  }
+
+  else if (id === 'established') {
+    G.ryo = 120000
+    G.reputation = 45
+    G.morale = 80
+    G.legend = 60            // crosses Tier C threshold (min 50)
+    G.prestigeTier = 'C'
+    G.upgrades.academy = 1
+    G.shinobi.forEach(s => { s.potential = clamp((s.potential || 50) + 8, 20, 99) })
+    rivals.forEach(v => { v.rel = clamp((v.rel || 30) - 10, 0, 100); v.threat = clamp((v.threat || 0) + 5, 0, 100) })
+    G.establishedExpectations = true   // higher daimyō bar (read where mandates are set)
+  }
+
+  else if (id === 'wartorn') {
+    G.upgrades.wall = 2
+    G.upgrades.seal = 1
+    rivals.forEach(v => {
+      v.rel = clamp((v.rel || 30) - 20, 0, 100)
+      v.threat = clamp((v.threat || 0) + 30, 0, 100)
+      v.grudgeTicks = (v.grudgeTicks || 0) + 2
+    })
+    // Battle-hardened: small stat bump across the roster.
+    G.shinobi.forEach(s => Object.keys(s.stats).forEach(k => { s.stats[k] = clamp(Math.round(s.stats[k] * 1.05), 1, 99) }))
+  }
+
+  else if (id === 'beastkeeper') {
+    // Seal a low-tail beast that no rival already holds, assign a Jonin+ host.
+    const beast = (G.beasts || []).find(b => !b.sealed && !b.owner && b.tails <= 2)
+                || (G.beasts || []).find(b => !b.sealed && !b.owner)
+    const host  = [...G.shinobi].sort((a, b) => sPow(b) - sPow(a)).find(s => (s.ri || 0) >= 2)
+    if (beast && host) {
+      beast.sealed = true
+      beast.jk = host.id
+      beast.syncMonths = 4
+      beast.loreUnlocked = beast.loreUnlocked || []
+      beast.loreBonusActive = false
+      beast.escapeHistory = beast.escapeHistory || []
+      host.jk = beast.n
+      host.title = `Jinchuriki of ${beast.n}`
+    }
+    rivals.forEach(v => { v.rel = clamp((v.rel || 30) - 8, 0, 100); v.threat = clamp((v.threat || 0) + 8, 0, 100) })
+  }
+
+  return G
 }
 
 // ── Staff constructor ──────────────────────────────────────────────────────────
