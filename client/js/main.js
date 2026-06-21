@@ -1,5 +1,5 @@
 import { G } from './state.js'
-import { sp, cm, upUI, schEx, setNation, toggleColorblind, ntf } from './ui.js'
+import { sp, cm, upUI, schEx, setNation, toggleColorblind, ntf, continueTurn } from './ui.js'
 import { showSetup, selIcon, beginGame, restoreGame, selScenario } from './setup.js'
 import { adv } from './adv.js'
 import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath } from './panels/roster.js'
@@ -82,7 +82,7 @@ Object.assign(window, {
   showSetup, showLobby, selIcon, beginGame, restoreGame, selScenario,
   // room / lobby
   createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode,
-  endTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose,
+  endTurn, continueTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose,
   setTimeout_, setMaxPlayers, voteAdvance, copyInvite,
   // navigation & modals
   sp, cm, adv, toggleNav, setNation, toggleColorblind,

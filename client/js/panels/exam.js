@@ -187,7 +187,7 @@ export function startEx() {
     const sq = G.squads.find(q => q.id === sqId); if (!sq) return
     sq.members.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s) s.status = 'exam' })
   })
-  rEx()
+  rEx(); upUI()   // upUI refreshes the Continue button to its blocked (exam-active) state
 }
 
 function _formatBonus(s) {

@@ -111,7 +111,55 @@ export function upUI() {
     inboxBadge.style.display = count > 0 ? '' : 'none'
   }
 
+  _updateContinueBtn()
+
   rP(ui.CP)
+}
+
+// ── ContinueButton (FM24 spec) ─────────────────────────────────────────────────
+// Reflects pending actions: ready / pending (soft, inbox) / blocked (must resolve).
+function _pendingState() {
+  if (G.pendingChoiceEvent)   return { state: 'blocked', reason: 'worldchoice' }
+  if (G.pendingQuickDecision) return { state: 'blocked', reason: 'inbox' }
+  if (G.examActive)           return { state: 'blocked', reason: 'exam' }
+  if (G.warActive)            return { state: 'blocked', reason: 'war' }
+  const n = (() => { try { return getInboxCount() } catch { return 0 } })()
+  if (n > 0) return { state: 'pending', count: n }
+  return { state: 'ready' }
+}
+
+function _updateContinueBtn() {
+  const btn = document.getElementById('btn-end-turn')
+  if (!btn) return
+  const p = _pendingState()
+  const monthName = MONTHS[G.month - 1]?.n || ''
+  btn.classList.remove('ct-ready', 'ct-pending', 'ct-blocked')
+  if (p.state === 'blocked') {
+    btn.classList.add('ct-blocked')
+    btn.innerHTML = 'Resolve to continue'
+    btn.title = 'A required decision is unresolved.'
+  } else if (p.state === 'pending') {
+    btn.classList.add('ct-pending')
+    btn.innerHTML = `End Turn ▸ <span class="ct-badge">${p.count}</span>`
+    btn.title = `${p.count} decision${p.count === 1 ? '' : 's'} pending in your inbox — you may still advance.`
+  } else {
+    btn.classList.add('ct-ready')
+    btn.innerHTML = `End Turn ▸ ${monthName}`
+    btn.title = `Advance to ${monthName} Y${G.year}.`
+  }
+}
+
+/** Wraps endTurn: blocking decisions route the player to them instead of advancing. */
+export function continueTurn() {
+  const p = _pendingState()
+  if (p.state === 'blocked') {
+    if (p.reason === 'worldchoice' && typeof window.openWorldChoice === 'function') window.openWorldChoice()
+    else if (p.reason === 'exam' || p.reason === 'war') sp('exam')
+    else sp('inbox')
+    ntf('Resolve the pending decision first.')
+    return
+  }
+  if (typeof window.endTurn === 'function') window.endTurn()
 }
 
 function _set(id, val) {

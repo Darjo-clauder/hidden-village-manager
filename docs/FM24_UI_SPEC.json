@@ -1,0 +1,525 @@
+{
+  "meta": {
+    "title": "Hidden Village Manager — FM24 / FHM-style UI Conversion Spec",
+    "version": "1.0",
+    "target": "16:9 desktop (min 1280x720, optimized 1600x900+)",
+    "conventions": [
+      "Left primary nav (icon+label, collapsible to icons)",
+      "Persistent top bar with date, treasury, reputation, morale, and a central Continue button",
+      "Tabbed content area per screen",
+      "Right-side context inspector that updates on row/entity selection",
+      "Every entity (shinobi, squad, village, mission) is a clickable hyperlink with hover preview and right-click context menu",
+      "Tables: sortable, reorderable, show/hide columns, saved views",
+      "Continue button reflects pending actions (color + badge + label)"
+    ],
+    "note": "Six required keys present: goals, screens, components, flows, assets, roadmap. Accessibility/localization checklists, prompt snippets, and CSS tokens are nested under `assets` plus surfaced as top-level convenience keys (accessibility, localization, promptSnippets, cssTokens)."
+  },
+
+  "goals": [
+    {
+      "id": "g1",
+      "title": "Legibility over decoration — every screen answers 'what needs my decision now?'",
+      "detail": "Replace ambient stat tiles with FM24-style data density: one clear title, 3-5 primary KPIs, scannable sortable tables, and an inspector that explains the selected entity. The Continue button is the single source of 'what is blocking the turn'.",
+      "successMetric": "A returning player can identify and resolve all pending decisions in <30s from the Home screen."
+    },
+    {
+      "id": "g2",
+      "title": "One interaction grammar everywhere — click, hover, right-click, Continue",
+      "detail": "Unify the current bespoke onclick handlers into a consistent grammar: left-click selects/opens, hover previews, right-click opens a context menu of verbs, and the spacebar/Continue advances. This makes 28 panels feel like one product.",
+      "successMetric": "Same gesture set works on shinobi, squads, villages, missions, prospects, and staff with zero per-screen relearning."
+    },
+    {
+      "id": "g3",
+      "title": "Turn-based rhythm with reversible drilling — never lose the player's place",
+      "detail": "Mirror FM24's 'process the inbox, set instructions, Continue' loop. Decisions surface as inbox items or inspector actions; drilling into an entity is a non-destructive overlay/route that returns to context. Pending mid-mission events, exam stage postures, and war commands all route through the same decision queue.",
+      "successMetric": "Continue is disabled/annotated whenever an unresolved blocking decision exists; players never advance past a required choice by accident."
+    }
+  ],
+
+  "screens": [
+    {
+      "name": "Home (Hokage's Desk)",
+      "currentEquivalent": "dashboard.js + inbox.js",
+      "primaryTasks": ["Triage pending decisions", "Read this-month summary", "Jump to the screen that needs action", "Continue the turn"],
+      "informationHierarchy": {
+        "title": "Village name + Y{year} M{month} + prestige tier badge",
+        "primaryMetrics": ["Treasury (+net/mo)", "Reputation", "Morale", "Roster ready/total", "Legend"],
+        "secondaryPanels": ["Pending Decisions (inbox digest)", "Last Month summary", "Upcoming Calendar (Exam/Summit/War/Intake)", "At-risk alerts (commitment, injuries, aging prospects)"]
+      },
+      "recommendedLayout": "Left nav | top bar (KPIs + Continue) | center 2-col: left=Inbox digest (urgent first), right=Calendar + summary | right inspector hidden until an inbox item is selected",
+      "contextMenus": {
+        "inboxItem": ["Open", "Resolve →", "Snooze 1 month", "Mark read", "Go to subject"],
+        "calendarEvent": ["View details", "Prepare squads", "Add reminder"]
+      },
+      "keyboardShortcuts": {"Space/Enter": "Continue", "i": "Inbox", "1-9": "Jump to nav slot", "Esc": "Close overlay"},
+      "microcopy": {
+        "continue_blocked": "Resolve {n} decision(s) to continue",
+        "continue_ready": "Continue ▸ {monthName} Y{year}",
+        "empty_inbox": "No decisions pending. The village runs smoothly.",
+        "tooltip_morale": "Village morale. Below 40 risks unrest and harder recruitment."
+      }
+    },
+    {
+      "name": "Squad / Roster (Shinobi Force)",
+      "currentEquivalent": "roster.js + depthchart.js + squads.js",
+      "primaryTasks": ["Scan roster by ability/potential/grade", "Set dev paths", "Build squads & depth chart", "Spot injuries/fatigue/contract risk"],
+      "informationHierarchy": {
+        "title": "Shinobi Force — {n} shinobi ({available} available)",
+        "primaryMetrics": ["Clan composition / synergy tier", "Avg power", "Payroll vs cap", "Injured count"],
+        "secondaryPanels": ["Active assignments", "Selected shinobi inspector (stats, trajectory, dev path, contract)"]
+      },
+      "recommendedLayout": "Left nav | tabs: Roster · Squads · Depth Chart · Development | center sortable table | right inspector = selected shinobi dossier",
+      "contextMenus": {
+        "shinobiRow": ["Open Dossier", "Assign to Mission", "Add to Squad", "Set Development Path ▸", "Renew Contract", "Add/Remove No-Trade", "Make Jinchuriki ▸", "Retire"]
+      },
+      "keyboardShortcuts": {"f": "Filter", "c": "Customize columns", "Enter": "Open dossier", "a": "Assign selected"},
+      "microcopy": {
+        "col_grade_tip": "Performance grade (S–F) from recent mission outcomes vs potential.",
+        "devpath_set": "Development path set: {path}. Biases monthly stat growth.",
+        "trajectory_tip": "Career arc: Ascending → Prime → Late Career → Declining (age vs peak)."
+      }
+    },
+    {
+      "name": "Missions (Operations Board)",
+      "currentEquivalent": "missions.js",
+      "primaryTasks": ["Read mission intel (terrain/clan/danger/spec)", "Pick tactical approach", "Assign best-fit shinobi or squad", "Set prep posture"],
+      "informationHierarchy": {
+        "title": "Operations — {available} missions",
+        "primaryMetrics": ["Idle shinobi", "Active ops", "Prep mode", "Avg success this month (form)"],
+        "secondaryPanels": ["Mission cards (intel + best-fit)", "Last mission report", "Assign overlay with approach picker"]
+      },
+      "recommendedLayout": "Left nav | tabs: Solo · Squad · Defense · Chains · Templates · Log · Underground | center mission cards (list/grid toggle) | right inspector = selected mission briefing (intel + candidate matchups)",
+      "contextMenus": {
+        "missionCard": ["Briefing", "Quick-assign best fit", "Assign…", "Set approach ▸", "Pin", "Ignore"]
+      },
+      "keyboardShortcuts": {"b": "Open briefing", "Enter": "Assign best fit", "1/2/3": "Stealth/Balanced/Assault approach"},
+      "microcopy": {
+        "approach_favored": "▲ Favored vs {spec} — +7% success",
+        "approach_mismatch": "▼ Mismatch vs {spec} — −7% success",
+        "assign_btn": "Deploy ▸",
+        "intel_tip": "Mission intel: terrain, likely enemy clan, danger band, and the unit type that gets a bonus."
+      }
+    },
+    {
+      "name": "Competitions (Chunin Exam / Nation War / Summit)",
+      "currentEquivalent": "exam.js + war.js + kage.js (summit)",
+      "primaryTasks": ["Nominate squads", "Set per-stage posture / command", "Run stages", "Read bracket + standings"],
+      "informationHierarchy": {
+        "title": "{Competition} — {stage} (Y{year})",
+        "primaryMetrics": ["Villages in contention", "Squads remaining", "Fallen (war)", "Season seed"],
+        "secondaryPanels": ["Bracket/standings", "Stage posture/command selector", "Round results overlay"]
+      },
+      "recommendedLayout": "Left nav | tabs: Chunin Exam · Nation War · Summit · S-Rank Bids · Records · Leaders | center bracket/standings | bottom action bar: posture/command + Run Stage",
+      "contextMenus": {
+        "squadEntry": ["Squad sheet", "Withdraw nominee", "Scout opponent"],
+        "rivalEntry": ["Intel dossier", "Threat board"]
+      },
+      "keyboardShortcuts": {"r": "Run stage", "Tab": "Cycle posture", "Esc": "Close results"},
+      "microcopy": {
+        "run_stage": "Run {stageShort} ▸",
+        "posture_tip": "Stage posture affects only your squads. Push = +advance, more wounds & fatigue.",
+        "war_command_tip": "Command order: Press (+advance, ×1.3 casualties) / Hold / Withdraw (−advance, ×0.55 casualties)."
+      }
+    },
+    {
+      "name": "Transfers & Scouting (Recruitment)",
+      "currentEquivalent": "transfers.js + scouting.js + academy.js + youthacademy.js + prospectEngine",
+      "primaryTasks": ["Scout prospects", "Negotiate signings/loans", "Match rival offers", "Manage academy intake & training"],
+      "informationHierarchy": {
+        "title": "Recruitment — window {open/closed}",
+        "primaryMetrics": ["Scout budget split", "Watchlist size", "Cap space", "Prospect leads"],
+        "secondaryPanels": ["Prospect pool (sortable, confidence ranges)", "Negotiation panel", "Academy class board"]
+      },
+      "recommendedLayout": "Left nav | tabs: Transfer Market · Scouting · Academy · Youth | center prospect/market table | right inspector = prospect report or negotiation",
+      "contextMenus": {
+        "prospectRow": ["Scout report", "Add to watchlist", "Open negotiation", "Assign scout", "Compare"]
+      },
+      "keyboardShortcuts": {"w": "Toggle watchlist", "n": "Negotiate", "c": "Compare"},
+      "microcopy": {
+        "offer_submit": "Submit offer ({fee} ryo)",
+        "confidence_tip": "Wider range = lower scout confidence. Invest scouting to narrow it.",
+        "match_offer": "Match rival offer ({cost} ryo)"
+      }
+    },
+    {
+      "name": "Finances & Economy (Treasury)",
+      "currentEquivalent": "finances.js + economy.js",
+      "primaryTasks": ["Review income/expense streams", "Open/secure trade routes", "Manage black-market heat", "Watch the cap"],
+      "informationHierarchy": {
+        "title": "Treasury — {health tier}",
+        "primaryMetrics": ["Balance", "Monthly net", "Payroll vs cap", "Income streams"],
+        "secondaryPanels": ["12-month history chart", "Trade routes & contracts", "Black market (heat meter)"]
+      },
+      "recommendedLayout": "Left nav | tabs: Overview · Trade · Contracts · Underground · History | center stream table + chart | right inspector = selected stream detail",
+      "contextMenus": {
+        "routeRow": ["Open route", "Secure route", "Close route", "View disruption history"]
+      },
+      "keyboardShortcuts": {"h": "History chart", "/": "Search streams"},
+      "microcopy": {
+        "secure_route": "Secure Route — {cost} ryo ▸",
+        "heat_tip": "Underworld heat multiplies exposure risk and cools ~6/month if you lie low.",
+        "cap_warn": "Over payroll cap by {amount} ryo — cut salary or release."
+      }
+    },
+    {
+      "name": "Village (Infrastructure & Doctrine)",
+      "currentEquivalent": "village.js (overview) + upgrades.js + clans.js + beasts.js + safehouses.js",
+      "primaryTasks": ["Review village status", "Build/upgrade & pick doctrine", "Manage clans & bloodlines", "Manage jinchuriki control"],
+      "informationHierarchy": {
+        "title": "Village Status — Tier {prestige}",
+        "primaryMetrics": ["Defense rating", "Upkeep/mo", "Districts built", "Doctrine"],
+        "secondaryPanels": ["Prestige progress", "Upgrade tree", "Clan council", "Beast control"]
+      },
+      "recommendedLayout": "Left nav | tabs: Status · Upgrades · Clans · Tailed Beasts · Safehouses | center build/list | right inspector = selected building/clan/beast",
+      "contextMenus": {
+        "buildingRow": ["Upgrade", "Details", "View effects"],
+        "beastRow": ["Beast sheet", "Reinforce Seal", "Assign Jinchuriki", "Release Seal"]
+      },
+      "keyboardShortcuts": {"u": "Upgrades", "Enter": "Open selected"},
+      "microcopy": {
+        "doctrine_lock": "Adopt {doctrine} — permanent",
+        "reinforce_seal": "Reinforce Seal — {cost} ryo (+18 control)",
+        "defense_tip": "Defense rating reduces raid losses. Walls + seals + doctrine + active effects."
+      }
+    },
+    {
+      "name": "Intelligence (Threat Board)",
+      "currentEquivalent": "intel.js + world.js",
+      "primaryTasks": ["Assess rival threat tiers", "Read dossiers", "Dispatch ANBU ops", "Manage counter-intel"],
+      "informationHierarchy": {
+        "title": "Intelligence — Y{year} M{month}",
+        "primaryMetrics": ["Top threat", "Active ops", "Counter-intel rating", "Agents in custody"],
+        "secondaryPanels": ["Threat board (sorted)", "Village dossiers", "ANBU dispatch"]
+      },
+      "recommendedLayout": "Left nav | tabs: Threats · Dossiers · ANBU · Caught · Counter-Intel | center threat cards/table | right inspector = village dossier",
+      "contextMenus": {
+        "villageRow": ["Dossier", "Dispatch ANBU ▸", "Shadow scout", "Propose alliance", "Demand tribute"]
+      },
+      "keyboardShortcuts": {"t": "Threats", "d": "Dossiers"},
+      "microcopy": {
+        "threat_tip": "Threat tier blends relations and strength. CRITICAL = hostile + strong.",
+        "anbu_dispatch": "Dispatch {op} → {village} ({cost} ryo)"
+      }
+    },
+    {
+      "name": "History (Chronicles, Records, Memorial, Legacy)",
+      "currentEquivalent": "chronicles.js + log.js + memorial.js + legacy.js",
+      "primaryTasks": ["Review saga events", "Filter/search the log", "Honor the fallen", "Plan succession"],
+      "informationHierarchy": {
+        "title": "Chronicles",
+        "primaryMetrics": ["Legend", "Championships", "Fallen", "Honored"],
+        "secondaryPanels": ["Filterable timeline", "Records", "Memorial wall", "Legacy decisions"]
+      },
+      "recommendedLayout": "Left nav | tabs: Chronicle · Event Log · Records · Memorial · Legacy | center timeline | right inspector = entry detail",
+      "contextMenus": {"chronicleEntry": ["Read", "Go to subject", "Pin to saga"], "fallenEntry": ["Honor the Fallen", "View career"]},
+      "keyboardShortcuts": {"/": "Search", "f": "Filter type"},
+      "microcopy": {"honor_fallen": "Honor the Fallen — +5 legend, +3 morale", "filter_all": "All ({n})"}
+    }
+  ],
+
+  "components": [
+    {
+      "id": "DataTable",
+      "purpose": "Sortable, reorderable, show/hide-column table with saved views — the workhorse for roster/market/intel.",
+      "states": ["default", "hover-row", "selected-row", "sorted-asc", "sorted-desc", "loading", "empty"],
+      "behaviors": ["Click header to sort (shift-click multi-sort)", "Drag header to reorder", "Right-click header → column manager", "Row hover shows inline preview", "Row right-click → entity context menu", "Saved views persisted to localStorage"],
+      "propsExample": {
+        "id": "roster-table",
+        "rowKey": "id",
+        "columns": [
+          {"key": "rank", "label": "Rank", "width": 56, "sortable": true, "align": "left", "pinned": true},
+          {"key": "name", "label": "Name", "width": 160, "sortable": true, "render": "entityLink"},
+          {"key": "age", "label": "Age", "width": 48, "sortable": true, "align": "center"},
+          {"key": "power", "label": "Ability", "width": 80, "sortable": true, "render": "stars"},
+          {"key": "potential", "label": "Potential", "width": 90, "sortable": true, "render": "stars"},
+          {"key": "grade", "label": "Grd", "width": 48, "sortable": true, "render": "gradeBadge"},
+          {"key": "salary", "label": "Salary", "width": 80, "sortable": true, "align": "right", "format": "ryo"}
+        ],
+        "defaultSort": {"key": "power", "dir": "desc"},
+        "selectable": "single",
+        "contextMenu": "shinobiRow",
+        "savedViews": ["Default", "Contract Risk", "Prospect Watch"]
+      }
+    },
+    {
+      "id": "ContinueButton",
+      "purpose": "Central turn-advance control that reflects pending blocking actions.",
+      "states": [
+        {"name": "ready", "label": "Continue ▸ {month} Y{year}", "color": "var(--accent)", "enabled": true},
+        {"name": "pending", "label": "{n} decision(s) pending", "color": "var(--orange)", "badge": "{n}", "enabled": true, "behavior": "Clicking jumps to first unresolved decision instead of advancing"},
+        {"name": "blocked", "label": "Resolve {n} to continue", "color": "var(--red)", "enabled": false, "tooltip": "A required field decision / nomination is unresolved"},
+        {"name": "processing", "label": "Advancing…", "spinner": true, "enabled": false}
+      ],
+      "propsExample": {"pendingCount": 2, "blocking": false, "nextLabel": "Frost Moon Y3", "onContinue": "adv()", "onJumpToPending": "openInbox('urgent')"}
+    },
+    {
+      "id": "Inbox",
+      "purpose": "Decision + message queue; the spine of the turn loop. Items are typed (complication, rival_bid, trade_offer, award, press, etc.).",
+      "states": ["unread", "read", "actioned", "snoozed", "archived"],
+      "behaviors": ["Priority sort (urgent→standard)", "Inline action buttons", "Grouped by category", "Badge count on nav + Continue"],
+      "propsExample": {
+        "item": {"id": "cmp_8x", "type": "complication", "priority": "urgent", "category": "Missions", "icon": "⚔", "title": "Ambush — Rogue nin exploit winter cover", "body": "Enemy reinforcements cut off the route out.", "actions": [{"label": "Fight through — +reward, +risk", "fn": "resolveComplication('cmp_8x','fight')"}, {"label": "Evade quietly — safer", "fn": "resolveComplication('cmp_8x','evade')"}]}
+      }
+    },
+    {
+      "id": "EntityInspector",
+      "purpose": "Right-side panel that renders the selected entity (shinobi/squad/village/prospect) with verbs.",
+      "states": ["empty", "loading", "loaded", "comparison"],
+      "propsExample": {"entityType": "shinobi", "entityId": "5ledhve9ayc", "sections": ["header", "stats", "trajectory", "devPath", "contract", "bonds", "actions"], "actions": ["assign", "addToSquad", "renew", "retire"]}
+    },
+    {
+      "id": "ContextMenu",
+      "purpose": "Right-click verb menu, consistent across all entities.",
+      "propsExample": {"x": 420, "y": 310, "target": {"type": "shinobi", "id": "abc"}, "items": [{"label": "Open Dossier", "fn": "oDos('abc')"}, {"label": "Assign to Mission", "fn": "oA()"}, {"separator": true}, {"label": "Set Development Path", "submenu": [{"label": "ANBU Track", "fn": "setDevPath('abc','anbu')"}]}]}
+    },
+    {
+      "id": "ModalDialog",
+      "purpose": "Focused task overlays (assign, negotiate, create squad, round results). Trap focus; Esc closes non-blocking.",
+      "states": ["open", "closing", "blocking (no backdrop-dismiss)"],
+      "propsExample": {"id": "ov-assign", "title": "Assign: Retrieve stolen clan scroll", "size": "md", "blocking": false, "footer": ["Cancel", "Deploy ▸"]}
+    },
+    {
+      "id": "Timeline",
+      "purpose": "Annual calendar / season timeline with event markers (Exam, Summit, War, Intake, loan expiries).",
+      "propsExample": {"year": 3, "currentMonth": 6, "events": [{"month": 4, "label": "Chunin Exam", "tag": "EXAM"}, {"month": 6, "label": "Five-Kage Summit", "tag": "SUMMIT"}, {"month": 12, "label": "Nation War", "tag": "WAR"}]}
+    },
+    {
+      "id": "BracketView",
+      "purpose": "Tournament bracket for Chunin Exam / Nation War with per-stage advancement.",
+      "propsExample": {"stages": ["Qualifier", "Forest of Death", "Semifinal", "Final"], "round": 1, "entries": [{"village": "You", "alive": 3, "scrolls": 2, "seed": 1}]}
+    },
+    {
+      "id": "Chart",
+      "purpose": "Line (finance history, morale trend), bar (income streams), radar (shinobi stats).",
+      "propsExample": {"type": "line", "series": [{"name": "Net", "data": [-12890, -6520, 1200, 4300]}], "xLabels": ["M1", "M2", "M3", "M4"], "yFormat": "ryo"}
+    },
+    {
+      "id": "Heatmap",
+      "purpose": "Mission-spec vs squad-fit matrix; clan-synergy grid; rival threat matrix.",
+      "propsExample": {"rows": ["Squad A", "Squad B"], "cols": ["Stealth", "Combat", "Intel", "Siege"], "values": [[0.8, 0.4, 0.7, 0.3], [0.3, 0.9, 0.4, 0.8]], "scale": "redGreen"}
+    },
+    {
+      "id": "ActivityGrid",
+      "purpose": "Per-shinobi monthly activity (mission/train/rest/injured) like a contribution grid; surfaces fatigue/overuse.",
+      "propsExample": {"entity": "shinobi:abc", "months": [{"m": 1, "state": "mission"}, {"m": 2, "state": "injured"}, {"m": 3, "state": "rest"}], "legend": {"mission": "var(--accent)", "injured": "var(--red)", "rest": "var(--surface-3)"}}
+    },
+    {
+      "id": "StatBar / StarRating / GradeBadge",
+      "purpose": "Compact value renderers reused in tables and inspector.",
+      "propsExample": {"stars": {"value": 78, "max": 100}, "grade": {"label": "B", "color": "#8fbc8f"}, "bar": {"value": 64, "color": "var(--accent)"}}
+    },
+    {
+      "id": "SegmentedControl",
+      "purpose": "Posture/approach/command pickers (Stealth/Balanced/Assault; Push/Steady/Conserve; Press/Hold/Withdraw).",
+      "propsExample": {"id": "approach", "options": [{"id": "stealth", "icon": "🥷", "label": "Stealth", "hint": "▲ favored vs intel"}, {"id": "balanced", "icon": "⚖", "label": "Balanced"}, {"id": "assault", "icon": "⚔", "label": "Assault"}], "value": "balanced"}
+    }
+  ],
+
+  "flows": [
+    {
+      "id": "start-season",
+      "name": "Start Season",
+      "steps": [
+        {"state": "New Game → Setup screen", "ui": "Village name/kage/icon inputs + Founding Scenario segmented cards + nation pick", "action": "selScenario(id); selNation(id)"},
+        {"state": "Confirm", "ui": "Continue & Begin button (ready)", "action": "beginGame()"},
+        {"state": "World generated", "ui": "Home screen, off-season banner (M1–M3), calendar populated", "action": "initState(); applyScenario(G, scenario)"},
+        {"state": "Pre-season tasks", "ui": "Inbox: contract renewals, recruitment; Continue shows pending count", "action": "resolve inbox items"}
+      ],
+      "apiPayloads": {
+        "create_world": {"vName": "Konohagakure", "kName": "Tyler", "vIcon": "🍃", "scenario": "established", "nationId": "ember"},
+        "sync_state (socket)": {"power": 0, "reputation": 45, "shinobiCount": 22, "ryo": 120000, "fullState": "{G}"}
+      }
+    },
+    {
+      "id": "manage-roster",
+      "name": "Manage Roster",
+      "steps": [
+        {"state": "Open Roster", "ui": "DataTable sorted by ability; clan synergy header", "action": "sp('roster')"},
+        {"state": "Select shinobi", "ui": "Right inspector loads dossier (stats, trajectory, dev path)", "action": "rosSelect(id)"},
+        {"state": "Set development path", "ui": "SegmentedControl in inspector", "action": "setDevPath(id, 'anbu')"},
+        {"state": "Build squad", "ui": "Squads tab → create overlay (leader + 2)", "action": "doCS()"},
+        {"state": "Set depth chart", "ui": "Depth tab → drag to slots / Call Up", "action": "setDepthSlot(squadId, role, shinobiId)"}
+      ],
+      "apiPayloads": {
+        "set_dev_path": {"shinobiId": "abc", "path": "anbu"},
+        "create_squad": {"name": "Team Kaze", "leaderId": "abc", "memberIds": ["def", "ghi"]},
+        "set_depth": {"squadId": "sq1", "roleId": "vanguard", "slot": "starter", "shinobiId": "abc"}
+      }
+    },
+    {
+      "id": "simulate-match",
+      "name": "Simulate Match (Mission / Exam Stage / War Round)",
+      "steps": [
+        {"state": "Pre-resolve", "ui": "Set prep posture + per-stage posture/command; nominate squads", "action": "setMissionPrep(); setExamPosture(); setWarCommand()"},
+        {"state": "Advance", "ui": "Continue ▸ (or Run Stage ▸)", "action": "adv() / runRound() / runWarRound()"},
+        {"state": "Mid-event (if fired)", "ui": "Inbox decision (complication) blocks nothing but affects outcome", "action": "resolveComplication(id, choiceId)"},
+        {"state": "Result", "ui": "ModalDialog round overlay / mission report card with quality band + margin", "action": "render report"}
+      ],
+      "apiPayloads": {
+        "assign_mission": {"missionId": "m12", "assignedTo": "abc", "squadId": null, "approach": "stealth", "prep": "standard"},
+        "resolve_complication": {"id": "cmp_8x", "choiceId": "fight"},
+        "run_stage": {"competition": "exam", "round": 1, "posture": "push"}
+      }
+    },
+    {
+      "id": "trade-negotiation",
+      "name": "Trade / Transfer Negotiation",
+      "steps": [
+        {"state": "Open market", "ui": "Recruitment → Transfer Market DataTable", "action": "sp('transfers'); trTab('market')"},
+        {"state": "Select target", "ui": "Inspector = player report + value estimate", "action": "openNegotiation(id)"},
+        {"state": "Offer", "ui": "Negotiation modal: fee, wage, clauses sliders", "action": "submitOffer(payload)"},
+        {"state": "Counter / rival match", "ui": "Inbox: counter or rival_bid; match or walk", "action": "acceptCounter() / matchRivalOffer()"},
+        {"state": "Confirm", "ui": "confirmTransfer modal → roster updates", "action": "confirmTransfer(id)"}
+      ],
+      "apiPayloads": {
+        "submit_offer": {"targetId": "p77", "fee": 14000, "wage": 800, "clauses": {"noTrade": false, "twoWay": true}},
+        "match_rival_offer": {"prospectId": "p77", "cost": 16000},
+        "confirm_transfer": {"targetId": "p77", "accepted": true}
+      }
+    },
+    {
+      "id": "scouting",
+      "name": "Scouting",
+      "steps": [
+        {"state": "Open Scouting", "ui": "Budget split sliders + region assignments", "action": "setScoutBudget(split)"},
+        {"state": "Assign scout", "ui": "Assign scout to region/prospect", "action": "assignScout(scoutId, region)"},
+        {"state": "Reports arrive", "ui": "Prospect rows show narrowing confidence ranges over months", "action": "tick → scoutReports"},
+        {"state": "Watchlist → sign", "ui": "Add to watchlist; later open negotiation", "action": "toggleWatchlist(id)"}
+      ],
+      "apiPayloads": {
+        "set_scout_budget": {"domestic": 40, "foreign": 30, "shadow": 30},
+        "assign_scout": {"scoutId": "s2", "region": "lightning", "focus": "vanguard"}
+      }
+    },
+    {
+      "id": "training",
+      "name": "Training & Development",
+      "steps": [
+        {"state": "Open Development", "ui": "Roster → Development tab + Youth Academy", "action": "sp('youthacademy')"},
+        {"state": "Set tracks", "ui": "Per-student track + intensity + sensei selects", "action": "yaSetTrack(); yaSetIntensity(); yaSetSensei()"},
+        {"state": "Set focus / rest", "ui": "Per-shinobi training focus or rest month in dossier", "action": "setTrainingFocus(id, stat); toggleRestMonth(id)"},
+        {"state": "Monthly review", "ui": "Inbox training reports; milestone events (First S-Rank)", "action": "tick"}
+      ],
+      "apiPayloads": {
+        "set_training_focus": {"shinobiId": "abc", "stat": "ninjutsu"},
+        "set_academy_plan": {"studentId": "st4", "track": "offense", "intensity": "high", "senseiId": "stf1"}
+      }
+    }
+  ],
+
+  "assets": {
+    "iconography": ["Rank chips (G/C/J/A/S)", "Spec icons (stealth/combat/intel/escort/siege/recovery)", "Nation crests (Ember/Tempest/Tide/Dune/Stone)", "Beast tails ◆", "Status dots (available/mission/injured/exam)", "Threat tier badges"],
+    "fonts": ["Segoe UI / system-ui for prose + nav", "Courier New (mono) for numeric readouts: ryo, stats, dates"],
+    "fileAssets": ["component CSS module (tokens)", "table column-manager popover", "context-menu portal", "inspector drawer", "toast/ntf", "modal manager", "chart sprite (line/bar/radar)", "heatmap cell renderer"],
+    "cssTokens": {
+      ":root": {
+        "--bg": "#0a0c10",
+        "--surface": "#1a1814",
+        "--surface-2": "#13110d",
+        "--surface-3": "#0d0d0d",
+        "--border": "rgba(110,100,80,0.22)",
+        "--border-dim": "rgba(110,100,80,0.12)",
+        "--text-hi": "#e8e0cc",
+        "--text": "#c9c0a8",
+        "--text-mid": "#9a9080",
+        "--text-dim": "#7a7060",
+        "--accent": "#c9a84c",
+        "--accent-bg": "rgba(201,168,76,0.08)",
+        "--accent-border": "rgba(201,168,76,0.30)",
+        "--green": "#8fbc8f",
+        "--red": "#f0605a",
+        "--orange": "#f0a030",
+        "--blue": "#4a88c0",
+        "--purple": "#9870c0",
+        "--radius": "2px",
+        "--row-h": "28px",
+        "--nav-w": "190px",
+        "--inspector-w": "300px",
+        "--font-ui": "'Segoe UI',system-ui,-apple-system,Arial,sans-serif",
+        "--font-num": "'Courier New',Courier,monospace",
+        "--fs-title": "13px",
+        "--fs-body": "10px",
+        "--fs-meta": "8px"
+      },
+      "stateColors": {
+        "continue.ready": "var(--accent)",
+        "continue.pending": "var(--orange)",
+        "continue.blocked": "var(--red)",
+        "row.hover": "var(--accent-bg)",
+        "row.selected": "rgba(201,168,76,0.14)"
+      },
+      "nationAccentOverride": "JS sets --accent + derived vars from the active nation crest color"
+    },
+    "accessibility": [
+      "All color-coded states also carry a text/icon cue (colorblind toggle already exists: _a11yColorblind → pattern tags)",
+      "Keyboard: full nav with 1–9 + letter shortcuts; visible focus ring (2px var(--accent)); Continue on Space/Enter",
+      "Right-click menus mirrored to a keyboard 'context' key + long-press for touch",
+      "Tables: header cells aria-sort; rows role=row; selected row aria-selected",
+      "Modals: focus trap, aria-modal, Esc to close (non-blocking), return focus to trigger",
+      "Min contrast WCAG AA (4.5:1 body, 3:1 large/UI) — verify --text on --surface and accent-on-dark",
+      "Min target size 24x24 logical for clickable chips; hover preview also reachable via focus",
+      "Respect prefers-reduced-motion (disable Continue spinner pulse, row transitions)",
+      "No information by color alone in charts/heatmaps — add labels + patterns"
+    ],
+    "localization": [
+      "Externalize all microcopy to a string table keyed by id (see screens[].microcopy)",
+      "Support ICU plurals/interpolation: '{n, plural, one {# decision} other {# decisions}}'",
+      "Keep IP-named entities (clans, villages, jutsu, beasts) in a separate namespace so a future IP-neutral build can swap them without touching UI strings",
+      "Date/number formatting via Intl; ryo uses Intl.NumberFormat",
+      "Layout: allow +30% text expansion (German/French) — nav labels and buttons must not truncate; tables reflow column min-widths",
+      "RTL-readiness: logical CSS props (margin-inline, inset-inline) where feasible",
+      "Avoid baking text into icons; tooltips localized"
+    ],
+    "promptSnippets": {
+      "matchReport": "Write a 2-3 sentence {rank}-rank mission debrief. Inputs: mission={name}, squad={squad}, outcome={success|fail}, quality={decisive|narrow|costly|disaster}, standout={shinobi}, spec={spec}. Tone: terse field-report. No preamble. <=55 words.",
+      "scoutingNote": "1-2 sentence scouting note on prospect {name}, age {age}, role {role}, potential band {lo}-{hi}, confidence {pct}%. Mention one strength + one risk. No names of real people. <=30 words.",
+      "tooltip": "One-line tooltip for UI element '{id}'. State what it is + the one decision-relevant consequence. <=14 words. No marketing tone.",
+      "inboxEvent": "Generate a mid-mission field event for spec={spec}. Output JSON {title,body(<=18 words),options:[{label(<=8 words),scMod,ryoMod,riskMod}]} with 2 options, opposite tradeoffs.",
+      "efficiencyNote": "All snippets: cap tokens, forbid preamble/markdown, require the field list back as compact text or JSON; cache the static instruction prefix and vary only the {inputs}."
+    }
+  },
+
+  "accessibility": "See assets.accessibility",
+  "localization": "See assets.localization",
+  "promptSnippets": "See assets.promptSnippets",
+  "cssTokens": "See assets.cssTokens",
+
+  "roadmap": [
+    {
+      "phase": "P0 — Foundation: design system + shell",
+      "items": ["CSS token module", "App shell: left nav + top bar + content + inspector slots", "ContinueButton with pending/blocked logic wired to inbox count", "ContextMenu portal + EntityInspector drawer"],
+      "effort": "M (4-6 dev-days)",
+      "qa": ["Continue reflects pending/blocked correctly", "Nav keyboard 1-9 works", "Inspector opens/closes, returns focus", "Tokens themable per nation"]
+    },
+    {
+      "phase": "P1 — DataTable + entity grammar",
+      "items": ["DataTable (sort/reorder/show-hide/saved views)", "Unify shinobi/prospect/village/mission as clickable entities", "Right-click context menus per entity type", "Hover preview cards"],
+      "effort": "L (6-9 dev-days)",
+      "qa": ["Sort/multisort/reorder persist", "Column manager hides/shows", "Context menu verbs route to existing handlers", "Saved views survive reload", "Keyboard row nav + Enter opens"]
+    },
+    {
+      "phase": "P2 — Home + Inbox turn loop",
+      "items": ["Home screen rebuild (KPIs + inbox digest + calendar)", "Inbox typed-item renderer (complication/bid/offer/award)", "Blocking-decision gate on Continue", "Timeline component"],
+      "effort": "M (4-6 dev-days)",
+      "qa": ["Urgent items sort first", "Resolving an item clears badge + advances gate", "Continue blocked when nomination/field decision unresolved", "Snooze/archive states"]
+    },
+    {
+      "phase": "P3 — Core task screens",
+      "items": ["Roster/Squads/Depth", "Missions (briefing + approach inspector)", "Competitions (bracket + posture/command bar)", "Transfers/Scouting"],
+      "effort": "XL (10-14 dev-days)",
+      "qa": ["Each flow in flows[] completes end-to-end", "Approach/posture/command apply (verify sc deltas)", "Negotiation payloads valid", "No console errors across panels"]
+    },
+    {
+      "phase": "P4 — Supporting screens + viz",
+      "items": ["Finances (chart + streams)", "Village (upgrades/clans/beasts/safehouses)", "Intelligence threat board", "History (chronicle/records/memorial/legacy)", "Chart/Heatmap/ActivityGrid"],
+      "effort": "L (7-10 dev-days)",
+      "qa": ["Charts render with real series", "Heatmap fit-matrix matches resolution math", "Activity grid flags overuse/fatigue"]
+    },
+    {
+      "phase": "P5 — A11y, L10n, polish",
+      "items": ["String externalization + ICU", "Focus management + ARIA", "Colorblind/reduced-motion passes", "Contrast audit", "Localized number/date"],
+      "effort": "M (4-6 dev-days)",
+      "qa": ["Keyboard-only full playthrough", "Axe/contrast audit passes AA", "Pseudo-localization (+30%) no truncation", "Screen-reader reads table sort + modal"]
+    }
+  ]
+}
