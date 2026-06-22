@@ -34,8 +34,9 @@ export function newKageDev() {
     attrs: { command: 1, tactics: 1, mentorship: 1, diplomacy: 1, administration: 1, espionage: 1 } }
 }
 
-/** Rising XP curve. L1→2 needs 100, then +60/level. */
-export function xpForLevel(level) { return 100 + (level - 1) * 60 }
+/** Rising XP curve — gentler first levels (faster early reward), steepening later.
+ *  L1→2: 60, L2→3: 115, L3→4: 170, … (+55/level). */
+export function xpForLevel(level) { return 60 + (level - 1) * 55 }
 
 export function kageAttr(G, id) { return (G.kageDev && G.kageDev.attrs && G.kageDev.attrs[id]) || 0 }
 

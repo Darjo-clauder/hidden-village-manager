@@ -3279,7 +3279,7 @@ export function adv() {
   // ── Kage development XP — base + this month's mission wins + queued events ──
   {
     const wins = (G._formThisMonth?.wins) || 0
-    const xp = 3 + wins * 2 + (G._kageXpPending || 0)
+    const xp = 4 + wins * 2 + (G._kageXpPending || 0)
     G._kageXpPending = 0
     const res = addKageXp(G, xp)
     if (res.leveled) {

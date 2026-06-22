@@ -3,6 +3,23 @@ import { RANKS } from '../constants.js'
 import { NATIONS, nationMods } from '../../../shared/constants/nations.js'
 import { villageRevenue } from '../../../shared/utils/economy.js'
 import { getInboxDigest, getInboxCount } from './inbox.js'
+import { xpForLevel, PATH_BY_ID } from '../../../shared/constants/kageDev.js'
+
+// Compact Kage progression strip (clickable → Kage Path screen).
+function _kageStrip() {
+  const k = G.kageDev
+  if (!k) return ''
+  const xpNext = xpForLevel(k.level)
+  const xpPct = Math.min(100, Math.round((k.xp / xpNext) * 100))
+  const path = k.path ? PATH_BY_ID[k.path] : null
+  return `<div onclick="sp('kagedev')" title="Open Kage Path" style="display:flex;align-items:center;gap:10px;background:var(--surface,#1a1814);border:1px solid var(--border);padding:7px 12px;margin-bottom:12px;cursor:pointer">
+    <span style="font-size:11px;color:var(--accent);font-weight:bold">${G.kName || 'Kage'}</span>
+    <span style="font-size:8px;color:#7a7060">Lvl ${k.level}${path ? ` · ${path.icon} ${path.n}` : ' · no path chosen'}</span>
+    <div style="flex:1;max-width:160px;background:#0d0d0d;height:5px;border-radius:3px;overflow:hidden"><div style="height:5px;width:${xpPct}%;background:var(--accent)"></div></div>
+    <span style="font-size:7px;color:#555;font-family:var(--font-num,'Courier New',monospace)">${k.xp}/${xpNext} XP</span>
+    ${k.points > 0 ? `<span style="font-size:8px;color:#8fbc8f;margin-left:auto">● ${k.points} point${k.points !== 1 ? 's' : ''} to spend ▸</span>` : '<span style="font-size:8px;color:#3a3630;margin-left:auto">Kage Path ▸</span>'}
+  </div>`
+}
 
 // P2 turn loop — Home surfaces the top pending decisions with a route to resolve.
 function _decisionDigest() {
@@ -109,6 +126,7 @@ export function rDash() {
   el.innerHTML = `
     <div class="pt">Dashboard — Y${G.year} M${G.month}</div>
 
+    ${_kageStrip()}
     ${_decisionDigest()}
 
     ${G._ff_nationHud ? `
