@@ -25,6 +25,7 @@ import { rYA } from './panels/youthacademy.js'
 import { rMeet } from './panels/meetings.js'
 import { rTr } from './panels/transfers.js'
 import { rLeg } from './panels/legacy.js'
+import { rKageDev } from './panels/kagedev.js'
 import { rLob } from './panels/lobby.js'
 import { rDash } from './panels/dashboard.js'
 import { rInbox, getInboxCount } from './panels/inbox.js'
@@ -215,7 +216,7 @@ export function rP(id) {
     kage: rKa, exam: rEx, intel: rIn, log: rLo,
     chronicles: rCh, memorial: rMem, finances: rFi, staff: rSt,
     scouting: rSco, youthacademy: rYA, meetings: rMeet,
-    transfers: rTr, legacy: rLeg, lobby: rLob, world: rWo, clans: rClans, safehouses: rSafehouses, calendar: rWorldCalendar,
+    transfers: rTr, legacy: rLeg, kagedev: rKageDev, lobby: rLob, world: rWo, clans: rClans, safehouses: rSafehouses, calendar: rWorldCalendar,
   }
   map[id]?.()
 }

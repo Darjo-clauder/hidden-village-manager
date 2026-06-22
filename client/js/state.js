@@ -4,6 +4,7 @@ import {
   REGIONS, PM_DESC, REGION_EVENTS, DEV_CURVES, AGENT_AGENDAS,
 } from './constants.js'
 import { ARCHETYPE_POOL } from '../../shared/utils/personality.js'
+import { newKageDev } from '../../shared/constants/kageDev.js'
 
 // ── utilities ──────────────────────────────────────────────────────────────
 export const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a
@@ -270,6 +271,7 @@ export function initState() {
     sellPressure: [],
     // Reputation & Legacy
     kageRep: 1,               // 1–5 stars
+    kageDev: newKageDev(),    // GM-style Kage progression (attrs + XP + path)
     prestigeTier: 'D',
     hallOfLegends: [],        // enshrined shinobi records
     dynastyRecords: {

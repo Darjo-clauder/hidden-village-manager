@@ -4,6 +4,7 @@ import { strengthRatio, rankStandings } from '../../../shared/utils/rivalSim.js'
 import { MANDATE_BY_ID, DISMISSAL_THRESHOLD } from '../../../shared/utils/ownerMandate.js'
 import { resolveNoConfidence } from '../adv.js'
 import { COACHING_PHILOSOPHIES, PHILOSOPHY_BY_ID } from '../../../shared/constants/coachingPhilosophy.js'
+import { kageMod, kagePerk } from '../../../shared/constants/kageDev.js'
 
 export function rKa() {
   const el = document.getElementById('kgl')
@@ -108,14 +109,18 @@ export function resKE(i) {
 
 export function sGift(n) {
   if (G.ryo < 5000) { ntf('Not enough ryo!'); return }
-  const v = G.villages.find(x => x.n === n); G.ryo -= 5000; v.rel = clamp(v.rel + 10, 0, 100)
-  aL('Gifts sent to ' + n + '.', 'good'); ntf('Relations improved!'); upUI()
+  const v = G.villages.find(x => x.n === n); G.ryo -= 5000
+  const gain = Math.round(10 * (1 + kageMod(G, 'diplomacy')))   // Kage Diplomacy boosts goodwill
+  v.rel = clamp(v.rel + gain, 0, 100)
+  aL(`Gifts sent to ${n} (+${gain} relations).`, 'good'); ntf('Relations improved!'); upUI()
 }
 
 export function propAl(n) {
-  if (G.ryo < 10000) { ntf('Not enough ryo!'); return }
-  const v = G.villages.find(x => x.n === n); G.ryo -= 10000; v.rel = clamp(v.rel + 25, 0, 100); v.allied = true
-  aL('Alliance with ' + n + '!', 'good'); ntf('Allied with ' + n + '!'); upUI()
+  const cost = Math.round(10000 * (kagePerk(G) === 'alliance' ? 0.7 : 1))   // Diplomat signature
+  if (G.ryo < cost) { ntf('Not enough ryo!'); return }
+  const v = G.villages.find(x => x.n === n); G.ryo -= cost
+  v.rel = clamp(v.rel + 25 + Math.round(25 * kageMod(G, 'diplomacy')), 0, 100); v.allied = true
+  aL(`Alliance with ${n}! (${fmt(cost)} ryo)`, 'good'); ntf('Allied with ' + n + '!'); upUI()
 }
 
 export function rattle(n) {

@@ -3,6 +3,7 @@ import { RANKS } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { seedsFromTable } from '../../../shared/utils/season.js'
 import { queuePressConference } from '../adv.js'
+import { kageMod, kagePerk } from '../../../shared/constants/kageDev.js'
 
 // ── Nation War ──────────────────────────────────────────────────────────────
 // The annual "big leagues": a 5-village elite bracket where Jonin+ squads clash
@@ -20,8 +21,12 @@ export const WAR_COMMANDS = [
   { id: 'withdraw', label: 'Tactical Withdrawal', icon: '🛡', adv: -0.07, kiaMult: 0.55, desc: '−advance, but far fewer deaths — preserve your elite.' },
 ]
 function _command() { return WAR_COMMANDS.find(c => c.id === (ui.warSt?.command || 'hold')) || WAR_COMMANDS[1] }
-function _cmdAdv(c) { return c.isPlayer ? _command().adv : 0 }
-function _cmdKia(c, base) { return base * (c.isPlayer ? _command().kiaMult : 1) }
+function _cmdAdv(c) { return c.isPlayer ? _command().adv + kageMod(G, 'tactics') : 0 }
+function _cmdKia(c, base) {
+  if (!c.isPlayer) return base
+  const perkMult = kagePerk(G) === 'war_casualties' ? 0.75 : 1   // Warlord signature
+  return base * _command().kiaMult * perkMult
+}
 export function setWarCommand(id) { if (ui.warSt) { ui.warSt.command = id; upUI() } }
 
 // Survival multiplier on KIA rolls: jinchuriki are hardest to kill, bloodline clans tougher.
@@ -189,6 +194,7 @@ function _runWarFinal(field, res) {
       if (!s) return
       s.warVeteran = (s.warVeteran || 0) + 1
       addLegend(3)
+      G._kageXpPending = (G._kageXpPending || 0) + 10
       res.push({ name: sn(s), result: 'Survived the Final Stand — war hero', good: true })
     })
   })

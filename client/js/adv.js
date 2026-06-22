@@ -18,6 +18,7 @@ import { tickRivalStrength, shouldFireRivalEvent, pickRivalEvent, computePlayerS
 import { initSeasonTable, playMatchday } from '../../shared/utils/season.js'
 import { villageRevenue } from '../../shared/utils/economy.js'
 import { resolveMission, qualityEffects, missionApproachMod } from '../../shared/utils/missionEngine.js'
+import { kageMod, kagePerk, addKageXp } from '../../shared/constants/kageDev.js'
 import { DYNASTY_YEARS, computeDynastyGrade } from '../../shared/utils/dynasty.js'
 import { bondMissionBonus, mentorGrowthBonus, kiaRipple, BOND_TYPES } from '../../shared/bonds/bondTypes.js'
 import { BM_MISSION_BY_ID, getUnderworldTier, discoveryChance, UNDERWORLD_TIERS } from '../../shared/constants/blackMarket.js'
@@ -483,7 +484,7 @@ export function resolveDeepCoverOp(assignmentId) {
 
   if (!op || !s) { G.aM = G.aM.filter(x => x.id !== assignmentId); return }
 
-  const sc = clamp(0.60 + (s.ri || 0) * 0.05 + shBonus, 0.20, 0.95)
+  const sc = clamp(0.60 + (s.ri || 0) * 0.05 + shBonus + kageMod(G, 'espionage'), 0.20, 0.95)
   s.status = 'available'; s.missId = null
 
   if (Math.random() < sc) {
@@ -998,7 +999,7 @@ export function adv() {
       }
 
       // Stat growth
-      const mentorBoost = 1 + mentorGrowthBonus(s, G.shinobi) + (cp.growthBonus || 0) + (dp.statGrowthBonus || 0) + ((DOCTRINE_BY_ID[G.villageDoctrine]?.growthMod) || 0)
+      const mentorBoost = 1 + mentorGrowthBonus(s, G.shinobi) + (cp.growthBonus || 0) + (dp.statGrowthBonus || 0) + ((DOCTRINE_BY_ID[G.villageDoctrine]?.growthMod) || 0) + kageMod(G, 'mentorship')
       if (Math.random() < 0.25 * tgM * mentorBoost) {
         const k = pk(['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed'])
         const kG = k === 'intelligence' && s.pers.n === 'Bookworm' ? 2 : 1
@@ -1379,7 +1380,7 @@ export function adv() {
         return acc + (ms.declineMod || 0) * 0.5  // half-weight per member so one declining vet doesn't cripple a squad
       }, 0)
       const sqFatigueMod = sq.members.reduce((acc, id) => { const mb = G.shinobi.find(x => x.id === id); return acc + (mb ? fatiguePenalty(mb) : 0) }, 0) / Math.max(1, sq.members.length)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod() + (am._scMod || 0) + sqFatigueMod + _appMod.sc - _appMod.risk - (am._riskMod || 0), 0.1, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod() + (am._scMod || 0) + sqFatigueMod + _appMod.sc - _appMod.risk - (am._riskMod || 0) + kageMod(G, 'command'), 0.1, successCeiling(m.rk))
 
       const _mev = resolveMission(sc)
       const _mq = qualityEffects(_mev.quality)
@@ -1557,7 +1558,7 @@ export function adv() {
       const _soloAppMod = missionApproachMod(am.approach, m.spec)  // tactical approach vs mission spec
       const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
       const bMB = bondMissionBonus(s, G.shinobi)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0) + fatiguePenalty(s) + getMissionSpecBonus(s, m) + _soloAppMod.sc - _soloAppMod.risk - (am._riskMod || 0), 0.08, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0) + fatiguePenalty(s) + getMissionSpecBonus(s, m) + _soloAppMod.sc - _soloAppMod.risk - (am._riskMod || 0) + kageMod(G, 'command'), 0.08, successCeiling(m.rk))
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)
@@ -2130,8 +2131,9 @@ export function adv() {
   // Climate + doctrine economic modifiers (variable playthroughs)
   const _docInc = (DOCTRINE_BY_ID[G.villageDoctrine]?.incomeMod) || 0
   const _climateInc = (G.worldClimate?.economyMod) || 0
-  const _econMult = Math.max(0.3, 1 + _climateInc + _docInc)
-  const totalIncome = Math.round((trI + coI + jkI + daimyoB + villageRev + examFeeAmt + loanFeeAmt + sponsorshipIncome) * _natIncMult * _econMult)
+  const _econMult = Math.max(0.3, 1 + _climateInc + _docInc + kageMod(G, 'administration'))
+  const _kageStipend = kagePerk(G) === 'stipend' ? 600 : 0
+  const totalIncome = Math.round((trI + coI + jkI + daimyoB + villageRev + examFeeAmt + loanFeeAmt + sponsorshipIncome + _kageStipend) * _natIncMult * _econMult)
   const totalExpend = shinobiSal + staffSal + maintenance
   const monthlyNet = totalIncome - totalExpend
 
@@ -3274,6 +3276,29 @@ export function adv() {
   }
 
   syncToServer(); rfM(); rfP()
+  // ── Kage development XP — base + this month's mission wins + queued events ──
+  {
+    const wins = (G._formThisMonth?.wins) || 0
+    const xp = 3 + wins * 2 + (G._kageXpPending || 0)
+    G._kageXpPending = 0
+    const res = addKageXp(G, xp)
+    if (res.leveled) {
+      aL(`Your Kage reached Level ${res.newLevel} — ${res.levels * 2} development point(s) to spend.`, 'good')
+      addNotice(`Kage Level ${res.newLevel} — spend development points on the Kage Path screen.`, 'good')
+      ntf(`⬆ Kage Level ${res.newLevel}!`)
+    }
+  }
+
+  // Spymaster perk — free monthly recon on a random un-scouted rival.
+  if (kagePerk(G) === 'recon' && (G.villages || []).length) {
+    const now = (G.year - 1) * 12 + G.month
+    G.intelReports = G.intelReports || []
+    const target = pk(G.villages.filter(v => !G.intelReports.some(r => r.villageId === (v.id || v.n) && r.type === 'recon')))
+    if (target) {
+      G.intelReports.push({ villageId: target.id || target.n, type: 'recon', data: { rosterSize: (target.roster || []).length || rnd(8, 18), economyLevel: rnd(1, 4) }, expiresMonth: now + 3 })
+    }
+  }
+
   G.month++; if (G.month > 12) { G.month = 1; G.year++; addChronicle('New Year', 'Year ' + G.year + ' begins. Legend: ' + G.legend + '. Shinobi: ' + G.shinobi.length + '.', 'event') }
   upUI(); ntf('Month advanced → Y' + G.year + ' M' + G.month)
 }

@@ -24,6 +24,7 @@ import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIn
 import { rMeet, doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction, consultSeniorGroup } from './panels/meetings.js'
 import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms, confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide, sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter, trSort, trCtx, trHover } from './panels/transfers.js'
 import { rLeg, legTab, designateSuccessor, resolveLegacyDecision, triggerDynastyHandoff, sellDraftPick } from './panels/legacy.js'
+import { rKageDev, spendKagePt, chooseKagePath } from './panels/kagedev.js'
 import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel, intelCtx } from './panels/intel.js'
 import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc, setExamPosture, exLeadersSort } from './panels/exam.js'
 import { musterWar, startWar, runWarRound, setWarCommand } from './panels/war.js'
@@ -153,6 +154,7 @@ Object.assign(window, {
   sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter,
   // legacy + records
   legTab, designateSuccessor, resolveLegacyDecision, triggerDynastyHandoff, sellDraftPick,
+  spendKagePt, chooseKagePath,
   // intel
   intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel, intelCtx,
   // exam tabs

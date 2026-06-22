@@ -3,6 +3,7 @@ import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS, INJURY_TYPES } f
 import { aL, ntf, upUI, schEx } from '../ui.js'
 import { initSeasonTable, sortedTable, seedsFromTable } from '../../../shared/utils/season.js'
 import { tblSort, tblToggleSort, tblHeaderHtml, tblSortRows } from '../uikit.js'
+import { kageMod } from '../../../shared/constants/kageDev.js'
 import { renderWar } from './war.js'
 import { queuePressConference } from '../adv.js'
 
@@ -102,7 +103,7 @@ export const EXAM_POSTURES = [
   { id: 'conserve', label: 'Conserve',  icon: '🛡', adv: -0.06, woundMod: -0.20, workload: -6, desc: '−6% advance, but protects your shinobi (fewer wounds, rest).' },
 ]
 function _posture() { return EXAM_POSTURES.find(p => p.id === (ui.exSt?.posture || 'steady')) || EXAM_POSTURES[1] }
-function _postureAdv(c) { return c.isPlayer ? _posture().adv : 0 }
+function _postureAdv(c) { return c.isPlayer ? _posture().adv + kageMod(G, 'tactics') : 0 }
 // Apply posture fatigue/rest to a player squad's members (called when they advance).
 function _applyPostureWorkload(c) {
   if (!c.isPlayer) return
@@ -459,6 +460,7 @@ function _runFinals(field, biasMod) {
       const prom = Math.random() < clamp(0.55 + hostBonus + fmtB - biasMod + _posture().adv, 0.05, 0.97)
       if (prom) {
         s.ri++; s.salary = 500 + s.ri * 400; examPromotions++
+        G._kageXpPending = (G._kageXpPending || 0) + 8
         res.push({ name: sn(s), result: `Promoted to ${RANKS[s.ri]}! (${c.name})`, promoted: true })
         aL(sn(s) + ' promoted via Exam!' + (fmtB > 0 ? ' (format bonus applied)' : '') + (biasMod > 0 ? ' (judge bias penalised)' : ''), 'good')
         G.dynastyRecords.examWins = (G.dynastyRecords?.examWins || 0) + 1
