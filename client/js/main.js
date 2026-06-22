@@ -168,3 +168,15 @@ Object.assign(window, {
   // world calendar
   resolveWorldEventChoice,
 })
+
+// ── Accessibility init (P5) — tag overlays as modal dialogs for assistive tech ──
+function _a11yInit() {
+  document.querySelectorAll('.ov').forEach(ov => {
+    ov.setAttribute('role', 'dialog')
+    ov.setAttribute('aria-modal', 'true')
+  })
+  const cont = document.getElementById('btn-end-turn')
+  if (cont) cont.setAttribute('aria-keyshortcuts', 'Enter')
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _a11yInit)
+else _a11yInit()

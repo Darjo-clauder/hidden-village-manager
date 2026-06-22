@@ -1,5 +1,13 @@
 /* ── Reset & Base ─────────────────────────────────────────────────────────── */
 *{box-sizing:border-box;margin:0;padding:0}
+/* ── Accessibility (P5) ───────────────────────────────────────────────────── */
+:focus-visible{outline:2px solid var(--accent,#c9a84c);outline-offset:1px;border-radius:2px}
+:focus:not(:focus-visible){outline:none}
+[onclick],[oncontextmenu],.tab,.nb,.gb,.btn{cursor:pointer}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:.01ms !important;animation-duration:.01ms !important;animation-iteration-count:1 !important;scroll-behavior:auto !important}
+}
 html,body{height:100%;overflow:hidden}
 body{
   font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;

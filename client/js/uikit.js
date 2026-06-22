@@ -92,7 +92,8 @@ export function tblHeaderHtml(columns, sort, onSortFn) {
   return columns.map(c => {
     const active = sort && sort.key === c.key
     const arrow = active ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''
-    return `<th onclick="${onSortFn}('${c.key}')" title="Sort by ${c.label}"
+    const ariaSort = active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'
+    return `<th role="columnheader" aria-sort="${ariaSort}" tabindex="0" onclick="${onSortFn}('${c.key}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${onSortFn}('${c.key}')}" title="Sort by ${c.label}"
       style="padding:4px 6px;font-size:7px;color:${active ? 'var(--accent)' : '#555'};letter-spacing:1px;text-align:${c.align || 'left'};text-transform:uppercase;cursor:pointer;user-select:none;white-space:nowrap">${c.label}${arrow}</th>`
   }).join('')
 }
