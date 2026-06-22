@@ -137,6 +137,33 @@ export function lineChartSvg(values, opts = {}) {
   </svg>${labels.length ? `<div style="display:flex;justify-content:space-between;font-size:7px;color:#555;margin-top:2px"><span>${labels[0]}</span><span>${labels[labels.length - 1]}</span></div>` : ''}`
 }
 
+/** Heatmap grid. rowLabels[], colLabels[], matrix[r][c] in 0..1 (red→green). */
+export function heatmapHtml(rowLabels, colLabels, matrix, opts = {}) {
+  const { cell = 34, labelW = 96 } = opts
+  const col = v => {
+    const t = Math.max(0, Math.min(1, v))
+    const r = Math.round(240 * (1 - t) + 90 * t), g = Math.round(96 * (1 - t) + 188 * t), b = Math.round(90 * (1 - t) + 143 * t)
+    return `rgba(${r},${g},${b},0.88)`
+  }
+  const head = `<tr><th style="width:${labelW}px"></th>${colLabels.map(c => `<th style="font-size:7px;color:var(--text-dim,#7a7060);font-weight:normal;text-transform:uppercase;letter-spacing:.5px;padding:2px;text-align:center">${c}</th>`).join('')}</tr>`
+  const body = rowLabels.map((rl, r) => `<tr>
+    <td style="font-size:8px;color:var(--text,#c9c0a8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${labelW}px;padding-right:6px">${rl}</td>
+    ${colLabels.map((_, c) => { const v = (matrix[r] && matrix[r][c]) || 0; return `<td style="padding:1px"><div title="${Math.round(v * 100)}%" style="height:${cell - 6}px;background:${col(v)};border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:7px;color:#0a0c10;font-weight:600">${Math.round(v * 100)}</div></td>` }).join('')}
+  </tr>`).join('')
+  return `<table style="width:100%;border-collapse:collapse">${head}${body}</table>`
+}
+
+/** Activity grid — months:[{m, state}]; colored cells with a legend. */
+export function activityGridHtml(months, opts = {}) {
+  const COLORS = { mission: 'var(--accent,#c9a84c)', injured: 'var(--red,#f0605a)', exam: 'var(--blue,#4a88c0)', war: '#a05050', rest: 'var(--surface-3,#0d0d0d)', available: '#2a2a2a', training: 'var(--green,#8fbc8f)' }
+  const LABEL = { mission: 'Mission', injured: 'Injured', exam: 'Exam', war: 'War', rest: 'Rest', available: 'Idle', training: 'Training' }
+  if (!months || !months.length) return `<div style="font-size:8px;color:#555">No activity recorded yet.</div>`
+  const cells = months.map(x => `<div title="M${x.m}: ${LABEL[x.state] || x.state}" style="flex:1;min-width:9px;height:14px;border-radius:2px;background:${COLORS[x.state] || '#222'}"></div>`).join('')
+  const seen = [...new Set(months.map(x => x.state))]
+  const legend = seen.map(s => `<span style="display:inline-flex;align-items:center;gap:3px;font-size:7px;color:var(--text-dim,#7a7060)"><span style="width:8px;height:8px;border-radius:2px;background:${COLORS[s] || '#222'}"></span>${LABEL[s] || s}</span>`).join('  ')
+  return `<div style="display:flex;gap:2px;margin-bottom:4px">${cells}</div><div style="display:flex;gap:8px;flex-wrap:wrap">${legend}</div>`
+}
+
 /** Horizontal proportional bars. items: [{label, value, color}]. */
 export function barRowsSvg(items, opts = {}) {
   const { format = v => v } = opts

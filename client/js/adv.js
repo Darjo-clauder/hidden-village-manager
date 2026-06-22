@@ -651,6 +651,19 @@ export function activateBloodline(beastName) {
 export function adv() {
   // Off-season phase: months 1–3 are recovery/prep. Flag used by UI.
   G.isOffSeason = G.month >= 1 && G.month <= 3
+
+  // ── Per-shinobi activity log (P4 ActivityGrid) — record this month's state ──
+  G.shinobi.forEach(s => {
+    const act = s.status === 'mission' ? 'mission'
+      : s.status === 'injured' ? 'injured'
+      : s.status === 'exam' ? 'exam'
+      : s.status === 'war' ? 'war'
+      : s.restMonth ? 'rest'
+      : s.trainingFocus ? 'training'
+      : 'available'
+    ;(s.activityLog = s.activityLog || []).push({ m: G.month, state: act })
+    if (s.activityLog.length > 12) s.activityLog.shift()
+  })
   const tgM = G.upgrades.training === 1 ? 2 : G.upgrades.training === 2 ? 3 : 1
   const iB = G.upgrades.intel === 1 ? 0.05 : G.upgrades.intel === 2 ? 0.10 : 0
   const hL = G.upgrades.hospital

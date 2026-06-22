@@ -5,6 +5,32 @@ import { sqSynergy, cohesionLabel, calcChemistry } from '../synergy.js'
 import { bondThresholdInfo } from '../../../shared/bonds/bondTypes.js'
 import { FORMATIONS } from '../../../shared/utils/formation.js'
 import { MISSION_APPROACHES } from '../../../shared/utils/missionEngine.js'
+import { heatmapHtml } from '../uikit.js'
+
+// Squad × mission-spec fit matrix (P4 heatmap). Fit = squad avg of the two
+// stats most relevant to each spec, normalised 0..1.
+const _SPEC_STATS = {
+  Stealth:  ['speed', 'intelligence'],
+  Combat:   ['taijutsu', 'ninjutsu'],
+  Intel:    ['intelligence', 'genjutsu'],
+  Escort:   ['speed', 'chakra'],
+  Siege:    ['ninjutsu', 'chakra'],
+  Recovery: ['intelligence', 'taijutsu'],
+}
+function _squadFitMatrix() {
+  const cols = Object.keys(_SPEC_STATS)
+  const rows = G.squads.map(sq => sq.n)
+  const matrix = G.squads.map(sq => {
+    const mbs = sq.members.map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
+    return cols.map(spec => {
+      const [a, b] = _SPEC_STATS[spec]
+      if (!mbs.length) return 0
+      const avg = mbs.reduce((acc, s) => acc + ((s.stats?.[a] || 0) + (s.stats?.[b] || 0)) / 2, 0) / mbs.length
+      return Math.max(0, Math.min(1, avg / 100))
+    })
+  })
+  return { rows, cols, matrix }
+}
 
 export function setFormation(squadId, formation) {
   if (!G._ff_tacticalFormation) return
@@ -16,7 +42,13 @@ export function setFormation(squadId, formation) {
 export function rSq() {
   const el = document.getElementById('sql')
   if (!G.squads.length) { el.innerHTML = '<div style="color:#7a7060;font-size:10px">No squads.</div>'; return }
-  el.innerHTML = G.squads.map(sq => {
+  const _fit = _squadFitMatrix()
+  const _fitHtml = `<div style="background:#1a1814;border:1px solid #2e2a22;padding:10px 12px;margin-bottom:12px">
+    <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:8px">Squad Fit Matrix — by mission specialty</div>
+    ${heatmapHtml(_fit.rows, _fit.cols, _fit.matrix)}
+    <div style="font-size:7px;color:#3a3630;margin-top:6px">Higher = better suited. Pair a squad with missions matching its strongest specialties.</div>
+  </div>`
+  el.innerHTML = _fitHtml + G.squads.map(sq => {
     const mbs = sq.members.map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
     const leader = G.shinobi.find(s => s.id === sq.leaderId)
     const rawPw = sqP(sq) + (leader?.pers.n === 'Charismatic' ? 5 : 0)
