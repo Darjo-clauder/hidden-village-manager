@@ -2,6 +2,35 @@ import { G, ui, sPow, rnd, sn, pk, clamp, fmt, addChronicle, addLegend, computeM
 import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS, INJURY_TYPES } from '../constants.js'
 import { aL, ntf, upUI, schEx } from '../ui.js'
 import { initSeasonTable, sortedTable, seedsFromTable, seasonSchedule, teamFixtures } from '../../../shared/utils/season.js'
+import { leagueLeaders } from '../../../shared/utils/seasonStats.js'
+
+// Season-by-season stat history (surfaces the archived G.seasonStats snapshots).
+function _seasonHistoryHtml() {
+  const stats = G.seasonStats || {}
+  const years = Object.keys(stats).map(Number).sort((a, b) => b - a)
+  if (!years.length) return `<div style="font-size:8px;color:#555;margin-bottom:12px">No completed seasons yet — history appears after Year 1 ends (Month 12).</div>`
+  return `<div style="font-size:10px;color:#c9a84c;margin:14px 0 8px;text-transform:uppercase;letter-spacing:1px">Season History</div>
+    <div style="display:grid;gap:6px;margin-bottom:14px">
+      ${years.map(y => {
+        const snap = stats[y]; const L = leagueLeaders(snap)
+        const mvp = L.topWins[0]; const mis = L.topMissions[0]; const sr = L.topSRank[0]
+        const finish = snap.playerStanding ? `#${snap.playerStanding}` : '—'
+        const finCol = snap.playerStanding === 1 ? '#c9a84c' : snap.playerStanding <= 3 ? '#8fbc8f' : '#7a7060'
+        return `<div style="background:#0a0a0a;border:1px solid #2e2a22;border-left:2px solid ${finCol};padding:8px 10px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="font-size:10px;color:#e8e0cc;font-weight:bold">Year ${y}</span>
+            <span style="font-size:8px;color:#7a7060">Tier ${snap.prestige}</span>
+            <span style="font-size:8px;color:${finCol};margin-left:auto">Finished ${finish}${snap.kiaCount ? ` · <span style="color:#f66">${snap.kiaCount} fallen</span>` : ''}</span>
+          </div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:8px;color:#7a7060">
+            ${mvp && mvp.winsThisSeason > 0 ? `<span>🏅 MVP <b style="color:#e8e0cc">${mvp.name}</b> (${mvp.winsThisSeason}W)</span>` : ''}
+            ${mis && mis.missionsThisSeason > 0 ? `<span>⚙ Most missions <b style="color:#e8e0cc">${mis.name}</b> (${mis.missionsThisSeason})</span>` : ''}
+            ${sr && sr.sRankWins > 0 ? `<span>★ Top S-rank <b style="color:#c9a84c">${sr.name}</b> (${sr.sRankWins})</span>` : ''}
+          </div>
+        </div>`
+      }).join('')}
+    </div>`
+}
 import { tblSort, tblToggleSort, tblHeaderHtml, tblSortRows } from '../uikit.js'
 import { kageMod } from '../../../shared/constants/kageDev.js'
 import { renderWar } from './war.js'
@@ -722,6 +751,7 @@ function _recordsTab() {
       <div style="font-size:8px;color:#7a7060;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Reigning Champion (Year ${champ.year})</div>
       <div style="font-size:13px;color:${champ.player ? '#c9a84c' : '#e8e0cc'}">🏆 ${champ.ico || ''} ${champ.village}${champ.player ? ' — your village' : ''}</div>
     </div>` : ''}
+    ${_seasonHistoryHtml()}
     <div style="font-size:10px;color:#c9a84c;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">Historical Exam Records</div>
     <div style="display:grid;gap:4px;margin-bottom:14px">
       ${rows.map(r => `<div style="display:flex;justify-content:space-between;padding:5px 8px;background:#0a0a0a;border-radius:3px">

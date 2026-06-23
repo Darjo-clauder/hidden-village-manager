@@ -7,7 +7,7 @@ export function snapshotSeasonStats(G) {
   const shinobi = G.shinobi || []
   const players = shinobi.map(s => ({
     id: s.id,
-    name: (s.n || s.firstName || s.id),
+    name: (s.fn && s.ln) ? `${s.fn} ${s.ln}` : (s.fn || s.n || s.firstName || s.id),
     ri: s.ri ?? 0,
     rank: ['Genin', 'Chunin', 'Jonin', 'ANBU', 'S-Rank'][s.ri ?? 0] || 'Genin',
     clan: s.clan || '',
