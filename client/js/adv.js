@@ -2855,11 +2855,11 @@ export function adv() {
   if (G.tempDef > 0) G.tempDef = Math.max(0, G.tempDef - 5)
   if (G.examSched && G.month === G.examMonth) { aL('Chunin Exam is now! Go to Exam panel.', 'ev'); ntf('Chunin Exam!') }
 
-  // ── Nation War — annual marquee at year-end ───────────────────────────────
+  // ── Grand Tournament — the deadly year-end playoff, seeded by the season ───
   if (G.month === 12 && !G.warActive && G.warDoneYear !== G.year) {
     G.warSched = true
-    aL('🏯 The Nation War mobilizes! The great powers prepare to clash. Muster your elite in the Nation War tab.', 'ev')
-    ntf('Nation War mobilizing!')
+    aL('🏆 The Grand Tournament begins! Seeded by the season standings, the great villages clash to the death. Muster your elite in the Grand Tournament tab.', 'ev')
+    ntf('Grand Tournament — muster your elite!')
   }
 
   // ── Prestige tier tick ──────────────────────────────────────────────────────

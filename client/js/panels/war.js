@@ -5,7 +5,7 @@ import { seedsFromTable } from '../../../shared/utils/season.js'
 import { queuePressConference } from '../adv.js'
 import { kageMod, kagePerk } from '../../../shared/constants/kageDev.js'
 
-// ── Nation War ──────────────────────────────────────────────────────────────
+// ── Grand Tournament ──────────────────────────────────────────────────────────────
 // The annual "big leagues": a 5-village elite bracket where Jonin+ squads clash
 // and shinobi DIE. Chunin Exam graduates feed up into this pool. Punishing — no
 // one is safe — but tailed-beast hosts and bloodline clans survive more often.
@@ -105,9 +105,9 @@ function _killMember(s, entry, c, stageName) {
   if (entry.isPlayer) {
     const lastWords = `Fell at ${stageName}.`
     entry.fallen.push({ name: sn(s), rank: RANKS[s.ri], year: G.year })
-    if (c.sqRef) { c.sqRef.fallen = c.sqRef.fallen || []; c.sqRef.fallen.push({ name: sn(s), mission: 'Nation War', year: G.year, month: G.month }) }
-    G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: 'Nation War — ' + stageName, year: G.year, month: G.month, wins: s.wins || 0, lastWords })
-    if ((s.wins || 0) >= 30 || s.ri >= 3) { addChronicle('War Hero Fallen', `${sn(s)} (${RANKS[s.ri]}) was killed at ${stageName} in the Nation War. The village mourns.`, 'shinobi'); addLegend(8) }
+    if (c.sqRef) { c.sqRef.fallen = c.sqRef.fallen || []; c.sqRef.fallen.push({ name: sn(s), mission: 'Grand Tournament', year: G.year, month: G.month }) }
+    G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: 'Grand Tournament — ' + stageName, year: G.year, month: G.month, wins: s.wins || 0, lastWords })
+    if ((s.wins || 0) >= 30 || s.ri >= 3) { addChronicle('War Hero Fallen', `${sn(s)} (${RANKS[s.ri]}) was killed at ${stageName} in the Grand Tournament. The village mourns.`, 'shinobi'); addLegend(8) }
     aL(`☠ ${sn(s)} KIA at ${stageName}.`, 'bad')
     G.shinobi = G.shinobi.filter(x => x.id !== s.id)
   } else if (c.vRef) {
@@ -212,20 +212,20 @@ function _runWarFinal(field, res) {
     G.warHistory.push({ year: G.year, champion: champ.name, player: playerWon })
     if (playerWon) {
       addLegend(30); G.reputation = clamp((G.reputation || 0) + 25, 0, 999); G.morale = clamp((G.morale || 50) + 10, 0, 100)
-      aL('🏯 ' + G.vName + ' WINS the Nation War! The age belongs to us. +30 legend, +25 reputation.', 'good')
-      addChronicle('Nation War Champion', `${G.vName} triumphed over the great powers to win the Year ${G.year} Nation War.`, 'legend')
+      aL('🏯 ' + G.vName + ' WINS the Grand Tournament! The age belongs to us. +30 legend, +25 reputation.', 'good')
+      addChronicle('Grand Tournament Champion', `${G.vName} triumphed over the great powers to win the Year ${G.year} Grand Tournament.`, 'legend')
       if (!G.pendingPress) queuePressConference('war_win')
     } else {
       G.morale = clamp((G.morale || 50) - 8, 0, 100)
-      aL('🏯 ' + champ.name + ' wins the Nation War. ' + G.vName + ' counts its dead.', 'bad')
-      addChronicle('Nation War', `${champ.name} won the Year ${G.year} Nation War.`, 'legend')
+      aL('🏯 ' + champ.name + ' wins the Grand Tournament. ' + G.vName + ' counts its dead.', 'bad')
+      addChronicle('Grand Tournament', `${champ.name} won the Year ${G.year} Grand Tournament.`, 'legend')
       if (!G.pendingPress) queuePressConference('war_loss')
     }
   }
 
   // Casualty tally + cleanup.
   const myFallen = playerEntry?.fallen?.length || 0
-  if (myFallen > 0) aL(`The Nation War cost ${myFallen} of our shinobi their lives.`, 'bad')
+  if (myFallen > 0) aL(`The Grand Tournament cost ${myFallen} of our shinobi their lives.`, 'bad')
 
   G.warCands.forEach(sqId => {
     const sq = G.squads.find(q => q.id === sqId); if (!sq) return
@@ -255,23 +255,23 @@ function _eliteSquads() {
 function _renderWarMuster(el, tabHtml) {
   const last = G._warResult
   const recap = last ? `<div style="border:1px solid ${last.champ?.player ? '#c9a84c' : '#5a2a2a'};background:#0d0606;padding:10px;margin-bottom:12px">
-      <div style="font-size:11px;color:${last.champ?.player ? '#c9a84c' : '#e8a0a0'}">${last.champ ? `🏯 Last Nation War — Champion: ${last.champ.ico || ''} ${last.champ.name}${last.champ.player ? ' (you)' : ''}` : 'Nation War concluded.'}</div>
+      <div style="font-size:11px;color:${last.champ?.player ? '#c9a84c' : '#e8a0a0'}">${last.champ ? `🏯 Last Grand Tournament — Champion: ${last.champ.ico || ''} ${last.champ.name}${last.champ.player ? ' (you)' : ''}` : 'Grand Tournament concluded.'}</div>
       ${last.fallen ? `<div style="font-size:8px;color:#f88;margin-top:4px">${last.fallen} of our shinobi fell.</div>` : ''}
     </div>` : ''
 
   if (!G.warSched) {
     return (el.innerHTML = tabHtml + recap +
       `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:12px">
-        <div style="font-size:11px;color:#c9a84c;margin-bottom:6px">🏯 Nation War</div>
-        <div style="font-size:9px;color:#7a7060;line-height:1.5">The Nation War is the annual clash of the great powers — fought by your <b>elite (Jonin and above)</b>, in squads, to the death. It is mustered each <b>Year-end (Month 12)</b>. Win the Chunin Exams to graduate prospects into your war pool; the standings seed the bracket.</div>
-        <div style="font-size:8px;color:#5a5448;margin-top:8px">No war is mustering. The next Nation War mobilizes at Month 12.</div>
+        <div style="font-size:11px;color:#c9a84c;margin-bottom:6px">🏯 Grand Tournament</div>
+        <div style="font-size:9px;color:#7a7060;line-height:1.5">The Grand Tournament is the annual clash of the great powers — fought by your <b>elite (Jonin and above)</b>, in squads, to the death. It is mustered each <b>Year-end (Month 12)</b>. Win the Chunin Exams to graduate prospects into your tournament pool; the standings seed the bracket.</div>
+        <div style="font-size:8px;color:#5a5448;margin-top:8px">No tournament is mustering. The next Grand Tournament mobilizes at Month 12.</div>
       </div>`)
   }
 
   const elite = _eliteSquads()
   return (el.innerHTML = tabHtml + recap +
     `<div style="border:1px solid #c9a84c;background:#0d0a04;padding:10px;margin-bottom:12px">
-      <div style="font-size:11px;color:#c9a84c">🏯 The Nation War is mobilizing!</div>
+      <div style="font-size:11px;color:#c9a84c">🏯 The Grand Tournament is mobilizing!</div>
       <div style="font-size:8px;color:#7a7060;margin-top:4px">Muster up to ${WAR_MAX_SQUADS} elite squads (Jonin+). Casualties are expected — jinchuriki and bloodline clans survive more often.</div>
     </div>` +
     '<div style="margin-bottom:12px">' +
@@ -292,7 +292,7 @@ function _renderActiveWar(el, tabHtml) {
   const totalAlive = field.reduce((a, e) => a + e.alive.length, 0)
   const totalFallen = field.reduce((a, e) => a + (e.fallen?.length || 0), 0)
   el.innerHTML = tabHtml + `<div style="background:#0d0808;border:1px solid #c9a84c;padding:14px">
-    <div style="font-size:8px;letter-spacing:3px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">Nation War — ${WAR_STAGES[r] || 'Final Stand'}</div>
+    <div style="font-size:8px;letter-spacing:3px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">Grand Tournament — ${WAR_STAGES[r] || 'Final Stand'}</div>
     <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${standing.length} villages in the field · ${totalAlive} squads standing · <span style="color:#f88">${totalFallen} fallen</span></div>
     <div style="display:grid;gap:8px;margin-bottom:10px">
       ${standing.map((e, i) => `<div style="border:1px solid ${e.isPlayer ? '#c9a84c' : '#2e2a22'};padding:7px;background:${e.isPlayer ? 'rgba(201,168,76,0.06)' : '#0a0a0a'}">

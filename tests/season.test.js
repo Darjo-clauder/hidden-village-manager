@@ -2,10 +2,40 @@ import { describe, it, expect } from 'vitest'
 import {
   initSeasonTable, roundPairings, simMatch, recordMatch,
   sortedTable, seedsFromTable, playMatchday, SEASON_PTS,
+  seasonSchedule, teamFixtures,
 } from '../shared/utils/season.js'
 import { withSeed } from './helpers/rng.js'
 
 const NAMES = ['You', 'Kazegakure', 'Shimogakure', 'Gangakure', 'Raikurokure']
+
+describe('season schedule', () => {
+  it('generates the requested number of rounds', () => {
+    const sched = seasonSchedule(NAMES, 6)
+    expect(sched).toHaveLength(6)
+  })
+
+  it('each round pairs everyone at most once (no double-booking)', () => {
+    seasonSchedule(NAMES, 8).forEach(round => {
+      const seen = new Set()
+      round.forEach(({ a, b }) => { expect(seen.has(a)).toBe(false); expect(seen.has(b)).toBe(false); seen.add(a); seen.add(b) })
+    })
+  })
+
+  it('teamFixtures returns one fixture per round the team appears in', () => {
+    const sched = seasonSchedule(NAMES, 4)   // odd count → one BYE per round
+    const fx = teamFixtures(sched, 'You')
+    expect(fx.length).toBeGreaterThan(0)
+    fx.forEach(f => { expect(f.opp).not.toBe('You'); expect(typeof f.home).toBe('boolean') })
+  })
+
+  it('playMatchday records results by round for the schedule view', () => {
+    const season = { year: 1, round: 0, table: initSeasonTable(NAMES), lastResults: [] }
+    playMatchday(season, NAMES, () => 50)
+    expect(season.resultsByRound[0]).toBeDefined()
+    expect(Array.isArray(season.resultsByRound[0])).toBe(true)
+    expect(season.round).toBe(1)
+  })
+})
 
 describe('season table', () => {
   it('initialises a zeroed row per village', () => {

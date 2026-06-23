@@ -80,10 +80,33 @@ export function seedsFromTable(table) {
 }
 
 /**
+ * Full fixture schedule for a season: an array of rounds, each a list of
+ * { a, b } pairings. Lets the UI show the year's slate and look ahead.
+ */
+export function seasonSchedule(names, numRounds) {
+  const rounds = []
+  for (let r = 0; r < numRounds; r++) rounds.push(roundPairings(names, r).map(([a, b]) => ({ a, b })))
+  return rounds
+}
+
+/** The fixtures for one team across a schedule: [{ round, opp, home }]. */
+export function teamFixtures(schedule, name) {
+  const out = []
+  schedule.forEach((round, i) => {
+    for (const m of round) {
+      if (m.a === name) { out.push({ round: i, opp: m.b, home: true }); break }
+      if (m.b === name) { out.push({ round: i, opp: m.a, home: false }); break }
+    }
+  })
+  return out
+}
+
+/**
  * Play one matchday for all villages and fold results into the table.
- * Mutates `season` (round++, table, lastResults). `strOf(name)` returns strength.
+ * Mutates `season` (round++, table, lastResults, resultsByRound). `strOf(name)` → strength.
  */
 export function playMatchday(season, names, strOf, rng = Math.random) {
+  const playedRound = season.round
   const pairs = roundPairings(names, season.round)
   const results = []
   pairs.forEach(([a, b]) => {
@@ -92,6 +115,8 @@ export function playMatchday(season, names, strOf, rng = Math.random) {
     results.push({ a, b, winner: res.winner === 'draw' ? null : (res.winner === 'a' ? a : b) })
   })
   season.lastResults = results
+  season.resultsByRound = season.resultsByRound || {}
+  season.resultsByRound[playedRound] = results
   season.round++
   return results
 }

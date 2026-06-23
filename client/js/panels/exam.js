@@ -1,7 +1,7 @@
 import { G, ui, sPow, rnd, sn, pk, clamp, fmt, addChronicle, addLegend, computeMarketValue } from '../state.js'
 import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS, INJURY_TYPES } from '../constants.js'
 import { aL, ntf, upUI, schEx } from '../ui.js'
-import { initSeasonTable, sortedTable, seedsFromTable } from '../../../shared/utils/season.js'
+import { initSeasonTable, sortedTable, seedsFromTable, seasonSchedule, teamFixtures } from '../../../shared/utils/season.js'
 import { tblSort, tblToggleSort, tblHeaderHtml, tblSortRows } from '../uikit.js'
 import { kageMod } from '../../../shared/constants/kageDev.js'
 import { renderWar } from './war.js'
@@ -12,12 +12,13 @@ window._exTab = 'exam'
 export function rEx() {
   const el = document.getElementById('exl')
   if (!el) return
-  const tabs = ['exam', 'war', 'summit', 'srank', 'records', 'leaders']
-  const labels = { exam: 'CHUNIN EXAM', war: 'NATION WAR', summit: 'SUMMIT', srank: 'S-RANK BIDS', records: 'RECORDS', leaders: 'LEADERS' }
+  const tabs = ['season', 'exam', 'war', 'summit', 'srank', 'records', 'leaders']
+  const labels = { season: 'SEASON', exam: 'CHUNIN EXAM', war: 'GRAND TOURNAMENT', summit: 'SUMMIT', srank: 'S-RANK BIDS', records: 'RECORDS', leaders: 'LEADERS' }
   const offSeasonBanner = G.isOffSeason ? `<div style="background:#0d0a04;border:1px solid #c9a84c;padding:6px 10px;margin-bottom:10px;font-size:8px;color:#c9a84c">⛄ Off-season — Months 1–3. Focus: recruitment, contract renewals, squad prep. Season begins Month 4.</div>` : ''
   const tabHtml = `${offSeasonBanner}<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
     ${tabs.map(t => `<button class="btn${window._exTab === t ? ' act' : ''}" onclick="exTab('${t}')" style="font-size:9px;padding:3px 8px${t === 'war' ? ';color:#c9a84c' : ''}">${labels[t]}${t === 'war' && G.warSched ? ' ●' : ''}</button>`).join('')}
   </div>`
+  if (window._exTab === 'season') { el.innerHTML = tabHtml + _seasonTab(); return }
   if (window._exTab === 'war') { renderWar(el, tabHtml); return }
   if (window._exTab === 'summit') { el.innerHTML = tabHtml + _summitTab(); return }
   if (window._exTab === 'srank') { el.innerHTML = tabHtml + _srankTab(); return }
@@ -29,6 +30,64 @@ export function rEx() {
 }
 
 export function exTab(t) { window._exTab = t; rEx() }
+
+// ── Season tab — the year's spine: schedule → standings → Grand Tournament ─────
+function _seasonTab() {
+  const playerName = G.vName
+  const names = [playerName, ...(G.villages || []).map(v => v.n)]
+  if (!G.season?.table) {
+    return `<div style="color:#7a7060;font-size:10px;padding:14px 0">The season begins in Month 4. Fixtures and standings will appear here.</div>`
+  }
+  const round = G.season.round || 0
+  const schedule = seasonSchedule(names, 11)
+  const fixtures = teamFixtures(schedule, playerName)
+  const resultsByRound = G.season.resultsByRound || {}
+  const resultFor = r => {
+    const rr = resultsByRound[r]; if (!rr) return null
+    const m = rr.find(x => x.a === playerName || x.b === playerName); if (!m) return null
+    return m.winner === playerName ? 'W' : m.winner === null ? 'D' : 'L'
+  }
+
+  // Structure overview — the year at a glance.
+  const overview = `<div style="background:#0d0a04;border:1px solid #2e2a22;padding:11px 13px;margin-bottom:12px">
+    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">The Shinobi Year</div>
+    <div style="display:flex;gap:6px;align-items:stretch;flex-wrap:wrap;font-size:8px">
+      ${[
+        ['🎓 Academy Intake', 'M4', 'Prospects enter the system'],
+        ['⚔ Chunin Exam', 'M4 / M10', 'Little league — develop genin → chunin'],
+        ['📅 Season Matchdays', 'All year', 'Monthly fixtures build the standings'],
+        ['🏆 Grand Tournament', 'M12', 'The deadly year-end playoff, seeded by standings'],
+      ].map(([t, when, d], i) => `<div style="flex:1;min-width:120px;border:1px solid #2a2520;border-left:2px solid #c9a84c;padding:7px 9px">
+        <div style="font-size:9px;color:#e8e0cc;font-weight:bold">${t}</div>
+        <div style="font-size:7px;color:#c9a84c;margin:2px 0">${when}</div>
+        <div style="font-size:7px;color:#7a7060;line-height:1.4">${d}</div>
+      </div>${i < 3 ? '<div style="align-self:center;color:#3a3630;font-size:11px">→</div>' : ''}`).join('')}
+    </div>
+  </div>`
+
+  // Player fixture list — recent results + upcoming.
+  const fixtureList = `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:9px;margin-bottom:12px">
+    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">${playerName} — Fixtures</div>
+    <div style="display:grid;gap:2px">
+      ${fixtures.map(f => {
+        const done = f.round < round
+        const res = done ? resultFor(f.round) : null
+        const next = f.round === round
+        const resCol = res === 'W' ? '#8fbc8f' : res === 'L' ? '#f66' : res === 'D' ? '#c9a84c' : '#555'
+        return `<div style="display:flex;align-items:center;gap:8px;font-size:8px;padding:3px 6px;background:${next ? 'rgba(201,168,76,.08)' : 'transparent'};border-left:2px solid ${next ? '#c9a84c' : 'transparent'}">
+          <span style="color:#555;width:40px">Round ${f.round + 1}</span>
+          <span style="color:#7a7060;width:28px">${f.home ? 'vs' : '@'}</span>
+          <span style="flex:1;color:#e8e0cc">${f.opp}</span>
+          ${done ? `<span style="color:${resCol};font-weight:bold;width:16px;text-align:center">${res || '·'}</span>`
+                 : next ? '<span style="color:#c9a84c;font-size:7px">NEXT ▸</span>'
+                 : '<span style="color:#3a3630;font-size:7px">upcoming</span>'}
+        </div>`
+      }).join('')}
+    </div>
+  </div>`
+
+  return overview + _seasonStandingsCard() + fixtureList
+}
 
 // Season standings card — the league race that seeds the exam bracket.
 function _seasonStandingsCard() {
