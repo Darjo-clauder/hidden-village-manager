@@ -109,10 +109,24 @@ export function rMissionReport() {
   const r = G.lastMissionReport
   if (!r) { el.innerHTML = ''; return }
   const GRADE_COLOR = { A:'#c9a84c', B:'#8fbc8f', C:'#f0a030', D:'#f66' }
+  const QUALITY_LABEL = { decisive:'Decisive', narrow:'Narrow', costly:'Costly', disaster:'Disaster' }
+  // Play-by-play: the three contested beats of the operation.
+  const beatHtml = (r.phases && r.phases.length) ? `
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      ${r.phases.map(p => {
+        const c = p.won ? '#8fbc8f' : '#f66'
+        return `<div style="flex:1;border:1px solid ${c}44;background:${p.won?'rgba(143,188,143,.06)':'rgba(255,102,102,.06)'};padding:5px 7px;text-align:center">
+          <div style="font-size:7px;color:#7a7060;text-transform:uppercase;letter-spacing:1px">${p.name}</div>
+          <div style="font-size:11px;color:${c};font-weight:bold;margin-top:2px">${p.won ? '✓' : '✕'}</div>
+        </div>`
+      }).join('')}
+    </div>
+    ${r.quality ? `<div style="font-size:8px;color:#7a7060;margin-bottom:8px">Outcome: <b style="color:${r.succeeded ? '#8fbc8f' : '#f66'}">${QUALITY_LABEL[r.quality] || r.quality}</b>${r.margin != null ? ` · margin ${r.margin > 0 ? '+' : ''}${r.margin}` : ''}</div>` : ''}` : ''
   el.innerHTML = `<div style="background:#0a0a0a;border:1px solid #333;padding:10px;margin-bottom:12px">
     <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:8px">
       Last Mission Report — ${r.missionName} (${r.missionRk}-Rank) · ${r.succeeded?'<span style="color:#8fbc8f">SUCCESS</span>':'<span style="color:#f66">FAILURE</span>'}
     </div>
+    ${beatHtml}
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       ${r.scores.map(sc => `<div style="background:#111;border:1px solid ${GRADE_COLOR[sc.grade]}22;padding:6px 9px;min-width:80px">
         <div style="font-size:9px;color:#e8e0cc">${sc.name}</div>

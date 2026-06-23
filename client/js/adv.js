@@ -1446,7 +1446,7 @@ export function adv() {
         })
         if (_mev.quality === 'decisive') pushNarrative(genMissionBlurb(sq.n, sq.members.length > 0 ? (G.shinobi.find(x => x.id === sq.members[0])?.ri ?? 2) : 2, m.n, 'decisive'), _sqActorIds)
         // Post-mission contribution scores (Phase 4)
-        G.lastMissionReport = _buildMissionReport(sq, m, true)
+        G.lastMissionReport = _buildMissionReport(sq, m, true, _mev)
         // Squad identity unlock at cohesion 75
         if (sq.cohesion >= 75 && !sq.identity) {
           const taken = G.squads.filter(q => q.identity).map(q => q.identity.title)
@@ -1545,7 +1545,7 @@ export function adv() {
         if (_mev.quality === 'disaster') pushNarrative(genMissionBlurb(sq.n, 2, m.n, 'disaster'))
         pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, narrative: _sqFailNarr, quality: _mev.quality })
         G.morale = clamp(G.morale - 5 + _mq.morale, 0, 100)
-        G.lastMissionReport = _buildMissionReport(sq, m, false)
+        G.lastMissionReport = _buildMissionReport(sq, m, false, _mev)
       }
     } else {
       const s = G.shinobi.find(x => x.id === am.assignedTo); if (!s) return
@@ -3351,7 +3351,7 @@ export function resRaid() {
 }
 
 // ── Post-mission contribution scorer (Phase 4) ────────────────────────────────
-function _buildMissionReport(sq, m, succeeded) {
+function _buildMissionReport(sq, m, succeeded, mev) {
   const ROLE_PRIMARY = { vanguard:'taijutsu', support:'ninjutsu', intel:'stealth', medical:'chakra', flex:null }
   const ROLE_SECONDARY = { vanguard:'speed', support:'chakra', intel:'intelligence', medical:'intelligence', flex:null }
   const scores = sq.members.map(id => {
@@ -3367,7 +3367,8 @@ function _buildMissionReport(sq, m, succeeded) {
     const detail = grade === 'A' ? 'Exceptional' : grade === 'B' ? 'Solid' : grade === 'C' ? 'Below par' : 'Poor showing'
     return { id: s.id, name: sn(s), role: roleId, grade, detail, statVal: Math.round(statVal) }
   }).filter(Boolean)
-  return { missionId: m.id, missionName: m.n, missionRk: m.rk, squadId: sq.id, squadName: sq.n, succeeded, year: G.year, month: G.month, scores }
+  return { missionId: m.id, missionName: m.n, missionRk: m.rk, squadId: sq.id, squadName: sq.n, succeeded, year: G.year, month: G.month, scores,
+    phases: mev?.phases || null, quality: mev?.quality || null, margin: mev?.margin ?? null }
 }
 
 // ── Phase 4 tick functions ─────────────────────────────────────────────────────
