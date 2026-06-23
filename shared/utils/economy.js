@@ -22,6 +22,12 @@ export function isFiniteRyo(ryo) {
 // daimyo patronage, scaling with reputation and prestige. Single source of truth so
 // the tick and the UI panels agree. Pure.
 export const PRESTIGE_REVENUE = { D: 0, C: 4000, B: 9000, A: 15000, S: 24000 }
+// Reputation revenue uses diminishing returns past a soft cap so a maxed-rep
+// village doesn't run away with ~400k/mo. Below REP_SOFT_CAP it's the original
+// linear 400/rep (early/mid game unchanged); above it, marginal rep is worth 25%.
+export const REP_SOFT_CAP = 200
 export function villageRevenue(reputation = 0, prestigeTier = 'D') {
-  return Math.round(22000 + reputation * 400 + (PRESTIGE_REVENUE[prestigeTier] || 0))
+  const base = Math.min(reputation, REP_SOFT_CAP) * 400
+  const over = Math.max(0, reputation - REP_SOFT_CAP) * 100
+  return Math.round(22000 + base + over + (PRESTIGE_REVENUE[prestigeTier] || 0))
 }
