@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-24 · **HEAD:** `63d350b` · **Branch:** `master` · **Tests:** 630 passing / 50 files
+**Last updated:** 2026-06-24 · **HEAD:** `9bfc971` · **Branch:** `master` · **Tests:** 639 passing / 51 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -172,7 +172,7 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 - **Grand Tournament internal naming:** display says "Grand Tournament" but state/chronicle keys are still `warSched`/`warActive`/`Nation War` internals (kept for save compat). Harmless; just don't be confused by the mismatch.
 - **War/Exam stage logic lives in panels**, not unit-tested. Worth extracting stage math to shared pure utils.
 - **Grand Tournament KIA on rivals** permanently removes roster ninja; replenishment is light — watch for rival roster depletion over many years.
-- **Long-run balance validated, not swept:** 5-year run is stable + the rep-income runaway is fixed; a full 15+ year dynasty sweep hasn't been done.
+- **Long-run balance swept (2026-06-24):** deterministic 20-year sweep added (`tests/dynastySweep.test.js`). Found + fixed a real drift — `tickRivalStrength` had positive-only drift with no mean reversion, so rivals saturated at the 200 cap over a dynasty and lost all differentiation. Now mean-reverts toward a personality/relations-shifted per-village baseline (`village.baseStrength`, lazily set). Kage XP/point curve verified healthy (no unbounded points within a realistic horizon); rep-income soft cap holds. Sweep model omits the real 50-roster wage bill / staff / upkeep, so it's a curve-regression harness, not an economy-tuning oracle.
 - **Preview build + socket race:** `npx vite build` required before any browser verify (preview server :3000 serves static `dist/`). Also `endTurn()` no-ops until the socket connects — after a page reload, give it a beat before driving turns via preview_eval, or the date won't advance.
 - **`window.G`/`window.upUI` are NOT exposed** — browser verification is DOM-only (read sidebar/panel text).
 
@@ -184,10 +184,9 @@ Build is re-audited (2026-06-22) as a "functioning sports sim that feels like on
 
 1. **Localization foundation** — the one open structural gap (§6). Large; do as its own effort: `t()` helper + string table + IP-vs-UI namespace split, then extract panel-by-panel.
 2. **Live match viewer** — turn the post-result play-by-play into a watch-it-unfold view (large feature).
-3. **15+ year dynasty balance sweep** — verify economy/roster/Kage-XP don't drift over a full dynasty; tune curves.
-4. **Roll the P1 entity-grammar kit onto remaining panels** (academy, finances, depth chart, etc.) for full UI consistency.
+3. **Roll the P1 entity-grammar kit onto remaining panels** (academy, finances, depth chart, etc.) for full UI consistency.
 
-**Recently done:** Schedule depth (`c1e4e8d`, League Fixture Grid). Mid-season pressure events (`seasonPressNotice` in season.js → Standings noticeboard items: title race / clinching / slump / relegation; throttled 1/2mo, no back-to-back repeats; 6 tests).
+**Recently done:** Schedule depth (`c1e4e8d`, League Fixture Grid). Mid-season pressure events (`seasonPressNotice` in season.js → Standings noticeboard items: title race / clinching / slump / relegation; throttled 1/2mo, no back-to-back repeats; 6 tests). Dynasty balance sweep (`tests/dynastySweep.test.js` + rival mean-reversion fix in `rivalSim.js`).
 
 ---
 

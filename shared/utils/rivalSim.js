@@ -13,14 +13,28 @@ export const RIVAL_EVENT_TYPES = [
 ]
 
 /**
- * Grows or decays a village's strength by one monthly tick.
- * @param {object} village - has .strength, .rel, .personality
+ * Evolves a village's strength by one monthly tick — MEAN-REVERTING toward a
+ * stable per-village baseline rather than drifting upward unboundedly.
+ *
+ * The original model added an almost-always-positive delta every month, so over a
+ * long dynasty (15+ years) every rival saturated at the 200 cap and pinned there,
+ * erasing all differentiation (personality/relations stopped mattering). Instead we
+ * pull strength toward a personality/relations-shifted target each month plus small
+ * noise: aggressive/hostile neighbours sit higher, but everyone settles into a band.
+ *
+ * @param {object} village - has .strength, .rel, .personality (.baseStrength lazily set)
  * @returns {number} strength delta applied
  */
 export function tickRivalStrength(village) {
-  const base = village.personality === 'Aggressive' ? 1.5 : village.personality === 'Honorable' ? 0.8 : 1.0
-  const relMod = village.rel >= 60 ? -0.3 : village.rel <= 30 ? 0.5 : 0
-  const delta = base + relMod + (Math.random() * 0.5 - 0.25)
+  // Anchor each village to a stable baseline the first time it's ticked.
+  if (village.baseStrength == null) village.baseStrength = village.strength || 50
+  // Personality & relations shift the target the village gravitates toward — a band,
+  // not a ramp. Hostile (low rel) neighbours build up; friendly ones ease off.
+  const persTarget = village.personality === 'Aggressive' ? 18 : village.personality === 'Honorable' ? -8 : 0
+  const relTarget  = village.rel >= 60 ? -10 : village.rel <= 30 ? 12 : 0
+  const target = Math.max(10, Math.min(200, village.baseStrength + persTarget + relTarget))
+  // Pull ~8%/month toward target + small noise → settles into a stable band, no runaway.
+  const delta = (target - (village.strength || 50)) * 0.08 + (Math.random() - 0.5)
   village.strength = Math.max(10, Math.min(200, (village.strength || 50) + delta))
   return delta
 }
