@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-22 · **HEAD:** `ef7d7e4` · **Branch:** `master` · **Tests:** 624 passing / 50 files
+**Last updated:** 2026-06-24 · **HEAD:** `c1e4e8d` · **Branch:** `master` · **Tests:** 624 passing / 50 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -180,14 +180,13 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 
 ## 7. Next targets
 
-Build is re-audited (2026-06-22) as a "functioning sports sim that feels like one." The FM-spine, stat layer, presentation, GM progression, and a balance pass are all in. Candidate next targets (user's call):
+Build is re-audited (2026-06-22) as a "functioning sports sim that feels like one." The FM-spine, stat layer, presentation, GM progression, and a balance pass are all in. **Schedule depth (#2) is now done** — `c1e4e8d` added the League Fixture Grid to the SEASON tab (`_seasonFixtureGrid` in `panels/exam.js`): every village's matchup round-by-round with results + look-ahead. Candidate next targets (user's call):
 
-1. **League-wide fixture/results grid** — see every village's season at a glance (builds directly on the new SEASON tab; highest-visibility remaining "sim" cue). *Recommended.*
-2. **Localization foundation** — the one open structural gap (§6). Large; do as its own effort: `t()` helper + string table + IP-vs-UI namespace split, then extract panel-by-panel.
-3. **Live match viewer** — turn the post-result play-by-play into a watch-it-unfold view (large feature).
-4. **15+ year dynasty balance sweep** — verify economy/roster/Kage-XP don't drift over a full dynasty; tune curves.
-5. **Roll the P1 entity-grammar kit onto remaining panels** (academy, finances, depth chart, etc.) for full UI consistency.
-6. **Mid-season pressure events** — standings-driven inbox events (relegation-style stakes, title race tension).
+1. **Localization foundation** — the one open structural gap (§6). Large; do as its own effort: `t()` helper + string table + IP-vs-UI namespace split, then extract panel-by-panel.
+2. **Live match viewer** — turn the post-result play-by-play into a watch-it-unfold view (large feature).
+3. **15+ year dynasty balance sweep** — verify economy/roster/Kage-XP don't drift over a full dynasty; tune curves.
+4. **Roll the P1 entity-grammar kit onto remaining panels** (academy, finances, depth chart, etc.) for full UI consistency.
+5. **Mid-season pressure events** — standings-driven inbox events (relegation-style stakes, title race tension).
 
 ---
 
@@ -204,7 +203,7 @@ Build is re-audited (2026-06-22) as a "functioning sports sim that feels like on
 ## 9. First moves for the new session
 
 1. Read this doc + the auto-memory (`MEMORY.md` index loads automatically; `project_state.md` has the running log).
-2. `git -C C:\Users\Tyler\ninja\hidden-village-manager log --oneline -5` — confirm HEAD matches above (`ef7d7e4`).
+2. `git -C C:\Users\Tyler\ninja\hidden-village-manager log --oneline -5` — confirm HEAD matches above (`c1e4e8d`).
 3. `npx vitest run` — expect 624 passing / 50 files.
 4. `npx vite build` before any browser playtest (see §6 build + socket-race notes).
 5. Ask the user which target to take next (see §7), or continue whatever they were mid-stream on.
