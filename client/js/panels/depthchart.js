@@ -2,9 +2,34 @@ import { G, sPow, sn } from '../state.js'
 import { RANKS, SQUAD_ROLES } from '../constants.js'
 import { ensureDepthEntry, assignDepthSlot, toggleDepthLock, evalDepth, resolveActiveShinobi } from '../depthEngine.js'
 import { aL, ntf, upUI } from '../ui.js'
+import { openContextMenu, showHoverPreview, hideHoverPreview } from '../uikit.js'
 
 const RANK_LABELS = RANKS
 const RANK_RI     = [0, 1, 2, 3, 4]
+
+// ── P1 kit grammar for roster-tier slots — right-click verbs + hover stat card ──
+export function depCtx(e, id) {
+  e.preventDefault()
+  const s = (G.shinobi || []).find(x => x.id === id); if (!s) return false
+  openContextMenu(e.clientX, e.clientY, [
+    { label: 'Open Dossier', fn: () => window.oDos && window.oDos(id) },
+    { label: 'Squads Panel', fn: () => window.sp && window.sp('squads') },
+  ])
+  return false
+}
+
+export function depHover(e, id) {
+  const s = (G.shinobi || []).find(x => x.id === id); if (!s) return
+  const row = (k, v) => `<div class="hp-row"><span>${k}</span><b>${v}</b></div>`
+  const statAvg = s.stats ? Math.round(Object.values(s.stats).reduce((a, b) => a + b, 0) / Object.values(s.stats).length) : 0
+  showHoverPreview(e.clientX, e.clientY, `
+    <div class="hp-name">${sn(s)}</div>
+    <div class="hp-sub">${RANKS[s.ri]} · ${s.phase || 'prime'}</div>
+    ${row('Power', sPow(s))}
+    ${row('Stat avg', statAvg)}
+    ${row('Status', s.status)}
+    ${s.clan ? row('Clan', s.clan) : ''}`)
+}
 
 export function rDep() {
   const el = document.getElementById('p-depth')
@@ -157,7 +182,7 @@ function _slotHtml(s, cls) {
   const phaseIcons  = { developing:'↑', prime:'★', veteran:'◆', declining:'↓' }
   const phase = s.phase || 'prime'
   return `
-    <div class="depth-slot ${cls}" title="${s.fn} ${s.ln}">
+    <div class="depth-slot ${cls}" title="${s.fn} ${s.ln}" oncontextmenu="return depCtx(event,'${s.id}')" onmousemove="depHover(event,'${s.id}')" onmouseleave="hideHoverPreview()">
       <div style="font-size:9px;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.fn} ${s.ln}</div>
       <div style="font-size:7px;color:var(--text-dim);margin-top:2px">Avg: ${statAvg}</div>
       <div style="font-size:7px;color:${phaseColors[phase]};margin-top:1px">${phaseIcons[phase]} ${phase}</div>

@@ -6,7 +6,7 @@ import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTa
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation, setSqApproach } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM, setMissionApproach, selectMission, setInspectorApproach, deployFromInspector } from './panels/missions.js'
 import { rUp, buyUp, buildDistrict, chooseDoctrine } from './panels/upgrades.js'
-import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab } from './panels/academy.js'
+import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab, acCtx, acHover } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, secureRoute } from './panels/economy.js'
 import { logFilter, logSearch } from './panels/log.js'
 import { honorFallen } from './panels/memorial.js'
@@ -19,7 +19,7 @@ import { rFi, setBudgetPriority } from './panels/finances.js'
 import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff, staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting, staffCtx, staffHover } from './panels/staff.js'
 import { rSco, assignScout, setScoutBudget, toggleWatchlist, trialDay, signProspect, draftSort, scoutCtx, scoutHover } from './panels/scouting.js'
 import { retainScout, dismissScout } from './scoutEngine.js'
-import { setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule } from './panels/depthchart.js'
+import { setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule, depCtx, depHover } from './panels/depthchart.js'
 import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab } from './panels/youthacademy.js'
 import { rMeet, doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction, consultSeniorGroup } from './panels/meetings.js'
 import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms, confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide, sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter, trSort, trCtx, trHover } from './panels/transfers.js'
@@ -102,7 +102,7 @@ Object.assign(window, {
   buyUp, buildDistrict, chooseDoctrine,
   // academy
   rec, oScout, doScout, oSensei, doSensei, setTrainingPlan,
-  matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab,
+  matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab, acCtx, acHover,
   // economy
   eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, secureRoute,
   // log + memorial
@@ -142,7 +142,7 @@ Object.assign(window, {
   assignScout, setScoutBudget, setBudgetPriority, toggleWatchlist, trialDay, signProspect, draftSort, scoutCtx, scoutHover,
   retainScout, dismissScout,
   // depth chart
-  setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule,
+  setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule, depCtx, depHover,
   // youth academy
   yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab,
   // people management

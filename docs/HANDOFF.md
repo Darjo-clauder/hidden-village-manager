@@ -184,9 +184,9 @@ Build is re-audited (2026-06-22) as a "functioning sports sim that feels like on
 
 1. **Localization foundation** — the one open structural gap (§6). Large; do as its own effort: `t()` helper + string table + IP-vs-UI namespace split, then extract panel-by-panel.
 2. **Live match viewer** — turn the post-result play-by-play into a watch-it-unfold view (large feature).
-3. **Roll the P1 entity-grammar kit onto remaining panels** (academy, finances, depth chart, etc.) for full UI consistency.
+3. **Mid-season pressure events follow-ups** — could escalate to council-mandate stakes or wire standings beats into press conferences.
 
-**Recently done:** Schedule depth (`c1e4e8d`, League Fixture Grid). Mid-season pressure events (`seasonPressNotice` in season.js → Standings noticeboard items: title race / clinching / slump / relegation; throttled 1/2mo, no back-to-back repeats; 6 tests). Dynasty balance sweep (`tests/dynastySweep.test.js` + rival mean-reversion fix in `rivalSim.js`).
+**Recently done:** Schedule depth (`c1e4e8d`, League Fixture Grid). Mid-season pressure events (`seasonPressNotice` in season.js → Standings noticeboard items: title race / clinching / slump / relegation; throttled 1/2mo, no back-to-back repeats; 6 tests). Dynasty balance sweep (`tests/dynastySweep.test.js` + rival mean-reversion fix in `rivalSim.js`). P1 kit grammar rolled onto Academy (`acCtx`/`acHover`) + Depth Chart (`depCtx`/`depHover`) — right-click verbs + hover stat cards on prospect cards & roster-tier slots; browser-verified. Kit is now on Roster, Intel, Transfers, Staff, Scouting, Academy, Depth Chart (Finances already has the P4 charts; it's numbers-only so no entity grammar needed).
 
 ---
 

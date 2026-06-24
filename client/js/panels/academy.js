@@ -6,8 +6,41 @@ import { isEnabled } from '../../../config/features.js'
 import { TRAINING_PLANS, PLAN_BY_ID } from '../../../shared/constants/trainingPlans.js'
 import { applyGraduationBias } from '../prospectEngine.js'
 import { mentorshipSummary } from '../../../shared/utils/mentorship.js'
+import { openContextMenu, showHoverPreview, hideHoverPreview } from '../uikit.js'
 
 let _acTab = 'prospects'
+
+// ── P1 kit grammar for prospect cards — right-click verbs + hover scouting card ──
+export function acCtx(e, id) {
+  e.preventDefault()
+  const p = (G.prospects || []).find(x => x.id === id); if (!p) return false
+  const scoutingAm = (G.aM || []).find(am => am.isScout && am.scoutTargetId === id)
+  openContextMenu(e.clientX, e.clientY, [
+    { label: 'Recruit — 2,000 ryo', disabled: G.ryo < 2000, fn: () => window.rec && window.rec(id) },
+    ...(p.scouted || scoutingAm ? [] : [{ label: 'Scout — 3,000 ryo', disabled: G.ryo < 3000, fn: () => window.oScout && window.oScout(id) }]),
+    ...(p.mentor ? [] : [{ label: 'Assign Sensei…', fn: () => window.oSensei && window.oSensei(id) }]),
+    ...(p.rivalOffer ? [
+      { separator: true },
+      { label: `Match ${p.rivalOffer.village}'s offer`, disabled: G.ryo < p.rivalOffer.offerRyo, danger: true, fn: () => window.matchRivalOffer && window.matchRivalOffer(id) },
+    ] : []),
+  ])
+  return false
+}
+
+export function acHover(e, id) {
+  const p = (G.prospects || []).find(x => x.id === id); if (!p) return
+  const pot = p.scouted ? p.potential
+    : (p.potRange && !p.potRange.exact ? `${p.potRange.lo}–${p.potRange.hi}?` : '???')
+  const row = (k, v) => `<div class="hp-row"><span>${k}</span><b>${v}</b></div>`
+  showHoverPreview(e.clientX, e.clientY, `
+    <div class="hp-name">${sn(p)}${p.prodigy ? ' ✦' : ''}</div>
+    <div class="hp-sub">${p.clan ? p.clan + ' · ' + p.trait : (p.spec || '—')} · Age ${p.age}</div>
+    ${row('Power', sPow(p))}
+    ${row('Potential', pot)}
+    ${p.archetype ? row('Archetype', p.archetype.n) : ''}
+    ${p.trainingPlanId && PLAN_BY_ID[p.trainingPlanId] ? row('Plan', PLAN_BY_ID[p.trainingPlanId].label) : ''}
+    ${row('Patience', `${Math.max(0, 100 - (p.monthsWaiting || 0) * 12.5)}%`)}`)
+}
 
 export function acTab(tab) {
   _acTab = tab
@@ -282,12 +315,12 @@ export function rAc() {
     const familySib = p.familyId ? G.prospects.filter(x => x.id !== p.id && x.familyId === p.familyId) : []
     const isScoutSourced = !!p.fromRegion
     const urgencyBorder = isScoutSourced && p.urgencyMonths <= 2 && p.rivalInterest ? 'border-color:#f66' : p.prodigy ? 'border-color:#c9a84c;box-shadow:0 0 8px rgba(201,168,76,0.2)' : waited >= 6 ? 'border-color:#f66' : ''
-    return `<div class="card" style="${urgencyBorder}">
+    return `<div class="card" style="${urgencyBorder}" oncontextmenu="return acCtx(event,'${p.id}')">
       ${isScoutSourced && p.rivalInterest && p.urgencyMonths > 0 ? `<div style="background:#3a0000;border-radius:3px;padding:2px 6px;font-size:7px;color:#f99;margin-bottom:5px">⚠ Rival village interest — ${p.urgencyMonths}m urgency window</div>` : ''}
       ${isScoutSourced ? `<div style="font-size:7px;color:#9b7fbf;margin-bottom:4px">🗺 Scouted by ${p.scoutName||'unknown'} · ${p.origin}</div>` : ''}
       <div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:7px">
         <div style="flex:1">
-          <div style="font-size:11px;color:${p.prodigy ? '#c9a84c' : '#e8e0cc'};font-weight:bold">${sn(p)}${p.prodigy ? ' <span style="font-size:8px;color:#c9a84c">✦ PRODIGY</span>' : ''}</div>
+          <div style="font-size:11px;color:${p.prodigy ? '#c9a84c' : '#e8e0cc'};font-weight:bold" onmousemove="acHover(event,'${p.id}')" onmouseleave="hideHoverPreview()">${sn(p)}${p.prodigy ? ' <span style="font-size:8px;color:#c9a84c">✦ PRODIGY</span>' : ''}</div>
           <div style="font-size:8px;color:#7a7060">${p.clan ? p.clan + ' · ' + p.trait : p.spec} · Age ${p.age}${p.origin ? ' · <span style="color:#cc7fb8">from ' + p.origin + '</span>' : ''}</div>
           ${p.archetype ? `<div style="font-size:8px;color:#cc7fb8;margin-top:2px;letter-spacing:1px">${p.archetype.n}</div>` : ''}
           ${rival ? `<div style="font-size:8px;color:#f66;margin-top:2px">⚔ Rivals with ${sn(rival)}</div>` : ''}
