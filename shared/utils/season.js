@@ -102,6 +102,78 @@ export function teamFixtures(schedule, name) {
 }
 
 /**
+ * Standings-driven mid-season pressure — returns at most one notice descriptor
+ * (or null) reflecting where the player sits in the race. Pure + deterministic:
+ * the same table/round always yields the same notice, so it's unit-testable and
+ * the caller controls frequency. `playerName` is the human village.
+ *
+ * Notice kinds: 'title_race' (top, chasers close), 'clinching' (commanding lead
+ * late), 'pace' (leading comfortably mid-table), 'midpack' (drifting), 'slump'
+ * (bottom of the table, council restless), 'relegation' (rock bottom, late).
+ */
+export function seasonPressNotice(table, playerName, round, totalRounds) {
+  const rows = sortedTable(table)
+  if (rows.length < 2) return null
+  const rank = rows.findIndex(r => r.name === playerName)
+  if (rank < 0) return null
+  const me = rows[rank]
+  if ((me.played || 0) < 1) return null               // nothing to react to yet
+  const n = rows.length
+  const roundsLeft = Math.max(0, totalRounds - round)
+  const lateSeason = round >= Math.ceil(totalRounds * 0.6)
+  const leader = rows[0]
+  const gapToLead = leader.pts - me.pts
+  const chaser = rows[rank + 1]
+  const gapToChaser = chaser ? me.pts - chaser.pts : Infinity
+
+  // Leading.
+  if (rank === 0) {
+    if (lateSeason && gapToChaser >= 7) {
+      return { kind: 'clinching', priority: 'standard', icon: '🏆',
+        title: 'Title in Sight',
+        body: `${playerName} top the table with a ${gapToChaser}-point cushion and ${roundsLeft} round(s) to play. The village smells a championship — and the seeding edge into the Grand Tournament that comes with it.` }
+    }
+    if (gapToChaser <= 3) {
+      return { kind: 'title_race', priority: 'standard', icon: '🔥',
+        title: 'Top of the Table — Just',
+        body: `${playerName} lead, but ${chaser.name} are right on your heels (${gapToChaser <= 0 ? 'level' : `+${gapToChaser}`} pts). Every matchday is a final from here. Drop points and the lead is gone.` }
+    }
+    return { kind: 'pace', priority: 'info', icon: '📈',
+      title: 'Setting the Pace',
+      body: `${playerName} sit top of the standings with ${me.pts} pts. Keep the run going and the bracket seeding is yours.` }
+  }
+
+  // Bottom of the table.
+  if (rank >= n - 1) {
+    if (lateSeason) {
+      return { kind: 'relegation', priority: 'urgent', icon: '⚠',
+        title: 'Council Demands Answers',
+        body: `${playerName} are rooted to the bottom of the standings with ${roundsLeft} round(s) left. The council is openly questioning your leadership. A strong finish would cool the room — a poor one will not be forgotten at year's end.` }
+    }
+    return { kind: 'slump', priority: 'standard', icon: '📉',
+      title: 'Fans Growing Restless',
+      body: `${playerName} are languishing at the foot of the table (${me.pts} pts). The barracks mood is sour. Results need to turn before this becomes a crisis.` }
+  }
+
+  // Chasing from mid-pack.
+  if (rank <= Math.floor(n / 2) && gapToLead <= 4) {
+    return { kind: 'title_race', priority: 'standard', icon: '🔥',
+      title: 'In the Hunt',
+      body: `${playerName} sit ${rank + 1}${_ord(rank + 1)}, just ${gapToLead} pts off ${leader.name} at the top. The race is on — a winning streak puts the lead within reach.` }
+  }
+
+  if (lateSeason && rank > Math.floor(n / 2)) {
+    return { kind: 'midpack', priority: 'info', icon: '😐',
+      title: 'Drifting in Mid-Table',
+      body: `${playerName} are ${rank + 1}${_ord(rank + 1)} and fading from the seeding picture with ${roundsLeft} round(s) left. Time to string results together or settle for a low seed.` }
+  }
+
+  return null
+}
+
+function _ord(n) { return n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th' }
+
+/**
  * Play one matchday for all villages and fold results into the table.
  * Mutates `season` (round++, table, lastResults, resultsByRound). `strOf(name)` → strength.
  */

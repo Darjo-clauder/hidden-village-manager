@@ -15,7 +15,7 @@ import { jutsuLoadoutBonus } from '../../shared/jutsu/loadout.js'
 import { DISTRICTS, getDistrictPassives } from '../../shared/constants/districts.js'
 import { COUNCIL_FACTIONS, COUNCIL_PROPOSALS, getCouncilPerks } from '../../shared/constants/council.js'
 import { tickRivalStrength, shouldFireRivalEvent, pickRivalEvent, computePlayerStrength } from '../../shared/utils/rivalSim.js'
-import { initSeasonTable, playMatchday } from '../../shared/utils/season.js'
+import { initSeasonTable, playMatchday, seasonPressNotice } from '../../shared/utils/season.js'
 import { villageRevenue } from '../../shared/utils/economy.js'
 import { resolveMission, qualityEffects, missionApproachMod } from '../../shared/utils/missionEngine.js'
 import { kageMod, kagePerk, addKageXp } from '../../shared/constants/kageDev.js'
@@ -1809,6 +1809,22 @@ export function adv() {
     }
     if (G._pressWinStreak  >= 3 && !G.pendingPress) { queuePressConference('win_streak');  G._pressWinStreak  = 0 }
     if (G._pressLossStreak >= 3 && !G.pendingPress) { queuePressConference('loss_streak'); G._pressLossStreak = 0 }
+
+    // Mid-season pressure: standings-driven noticeboard items (title race / slump /
+    // council heat). Throttled to once every 2 months, and never repeats the same
+    // kind back-to-back, so it reads as narrative beats rather than spam.
+    const _notice = seasonPressNotice(G.season.table, playerName, G.season.round, 11)
+    if (_notice && G.month - (G._lastSeasonPressMonth || -99) >= 2 && _notice.kind !== G._lastSeasonPressKind) {
+      G.noticeboard = G.noticeboard || []
+      G.noticeboard.unshift({
+        id: 'seasonpress_' + G.year + '_' + G.month,
+        cat: 'Standings', icon: _notice.icon, priority: _notice.priority,
+        title: _notice.title, body: _notice.body, dismissed: false,
+      })
+      G._lastSeasonPressMonth = G.month
+      G._lastSeasonPressKind = _notice.kind
+      ntf('📊 ' + _notice.title)
+    }
   }
 
   // ── New press triggers ────────────────────────────────────────────────────

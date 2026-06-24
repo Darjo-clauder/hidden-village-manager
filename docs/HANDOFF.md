@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-24 · **HEAD:** `c1e4e8d` · **Branch:** `master` · **Tests:** 624 passing / 50 files
+**Last updated:** 2026-06-24 · **HEAD:** `63d350b` · **Branch:** `master` · **Tests:** 630 passing / 50 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -186,7 +186,8 @@ Build is re-audited (2026-06-22) as a "functioning sports sim that feels like on
 2. **Live match viewer** — turn the post-result play-by-play into a watch-it-unfold view (large feature).
 3. **15+ year dynasty balance sweep** — verify economy/roster/Kage-XP don't drift over a full dynasty; tune curves.
 4. **Roll the P1 entity-grammar kit onto remaining panels** (academy, finances, depth chart, etc.) for full UI consistency.
-5. **Mid-season pressure events** — standings-driven inbox events (relegation-style stakes, title race tension).
+
+**Recently done:** Schedule depth (`c1e4e8d`, League Fixture Grid). Mid-season pressure events (`seasonPressNotice` in season.js → Standings noticeboard items: title race / clinching / slump / relegation; throttled 1/2mo, no back-to-back repeats; 6 tests).
 
 ---
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   initSeasonTable, roundPairings, simMatch, recordMatch,
   sortedTable, seedsFromTable, playMatchday, SEASON_PTS,
-  seasonSchedule, teamFixtures,
+  seasonSchedule, teamFixtures, seasonPressNotice,
 } from '../shared/utils/season.js'
 import { withSeed } from './helpers/rng.js'
 
@@ -108,5 +108,49 @@ describe('season table', () => {
     // total points distributed = 3 per decisive match, 2 per draw
     const totalPts = Object.values(season.table).reduce((a, r) => a + r.pts, 0)
     expect([4, 5, 6]).toContain(totalPts)
+  })
+})
+
+describe('mid-season pressure notices', () => {
+  // Helper: build a table from [name, pts, w, l] tuples with played derived.
+  const tbl = rows => {
+    const t = initSeasonTable(rows.map(r => r[0]))
+    rows.forEach(([n, pts, w = 0, l = 0]) => { t[n].pts = pts; t[n].w = w; t[n].l = l; t[n].played = w + l })
+    return t
+  }
+
+  it('returns null before the player has played a match', () => {
+    const t = initSeasonTable(NAMES)
+    expect(seasonPressNotice(t, 'You', 0, 11)).toBeNull()
+  })
+
+  it('fires a tight title-race notice when leading by a slim margin', () => {
+    const t = tbl([['You', 15, 5, 1], ['Kazegakure', 13, 4, 2], ['Shimogakure', 6, 2, 4], ['Gangakure', 4, 1, 5], ['Raikurokure', 3, 1, 5]])
+    const n = seasonPressNotice(t, 'You', 6, 11)
+    expect(n.kind).toBe('title_race')
+  })
+
+  it('fires a clinching notice when commanding the table late', () => {
+    const t = tbl([['You', 24, 8, 0], ['Kazegakure', 12, 4, 4], ['Shimogakure', 10, 3, 5], ['Gangakure', 8, 2, 6], ['Raikurokure', 6, 2, 6]])
+    const n = seasonPressNotice(t, 'You', 9, 11)
+    expect(n.kind).toBe('clinching')
+  })
+
+  it('fires an urgent relegation notice when bottom of the table late', () => {
+    const t = tbl([['Kazegakure', 20, 7, 1], ['Shimogakure', 16, 5, 3], ['Gangakure', 12, 4, 4], ['Raikurokure', 9, 3, 5], ['You', 3, 1, 7]])
+    const n = seasonPressNotice(t, 'You', 9, 11)
+    expect(n.kind).toBe('relegation')
+    expect(n.priority).toBe('urgent')
+  })
+
+  it('fires an in-the-hunt notice when chasing close from mid-pack', () => {
+    const t = tbl([['Kazegakure', 14, 5, 2], ['You', 12, 4, 3], ['Shimogakure', 9, 3, 4], ['Gangakure', 7, 2, 5], ['Raikurokure', 6, 2, 5]])
+    const n = seasonPressNotice(t, 'You', 5, 11)
+    expect(n.kind).toBe('title_race')
+  })
+
+  it('is deterministic — same table yields the same notice', () => {
+    const t = tbl([['You', 15, 5, 1], ['Kazegakure', 13, 4, 2], ['Shimogakure', 6, 2, 4], ['Gangakure', 4, 1, 5], ['Raikurokure', 3, 1, 5]])
+    expect(seasonPressNotice(t, 'You', 6, 11)).toEqual(seasonPressNotice(t, 'You', 6, 11))
   })
 })
