@@ -64,6 +64,16 @@ import { roleBonus } from './depthEngine.js'
 // Expose roleBonus for inline use in squads overlay
 window._depthEngine = { roleBonus }
 
+// ── i18n bootstrap (L10N P0/P1) ─────────────────────────────────────────────────
+import { t, setLocale, getLocale, registerLocale, makePseudoLocale, formatNum, formatRyo } from '../../shared/utils/i18n.js'
+import { en } from '../../shared/i18n/en.js'
+import { ipName, setIpOverrides } from '../../shared/i18n/ipNames.js'
+registerLocale('en', en)
+registerLocale('en-XA', makePseudoLocale(en))   // pseudo-locale for +30% truncation QA
+setLocale('en')
+// Exposed for inline handlers, console QA (`setLocale('en-XA')`), and a future IP-neutral build.
+Object.assign(window, { t, setLocale, getLocale, ipName, setIpOverrides, _i18nFmt: { formatNum, formatRyo } })
+
 // Inject adv into room.js to break circular dep
 setAdvFn(adv)
 

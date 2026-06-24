@@ -2,6 +2,7 @@ import { G, ui, sPow, rnd, sn, pk, clamp, fmt, addChronicle, addLegend, computeM
 import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS, INJURY_TYPES } from '../constants.js'
 import { aL, ntf, upUI, schEx } from '../ui.js'
 import { initSeasonTable, sortedTable, seedsFromTable, seasonSchedule, teamFixtures } from '../../../shared/utils/season.js'
+import { t } from '../../../shared/utils/i18n.js'
 import { leagueLeaders } from '../../../shared/utils/seasonStats.js'
 
 // Season-by-season stat history (surfaces the archived G.seasonStats snapshots).
@@ -96,7 +97,7 @@ function _seasonTab() {
 
   // Player fixture list — recent results + upcoming.
   const fixtureList = `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:9px;margin-bottom:12px">
-    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">${playerName} — Fixtures</div>
+    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">${t('season.fixtures', { village: playerName })}</div>
     <div style="display:grid;gap:2px">
       ${fixtures.map(f => {
         const done = f.round < round
@@ -144,7 +145,7 @@ function _seasonFixtureGrid(names, schedule, round, resultsByRound, playerName) 
     </div>`
   }
   return `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:9px;margin-bottom:12px">
-    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">League Fixture Grid — all villages</div>
+    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">${t('season.leagueGrid')}</div>
     <div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
       ${schedule.map((rnd, r) => {
         const state = r < round ? 'done' : r === round ? 'now' : 'next'

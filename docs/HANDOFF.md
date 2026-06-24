@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-24 · **HEAD:** `9bfc971` · **Branch:** `master` · **Tests:** 639 passing / 51 files
+**Last updated:** 2026-06-24 · **HEAD:** `a8a0e51` · **Branch:** `master` · **Tests:** 655 passing / 52 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -168,7 +168,7 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 
 ## 6. Known open items
 
-- **Localization not started (the one open structural gap):** all UI strings are inline across ~28 panels. Full i18n (string table + ICU plurals + IP-vs-UI namespace split) is a large multi-session refactor — checklist in `docs/FM24_UI_SPEC.json` under `localization`. Accessibility half of polish IS done (P5).
+- **Localization — foundation DONE, extraction pending:** P0/P1 shipped (2026-06-24, see `docs/L10N_PLAN.md`). `shared/utils/i18n.js` (`t()` mini-ICU formatter: interpolation/plural/select/number + pseudo-locale), `shared/i18n/en.js` (`ui.*` string table, seeded), `shared/i18n/ipNames.js` (`ipName(kind,id)` — the single IP swap point, `setIpOverrides()` for an IP-neutral build). Booted in `main.js`; `t/setLocale/ipName` on `window`; `setLocale('en-XA')` = pseudo-loc truncation QA. 16 tests. **Still pending: P2+ bulk extraction** of inline strings across the 30 panels (incremental, stop-anytime). Accessibility half of polish IS done (P5).
 - **Grand Tournament internal naming:** display says "Grand Tournament" but state/chronicle keys are still `warSched`/`warActive`/`Nation War` internals (kept for save compat). Harmless; just don't be confused by the mismatch.
 - **War/Exam stage logic lives in panels**, not unit-tested. Worth extracting stage math to shared pure utils.
 - **Grand Tournament KIA on rivals** permanently removes roster ninja; replenishment is light — watch for rival roster depletion over many years.
@@ -182,7 +182,7 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 
 Build is re-audited (2026-06-22) as a "functioning sports sim that feels like one." The FM-spine, stat layer, presentation, GM progression, and a balance pass are all in. **Schedule depth (#2) is now done** — `c1e4e8d` added the League Fixture Grid to the SEASON tab (`_seasonFixtureGrid` in `panels/exam.js`): every village's matchup round-by-round with results + look-ahead. Candidate next targets (user's call):
 
-1. **Localization foundation** — the one open structural gap (§6). Large; do as its own effort: `t()` helper + string table + IP-vs-UI namespace split, then extract panel-by-panel.
+1. **Localization P2+ extraction** — foundation is in (§6, `docs/L10N_PLAN.md`); next is keying the ~656 `ntf`/`aL` toasts + nav/buttons/dashboard/inbox, with a grep guardrail. Incremental.
 2. **Live match viewer** — turn the post-result play-by-play into a watch-it-unfold view (large feature).
 3. **Mid-season pressure events follow-ups** — could escalate to council-mandate stakes or wire standings beats into press conferences.
 
