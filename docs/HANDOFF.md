@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-20 · **HEAD:** `7f5b8d0` · **Branch:** `master` · **Tests:** 604 passing / 49 files
+**Last updated:** 2026-06-22 · **HEAD:** `ef7d7e4` · **Branch:** `master` · **Tests:** 624 passing / 50 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -41,17 +41,20 @@ This is a **private Naruto-IP build** — **keep all Naruto namesakes and IP** (
 
 ## 3. The strategic arc
 
-The user audited the game against FHM and decided: **before adding more flavor, build a functioning sports loop.** Strategy = **repurpose existing systems**, don't rebuild. The mental model:
+The user audited the game against FHM and decided: **before adding more flavor, build a functioning sports loop.** Strategy = **repurpose existing systems**, don't rebuild. The year now reads as a visible, FM-shaped season (see the **SEASON** tab in Competitions):
 
 ```
-REGULAR SEASON  →  PLAYOFFS  →  OFFSEASON
-(monthly missions   (Chunin Exam = farm/prospects,   (roster moves)
- + league table)     Nation War = big leagues)
+ACADEMY INTAKE  →  CHUNIN EXAM  →  SEASON OF FIXTURES  →  GRAND TOURNAMENT
+(prospects enter)  (little league:    (monthly matchdays     (deadly year-end
+                    develop genin/      build the standings)   playoff, M12,
+                    chunin squads)                             seeded by standings)
 ```
 
-- **Chunin Exam = the farm system / "little league":** genin/chunin **squads**, bi-annual (M4, M10), promotes prospects up.
-- **Nation War = the big leagues:** Jonin+ **elite squads**, annual (M12), shinobi **die**.
-- Both are 5-village brackets **seeded by the season standings**. The standings are fed by rival-vs-rival sims **and the player's real monthly mission form**.
+- **Chunin Exam = the farm / "little league":** genin/chunin **squads**, bi-annual (M4, M10), promotes academy-intake prospects up.
+- **Grand Tournament = the big-league playoff** (formerly "Nation War", reframed): Jonin+ **elite squads**, annual (M12), shinobi **die**. Internal state is still `G.warSched`/`G.warActive` (display-only rename for save compat).
+- Both are 5-village brackets **seeded by the season standings**. Standings come from rival-vs-rival sims **and the player's real monthly mission form**.
+
+**Audit status (2026-06-22):** re-audited as a "functioning sports sim that *feels* like one" — visible schedule + playoff, stat history, play-by-play, GM progression. Only open structural gap is **localization** (inline strings; large refactor, deferred). See §6.5.
 
 ---
 
@@ -76,6 +79,13 @@ REGULAR SEASON  →  PLAYOFFS  →  OFFSEASON
 
 | System | Commit | Files | Notes |
 |---|---|---|---|
+| **Balance run + high-rep income fix** | `ef7d7e4` | `shared/utils/economy.js` | 5-yr playtest = stable. `villageRevenue` now has diminishing rep returns past `REP_SOFT_CAP=200` (below unchanged → no early bankruptcy); kills the rep→runaway-wealth spiral. |
+| **Mission play-by-play** | `e8ddd33` | `adv.js`, `panels/missions.js` | Mission report shows 3 phase beats (Infiltration/Engagement/Extraction ✓/✕) + outcome band; `_buildMissionReport` carries `_mev.phases`. |
+| **Season stat history** | `e20b9ac` | `panels/exam.js`, `shared/utils/seasonStats.js` | Records tab → per-year standing/MVP/leaders/fallen from `G.seasonStats`. Fixed name bug (read s.n→now fn+ln; ids were showing in leaders/awards). |
+| **Season spine + Grand Tournament** | `eb28086` | `shared/utils/season.js`, `panels/exam.js`, `panels/war.js`, `adv.js` | `seasonSchedule`/`teamFixtures`; new **SEASON** tab (year overview + fixtures w/ W-D-L + standings). Nation War reframed → **Grand Tournament** (display only). |
+| **Kage development (GM career)** | `033041f`, `2b4ae18` | `shared/constants/kageDev.js`, `panels/kagedev.js`, `adv.js`, many | 6 attrs + XP/levels + 5 GM paths w/ perks. Hooks: command→sc, tactics→exam/war, mentorship→growth, administration→income, diplomacy→relations, espionage→deep-cover. Nav "Kage Path"; dashboard strip; `tests/kageDev.test.js` (16). |
+| **FM24 UI conversion (P0–P5)** | `bc8fc6f`…`03ad662` | `uikit.js`, `style.css`, many panels | P0 ContinueButton states; P1 reusable kit (`uikit.js`: context-menu portal, sortable/customizable tables, hover previews) on Roster/Intel/Transfers/Staff/Scouting; P2 Home inbox-digest turn-loop; P3 Missions briefing inspector + sortable Leaders; P4 charts/bars/heatmap/activity-grid; P5 a11y (focus-visible, reduced-motion, ARIA). Spec: `docs/FM24_UI_SPEC.json`. |
+| **Depth + variability passes** | (pre-`bc8fc6f`) | many | Mission tactical-approach + mid-mission events; exam posture / war command; procedural rivals; founding scenarios; world climate; village doctrine; clan council; per-shinobi dev paths/trajectory; 8 dead-end panels fleshed out. |
 | **Gap closure — phase/grades/rumors/aging** | `7f5b8d0` | `adv.js`, `main.js`, `panels/missions.js`, `panels/roster.js`, `panels/inbox.js` | Off-season gate (months 1–3): missions replaced with Training Camp (8k ryo, fatigue reset + stat boost + morale +5), Free Agent link, Contract Renewals link. `gradeShinobi()` S/A/B/C/D/F from power ratio+streak+fatigue+decline. Grade badge column in roster table; Grade in dossier stats footer. ★ PEAK and ↘ past-peak tags on roster names. Rumor mill 32%/mo → rival intel blurbs in Inbox › Intel (🕵). Quarterly intel report every 3 months → peak-year + grade callouts (📊). |
 | **Pillar 5 + 6 — Social & Stability** | `992ef3a` | `adv.js`, `panels/inbox.js`, `panels/dashboard.js` | Alumni network (retired shinobi messages), fan/civic events (citizen morale extremes), sponsor inbox bridge. Hard morale floor by tier (D:20→S:60) enforced end-of-tick; rep floor (D:5→S:60) with passive recovery. Social dashboard card. |
 | **Pillar 4 — Live HUD micro-decisions** | `26847b2` | `adv.js`, `main.js`, `panels/roster.js`, `panels/dashboard.js`, `panels/inbox.js` | Fatigue meter (0–100, mission rank-scaled, sc penalty at 40/60/80%), 7 monthly quick-decision events (55%/mo, urgent inbox items), tactics quick-bar on dashboard. |
@@ -158,23 +168,26 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 
 ## 6. Known open items
 
-- **Rep/morale decay too steep (open):** a year of zero missions decays reputation→0 and morale 75→30. Intended "you must play" pressure, but the rate likely needs softening.
+- **Localization not started (the one open structural gap):** all UI strings are inline across ~28 panels. Full i18n (string table + ICU plurals + IP-vs-UI namespace split) is a large multi-session refactor — checklist in `docs/FM24_UI_SPEC.json` under `localization`. Accessibility half of polish IS done (P5).
+- **Grand Tournament internal naming:** display says "Grand Tournament" but state/chronicle keys are still `warSched`/`warActive`/`Nation War` internals (kept for save compat). Harmless; just don't be confused by the mismatch.
 - **War/Exam stage logic lives in panels**, not unit-tested. Worth extracting stage math to shared pure utils.
-- **Nation War KIA on rivals** permanently removes roster ninja; replenishment (recruits toward 40) is light — watch for rival roster depletion over many years.
-- **Month-12 war trigger** fires during the same tick that rolls to year+1 (cosmetic ordering quirk; works).
-- **Preview always needs a build:** `npx vite build` required before any browser verify — Vite HMR (5173) and the preview server (3000) are separate processes.
+- **Grand Tournament KIA on rivals** permanently removes roster ninja; replenishment is light — watch for rival roster depletion over many years.
+- **Long-run balance validated, not swept:** 5-year run is stable + the rep-income runaway is fixed; a full 15+ year dynasty sweep hasn't been done.
+- **Preview build + socket race:** `npx vite build` required before any browser verify (preview server :3000 serves static `dist/`). Also `endTurn()` no-ops until the socket connects — after a page reload, give it a beat before driving turns via preview_eval, or the date won't advance.
+- **`window.G`/`window.upUI` are NOT exposed** — browser verification is DOM-only (read sidebar/panel text).
 
 ---
 
 ## 7. Next targets
 
-Pillars 4–6 and the 4-system gap closure batch all shipped. A fresh FHM gap chart re-score will reveal updated ratings — recommend doing that before picking next targets. Likely still-lagging areas:
+Build is re-audited (2026-06-22) as a "functioning sports sim that feels like one." The FM-spine, stat layer, presentation, GM progression, and a balance pass are all in. Candidate next targets (user's call):
 
-1. **Chemistry/cliques** (≈58%) — individual pair chemistry exists but no clique formation (3+ bonded shinobi forming a in-group with morale and squad bonuses)
-2. **Conferences/rumors deeper** (≈72%) — headline ticker on dashboard would surface rumors passively without inbox visit
-3. **20-year longevity run** — verify alumni fire after year 15+, civic events at morale extremes, salary seniority compounding, rival trade acceptance path integrity
-4. **Press conference playtest** — needs a live win/loss streak; confirm tones + follow-up render end-to-end
-5. **Complication resolution UX** — wired; confirm scMod shifts outcome in a real mission with active assignment
+1. **League-wide fixture/results grid** — see every village's season at a glance (builds directly on the new SEASON tab; highest-visibility remaining "sim" cue). *Recommended.*
+2. **Localization foundation** — the one open structural gap (§6). Large; do as its own effort: `t()` helper + string table + IP-vs-UI namespace split, then extract panel-by-panel.
+3. **Live match viewer** — turn the post-result play-by-play into a watch-it-unfold view (large feature).
+4. **15+ year dynasty balance sweep** — verify economy/roster/Kage-XP don't drift over a full dynasty; tune curves.
+5. **Roll the P1 entity-grammar kit onto remaining panels** (academy, finances, depth chart, etc.) for full UI consistency.
+6. **Mid-season pressure events** — standings-driven inbox events (relegation-style stakes, title race tension).
 
 ---
 
@@ -190,7 +203,8 @@ Pillars 4–6 and the 4-system gap closure batch all shipped. A fresh FHM gap ch
 
 ## 9. First moves for the new session
 
-1. Read this doc + the auto-memory (`MEMORY.md` index loads automatically).
-2. `git -C C:\Users\Tyler\ninja\hidden-village-manager log --oneline -5` — confirm HEAD matches above.
-3. `npx vitest run` — expect 604 passing / 49 files.
-4. Ask the user which target to take next (see §7), or continue whatever they were mid-stream on.
+1. Read this doc + the auto-memory (`MEMORY.md` index loads automatically; `project_state.md` has the running log).
+2. `git -C C:\Users\Tyler\ninja\hidden-village-manager log --oneline -5` — confirm HEAD matches above (`ef7d7e4`).
+3. `npx vitest run` — expect 624 passing / 50 files.
+4. `npx vite build` before any browser playtest (see §6 build + socket-race notes).
+5. Ask the user which target to take next (see §7), or continue whatever they were mid-stream on.
