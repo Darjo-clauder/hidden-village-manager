@@ -115,7 +115,48 @@ function _seasonTab() {
     </div>
   </div>`
 
-  return overview + _seasonStandingsCard() + fixtureList
+  return overview + _seasonStandingsCard() + fixtureList + _seasonFixtureGrid(names, schedule, round, resultsByRound, playerName)
+}
+
+// League-wide fixture grid — every village's slate, round by round, with the
+// look-ahead the player tab can't give: who everyone else plays, and the results.
+function _seasonFixtureGrid(names, schedule, round, resultsByRound, playerName) {
+  if (!schedule.length) return ''
+  const winnerOf = (r, a, b) => {
+    const rr = resultsByRound[r]; if (!rr) return undefined
+    const m = rr.find(x => (x.a === a && x.b === b) || (x.a === b && x.b === a))
+    return m ? m.winner : undefined  // null = draw, name = winner
+  }
+  const cell = (m, r) => {
+    const played = r < round
+    const w = played ? winnerOf(r, m.a, m.b) : undefined
+    const side = (name) => {
+      const me = name === playerName
+      const won = played && w === name
+      const drew = played && w === null
+      const col = won ? '#8fbc8f' : (played && w !== undefined && !drew) ? '#6a6258' : drew ? '#c9a84c' : '#9a9080'
+      return `<span style="color:${me ? '#c9a84c' : col};font-weight:${me || won ? 'bold' : 'normal'}">${name}</span>`
+    }
+    return `<div style="display:flex;align-items:center;gap:5px;font-size:8px;padding:2px 6px;background:${(m.a === playerName || m.b === playerName) ? 'rgba(201,168,76,.06)' : 'transparent'}">
+      <span style="flex:1;text-align:right">${side(m.a)}</span>
+      <span style="color:#3a3630;width:12px;text-align:center">${played ? (w === null ? '=' : '·') : 'v'}</span>
+      <span style="flex:1">${side(m.b)}</span>
+    </div>`
+  }
+  return `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:9px;margin-bottom:12px">
+    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">League Fixture Grid — all villages</div>
+    <div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
+      ${schedule.map((rnd, r) => {
+        const state = r < round ? 'done' : r === round ? 'now' : 'next'
+        const tag = state === 'now' ? '<span style="color:#c9a84c;font-size:7px">◂ NOW</span>' : state === 'done' ? '<span style="color:#3a3630;font-size:7px">played</span>' : '<span style="color:#3a3630;font-size:7px">upcoming</span>'
+        return `<div style="border:1px solid ${state === 'now' ? '#c9a84c' : '#222'};border-left:2px solid ${state === 'now' ? '#c9a84c' : '#2a2520'};padding:4px 0 5px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0 6px 3px;font-size:7px;color:#7a7060;letter-spacing:1px">ROUND ${r + 1} ${tag}</div>
+          ${rnd.length ? rnd.map(m => cell(m, r)).join('') : '<div style="font-size:7px;color:#3a3630;padding:2px 6px">— bye round —</div>'}
+        </div>`
+      }).join('')}
+    </div>
+    <div style="font-size:7px;color:#555;margin-top:6px">Your village is highlighted gold. Winners in green; draws marked “=”.</div>
+  </div>`
 }
 
 // Season standings card — the league race that seeds the exam bracket.
