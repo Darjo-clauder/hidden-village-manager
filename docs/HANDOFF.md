@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-25 · **HEAD:** `4edbf78` · **Branch:** `master` · **Tests:** 672 passing / 53 files
+**Last updated:** 2026-06-25 · **HEAD:** `58833a2` · **Branch:** `master` · **Tests:** 672 passing / 53 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -182,15 +182,16 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 
 Build is re-audited (2026-06-22) as a "functioning sports sim that feels like one." The FM-spine, stat layer, presentation, GM progression, and a balance pass are all in. **Schedule depth (#2) is now done** — `c1e4e8d` added the League Fixture Grid to the SEASON tab (`_seasonFixtureGrid` in `panels/exam.js`): every village's matchup round-by-round with results + look-ahead. Candidate next targets (user's call):
 
-1. **Localization P2+ extraction** — foundation is in (§6, `docs/L10N_PLAN.md`); next is keying the ~656 `ntf`/`aL` toasts + nav/buttons/dashboard/inbox, with a grep guardrail. Incremental.
-2. **Live battle: auto-trigger toggle** — option to auto-open the live viewer for the player's own squad missions instead of clicking ▶ Watch. The only remaining live-battle idea.
-3. **Mid-season pressure events follow-ups** — could escalate to council-mandate stakes or wire standings beats into press conferences.
+1. **Localization P2+ extraction** — foundation is in (§6, `docs/L10N_PLAN.md`); next is keying the ~656 `ntf`/`aL` toasts + nav/buttons/dashboard/inbox, with a grep guardrail. Incremental. **The main remaining roadmap item.**
+2. **Mid-season pressure events follow-ups** — could escalate to council-mandate stakes or wire standings beats into press conferences.
+3. **Live battle for solo missions** — the viewer currently covers squad missions, matchday, exam, tournament; solo missions still resolve without a Watch option (squad-only by design so far).
 
 **Recently done (2026-06-24/25):**
 - **Schedule depth** (`c1e4e8d`, League Fixture Grid); **mid-season pressure notices** (`seasonPressNotice`); **dynasty balance sweep** (`tests/dynastySweep.test.js` + rival mean-reversion fix in `rivalSim.js`); **P1 kit** on Academy + Depth Chart.
 - **Localization foundation P0+P1** (`shared/utils/i18n.js`, `shared/i18n/en.js` + `ipNames.js`; see `docs/L10N_PLAN.md`).
 - **Season experience M1–M4** (all in `season.js` pure helpers + `panels/exam.js` `_seasonTab`): M1 matchday scorelines + form guide + GD (`styledScore`/`teamForm`, `_seasonResultsCard`); M2 next-match build-up (`matchPreview`); M3 title-race banner (`seasonState`); M4 off-season awards ceremony (`_seasonReviewCard`).
-- **Live battle viewer** — watch-it-unfold overlay, pure presentation over engine-decided results (`shared/utils/battleViewer.js` + `client/js/liveBattle.js`, `.bv-*` CSS). Covers: **missions** (`watchLastBattle`, ▶ Watch on mission report), **league matchday** (`watchMatchday` + `matchToBeats`), **Chunin Exam** (`watchExam`) and **Grand Tournament** (`watchTournament`) — the last two via safe per-stage bookkeeping `G._examRun`/`G._warRun` (no outcome change, stops at first elimination).
+- **Live battle viewer (complete)** — watch-it-unfold overlay, pure presentation over engine-decided results (`shared/utils/battleViewer.js` + `client/js/liveBattle.js`, `.bv-*` CSS). Covers: **missions** (`watchLastBattle`, ▶ Watch on mission report), **league matchday** (`watchMatchday` + `matchToBeats`), **Chunin Exam** (`watchExam`) and **Grand Tournament** (`watchTournament`) — the last two via safe per-stage bookkeeping `G._examRun`/`G._warRun` (no outcome change, stops at first elimination). **Auto-watch** toggle (`58833a2`): `G._autoWatchBattles` (default off) → `ui.js` `upUI()` one-shot opens the viewer once per turn after a squad mission (armed by `G._battleReportFresh` in adv.js), gated out of exam/war; ☐/☑ toggle beside the ▶ Watch button.
+- **Repo cleanup** (`e079c1d`): removed stray `hidden_village_manager (1).html` prototype; deleted 4 merged stale branches (local + origin). Only `master` remains.
 
 ---
 
@@ -207,7 +208,7 @@ Build is re-audited (2026-06-22) as a "functioning sports sim that feels like on
 ## 9. First moves for the new session
 
 1. Read this doc + the auto-memory (`MEMORY.md` index loads automatically; `project_state.md` has the running log).
-2. `git -C C:\Users\Tyler\ninja\hidden-village-manager log --oneline -5` — confirm HEAD matches above (`4edbf78`).
+2. `git -C C:\Users\Tyler\ninja\hidden-village-manager log --oneline -5` — confirm HEAD matches above (`58833a2`).
 3. `npx vitest run` — expect 624 passing / 50 files.
 4. `npx vite build` before any browser playtest (see §6 build + socket-race notes).
 5. Ask the user which target to take next (see §7), or continue whatever they were mid-stream on.
