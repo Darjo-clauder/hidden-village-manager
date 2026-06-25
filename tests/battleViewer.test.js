@@ -41,6 +41,13 @@ describe('beatNarrative', () => {
   it('falls back gracefully for an unknown phase', () => {
     expect(typeof beatNarrative('Mystery', true, 0)).toBe('string')
   })
+
+  it('covers tournament + exam stage names with distinct won/lost lines', () => {
+    for (const stage of ['Mobilization', 'The Front', 'Decisive Engagement', 'Final Stand', 'Qualifier', 'Quarterfinal', 'Semifinal', 'Final']) {
+      expect(beatNarrative(stage, true, 0).length).toBeGreaterThan(0)
+      expect(beatNarrative(stage, true, 0)).not.toBe(beatNarrative(stage, false, 0))
+    }
+  })
 })
 
 describe('battleSequence', () => {

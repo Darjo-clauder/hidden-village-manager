@@ -22,6 +22,22 @@ export function watchMatchday() {
     scoreline: { home: G.vName, away: opp, hs: playerScore, as: oppScore },
   })
 }
+
+/** Replay the player's run through the last Chunin Exam as a live bracket. */
+export function watchExam() {
+  const run = G._examRun
+  if (!run || !run.stages || !run.stages.length) return
+  const phases = run.stages.map(s => ({ name: s.name, won: s.advanced }))
+  const lastAdvanced = [...run.stages].reverse().find(s => s.advanced)
+  const reachedStage = run.champion ? 'Final' : (lastAdvanced ? lastAdvanced.name : run.stages[0].name)
+  const verdict = run.champion ? 'Champions of the Chunin Exam — promotions earned in fire.'
+    : `Eliminated at the ${reachedStage}. The academy fights on another year.`
+  openBattleViewer({
+    missionName: `Year ${run.year} Chunin Exam`, missionRk: 'Chunin Exam',
+    kind: 'tournament', phases, champion: run.champion, reachedStage, verdict,
+    succeeded: run.champion,
+  })
+}
 import { leagueLeaders } from '../../../shared/utils/seasonStats.js'
 
 // Season-by-season stat history (surfaces the archived G.seasonStats snapshots).
@@ -376,6 +392,8 @@ function _renderExamSetup(el, tabHtml) {
     }).join('') : '<div style="color:#7a7060;font-size:9px">No eligible squads. Build a squad in the Squads panel (all members must be available).</div>') +
     '</div>' +
     (G.examCands.length ? '<button class="gb" onclick="startEx()">Start Exam ►</button>' : '') +
+    ((G._examRun && G._examRun.stages && G._examRun.stages.length)
+      ? `<div style="margin-top:14px"><button class="gb" style="font-size:7px;padding:2px 8px;border-color:#c9a84c;color:#c9a84c" onclick="watchExam()">▶ Watch your exam run</button></div>` : '') +
     (G.examResults.length ? '<div style="margin-top:14px;font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:7px">Recent Results</div>' + G.examResults.slice(-10).map(r => `<div style="font-size:9px;padding:4px 0;border-bottom:1px solid #2e2a22;color:${r.promoted ? '#8fbc8f' : '#7a7060'}">${r.name}: ${r.result}${r.promoted ? ' → Promoted!' : ''}</div>`).join('') : '')
 }
 
@@ -477,6 +495,7 @@ export function startEx() {
   G.examJudgeProtested = false
   G.examActive = true
   ui.exSt = { round: 0, field: _buildExamField(), sabotaged: false }
+  G._examRun = { year: G.year, stages: [], champion: false }   // live-viewer recap bookkeeping
   // Mark every nominated squad's members as committed to the exam.
   G.examCands.forEach(sqId => {
     const sq = G.squads.find(q => q.id === sqId); if (!sq) return
@@ -727,7 +746,20 @@ function _renderSemifinalOverlay(duels, bye, field) {
   document.getElementById('ov-examfight').classList.add('open'); upUI()
 }
 
+// Record the player's advancement through one exam stage for the recap viewer.
+// Only records stages the player actually contested (stops at first elimination).
+function _recordExamStage(r, field) {
+  if (!G._examRun) return
+  const stages = G._examRun.stages
+  const entered = stages.length === 0 || stages[stages.length - 1].advanced
+  if (!entered) return
+  const pe = field.find(e => e.isPlayer)
+  const name = (EXAM_STAGES[r] || 'Final').split(' — ')[0]
+  stages.push({ name, advanced: !!pe && pe.alive.length > 0 })
+}
+
 function _renderRoundOverlay(r, res, field) {
+  _recordExamStage(r, field)
   const villagesIn = field.filter(e => e.alive.length > 0).length
   const totalAlive = field.reduce((a, e) => a + e.alive.length, 0)
   document.getElementById('ef-c').innerHTML =
@@ -771,6 +803,14 @@ function _runFinals(field, biasMod) {
     .sort((a, b) => b.count - a.count || b.pow - a.pow)
   const champ = finalists[0]?.e
   const playerWon = !!champ?.isPlayer
+
+  if (G._examRun) {
+    const stages = G._examRun.stages
+    const entered = stages.length === 0 || stages[stages.length - 1].advanced
+    const pe = field.find(e => e.isPlayer)
+    if (entered) stages.push({ name: 'Final', advanced: !!pe && pe.alive.length > 0 })
+    G._examRun.champion = playerWon
+  }
 
   if (!G.examHistoricalRecords) G.examHistoricalRecords = { totalPromotions: 0, bestSingleExam: 0, examWinsByVillage: {} }
   if (champ) {

@@ -4,6 +4,24 @@ import { aL, ntf, upUI } from '../ui.js'
 import { seedsFromTable } from '../../../shared/utils/season.js'
 import { queuePressConference } from '../adv.js'
 import { kageMod, kagePerk } from '../../../shared/constants/kageDev.js'
+import { openBattleViewer } from '../liveBattle.js'
+
+/** Replay the player's run through the last Grand Tournament as a live bracket. */
+export function watchTournament() {
+  const run = G._warRun
+  if (!run || !run.stages || !run.stages.length) return
+  const phases = run.stages.map(s => ({ name: s.name, won: s.advanced }))
+  const lastAdvanced = [...run.stages].reverse().find(s => s.advanced)
+  const reachedStage = run.champion ? WAR_STAGES[WAR_STAGES.length - 1] : (lastAdvanced ? lastAdvanced.name : run.stages[0].name)
+  const kiaTotal = run.fallen || run.stages.reduce((a, s) => a + (s.kia || 0), 0)
+  const verdict = run.champion ? 'Champions of the age — they conquered the great powers.'
+    : `Eliminated at ${reachedStage}. The village counts its dead.`
+  openBattleViewer({
+    missionName: `Year ${run.year} Grand Tournament`, missionRk: 'Grand Tournament',
+    kind: 'tournament', phases, champion: run.champion, reachedStage, kiaTotal, verdict,
+    succeeded: run.champion,
+  })
+}
 
 // ── Grand Tournament ──────────────────────────────────────────────────────────────
 // The annual "big leagues": a 5-village elite bracket where Jonin+ squads clash
@@ -93,6 +111,7 @@ export function startWar() {
   G.warActive = true
   ui.warSt = { round: 0 }
   ui.warField = _buildWarField()
+  G._warRun = { year: G.year, stages: [], champion: false }   // live-viewer recap bookkeeping
   G.warCands.forEach(sqId => {
     const sq = G.squads.find(q => q.id === sqId); if (!sq) return
     sq.members.forEach(mid => { const s = G.shinobi.find(x => x.id === mid); if (s) s.status = 'war' })
@@ -182,8 +201,20 @@ export function runWarRound() {
     return _runWarFinal(field, res)
   }
 
+  _recordWarStage(field, stageName, res)
   ui.warSt.round++
   upUI()
+}
+
+// Record the player's advancement through one tournament stage for the recap viewer.
+// Only records stages the player actually contested (stops at first elimination).
+function _recordWarStage(field, stageName, res) {
+  if (!G._warRun) return
+  const stages = G._warRun.stages
+  const entered = stages.length === 0 || stages[stages.length - 1].advanced
+  if (!entered) return
+  const pe = field.find(e => e.isPlayer)
+  stages.push({ name: stageName, advanced: !!pe && pe.alive.length > 0, kia: res.filter(x => x.kia).length })
 }
 
 function _runWarFinal(field, res) {
@@ -236,6 +267,13 @@ function _runWarFinal(field, res) {
   ui.warField = null; ui.warSt = null
 
   G._warResult = { champ: champ ? { name: champ.name, ico: champ.ico, player: playerWon } : null, res, fallen: myFallen }
+  if (G._warRun) {
+    const stages = G._warRun.stages
+    const entered = stages.length === 0 || stages[stages.length - 1].advanced
+    if (entered) stages.push({ name: WAR_STAGES[3], advanced: (playerEntry?.alive?.length || 0) > 0, kia: res.filter(x => x.kia).length })
+    G._warRun.champion = playerWon
+    G._warRun.fallen = myFallen
+  }
   upUI()
 }
 
@@ -254,8 +292,12 @@ function _eliteSquads() {
 
 function _renderWarMuster(el, tabHtml) {
   const last = G._warResult
+  const canWatch = !!(G._warRun && G._warRun.stages && G._warRun.stages.length)
   const recap = last ? `<div style="border:1px solid ${last.champ?.player ? '#c9a84c' : '#5a2a2a'};background:#0d0606;padding:10px;margin-bottom:12px">
-      <div style="font-size:11px;color:${last.champ?.player ? '#c9a84c' : '#e8a0a0'}">${last.champ ? `🏯 Last Grand Tournament — Champion: ${last.champ.ico || ''} ${last.champ.name}${last.champ.player ? ' (you)' : ''}` : 'Grand Tournament concluded.'}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div style="font-size:11px;color:${last.champ?.player ? '#c9a84c' : '#e8a0a0'}">${last.champ ? `🏯 Last Grand Tournament — Champion: ${last.champ.ico || ''} ${last.champ.name}${last.champ.player ? ' (you)' : ''}` : 'Grand Tournament concluded.'}</div>
+        ${canWatch ? `<button class="gb" style="font-size:7px;padding:2px 8px;border-color:#c9a84c;color:#c9a84c;white-space:nowrap" onclick="watchTournament()">▶ Watch your run</button>` : ''}
+      </div>
       ${last.fallen ? `<div style="font-size:8px;color:#f88;margin-top:4px">${last.fallen} of our shinobi fell.</div>` : ''}
     </div>` : ''
 

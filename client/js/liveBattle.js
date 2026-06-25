@@ -57,16 +57,21 @@ function _revealBeat(seq, i) {
 function _revealOutcome(rep) {
   const el = document.getElementById('bv-outcome'); if (!el) return
   const league = rep.kind === 'league'
-  const label = league ? (rep.result === 'win' ? 'WIN' : rep.result === 'draw' ? 'DRAW' : 'LOSS')
+  const tourney = rep.kind === 'tournament'
+  const label = tourney ? (rep.champion ? 'CHAMPIONS' : 'ELIMINATED')
+    : league ? (rep.result === 'win' ? 'WIN' : rep.result === 'draw' ? 'DRAW' : 'LOSS')
     : (rep.succeeded ? 'SUCCESS' : 'FAILURE')
-  const cls = league ? (rep.result === 'win' ? 'bv-win' : rep.result === 'draw' ? 'bv-draw' : 'bv-loss')
+  const cls = tourney ? (rep.champion ? 'bv-win' : 'bv-loss')
+    : league ? (rep.result === 'win' ? 'bv-win' : rep.result === 'draw' ? 'bv-draw' : 'bv-loss')
     : (rep.succeeded ? 'bv-win' : 'bv-loss')
   const verdict = rep.verdict || battleVerdict(rep.quality, rep.succeeded)
-  const detail = (league && rep.scoreline)
-    ? `<div class="bv-scoreline">${rep.scoreline.home} <b>${rep.scoreline.hs}–${rep.scoreline.as}</b> ${rep.scoreline.away}</div>`
-    : (rep.scores || []).length
-      ? `<div class="bv-grades">${rep.scores.map(sc => `<div class="bv-grade"><div class="bv-grade-n">${sc.name}</div><div class="bv-grade-g" style="color:${GRADE_COLOR[sc.grade] || '#888'}">${sc.grade}</div></div>`).join('')}</div>`
-      : ''
+  const detail = (tourney)
+    ? `<div class="bv-scoreline">Reached <b>${rep.reachedStage || 'the field'}</b>${rep.kiaTotal ? ` · ${rep.kiaTotal} fallen ☠` : ''}</div>`
+    : (league && rep.scoreline)
+      ? `<div class="bv-scoreline">${rep.scoreline.home} <b>${rep.scoreline.hs}–${rep.scoreline.as}</b> ${rep.scoreline.away}</div>`
+      : (rep.scores || []).length
+        ? `<div class="bv-grades">${rep.scores.map(sc => `<div class="bv-grade"><div class="bv-grade-n">${sc.name}</div><div class="bv-grade-g" style="color:${GRADE_COLOR[sc.grade] || '#888'}">${sc.grade}</div></div>`).join('')}</div>`
+        : ''
   el.innerHTML = `
     <div class="bv-result ${cls}">${label}</div>
     <div class="bv-verdict">${verdict}</div>

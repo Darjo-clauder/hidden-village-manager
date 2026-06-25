@@ -33,6 +33,40 @@ const LINES = {
     won:  ['Objective secured — they melt away.', 'A textbook exfil under cover of dusk.', 'Clean break; pursuit never finds them.'],
     lost: ['The exit collapses — they barely escape.', 'Hounded on the way out, blood on the trail.', 'Extraction botched; they limp home.'],
   },
+  // Grand Tournament stages
+  Mobilization: {
+    won:  ['The contingent answers the call, battle-ready.', 'Banners raised — the village marches as one.'],
+    lost: ['The muster falters; squads scatter in confusion.', 'A ragged mobilization — momentum lost before a blow.'],
+  },
+  'The Front': {
+    won:  ['They hold the line against the great powers.', 'Steel meets steel — the front holds firm.'],
+    lost: ['The line buckles; the front is overrun.', 'Routed at the front, the dead left behind.'],
+  },
+  'Decisive Engagement': {
+    won:  ['A duel for the ages — and they break their rival.', 'The decisive clash breaks their way.'],
+    lost: ['Overrun in the decisive engagement.', 'Outfought when it mattered most.'],
+  },
+  'Final Stand': {
+    won:  ['The last squads stand unbroken — champions.', 'Through fire and blood, they endure to the end.'],
+    lost: ['They fall at the final stand, honour intact.', 'So close — undone at the last.'],
+  },
+  // Chunin Exam stages
+  Qualifier: {
+    won:  ['They breeze through the written test.', 'Sharp minds — the qualifier is no obstacle.'],
+    lost: ['The written test trips them up — out early.', 'Caught out by the qualifier.'],
+  },
+  Quarterfinal: {
+    won:  ['Through the Forest of Death — scroll secured.', 'They survive the forest and press on.'],
+    lost: ['Lost in the Forest of Death — eliminated.', 'The forest claims them; the scroll slips away.'],
+  },
+  Semifinal: {
+    won:  ['They win the preliminary duels in style.', 'A commanding semifinal — into the last round.'],
+    lost: ['Edged out in the semifinal duels.', 'Beaten in the prelims, a step from the final.'],
+  },
+  Final: {
+    won:  ['Champions of the Chunin Exam!', 'They stand above all five villages.'],
+    lost: ['Runners-up — the title stays out of reach.', 'They reach the final but fall at the last.'],
+  },
 }
 
 /** Deterministic narrative line for a beat. `seed` picks among variants. */

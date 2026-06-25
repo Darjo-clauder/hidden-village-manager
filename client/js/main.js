@@ -27,8 +27,8 @@ import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfi
 import { rLeg, legTab, designateSuccessor, resolveLegacyDecision, triggerDynastyHandoff, sellDraftPick } from './panels/legacy.js'
 import { rKageDev, spendKagePt, chooseKagePath } from './panels/kagedev.js'
 import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel, intelCtx } from './panels/intel.js'
-import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc, setExamPosture, exLeadersSort, watchMatchday } from './panels/exam.js'
-import { musterWar, startWar, runWarRound, setWarCommand } from './panels/war.js'
+import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc, setExamPosture, exLeadersSort, watchMatchday, watchExam } from './panels/exam.js'
+import { musterWar, startWar, runWarRound, setWarCommand, watchTournament } from './panels/war.js'
 import { showLobby, createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode } from './setup.js'
 import { rClans, clanGift, launchClanChain, resolveClanCouncil } from './panels/clans.js'
 import { dismissOnboarding } from './panels/dashboard.js'
@@ -170,9 +170,9 @@ Object.assign(window, {
   // intel
   intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel, intelCtx,
   // exam tabs
-  exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc, setExamPosture, exLeadersSort, watchMatchday,
+  exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc, setExamPosture, exLeadersSort, watchMatchday, watchExam,
   // nation war
-  musterWar, startWar, runWarRound, setWarCommand,
+  musterWar, startWar, runWarRound, setWarCommand, watchTournament,
   // clans
   clanGift, launchClanChain, resolveClanCouncil,
   // onboarding
