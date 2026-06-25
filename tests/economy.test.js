@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { monthlySnapshot, isFiniteRyo, villageRevenue, PRESTIGE_REVENUE } from '../shared/utils/economy.js'
+import { monthlySnapshot, isFiniteRyo, villageRevenue, PRESTIGE_REVENUE, BASE_REVENUE } from '../shared/utils/economy.js'
 
 describe('monthlySnapshot — economy formula lock (I-ECON)', () => {
   it('matches the documented worked example (SIMULATION_MODELS Appendix B)', () => {
@@ -27,13 +27,13 @@ describe('monthlySnapshot — economy formula lock (I-ECON)', () => {
 describe('villageRevenue — baseline franchise income', () => {
   it('a fresh village (rep 10, D-tier) gets a workable operating base', () => {
     const r = villageRevenue(10, 'D')
-    expect(r).toBe(22000 + 10 * 400) // 26000
+    expect(r).toBe(BASE_REVENUE + 10 * 400) // 32000
   })
   it('scales up with reputation', () => {
     expect(villageRevenue(50, 'D')).toBeGreaterThan(villageRevenue(10, 'D'))
   })
   it('higher prestige tiers pay more', () => {
-    expect(villageRevenue(0, 'S')).toBe(22000 + PRESTIGE_REVENUE.S)
+    expect(villageRevenue(0, 'S')).toBe(BASE_REVENUE + PRESTIGE_REVENUE.S)
     expect(villageRevenue(0, 'A')).toBeGreaterThan(villageRevenue(0, 'C'))
   })
   it('defaults are safe (no NaN)', () => {

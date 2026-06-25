@@ -26,8 +26,15 @@ export const PRESTIGE_REVENUE = { D: 0, C: 4000, B: 9000, A: 15000, S: 24000 }
 // village doesn't run away with ~400k/mo. Below REP_SOFT_CAP it's the original
 // linear 400/rep (early/mid game unchanged); above it, marginal rep is worth 25%.
 export const REP_SOFT_CAP = 200
+// Flat civilian tax floor every village earns regardless of rep/prestige. Sized so a
+// fresh village (rep ~10, D prestige) carrying its seeded roster + starter staff runs
+// the intended gentle deficit (~−7k/mo, ~8-month runway) rather than a steep one — the
+// "perform-to-survive" pressure stays, but year-1 isn't a guaranteed bankruptcy. A flat
+// bump only matters early; at high rep/prestige it's negligible and the soft cap below
+// still bounds runaway wealth.
+export const BASE_REVENUE = 28000
 export function villageRevenue(reputation = 0, prestigeTier = 'D') {
   const base = Math.min(reputation, REP_SOFT_CAP) * 400
   const over = Math.max(0, reputation - REP_SOFT_CAP) * 100
-  return Math.round(22000 + base + over + (PRESTIGE_REVENUE[prestigeTier] || 0))
+  return Math.round(BASE_REVENUE + base + over + (PRESTIGE_REVENUE[prestigeTier] || 0))
 }
