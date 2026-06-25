@@ -1,4 +1,5 @@
 import { G, WS, ui, fmt } from './state.js'
+import { openBattleViewer } from './liveBattle.js'
 import { SEASONS, MONTHS } from './constants.js'
 import { nationIdentity, isValidNation } from '../../shared/constants/nations.js'
 import { schEx } from './state.js'
@@ -110,6 +111,12 @@ export function upUI() {
     const count = getInboxCount()
     inboxBadge.textContent = count
     inboxBadge.style.display = count > 0 ? '' : 'none'
+  }
+
+  // Auto-open the live battle viewer once after a turn resolves, if enabled.
+  if (G._autoWatchBattles && G._battleReportFresh && !G.examActive && !G.warActive) {
+    G._battleReportFresh = false
+    if (G.lastMissionReport?.phases?.length) openBattleViewer(G.lastMissionReport)
   }
 
   _updateContinueBtn()

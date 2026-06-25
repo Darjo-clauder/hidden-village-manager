@@ -12,6 +12,13 @@ import { openBattleViewer } from '../liveBattle.js'
 /** Replay the last mission as a live, watch-it-unfold battle. */
 export function watchLastBattle() { if (G.lastMissionReport) openBattleViewer(G.lastMissionReport) }
 
+/** Toggle auto-opening the live viewer after each squad mission resolves. */
+export function toggleAutoWatch() {
+  G._autoWatchBattles = !G._autoWatchBattles
+  ntf(G._autoWatchBattles ? 'Auto-watch on — battles play live after each turn.' : 'Auto-watch off.')
+  rMissionReport()
+}
+
 // Tactical approach picker — favored/mismatch highlighted against a mission's spec.
 export function _approachPickerHtml(spec, selId, setterFn) {
   return `<div style="margin-bottom:10px">
@@ -131,7 +138,10 @@ export function rMissionReport() {
       <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase">
         Last Mission Report — ${r.missionName} (${r.missionRk}-Rank) · ${r.succeeded?'<span style="color:#8fbc8f">SUCCESS</span>':'<span style="color:#f66">FAILURE</span>'}
       </div>
-      ${(r.phases && r.phases.length) ? `<button class="gb" style="font-size:7px;padding:2px 8px;border-color:#c9a84c;color:#c9a84c" onclick="watchLastBattle()">▶ Watch</button>` : ''}
+      ${(r.phases && r.phases.length) ? `<div style="display:flex;align-items:center;gap:8px">
+        <button class="gb" style="font-size:7px;padding:2px 8px;border-color:#c9a84c;color:#c9a84c" onclick="watchLastBattle()">▶ Watch</button>
+        <label style="font-size:7px;color:${G._autoWatchBattles ? '#8fbc8f' : '#7a7060'};cursor:pointer;user-select:none;display:flex;align-items:center;gap:3px" onclick="toggleAutoWatch()">${G._autoWatchBattles ? '☑' : '☐'} Auto-watch</label>
+      </div>` : ''}
     </div>
     ${beatHtml}
     <div style="display:flex;gap:8px;flex-wrap:wrap">

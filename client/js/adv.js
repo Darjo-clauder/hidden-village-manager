@@ -1447,6 +1447,7 @@ export function adv() {
         if (_mev.quality === 'decisive') pushNarrative(genMissionBlurb(sq.n, sq.members.length > 0 ? (G.shinobi.find(x => x.id === sq.members[0])?.ri ?? 2) : 2, m.n, 'decisive'), _sqActorIds)
         // Post-mission contribution scores (Phase 4)
         G.lastMissionReport = _buildMissionReport(sq, m, true, _mev)
+        G._battleReportFresh = true   // arms the auto-watch viewer for this turn
         // Squad identity unlock at cohesion 75
         if (sq.cohesion >= 75 && !sq.identity) {
           const taken = G.squads.filter(q => q.identity).map(q => q.identity.title)
@@ -1546,6 +1547,7 @@ export function adv() {
         pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, narrative: _sqFailNarr, quality: _mev.quality })
         G.morale = clamp(G.morale - 5 + _mq.morale, 0, 100)
         G.lastMissionReport = _buildMissionReport(sq, m, false, _mev)
+        G._battleReportFresh = true   // arms the auto-watch viewer for this turn
       }
     } else {
       const s = G.shinobi.find(x => x.id === am.assignedTo); if (!s) return

@@ -345,6 +345,7 @@ export function initState() {
     // Phase 4 additions
     missionPrepMode: 'standard',       // 'aggressive'|'standard'|'cautious' — set before each mission
     lastMissionReport: null,           // { missionId, squadId, scores:[{id,name,grade,detail}] }
+    _autoWatchBattles: false,          // when on, the live battle viewer auto-opens after a squad mission resolves
     seniorGroup: [],                   // [shinobiId] — top 3 by wins+commitment, auto-updated monthly
     seniorGroupMorale: 75,             // 0–100 — separate from village morale
     contractRenewalQueue: [],          // [{ shinobiId, demandSalary, year }]
