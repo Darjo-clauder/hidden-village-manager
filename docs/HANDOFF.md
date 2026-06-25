@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-25 · **HEAD:** `58833a2` · **Branch:** `master` · **Tests:** 672 passing / 53 files
+**Last updated:** 2026-06-25 · **HEAD:** `25ab4bd` · **Branch:** `master` · **Tests:** 673 passing / 53 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -186,7 +186,11 @@ Build is re-audited (2026-06-22) as a "functioning sports sim that feels like on
 2. **Mid-season pressure events follow-ups** — could escalate to council-mandate stakes or wire standings beats into press conferences.
 3. **Live battle for solo missions** — the viewer currently covers squad missions, matchday, exam, tournament; solo missions still resolve without a Watch option (squad-only by design so far).
 
-**Recently done (2026-06-24/25):**
+**Recently done (2026-06-25 — production-prep + polish session):**
+- **Economy rebalance** (`5e76c20`): `BASE_REVENUE` 22k→28k in `economy.js`. Found via playtest — a fresh village ran ~−12.7k/mo ("Crisis", ~5mo runway) vs the documented ~−7k/8mo target. Root cause was NOT a bug: 7 auto-seeded staff (2 starters + **5 `seedPhase1` scouts**, ~19.3k/mo) sit outside the balance harness. Now nets ~−6.8k/mo ("Stable"). Perform-to-survive pressure intact.
+- **Production hardening** (`cdff97b`): new `shared/utils/debug.js` (`DEBUG` via `?debug=1` or `localStorage.hvm_debug`; `dlog`/`dwarn` no-op in prod) — gated the 5 unconditional console.logs in `socket.js`/`phase1.js`. **dynastySweep now models the full cost structure it omitted** — staff bill (27k→46k), growing roster wage bill (12→40), prestige upkeep — plus new **`ECON-RUNWAY`** invariant encoding the ~8mo passive-runway target so a revenue/staff regression flips a test. 20yr sweep stays solvent; reveals a *gentle* late-dynasty (yr 9+) income/cost crossover — cushioned, not broken, but watch past ~yr 25.
+- **New-player polish** (`315cf89`/`6d2ccac`/`25ab4bd`): dashboard Treasury **runway readout** (`~N mo runway`, recolors <6/<3mo) + deficit onboarding step; missions board **color-tiered risk** (green≤15/amber≤30/red, `_riskColor`) + gold rewards + risk on squad cards; season standings **Edge column** (seed→Grand Tournament combat bonus, exact mirror of `war.js` `seedBonus`) + leader 👑.
+- **NOTE — audit verdict:** codebase is already clean (7 debug markers in 23.8k LOC, all growth arrays capped, no listener leaks). No blanket refactor done — that's net-negative risk near a milestone. Largest remaining modularity target is `adv.js` (3.6k lines), a multi-session job.
 - **Schedule depth** (`c1e4e8d`, League Fixture Grid); **mid-season pressure notices** (`seasonPressNotice`); **dynasty balance sweep** (`tests/dynastySweep.test.js` + rival mean-reversion fix in `rivalSim.js`); **P1 kit** on Academy + Depth Chart.
 - **Localization foundation P0+P1** (`shared/utils/i18n.js`, `shared/i18n/en.js` + `ipNames.js`; see `docs/L10N_PLAN.md`).
 - **Season experience M1–M4** (all in `season.js` pure helpers + `panels/exam.js` `_seasonTab`): M1 matchday scorelines + form guide + GD (`styledScore`/`teamForm`, `_seasonResultsCard`); M2 next-match build-up (`matchPreview`); M3 title-race banner (`seasonState`); M4 off-season awards ceremony (`_seasonReviewCard`).
