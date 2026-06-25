@@ -174,8 +174,38 @@ export function seasonPressNotice(table, playerName, round, totalRounds) {
 function _ord(n) { return n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th' }
 
 /**
+ * Stylised "objectives secured" scoreline from a sim result — turns abstract strength
+ * into a readable score (e.g. 3–1) whose margin tracks how dominant the win was.
+ * Deterministic from sa/sb. Returns [scoreA, scoreB] in a/b order.
+ */
+export function styledScore(res) {
+  const sa = res.sa || 0, sb = res.sb || 0
+  const hi = Math.max(sa, sb), lo = Math.min(sa, sb)
+  const rel = hi > 0 ? (hi - lo) / hi : 0          // 0 = dead even, →1 = blowout
+  if (res.winner === 'draw') { const s = 1 + Math.round(rel * 2); return [s, s] }
+  const w = 2 + Math.round(rel * 4)                // winner: 2..6
+  const l = Math.max(0, Math.round((1 - rel * 1.6) * 2)) // loser: 2..0 as dominance grows
+  return res.winner === 'a' ? [w, l] : [l, w]
+}
+
+/**
+ * Recent form for a team across played rounds, oldest→newest, capped at `n`.
+ * Returns an array of 'W' | 'D' | 'L'. Pure read over resultsByRound.
+ */
+export function teamForm(resultsByRound, name, upToRound, n = 5) {
+  const out = []
+  for (let r = upToRound - 1; r >= 0 && out.length < n; r--) {
+    const rr = resultsByRound[r]; if (!rr) continue
+    const m = rr.find(x => x.a === name || x.b === name); if (!m) continue
+    out.push(m.winner == null ? 'D' : m.winner === name ? 'W' : 'L')
+  }
+  return out.reverse()
+}
+
+/**
  * Play one matchday for all villages and fold results into the table.
  * Mutates `season` (round++, table, lastResults, resultsByRound). `strOf(name)` → strength.
+ * Each result carries a stylised scoreline { a, b, winner, scoreA, scoreB }.
  */
 export function playMatchday(season, names, strOf, rng = Math.random) {
   const playedRound = season.round
@@ -184,7 +214,8 @@ export function playMatchday(season, names, strOf, rng = Math.random) {
   pairs.forEach(([a, b]) => {
     const res = simMatch(strOf(a), strOf(b), rng)
     recordMatch(season.table, a, b, res)
-    results.push({ a, b, winner: res.winner === 'draw' ? null : (res.winner === 'a' ? a : b) })
+    const [scoreA, scoreB] = styledScore(res)
+    results.push({ a, b, winner: res.winner === 'draw' ? null : (res.winner === 'a' ? a : b), scoreA, scoreB })
   })
   season.lastResults = results
   season.resultsByRound = season.resultsByRound || {}

@@ -1,7 +1,7 @@
 import { G, ui, sPow, rnd, sn, pk, clamp, fmt, addChronicle, addLegend, computeMarketValue } from '../state.js'
 import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS, INJURY_TYPES } from '../constants.js'
 import { aL, ntf, upUI, schEx } from '../ui.js'
-import { initSeasonTable, sortedTable, seedsFromTable, seasonSchedule, teamFixtures } from '../../../shared/utils/season.js'
+import { initSeasonTable, sortedTable, seedsFromTable, seasonSchedule, teamFixtures, teamForm } from '../../../shared/utils/season.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { leagueLeaders } from '../../../shared/utils/seasonStats.js'
 
@@ -116,7 +116,7 @@ function _seasonTab() {
     </div>
   </div>`
 
-  return overview + _seasonStandingsCard() + fixtureList + _seasonFixtureGrid(names, schedule, round, resultsByRound, playerName)
+  return overview + _seasonResultsCard(round, resultsByRound, playerName) + _seasonStandingsCard() + fixtureList + _seasonFixtureGrid(names, schedule, round, resultsByRound, playerName)
 }
 
 // League-wide fixture grid — every village's slate, round by round, with the
@@ -160,21 +160,63 @@ function _seasonFixtureGrid(names, schedule, round, resultsByRound, playerName) 
   </div>`
 }
 
+// Small colored form guide — last-5 W/D/L as pips, oldest→newest.
+function _formPips(form) {
+  if (!form.length) return '<span style="color:#3a3630;font-size:7px">—</span>'
+  const col = { W: '#8fbc8f', D: '#c9a84c', L: '#cc5a4a' }
+  return form.map(r => `<span title="${r}" style="display:inline-block;width:9px;height:9px;line-height:9px;margin-left:2px;border-radius:2px;background:${col[r]};color:#0a0a0a;font-size:6px;text-align:center;font-weight:bold">${r}</span>`).join('')
+}
+
 // Season standings card — the league race that seeds the exam bracket.
 function _seasonStandingsCard() {
   if (!G.season?.table) return ''
   const rows = sortedTable(G.season.table)
   if (!rows.length) return ''
+  const rbr = G.season.resultsByRound || {}
+  const round = G.season.round || 0
   return `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:9px;margin-bottom:10px">
     <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">Season Standings — seeds the bracket</div>
     <table style="width:100%;border-collapse:collapse;font-size:8px">
-      <thead><tr style="color:#7a7060;text-align:left"><th style="padding:1px 4px">#</th><th>Village</th><th style="text-align:center">W</th><th style="text-align:center">D</th><th style="text-align:center">L</th><th style="text-align:right;padding-right:4px">Pts</th></tr></thead>
-      <tbody>${rows.map((row, i) => `<tr style="${row.name === G.vName ? 'color:#c9a84c;font-weight:bold' : 'color:#9a9080'}">
+      <thead><tr style="color:#7a7060;text-align:left"><th style="padding:1px 4px">#</th><th>Village</th><th style="text-align:center">W</th><th style="text-align:center">D</th><th style="text-align:center">L</th><th style="text-align:center" title="Goal difference">GD</th><th style="text-align:center">Pts</th><th style="text-align:right;padding-right:4px">Form</th></tr></thead>
+      <tbody>${rows.map((row, i) => {
+        const gd = (row.gf || 0) - (row.ga || 0)
+        const form = teamForm(rbr, row.name, round, 5)
+        return `<tr style="${row.name === G.vName ? 'color:#c9a84c;font-weight:bold' : 'color:#9a9080'}">
         <td style="padding:2px 4px">${i + 1}</td><td>${row.name}${row.name === G.vName ? ' (you)' : ''}</td>
         <td style="text-align:center">${row.w}</td><td style="text-align:center">${row.d}</td><td style="text-align:center">${row.l}</td>
-        <td style="text-align:right;padding-right:4px;color:#e8e0cc">${row.pts}</td></tr>`).join('')}</tbody>
+        <td style="text-align:center;color:${gd > 0 ? '#8fbc8f' : gd < 0 ? '#cc5a4a' : '#7a7060'}">${gd > 0 ? '+' : ''}${gd}</td>
+        <td style="text-align:center;color:#e8e0cc">${row.pts}</td>
+        <td style="text-align:right;padding-right:4px;white-space:nowrap">${_formPips(form)}</td></tr>`
+      }).join('')}</tbody>
     </table>
     <div style="font-size:7px;color:#555;margin-top:5px">Top seeds carry a survival edge into the Qualifier.${G._seasonFormBonus ? ` Last month's mission form: <span style="color:${G._seasonFormBonus > 0 ? '#8fbc8f' : '#f88'}">${G._seasonFormBonus > 0 ? '+' : ''}${G._seasonFormBonus}</span> to your fixture.` : ''}</div>
+  </div>`
+}
+
+// Latest matchday results — every fixture with its stylised scoreline + the
+// stand-out result of the round (biggest margin), so the season has a pulse.
+function _seasonResultsCard(round, resultsByRound, playerName) {
+  const lastPlayed = round - 1
+  const rr = resultsByRound[lastPlayed]
+  if (!rr || !rr.length) return ''
+  // Stand-out: the fixture with the biggest decisive margin this round.
+  let star = null
+  rr.forEach(m => { if (m.winner != null) { const mg = Math.abs((m.scoreA || 0) - (m.scoreB || 0)); if (!star || mg > star.mg) star = { m, mg } } })
+  const line = m => {
+    const me = m.a === playerName || m.b === playerName
+    const aWon = m.winner === m.a, bWon = m.winner === m.b
+    return `<div style="display:flex;align-items:center;gap:8px;font-size:8px;padding:3px 6px;background:${me ? 'rgba(201,168,76,.06)' : 'transparent'};border-left:2px solid ${me ? '#c9a84c' : 'transparent'}">
+      <span style="flex:1;text-align:right;color:${m.a === playerName ? '#c9a84c' : aWon ? '#e8e0cc' : '#8a8276'};font-weight:${m.a === playerName || aWon ? 'bold' : 'normal'}">${m.a}</span>
+      <span style="font-family:'Courier New',monospace;color:#c9a84c;min-width:30px;text-align:center">${m.scoreA ?? '·'}–${m.scoreB ?? '·'}</span>
+      <span style="flex:1;color:${m.b === playerName ? '#c9a84c' : bWon ? '#e8e0cc' : '#8a8276'};font-weight:${m.b === playerName || bWon ? 'bold' : 'normal'}">${m.b}</span>
+    </div>`
+  }
+  return `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:9px;margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase">Matchday ${lastPlayed + 1} — Results</div>
+      ${star ? `<div style="font-size:7px;color:#7a7060">★ Result of the round: <span style="color:#e8e0cc">${star.m.winner} ${Math.max(star.m.scoreA, star.m.scoreB)}–${Math.min(star.m.scoreA, star.m.scoreB)}</span></div>` : ''}
+    </div>
+    <div style="display:grid;gap:2px">${rr.map(line).join('')}</div>
   </div>`
 }
 

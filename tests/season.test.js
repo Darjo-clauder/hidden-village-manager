@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   initSeasonTable, roundPairings, simMatch, recordMatch,
   sortedTable, seedsFromTable, playMatchday, SEASON_PTS,
-  seasonSchedule, teamFixtures, seasonPressNotice,
+  seasonSchedule, teamFixtures, seasonPressNotice, styledScore, teamForm,
 } from '../shared/utils/season.js'
 import { withSeed } from './helpers/rng.js'
 
@@ -34,6 +34,45 @@ describe('season schedule', () => {
     expect(season.resultsByRound[0]).toBeDefined()
     expect(Array.isArray(season.resultsByRound[0])).toBe(true)
     expect(season.round).toBe(1)
+  })
+
+  it('playMatchday attaches a stylised scoreline to each result', () => {
+    const season = { year: 1, round: 0, table: initSeasonTable(NAMES), lastResults: [] }
+    const strOf = n => ({ You: 90, Kazegakure: 30, Shimogakure: 50, Gangakure: 50, Raikurokure: 50 }[n] || 50)
+    withSeed(3, () => playMatchday(season, NAMES, strOf, Math.random))
+    season.resultsByRound[0].forEach(m => {
+      expect(Number.isInteger(m.scoreA)).toBe(true)
+      expect(Number.isInteger(m.scoreB)).toBe(true)
+      // winner's score is never below the loser's
+      if (m.winner === m.a) expect(m.scoreA).toBeGreaterThanOrEqual(m.scoreB)
+      if (m.winner === m.b) expect(m.scoreB).toBeGreaterThanOrEqual(m.scoreA)
+    })
+  })
+})
+
+describe('matchday presentation helpers', () => {
+  it('styledScore gives a bigger margin for a more dominant win', () => {
+    const narrow = styledScore({ winner: 'a', sa: 52, sb: 48 })
+    const blowout = styledScore({ winner: 'a', sa: 95, sb: 20 })
+    const marginN = narrow[0] - narrow[1]
+    const marginB = blowout[0] - blowout[1]
+    expect(marginB).toBeGreaterThan(marginN)
+    expect(narrow[0]).toBeGreaterThanOrEqual(narrow[1])
+  })
+
+  it('styledScore returns an even line for a draw', () => {
+    const [a, b] = styledScore({ winner: 'draw', sa: 50, sb: 50 })
+    expect(a).toBe(b)
+  })
+
+  it('teamForm returns last-n W/D/L oldest→newest', () => {
+    const rbr = {
+      0: [{ a: 'You', b: 'X', winner: 'You' }],
+      1: [{ a: 'You', b: 'Y', winner: null }],
+      2: [{ a: 'Z', b: 'You', winner: 'Z' }],
+    }
+    expect(teamForm(rbr, 'You', 3)).toEqual(['W', 'D', 'L'])
+    expect(teamForm(rbr, 'You', 3, 2)).toEqual(['D', 'L'])   // capped at 2, newest kept
   })
 })
 
