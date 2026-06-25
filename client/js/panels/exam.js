@@ -66,7 +66,8 @@ function _seasonTab() {
   const playerName = G.vName
   const names = [playerName, ...(G.villages || []).map(v => v.n)]
   if (!G.season?.table) {
-    return `<div style="color:#7a7060;font-size:10px;padding:14px 0">The season begins in Month 4. Fixtures and standings will appear here.</div>`
+    const review = _seasonReviewCard(playerName)
+    return review + `<div style="color:#7a7060;font-size:10px;padding:14px 0">The season begins in Month 4. Fixtures and standings will appear here.</div>`
   }
   const round = G.season.round || 0
   const schedule = seasonSchedule(names, 11)
@@ -141,6 +142,55 @@ function _titleRaceBanner(playerName, round, totalRounds) {
       <div style="font-size:9px;color:#e8e0cc;font-weight:bold">${verdict}</div>
       <div style="font-size:7px;color:#7a7060;margin-top:2px">${st.phase} · ${st.roundsLeft} round${st.roundsLeft === 1 ? '' : 's'} left · Leaders: <span style="color:#c9a84c">${st.leader}</span> (${st.leaderPts} pts)</div>
     </div>
+  </div>`
+}
+
+// End-of-season awards ceremony (M4) — surfaced in the off-season. Reads the most
+// recent archived season (G.seasonHistory) + that year's awards (G.seasonAwards).
+function _seasonReviewCard(playerName) {
+  const hist = (G.seasonHistory || []).slice(-1)[0]
+  if (!hist || !Array.isArray(hist.table) || !hist.table.length) return ''
+  const table = hist.table
+  const pos = table.findIndex(r => r.name === playerName) + 1
+  const total = table.length
+  const ord = n => n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'
+  const won = hist.champion === playerName
+  const verdict = won ? 'Champions.'
+    : pos === 1 ? 'Top of the table.'
+    : pos <= Math.ceil(total / 2) ? 'A respectable campaign.'
+    : pos >= total ? 'A season to forget.'
+    : 'Room to grow.'
+  const vCol = won || pos === 1 ? '#8fbc8f' : pos >= total ? '#cc5a4a' : '#c9a84c'
+
+  const awards = G.seasonAwards?.[hist.year] || {}
+  const order = ['mvp', 'rookieOfYear', 'warHero', 'ironwall']
+  const cards = order.map(k => awards[k]).filter(a => a && a.name).map(a =>
+    `<div style="flex:1;min-width:120px;border:1px solid #2a2520;border-left:2px solid #c9a84c;padding:7px 9px">
+      <div style="font-size:7px;letter-spacing:1px;color:#c9a84c;text-transform:uppercase">${a.label}</div>
+      <div style="font-size:10px;color:#e8e0cc;font-weight:bold;margin:2px 0">${a.name}</div>
+      <div style="font-size:7px;color:#7a7060;line-height:1.4">${a.reason}</div>
+    </div>`).join('')
+
+  const standings = table.map((r, i) => `<tr style="${r.name === playerName ? 'color:#c9a84c;font-weight:bold' : 'color:#9a9080'}">
+    <td style="padding:1px 4px">${i + 1}</td>
+    <td>${r.name === hist.champion ? '👑 ' : ''}${r.name}${r.name === playerName ? ' (you)' : ''}</td>
+    <td style="text-align:center">${r.w}</td><td style="text-align:center">${r.d}</td><td style="text-align:center">${r.l}</td>
+    <td style="text-align:right;padding-right:4px;color:#e8e0cc">${r.pts}</td></tr>`).join('')
+
+  return `<div style="border:1px solid #c9a84c;background:linear-gradient(160deg,#13100a,#0a0a0a);padding:13px;margin-bottom:14px">
+    <div style="text-align:center;margin-bottom:10px">
+      <div style="font-size:7px;letter-spacing:3px;color:#7a7060;text-transform:uppercase">Year ${hist.year} · Season Review</div>
+      <div style="font-size:13px;color:#c9a84c;font-weight:bold;margin-top:3px">🏆 ${hist.champion || 'No champion'}</div>
+      <div style="font-size:8px;color:#7a7060;margin-top:2px">League champions</div>
+      <div style="margin-top:7px;font-size:10px;color:${vCol};font-weight:bold">${playerName}: ${pos}${ord(pos)} of ${total} — ${verdict}</div>
+    </div>
+    ${cards ? `<div style="font-size:7px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">Season Awards</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:11px">${cards}</div>` : ''}
+    <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:5px">Final Standings</div>
+    <table style="width:100%;border-collapse:collapse;font-size:8px">
+      <thead><tr style="color:#7a7060;text-align:left"><th style="padding:1px 4px">#</th><th>Village</th><th style="text-align:center">W</th><th style="text-align:center">D</th><th style="text-align:center">L</th><th style="text-align:right;padding-right:4px">Pts</th></tr></thead>
+      <tbody>${standings}</tbody>
+    </table>
   </div>`
 }
 
