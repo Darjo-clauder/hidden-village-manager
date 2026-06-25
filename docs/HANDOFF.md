@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-24 · **HEAD:** `a8a0e51` · **Branch:** `master` · **Tests:** 655 passing / 52 files
+**Last updated:** 2026-06-25 · **HEAD:** `4edbf78` · **Branch:** `master` · **Tests:** 672 passing / 53 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -183,10 +183,14 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 Build is re-audited (2026-06-22) as a "functioning sports sim that feels like one." The FM-spine, stat layer, presentation, GM progression, and a balance pass are all in. **Schedule depth (#2) is now done** — `c1e4e8d` added the League Fixture Grid to the SEASON tab (`_seasonFixtureGrid` in `panels/exam.js`): every village's matchup round-by-round with results + look-ahead. Candidate next targets (user's call):
 
 1. **Localization P2+ extraction** — foundation is in (§6, `docs/L10N_PLAN.md`); next is keying the ~656 `ntf`/`aL` toasts + nav/buttons/dashboard/inbox, with a grep guardrail. Incremental.
-2. **Live match viewer** — turn the post-result play-by-play into a watch-it-unfold view (large feature).
+2. **Live battle: auto-trigger toggle** — option to auto-open the live viewer for the player's own squad missions instead of clicking ▶ Watch. The only remaining live-battle idea.
 3. **Mid-season pressure events follow-ups** — could escalate to council-mandate stakes or wire standings beats into press conferences.
 
-**Recently done:** Schedule depth (`c1e4e8d`, League Fixture Grid). Mid-season pressure events (`seasonPressNotice` in season.js → Standings noticeboard items: title race / clinching / slump / relegation; throttled 1/2mo, no back-to-back repeats; 6 tests). Dynasty balance sweep (`tests/dynastySweep.test.js` + rival mean-reversion fix in `rivalSim.js`). P1 kit grammar rolled onto Academy (`acCtx`/`acHover`) + Depth Chart (`depCtx`/`depHover`) — right-click verbs + hover stat cards on prospect cards & roster-tier slots; browser-verified. Kit is now on Roster, Intel, Transfers, Staff, Scouting, Academy, Depth Chart (Finances already has the P4 charts; it's numbers-only so no entity grammar needed).
+**Recently done (2026-06-24/25):**
+- **Schedule depth** (`c1e4e8d`, League Fixture Grid); **mid-season pressure notices** (`seasonPressNotice`); **dynasty balance sweep** (`tests/dynastySweep.test.js` + rival mean-reversion fix in `rivalSim.js`); **P1 kit** on Academy + Depth Chart.
+- **Localization foundation P0+P1** (`shared/utils/i18n.js`, `shared/i18n/en.js` + `ipNames.js`; see `docs/L10N_PLAN.md`).
+- **Season experience M1–M4** (all in `season.js` pure helpers + `panels/exam.js` `_seasonTab`): M1 matchday scorelines + form guide + GD (`styledScore`/`teamForm`, `_seasonResultsCard`); M2 next-match build-up (`matchPreview`); M3 title-race banner (`seasonState`); M4 off-season awards ceremony (`_seasonReviewCard`).
+- **Live battle viewer** — watch-it-unfold overlay, pure presentation over engine-decided results (`shared/utils/battleViewer.js` + `client/js/liveBattle.js`, `.bv-*` CSS). Covers: **missions** (`watchLastBattle`, ▶ Watch on mission report), **league matchday** (`watchMatchday` + `matchToBeats`), **Chunin Exam** (`watchExam`) and **Grand Tournament** (`watchTournament`) — the last two via safe per-stage bookkeeping `G._examRun`/`G._warRun` (no outcome change, stops at first elimination).
 
 ---
 
@@ -203,7 +207,7 @@ Build is re-audited (2026-06-22) as a "functioning sports sim that feels like on
 ## 9. First moves for the new session
 
 1. Read this doc + the auto-memory (`MEMORY.md` index loads automatically; `project_state.md` has the running log).
-2. `git -C C:\Users\Tyler\ninja\hidden-village-manager log --oneline -5` — confirm HEAD matches above (`c1e4e8d`).
+2. `git -C C:\Users\Tyler\ninja\hidden-village-manager log --oneline -5` — confirm HEAD matches above (`4edbf78`).
 3. `npx vitest run` — expect 624 passing / 50 files.
 4. `npx vite build` before any browser playtest (see §6 build + socket-race notes).
 5. Ask the user which target to take next (see §7), or continue whatever they were mid-stream on.
