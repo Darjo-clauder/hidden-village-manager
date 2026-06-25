@@ -1,7 +1,7 @@
 import { G, ui, sPow, rnd, sn, pk, clamp, fmt, addChronicle, addLegend, computeMarketValue } from '../state.js'
 import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS, INJURY_TYPES } from '../constants.js'
 import { aL, ntf, upUI, schEx } from '../ui.js'
-import { initSeasonTable, sortedTable, seedsFromTable, seasonSchedule, teamFixtures, teamForm } from '../../../shared/utils/season.js'
+import { initSeasonTable, sortedTable, seedsFromTable, seasonSchedule, teamFixtures, teamForm, seasonState, matchPreview } from '../../../shared/utils/season.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { leagueLeaders } from '../../../shared/utils/seasonStats.js'
 
@@ -116,7 +116,55 @@ function _seasonTab() {
     </div>
   </div>`
 
-  return overview + _seasonResultsCard(round, resultsByRound, playerName) + _seasonStandingsCard() + fixtureList + _seasonFixtureGrid(names, schedule, round, resultsByRound, playerName)
+  const banner = _titleRaceBanner(playerName, round, schedule.length)
+  const preview = _matchPreviewCard(names, schedule, round, resultsByRound, playerName)
+  return banner + overview + preview + _seasonResultsCard(round, resultsByRound, playerName) + _seasonStandingsCard() + fixtureList + _seasonFixtureGrid(names, schedule, round, resultsByRound, playerName)
+}
+
+// Title-race banner (M3) — the persistent season-state strip at the top.
+function _titleRaceBanner(playerName, round, totalRounds) {
+  const st = seasonState(G.season.table, playerName, round, totalRounds)
+  if (!st) return ''
+  const ord = n => n === 1 ? 'st' : n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'
+  const posCol = st.isLeader ? '#8fbc8f' : st.playerPos >= st.total ? '#cc5a4a' : '#c9a84c'
+  const verdict = st.isLeader
+    ? `<span style="color:#8fbc8f">Leading the race</span>`
+    : st.inHunt ? `<span style="color:#c9a84c">In the hunt — ${st.gapToLead} off top</span>`
+    : st.playerPos >= st.total ? `<span style="color:#cc5a4a">Rooted to the bottom</span>`
+    : `<span style="color:#9a9080">${st.gapToLead} pts off the lead</span>`
+  return `<div style="display:flex;align-items:center;gap:14px;background:linear-gradient(90deg,#13100a,#0a0a0a);border:1px solid #2e2a22;border-left:3px solid ${posCol};padding:9px 13px;margin-bottom:12px">
+    <div style="text-align:center;min-width:46px">
+      <div style="font-size:18px;font-weight:bold;color:${posCol};line-height:1">${st.playerPos}<span style="font-size:9px">${ord(st.playerPos)}</span></div>
+      <div style="font-size:6px;letter-spacing:1px;color:#7a7060;text-transform:uppercase">of ${st.total}</div>
+    </div>
+    <div style="flex:1">
+      <div style="font-size:9px;color:#e8e0cc;font-weight:bold">${verdict}</div>
+      <div style="font-size:7px;color:#7a7060;margin-top:2px">${st.phase} · ${st.roundsLeft} round${st.roundsLeft === 1 ? '' : 's'} left · Leaders: <span style="color:#c9a84c">${st.leader}</span> (${st.leaderPts} pts)</div>
+    </div>
+  </div>`
+}
+
+// Match build-up card (M2) — the player's next fixture with full context.
+function _matchPreviewCard(names, schedule, round, resultsByRound, playerName) {
+  const p = matchPreview(G.season.table, resultsByRound, schedule, playerName, round)
+  if (!p) return `<div style="border:1px dashed #2e2a22;background:#0a0a0a;padding:9px;margin-bottom:12px;font-size:8px;color:#7a7060">Bye round — no fixture this matchday.</div>`
+  const pip = r => { const c = { W: '#8fbc8f', D: '#c9a84c', L: '#cc5a4a' }[r]; return `<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${c};margin-left:2px"></span>` }
+  const formRow = (label, form) => `<div style="display:flex;align-items:center;gap:6px;font-size:7px;color:#7a7060"><span style="width:54px">${label}</span>${form.length ? form.map(pip).join('') : '<span style="color:#3a3630">no games yet</span>'}</div>`
+  const h2hTxt = (p.h2h.w + p.h2h.d + p.h2h.l) ? `${p.h2h.w}W–${p.h2h.d}D–${p.h2h.l}L this season` : 'first meeting this season'
+  return `<div style="border:1px solid #c9a84c;background:#0d0a04;padding:11px 13px;margin-bottom:12px">
+    <div style="font-size:7px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:7px">▸ Next Matchday — Round ${round + 1}</div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:9px">
+      <div style="flex:1;text-align:right"><div style="font-size:11px;color:#c9a84c;font-weight:bold">${playerName}</div><div style="font-size:7px;color:#7a7060">${p.playerPos}${p.playerPos===1?'st':p.playerPos===2?'nd':p.playerPos===3?'rd':'th'} place</div></div>
+      <div style="font-size:8px;color:#7a7060;text-align:center">${p.home ? 'vs' : '@'}<div style="font-size:6px;color:#555;margin-top:2px">${p.home ? 'home' : 'away'}</div></div>
+      <div style="flex:1"><div style="font-size:11px;color:#e8e0cc;font-weight:bold">${p.opp}</div><div style="font-size:7px;color:#7a7060">${p.oppPos}${p.oppPos===1?'st':p.oppPos===2?'nd':p.oppPos===3?'rd':'th'} place</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:3px;border-top:1px solid #2a2520;padding-top:7px">
+      ${formRow('Your form', p.playerForm)}
+      ${formRow(p.opp + ' form', p.oppForm)}
+      <div style="font-size:7px;color:#7a7060;margin-top:1px">⚔ Head-to-head: <span style="color:#9a9080">${h2hTxt}</span></div>
+      ${p.stakes.length ? `<div style="font-size:7px;color:#c9a84c;margin-top:2px">At stake: ${p.stakes.join(' · ')}</div>` : ''}
+    </div>
+  </div>`
 }
 
 // League-wide fixture grid — every village's slate, round by round, with the

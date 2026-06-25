@@ -203,6 +203,62 @@ export function teamForm(resultsByRound, name, upToRound, n = 5) {
 }
 
 /**
+ * Title-race state for the persistent season banner (M3). Pure read over the table.
+ * Returns { leader, leaderPts, playerPos, total, gapToLead, roundsLeft, phase, inHunt }.
+ */
+export function seasonState(table, playerName, round, totalRounds) {
+  const order = sortedTable(table)
+  if (!order.length) return null
+  const leader = order[0]
+  const playerPos = order.findIndex(r => r.name === playerName) + 1
+  const me = table[playerName] || { pts: 0 }
+  const roundsLeft = Math.max(0, totalRounds - round)
+  const frac = totalRounds ? round / totalRounds : 0
+  const phase = frac < 0.34 ? 'Early season' : frac < 0.67 ? 'Mid season' : roundsLeft <= 1 ? 'Final day' : 'Run-in'
+  const gapToLead = (leader.pts || 0) - (me.pts || 0)
+  return {
+    leader: leader.name, leaderPts: leader.pts || 0,
+    playerPos, total: order.length, gapToLead, roundsLeft, phase,
+    inHunt: playerPos > 1 && gapToLead <= 4 && playerPos <= Math.ceil(order.length / 2),
+    isLeader: playerPos === 1,
+  }
+}
+
+/**
+ * Pre-match build-up for the player's fixture in `round` (M2): opponent, venue,
+ * both teams' form, this-season head-to-head, table positions, and what's at stake.
+ * Pure — also the data source for the future live-battle pre-match screen. Returns
+ * null on a bye / no fixture.
+ */
+export function matchPreview(table, resultsByRound, schedule, playerName, round) {
+  const rnd = schedule[round]; if (!rnd) return null
+  const fx = rnd.find(m => m.a === playerName || m.b === playerName); if (!fx) return null
+  const home = fx.a === playerName
+  const opp = home ? fx.b : fx.a
+  const order = sortedTable(table)
+  const playerPos = order.findIndex(r => r.name === playerName) + 1
+  const oppPos = order.findIndex(r => r.name === opp) + 1
+  const h2h = { w: 0, d: 0, l: 0 }
+  for (let r = 0; r < round; r++) {
+    const rr = resultsByRound[r]; if (!rr) continue
+    const m = rr.find(x => (x.a === playerName && x.b === opp) || (x.a === opp && x.b === playerName)); if (!m) continue
+    if (m.winner == null) h2h.d++; else if (m.winner === playerName) h2h.w++; else h2h.l++
+  }
+  const me = table[playerName] || { pts: 0 }
+  const leader = order[0]
+  const stakes = []
+  if (playerPos === 1) stakes.push('Defend top spot')
+  else if (leader && (leader.pts - (me.pts || 0)) <= 3) stakes.push('Win to close on the leaders')
+  if (playerPos >= order.length && order.length > 1) stakes.push('Climb off the bottom')
+  if (oppPos > 0 && oppPos < playerPos) stakes.push(`Leapfrog ${opp}`)
+  return {
+    opp, home, playerPos, oppPos, posGap: Math.abs(playerPos - oppPos),
+    h2h, oppForm: teamForm(resultsByRound, opp, round, 5),
+    playerForm: teamForm(resultsByRound, playerName, round, 5), stakes,
+  }
+}
+
+/**
  * Play one matchday for all villages and fold results into the table.
  * Mutates `season` (round++, table, lastResults, resultsByRound). `strOf(name)` → strength.
  * Each result carries a stylised scoreline { a, b, winner, scoreA, scoreB }.

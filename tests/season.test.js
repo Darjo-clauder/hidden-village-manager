@@ -3,6 +3,7 @@ import {
   initSeasonTable, roundPairings, simMatch, recordMatch,
   sortedTable, seedsFromTable, playMatchday, SEASON_PTS,
   seasonSchedule, teamFixtures, seasonPressNotice, styledScore, teamForm,
+  seasonState, matchPreview,
 } from '../shared/utils/season.js'
 import { withSeed } from './helpers/rng.js'
 
@@ -73,6 +74,44 @@ describe('matchday presentation helpers', () => {
     }
     expect(teamForm(rbr, 'You', 3)).toEqual(['W', 'D', 'L'])
     expect(teamForm(rbr, 'You', 3, 2)).toEqual(['D', 'L'])   // capped at 2, newest kept
+  })
+
+  const mkTable = rows => {
+    const t = initSeasonTable(rows.map(r => r[0]))
+    rows.forEach(([n, pts, w = 0, l = 0]) => { t[n].pts = pts; t[n].w = w; t[n].l = l; t[n].played = w + l })
+    return t
+  }
+
+  it('seasonState reports leader, position and run-in phase', () => {
+    const t = mkTable([['You', 12, 4, 1], ['Kazegakure', 15, 5, 0], ['Shimogakure', 6, 2, 3], ['Gangakure', 4, 1, 4], ['Raikurokure', 3, 1, 4]])
+    const st = seasonState(t, 'You', 9, 11)
+    expect(st.leader).toBe('Kazegakure')
+    expect(st.playerPos).toBe(2)
+    expect(st.gapToLead).toBe(3)
+    expect(st.inHunt).toBe(true)
+    expect(st.phase).toBe('Run-in')
+  })
+
+  it('matchPreview builds opponent context, h2h and stakes', () => {
+    const t = mkTable([['Kazegakure', 15, 5, 0], ['You', 12, 4, 1], ['Shimogakure', 6, 2, 3], ['Gangakure', 4, 1, 4], ['Raikurokure', 3, 1, 4]])
+    const schedule = seasonSchedule(NAMES, 11)
+    // find a round where You actually have a fixture
+    let round = 0
+    while (round < schedule.length && !schedule[round].some(m => m.a === 'You' || m.b === 'You')) round++
+    const rbr = { /* prior meeting */ }
+    const p = matchPreview(t, rbr, schedule, 'You', round)
+    expect(p).not.toBeNull()
+    expect(p.opp).not.toBe('You')
+    expect(typeof p.home).toBe('boolean')
+    expect(p.h2h).toEqual({ w: 0, d: 0, l: 0 })
+    expect(Array.isArray(p.stakes)).toBe(true)
+  })
+
+  it('matchPreview returns null on a bye round', () => {
+    const t = mkTable([['You', 0], ['Kazegakure', 0], ['Shimogakure', 0], ['Gangakure', 0], ['Raikurokure', 0]])
+    const schedule = seasonSchedule(NAMES, 11)
+    const byeRound = schedule.findIndex(r => !r.some(m => m.a === 'You' || m.b === 'You'))
+    if (byeRound >= 0) expect(matchPreview(t, {}, schedule, 'You', byeRound)).toBeNull()
   })
 })
 
