@@ -194,6 +194,13 @@ function _expiryBadge(m) {
   return `<span style="font-size:7px;color:${color};border:1px solid ${color};padding:1px 4px;margin-left:5px">Expires ${ml}m</span>`
 }
 
+// Risk-tier color so danger reads at a glance when scanning the board:
+// green ≤15% (safe), amber ≤30% (moderate), red >30% (dangerous).
+function _riskColor(risk) {
+  const pct = risk * 100
+  return pct <= 15 ? '#8fbc8f' : pct <= 30 ? '#fa0' : '#f66'
+}
+
 function _chainBadge(m) {
   if (!m.chainId) return ''
   return `<span style="font-size:7px;color:#4a9eca;border:1px solid #4a9eca;padding:1px 4px;margin-left:5px" title="Chain: ${m.chainName}">⛓ ${m.chainName} ${m.chainStep + 1}/${m.chainTotal}</span>`
@@ -260,10 +267,10 @@ export function rSoloM() {
         </div>
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:8px;color:#7a7060;margin-bottom:7px">
-        <span>Reward: <span style="color:#e8e0cc">${fmt(m.ryo)} ryo</span></span>
+        <span>Reward: <span style="color:#c9a84c;font-weight:bold">${fmt(m.ryo)} ryo</span></span>
         <span>Rep: <span style="color:#e8e0cc">+${m.rep}</span></span>
         <span>Duration: <span style="color:#e8e0cc">${m.dur}m</span></span>
-        <span>Risk: <span style="color:#e8e0cc">${Math.round(m.risk * 100)}%</span></span>
+        <span>Risk: <span style="color:${_riskColor(m.risk)};font-weight:bold">${Math.round(m.risk * 100)}%</span></span>
         <span>Min pwr: <span style="color:#e8e0cc">${m.mp}</span></span>
       </div>
       ${_missionIntel(m)}
@@ -325,7 +332,7 @@ function _offSeasonBlock() {
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border:1px solid #2a2a2a;background:#0d0d0d;margin-bottom:4px">
           <div>
             <div style="font-size:9px;color:#e8e0cc">${m.n}</div>
-            <div style="font-size:7px;color:#7a7060">${fmt(m.ryo)} ryo · ${m.dur}m · Risk ${Math.round(m.risk*100)}%</div>
+            <div style="font-size:7px;color:#7a7060">${fmt(m.ryo)} ryo · ${m.dur}m · Risk <span style="color:${_riskColor(m.risk)}">${Math.round(m.risk*100)}%</span></div>
           </div>
           ${aM
             ? `<div style="font-size:8px;color:#fa0">⟳ ${sn(G.shinobi.find(s=>s.id===aM.assignedTo)||{fn:'?',ln:''})} — ${aM.daysLeft}m</div>`
@@ -432,9 +439,10 @@ export function rSqM() {
         </div>
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:8px;color:#7a7060;margin-bottom:7px">
-        <span>Reward: <span style="color:#e8e0cc">${fmt(m.ryo)} ryo</span></span>
+        <span>Reward: <span style="color:#c9a84c;font-weight:bold">${fmt(m.ryo)} ryo</span></span>
         <span>Min sq pwr: <span style="color:#e8e0cc">${m.mp}</span></span>
         <span>Duration: <span style="color:#e8e0cc">${m.dur}m</span></span>
+        ${m.risk != null ? `<span>Risk: <span style="color:${_riskColor(m.risk)};font-weight:bold">${Math.round(m.risk * 100)}%</span></span>` : ''}
       </div>
       ${aM ? `<div style="font-size:9px;color:#fa0">⟳ Squad on mission — ${aM.daysLeft}m left</div>` : `<button class="gb" onclick="pickSq('${m.id}')">Assign Squad ►</button>`}
     </div>`
