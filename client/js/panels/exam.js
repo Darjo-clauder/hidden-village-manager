@@ -307,22 +307,30 @@ function _seasonStandingsCard() {
   if (!rows.length) return ''
   const rbr = G.season.resultsByRound || {}
   const round = G.season.round || 0
+  const total = rows.length
+  // Tournament seed edge a finishing position earns — mirrors seedBonus() in war.js
+  // (the top seed's +10% combat edge in the deadly Grand Tournament), so the standings
+  // show what league position is actually worth, not just bragging rights.
+  const seedEdge = pos => total < 2 ? 0 : Math.round((1 - (pos - 1) / (total - 1)) * 10)
   return `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:9px;margin-bottom:10px">
     <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">Season Standings — seeds the bracket</div>
     <table style="width:100%;border-collapse:collapse;font-size:8px">
-      <thead><tr style="color:#7a7060;text-align:left"><th style="padding:1px 4px">#</th><th>Village</th><th style="text-align:center">W</th><th style="text-align:center">D</th><th style="text-align:center">L</th><th style="text-align:center" title="Goal difference">GD</th><th style="text-align:center">Pts</th><th style="text-align:right;padding-right:4px">Form</th></tr></thead>
+      <thead><tr style="color:#7a7060;text-align:left"><th style="padding:1px 4px">#</th><th>Village</th><th style="text-align:center">W</th><th style="text-align:center">D</th><th style="text-align:center">L</th><th style="text-align:center" title="Goal difference">GD</th><th style="text-align:center">Pts</th><th style="text-align:center" title="Combat edge this seed earns in the Grand Tournament">Edge</th><th style="text-align:right;padding-right:4px">Form</th></tr></thead>
       <tbody>${rows.map((row, i) => {
         const gd = (row.gf || 0) - (row.ga || 0)
         const form = teamForm(rbr, row.name, round, 5)
+        const edge = seedEdge(i + 1)
+        const isLeader = i === 0
         return `<tr style="${row.name === G.vName ? 'color:#c9a84c;font-weight:bold' : 'color:#9a9080'}">
-        <td style="padding:2px 4px">${i + 1}</td><td>${row.name}${row.name === G.vName ? ' (you)' : ''}</td>
+        <td style="padding:2px 4px">${i + 1}</td><td>${isLeader ? '👑 ' : ''}${row.name}${row.name === G.vName ? ' (you)' : ''}</td>
         <td style="text-align:center">${row.w}</td><td style="text-align:center">${row.d}</td><td style="text-align:center">${row.l}</td>
         <td style="text-align:center;color:${gd > 0 ? '#8fbc8f' : gd < 0 ? '#cc5a4a' : '#7a7060'}">${gd > 0 ? '+' : ''}${gd}</td>
         <td style="text-align:center;color:#e8e0cc">${row.pts}</td>
+        <td style="text-align:center;color:${edge > 0 ? '#c9a84c' : '#555'}">${edge > 0 ? '+' + edge + '%' : '—'}</td>
         <td style="text-align:right;padding-right:4px;white-space:nowrap">${_formPips(form)}</td></tr>`
       }).join('')}</tbody>
     </table>
-    <div style="font-size:7px;color:#555;margin-top:5px">Top seeds carry a survival edge into the Qualifier.${G._seasonFormBonus ? ` Last month's mission form: <span style="color:${G._seasonFormBonus > 0 ? '#8fbc8f' : '#f88'}">${G._seasonFormBonus > 0 ? '+' : ''}${G._seasonFormBonus}</span> to your fixture.` : ''}</div>
+    <div style="font-size:7px;color:#555;margin-top:5px"><span style="color:#c9a84c">Edge</span> = combat bonus your seed carries into the year-end Grand Tournament — finish higher, fight from strength.${G._seasonFormBonus ? ` Last month's mission form: <span style="color:${G._seasonFormBonus > 0 ? '#8fbc8f' : '#f88'}">${G._seasonFormBonus > 0 ? '+' : ''}${G._seasonFormBonus}</span> to your fixture.` : ''}</div>
   </div>`
 }
 
