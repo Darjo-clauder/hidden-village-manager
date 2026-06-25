@@ -60,10 +60,19 @@ function runDynasty(seed) {
         { n: 'Gangakure',   strength: 48 }, { n: 'Raikurokure', strength: 72 },
       ],
       shinobi: Array.from({ length: 12 }, (_, i) => ({ ri: i < 2 ? 2 : i < 6 ? 1 : 0, salary: 500 + (i < 2 ? 2 : i < 6 ? 1 : 0) * 400 })),
+      // Staff bill — the REAL game seeds 7 staff (~19.3k/mo: 2 starters + 5 scout
+      // network). This is the cost line the old sweep omitted, which let the year-1
+      // deficit bug slip past. Higher prestige lets the player field elite command
+      // staff, so the bill scales modestly with tier (see staff-hire-on-promotion below).
+      staff: [
+        { salary: 3570 }, { salary: 3920 },                                  // starter scout + team sensei
+        { salary: 2700 }, { salary: 2200 }, { salary: 1900 }, { salary: 2200 }, { salary: 2800 }, // 5 seeded scouts
+      ],
     }
     applyKagePath(G, 'administrator')   // a representative build
+    const PRESTIGE_IDX = { D: 0, C: 1, B: 2, A: 3, S: 4 }
 
-    const track = { ryo: [], net: [], rep: [], level: [], leftover: [], finishes: [], maxAttr: [], rivalStr: [] }
+    const track = { ryo: [], net: [], rep: [], level: [], leftover: [], finishes: [], maxAttr: [], rivalStr: [], staffBill: [], roster: [] }
 
     for (let y = 1; y <= YEARS; y++) {
       const season = { year: y, round: 0, table: initSeasonTable(NAMES), lastResults: [] }
@@ -77,12 +86,18 @@ function runDynasty(seed) {
       }
 
       let yearNetSum = 0
+      const pIdx = PRESTIGE_IDX[G.prestigeTier] || 0
       for (let m = 1; m <= 12; m++) {
         // Economy — the real curve, with administration income mod folded in.
         const adminMod = 1 + (G.kageDev.attrs.administration || 0) * 0.012
         const income = Math.round(villageRevenue(G.reputation, G.prestigeTier) * adminMod)
+        // FULL cost structure (previously only shinobi wages were modelled):
         const wages = G.shinobi.reduce((a, s) => a + s.salary, 0)
-        const net = income - wages
+        const staffBill = G.staff.reduce((a, s) => a + s.salary, 0)
+        // Infrastructure upkeep grows with the village (prestige), reduced ~10% by the
+        // default infra budget slider — mirrors the maintenance line in the live finances panel.
+        const upkeep = Math.round((2500 + pIdx * 1500) * 0.9)
+        const net = income - wages - staffBill - upkeep
         yearNetSum += net
         G.ryo = Math.max(0, G.ryo + net)
 
@@ -107,17 +122,27 @@ function runDynasty(seed) {
           if (s.ri >= 3 && Math.random() < 0.01) s._retire = true
         })
         G.shinobi = G.shinobi.filter(s => !s._retire)
-        while (G.shinobi.length < 12) G.shinobi.push({ ri: 0, salary: 500, injured: false })
+        // Roster grows toward the real game's size (academy intake): ~12 → ~40 over a
+        // dynasty, so the wage bill scales the way it actually does in a live save.
+        const rosterTarget = Math.min(40, 12 + Math.floor((y - 1) * 1.5))
+        while (G.shinobi.length < rosterTarget) G.shinobi.push({ ri: 0, salary: 500, injured: false })
       }
 
       // Prestige climbs with reputation.
+      const prevTier = G.prestigeTier
       G.prestigeTier = ([['S', 200], ['A', 120], ['B', 70], ['C', 30], ['D', 0]].find(([, t]) => G.reputation >= t) || ['D'])[0]
+      // On a prestige promotion the player unlocks and hires elite command staff —
+      // the staff bill climbs with the village, not just the wage bill.
+      if ((PRESTIGE_IDX[G.prestigeTier] || 0) > (PRESTIGE_IDX[prevTier] || 0)) {
+        G.staff.push({ salary: 6000 + (PRESTIGE_IDX[G.prestigeTier] || 0) * 1500 })
+      }
 
       const myPos = sortedTable(season.table).findIndex(r => r.name === PLAYER) + 1
       track.ryo.push(G.ryo); track.net.push(Math.round(yearNetSum / 12)); track.rep.push(G.reputation)
       track.level.push(G.kageDev.level); track.leftover.push(G.kageDev.points)
       track.finishes.push(myPos); track.maxAttr.push(Math.max(...ATTR_IDS.map(id => G.kageDev.attrs[id])))
       track.rivalStr.push(G.villages.map(v => Math.round(v.strength)))
+      track.staffBill.push(G.staff.reduce((a, s) => a + s.salary, 0)); track.roster.push(G.shinobi.length)
     }
     return { G, track }
   })
@@ -173,6 +198,23 @@ describe('Dynasty balance sweep — 20-year deterministic', () => {
     expect(Math.max(...finalYear), 'a rival saturated at the 200 cap').toBeLessThan(195)
   })
 
+  it('ECON-RUNWAY: a passive fresh village survives the intended ~8-month runway', () => {
+    // Encodes the design target that the year-1 deficit bug violated. A brand-new
+    // village (rep 10, D-tier) that plays PASSIVELY — earning no mission income —
+    // must not bankrupt almost immediately; it should have a multi-month grace period
+    // (~8mo by design) to learn the systems. Uses the REAL villageRevenue curve plus
+    // the verified live starting cost structure (22 shinobi + 7 seeded staff), so a
+    // regression to BASE_REVENUE or the seeded staff load flips this assertion.
+    const startRyo = 60000
+    const income = villageRevenue(10, 'D')           // real curve → 32,000 at launch
+    const shinobiWages = 19450                        // 22-shinobi starting roster (verified in-game)
+    const staffBill = 19290                           // 7 seeded staff (verified in-game)
+    const passiveNet = income - shinobiWages - staffBill
+    expect(passiveNet, 'passive net should be a gentle deficit, not steep').toBeGreaterThan(-9000)
+    const runwayMonths = passiveNet >= 0 ? Infinity : startRyo / -passiveNet
+    expect(runwayMonths, `passive runway only ${runwayMonths.toFixed(1)} months`).toBeGreaterThanOrEqual(6)
+  })
+
   it('SNAP: dynasty trajectory (logged, not asserted)', () => {
     const cap = ATTR_IDS.every(id => G.kageDev.attrs[id] >= KAGE_ATTR_CAP)
     const firstCapYear = track.maxAttr.findIndex(v => v >= KAGE_ATTR_CAP) + 1
@@ -183,6 +225,8 @@ describe('Dynasty balance sweep — 20-year deterministic', () => {
       '════════════════════════════════════════════════',
       `  Year-end ryo : ${track.ryo.map(r => Math.round(r / 1000) + 'k').join(' ')}`,
       `  Avg mo. net  : ${track.net.map(n => Math.round(n / 1000) + 'k').join(' ')}`,
+      `  Roster size  : ${track.roster.join(' ')}`,
+      `  Staff bill   : ${track.staffBill.map(s => Math.round(s / 1000) + 'k').join(' ')}`,
       `  Reputation   : ${track.rep.join(' ')}   (soft cap ${REP_SOFT_CAP})`,
       `  Kage level   : ${track.level.join(' ')}`,
       `  Unspent pts  : ${track.leftover.join(' ')}`,

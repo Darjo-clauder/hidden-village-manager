@@ -8,6 +8,7 @@
 
 import { createProspect } from '../shared/types/Prospect.js'
 import { createScout } from '../shared/types/Scout.js'
+import { dlog } from '../shared/utils/debug.js'
 import { createMissionTemplate } from '../shared/types/MissionTemplate.js'
 import { createDepthChart } from '../shared/types/DepthChart.js'
 
@@ -104,7 +105,7 @@ export function seedPhase1(G) {
     if (!G.depthChart[sq.id]) G.depthChart[sq.id] = createDepthChart(sq.id)
   })
 
-  console.log('[seed] Phase 1 seed applied:', {
+  dlog('[seed] Phase 1 seed applied:', {
     prospects: G.prospects.length,
     staff: G.staff.length,
     missionTemplates: G.missionTemplates.length,

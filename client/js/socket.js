@@ -5,6 +5,7 @@ import { addNewsItem } from './news.js'
 import { RS } from './room.js'
 import { rLob } from './panels/lobby.js'
 import { migrateBeastStats } from './beastEngine.js'
+import { dlog } from '../../shared/utils/debug.js'
 
 export let socket = null
 
@@ -78,7 +79,7 @@ export function initSocket(name, kageName, icon) {
   // Server sends this right after 'join' if a save exists for this playerId.
   socket.on('load_state', (savedState) => {
     if (!savedState || typeof savedState !== 'object') return
-    console.log('[Socket] Restoring game state from server...')
+    dlog('[Socket] Restoring game state from server...')
     // Merge into G — existing keys from initState() provide defaults for any
     // fields that didn't exist in older saves.
     Object.keys(savedState).forEach(k => { G[k] = savedState[k] })
@@ -95,7 +96,7 @@ export function initSocket(name, kageName, icon) {
     }
     upUI()
     ntf('Session restored — welcome back, Kage.')
-    console.log(`[Socket] State restored: Y${G.year} M${G.month}, ${G.shinobi?.length || 0} shinobi, ${G.ryo} ryo`)
+    dlog(`[Socket] State restored: Y${G.year} M${G.month}, ${G.shinobi?.length || 0} shinobi, ${G.ryo} ryo`)
   })
 
   // ── World state ───────────────────────────────────────────────────────────
@@ -244,7 +245,7 @@ export function initSocket(name, kageName, icon) {
     _updateRoomBadge(roomCode)
     rLob()
     ntf('Room ' + roomCode + ' created — share the code to invite others!')
-    console.log('[Room] Created:', roomCode)
+    dlog('[Room] Created:', roomCode)
   })
 
   socket.on('room_joined', ({ roomCode, snapshot }) => {
@@ -255,7 +256,7 @@ export function initSocket(name, kageName, icon) {
     _updateRoomBadge(roomCode)
     rLob()
     ntf('Joined room ' + roomCode)
-    console.log('[Room] Joined:', roomCode)
+    dlog('[Room] Joined:', roomCode)
   })
 
   socket.on('room_state_update', (snapshot) => {
