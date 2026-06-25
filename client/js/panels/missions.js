@@ -7,6 +7,10 @@ import { isEnabled } from '../../../config/features.js'
 import { resolveMission } from '../../../shared/types/MissionTemplate.js'
 import { BLACK_MARKET_MISSIONS, BM_MISSION_BY_ID, getUnderworldTier, UNDERWORLD_TIERS } from '../../../shared/constants/blackMarket.js'
 import { MISSION_APPROACHES } from '../../../shared/utils/missionEngine.js'
+import { openBattleViewer } from '../liveBattle.js'
+
+/** Replay the last mission as a live, watch-it-unfold battle. */
+export function watchLastBattle() { if (G.lastMissionReport) openBattleViewer(G.lastMissionReport) }
 
 // Tactical approach picker — favored/mismatch highlighted against a mission's spec.
 export function _approachPickerHtml(spec, selId, setterFn) {
@@ -123,8 +127,11 @@ export function rMissionReport() {
     </div>
     ${r.quality ? `<div style="font-size:8px;color:#7a7060;margin-bottom:8px">Outcome: <b style="color:${r.succeeded ? '#8fbc8f' : '#f66'}">${QUALITY_LABEL[r.quality] || r.quality}</b>${r.margin != null ? ` · margin ${r.margin > 0 ? '+' : ''}${r.margin}` : ''}</div>` : ''}` : ''
   el.innerHTML = `<div style="background:#0a0a0a;border:1px solid #333;padding:10px;margin-bottom:12px">
-    <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:8px">
-      Last Mission Report — ${r.missionName} (${r.missionRk}-Rank) · ${r.succeeded?'<span style="color:#8fbc8f">SUCCESS</span>':'<span style="color:#f66">FAILURE</span>'}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase">
+        Last Mission Report — ${r.missionName} (${r.missionRk}-Rank) · ${r.succeeded?'<span style="color:#8fbc8f">SUCCESS</span>':'<span style="color:#f66">FAILURE</span>'}
+      </div>
+      ${(r.phases && r.phases.length) ? `<button class="gb" style="font-size:7px;padding:2px 8px;border-color:#c9a84c;color:#c9a84c" onclick="watchLastBattle()">▶ Watch</button>` : ''}
     </div>
     ${beatHtml}
     <div style="display:flex;gap:8px;flex-wrap:wrap">
