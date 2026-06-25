@@ -156,6 +156,13 @@ export function rDash() {
         <div class="dash-stat-sub" style="color:${monthlyNet >= 0 ? 'var(--green)' : 'var(--red)'}">
           ${monthlyNet >= 0 ? '+' : ''}${fmt(monthlyNet)} / month
         </div>
+        ${monthlyNet < 0 ? (() => {
+          // Runway — the single most useful number for a new GM: how many months the
+          // treasury lasts at the current burn. Run missions (or trim staff) to extend it.
+          const months = Math.floor(G.ryo / -monthlyNet)
+          const col = months < 3 ? 'var(--red)' : months < 6 ? 'var(--orange)' : 'var(--text-dim)'
+          return `<div class="dash-stat-sub" style="margin-top:2px;color:${col}">~${months} mo runway · missions extend it</div>`
+        })() : ''}
         <div class="dash-stat-sub" style="margin-top:3px;text-transform:uppercase;font-size:7px;letter-spacing:1px;color:${financeColor}">${financeHealth}</div>
       </div>
 
@@ -263,6 +270,7 @@ export function rDash() {
           { done: (G.staff||[]).some(s=>s.regionAssigned), label: 'Assign a scout to a region', tab: 'staff', hint: 'Open Staff → select your scout → assign a region.' },
           { done: Object.keys(G.clanApproval||{}).length > 0 || (G.shinobi||[]).some(s=>s.clan), label: 'Check your clan standing', tab: 'clans', hint: 'Open Clans — see which bloodlines are active in your village.' },
           { done: (G.tradeRoutes||[]).some(r=>r.active)||(G.contracts||[]).some(c=>c.active), label: 'Establish a trade route or contract', tab: 'finances', hint: 'Open Finances → activate a trade route to start earning income.' },
+          { done: (G.lifetimeMissions||0) >= 3, label: 'Mind your runway — you start at a deficit', tab: 'finances', hint: 'A young village spends more than its tax base earns. Run missions for ryo (or release a scout in Staff) before the treasury runs dry.' },
         ].map(item => `
           <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #1a2818">
             <div style="font-size:10px;color:${item.done?'#8fbc8f':'#3a5030'};min-width:14px;margin-top:1px">${item.done?'✓':'○'}</div>
