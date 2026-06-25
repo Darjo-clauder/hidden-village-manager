@@ -3,7 +3,7 @@ import {
   initSeasonTable, roundPairings, simMatch, recordMatch,
   sortedTable, seedsFromTable, playMatchday, SEASON_PTS,
   seasonSchedule, teamFixtures, seasonPressNotice, styledScore, teamForm,
-  seasonState, matchPreview,
+  seasonState, matchPreview, matchToBeats,
 } from '../shared/utils/season.js'
 import { withSeed } from './helpers/rng.js'
 
@@ -105,6 +105,23 @@ describe('matchday presentation helpers', () => {
     expect(typeof p.home).toBe('boolean')
     expect(p.h2h).toEqual({ w: 0, d: 0, l: 0 })
     expect(Array.isArray(p.stakes)).toBe(true)
+  })
+
+  it('matchToBeats maps a win/draw/loss from the player POV with the scoreline', () => {
+    const win = matchToBeats({ a: 'You', b: 'X', winner: 'You', scoreA: 4, scoreB: 1 }, 'You')
+    expect(win.result).toBe('win')
+    expect(win.playerScore).toBe(4); expect(win.oppScore).toBe(1)
+    expect(win.phases).toHaveLength(3)
+    expect(win.phases.every(p => p.won)).toBe(true)       // big margin → all beats won
+
+    // player is side B — POV flips
+    const loss = matchToBeats({ a: 'X', b: 'You', winner: 'X', scoreA: 3, scoreB: 0 }, 'You')
+    expect(loss.result).toBe('loss')
+    expect(loss.playerScore).toBe(0); expect(loss.oppScore).toBe(3)
+    expect(loss.phases.every(p => !p.won)).toBe(true)
+
+    const draw = matchToBeats({ a: 'You', b: 'X', winner: null, scoreA: 2, scoreB: 2 }, 'You')
+    expect(draw.result).toBe('draw')
   })
 
   it('matchPreview returns null on a bye round', () => {

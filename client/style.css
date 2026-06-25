@@ -645,3 +645,6 @@ body{
 .bv-grade-g{font-size:16px;font-weight:bold;margin-top:2px}
 .bv-close{background:#0d0a04;border:1px solid #c9a84c;color:#c9a84c;font-size:9px;padding:5px 18px;cursor:pointer}
 .bv-close:hover{background:#c9a84c;color:#0a0a0a}
+.bv-result.bv-draw{color:#c9a84c}
+.bv-scoreline{font-size:13px;color:#e8e0cc;margin-bottom:12px;font-family:'Courier New',monospace}
+.bv-scoreline b{color:#c9a84c;font-size:16px;margin:0 4px}

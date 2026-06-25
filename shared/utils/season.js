@@ -259,6 +259,30 @@ export function matchPreview(table, resultsByRound, schedule, playerName, round)
 }
 
 /**
+ * Convert a league result into a beat sequence for the live matchday viewer, from
+ * the player's point of view. Pure + deterministic. The scoreline stays authoritative
+ * (shown at the end); the 3 contest beats are stylised drama biased by the margin.
+ * Returns { phases:[{name,won}], result:'win'|'draw'|'loss', playerScore, oppScore }.
+ */
+export function matchToBeats(match, playerName) {
+  const isA = match.a === playerName
+  const ps = (isA ? match.scoreA : match.scoreB) ?? 0
+  const os = (isA ? match.scoreB : match.scoreA) ?? 0
+  const margin = ps - os
+  const names = ['Opening Exchanges', 'Midgame Push', 'Final Stand']
+  const pattern = margin >= 2 ? [true, true, true]
+    : margin === 1 ? [true, false, true]
+    : margin === 0 ? [false, true, false]      // tense, level — outcome shows the draw
+    : margin === -1 ? [true, false, false]
+    : [false, false, false]
+  return {
+    phases: names.map((name, i) => ({ name, won: pattern[i] })),
+    result: match.winner == null ? 'draw' : match.winner === playerName ? 'win' : 'loss',
+    playerScore: ps, oppScore: os,
+  }
+}
+
+/**
  * Play one matchday for all villages and fold results into the table.
  * Mutates `season` (round++, table, lastResults, resultsByRound). `strOf(name)` → strength.
  * Each result carries a stylised scoreline { a, b, winner, scoreA, scoreB }.

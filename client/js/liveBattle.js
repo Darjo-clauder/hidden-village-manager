@@ -56,13 +56,21 @@ function _revealBeat(seq, i) {
 
 function _revealOutcome(rep) {
   const el = document.getElementById('bv-outcome'); if (!el) return
-  const ok = rep.succeeded
-  const grades = (rep.scores || []).map(sc =>
-    `<div class="bv-grade"><div class="bv-grade-n">${sc.name}</div><div class="bv-grade-g" style="color:${GRADE_COLOR[sc.grade] || '#888'}">${sc.grade}</div></div>`).join('')
+  const league = rep.kind === 'league'
+  const label = league ? (rep.result === 'win' ? 'WIN' : rep.result === 'draw' ? 'DRAW' : 'LOSS')
+    : (rep.succeeded ? 'SUCCESS' : 'FAILURE')
+  const cls = league ? (rep.result === 'win' ? 'bv-win' : rep.result === 'draw' ? 'bv-draw' : 'bv-loss')
+    : (rep.succeeded ? 'bv-win' : 'bv-loss')
+  const verdict = rep.verdict || battleVerdict(rep.quality, rep.succeeded)
+  const detail = (league && rep.scoreline)
+    ? `<div class="bv-scoreline">${rep.scoreline.home} <b>${rep.scoreline.hs}–${rep.scoreline.as}</b> ${rep.scoreline.away}</div>`
+    : (rep.scores || []).length
+      ? `<div class="bv-grades">${rep.scores.map(sc => `<div class="bv-grade"><div class="bv-grade-n">${sc.name}</div><div class="bv-grade-g" style="color:${GRADE_COLOR[sc.grade] || '#888'}">${sc.grade}</div></div>`).join('')}</div>`
+      : ''
   el.innerHTML = `
-    <div class="bv-result ${ok ? 'bv-win' : 'bv-loss'}">${ok ? 'SUCCESS' : 'FAILURE'}</div>
-    <div class="bv-verdict">${battleVerdict(rep.quality, ok)}</div>
-    ${grades ? `<div class="bv-grades">${grades}</div>` : ''}
+    <div class="bv-result ${cls}">${label}</div>
+    <div class="bv-verdict">${verdict}</div>
+    ${detail}
     <button class="bv-close" onclick="closeBattleViewer()">Close</button>`
   el.classList.add('bv-on')
 }

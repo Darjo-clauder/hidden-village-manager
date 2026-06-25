@@ -1,8 +1,27 @@
 import { G, ui, sPow, rnd, sn, pk, clamp, fmt, addChronicle, addLegend, computeMarketValue } from '../state.js'
 import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS, INJURY_TYPES } from '../constants.js'
 import { aL, ntf, upUI, schEx } from '../ui.js'
-import { initSeasonTable, sortedTable, seedsFromTable, seasonSchedule, teamFixtures, teamForm, seasonState, matchPreview } from '../../../shared/utils/season.js'
+import { initSeasonTable, sortedTable, seedsFromTable, seasonSchedule, teamFixtures, teamForm, seasonState, matchPreview, matchToBeats } from '../../../shared/utils/season.js'
 import { t } from '../../../shared/utils/i18n.js'
+import { openBattleViewer } from '../liveBattle.js'
+
+/** Replay the player's most-recent league fixture as a live matchday. */
+export function watchMatchday() {
+  const season = G.season; if (!season) return
+  const lastPlayed = (season.round || 0) - 1
+  const rr = (season.resultsByRound || {})[lastPlayed]; if (!rr) return
+  const m = rr.find(x => x.a === G.vName || x.b === G.vName); if (!m) return
+  const { phases, result, playerScore, oppScore } = matchToBeats(m, G.vName)
+  const opp = m.a === G.vName ? m.b : m.a
+  const verdict = result === 'win' ? (playerScore - oppScore >= 2 ? 'A commanding matchday win.' : 'A hard-earned win.')
+    : result === 'draw' ? 'Honours even — a point apiece.'
+    : (oppScore - playerScore >= 2 ? 'Outclassed on the day.' : 'Beaten by a fine margin.')
+  openBattleViewer({
+    missionName: `${G.vName} vs ${opp}`, missionRk: `Matchday ${lastPlayed + 1}`,
+    kind: 'league', result, succeeded: result === 'win', phases, verdict,
+    scoreline: { home: G.vName, away: opp, hs: playerScore, as: oppScore },
+  })
+}
 import { leagueLeaders } from '../../../shared/utils/seasonStats.js'
 
 // Season-by-season stat history (surfaces the archived G.seasonStats snapshots).
@@ -309,10 +328,14 @@ function _seasonResultsCard(round, resultsByRound, playerName) {
       <span style="flex:1;color:${m.b === playerName ? '#c9a84c' : bWon ? '#e8e0cc' : '#8a8276'};font-weight:${m.b === playerName || bWon ? 'bold' : 'normal'}">${m.b}</span>
     </div>`
   }
+  const playerInRound = rr.some(m => m.a === playerName || m.b === playerName)
   return `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:9px;margin-bottom:12px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase">Matchday ${lastPlayed + 1} — Results</div>
-      ${star ? `<div style="font-size:7px;color:#7a7060">★ Result of the round: <span style="color:#e8e0cc">${star.m.winner} ${Math.max(star.m.scoreA, star.m.scoreB)}–${Math.min(star.m.scoreA, star.m.scoreB)}</span></div>` : ''}
+      <div style="display:flex;align-items:center;gap:8px">
+        ${star ? `<div style="font-size:7px;color:#7a7060">★ Result of the round: <span style="color:#e8e0cc">${star.m.winner} ${Math.max(star.m.scoreA, star.m.scoreB)}–${Math.min(star.m.scoreA, star.m.scoreB)}</span></div>` : ''}
+        ${playerInRound ? `<button class="gb" style="font-size:7px;padding:2px 8px;border-color:#c9a84c;color:#c9a84c" onclick="watchMatchday()">▶ Watch your match</button>` : ''}
+      </div>
     </div>
     <div style="display:grid;gap:2px">${rr.map(line).join('')}</div>
   </div>`
