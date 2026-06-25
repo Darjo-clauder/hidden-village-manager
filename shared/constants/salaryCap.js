@@ -1,21 +1,27 @@
 /**
- * Salary cap — monthly payroll ceiling (shinobi wages + staff wages) by prestige tier.
+ * Salary cap — monthly SHINOBI payroll ceiling by prestige tier.
  *
- * A village at prestige D can't afford to field a 50-man roster; reaching prestige S
- * unlocks the budget to do so. Overage is charged as a luxury tax (50 ryo/ryo over),
- * and a hard signing block activates when payroll exceeds 130% of cap.
+ * Counts shinobi wages only. Staff salaries are village infrastructure (scouts,
+ * sensei, council) and are EXEMPT — the cap governs how big a fighting roster you
+ * can field, not your back office. (A default new village is seeded with 7 staff it
+ * never chose; charging those against the cap put a fresh roster ~2× over its own
+ * cap and bled a hidden luxury tax from turn 1.) The D cap sits just above the
+ * starting roster so the early game is tight but legal; over-signing still bites.
+ *
+ * Overage is charged as a luxury tax (50 ryo/ryo over), and a hard signing block
+ * activates when payroll exceeds 130% of cap.
  *
  * Cap amounts are calibrated against the wage scale in state.js:
  *   Genin 500 · Chunin 900 · Jonin 1300 · ANBU 1700 · S-Rank 2100  (ryo/month)
  */
 
-/** Monthly payroll ceiling per prestige tier. */
+/** Monthly shinobi-payroll ceiling per prestige tier. */
 export const SALARY_CAP = {
-  D: 18_000,   // ~15 genin/chunin mix — early game is tight
-  C: 38_000,   // ~25 shinobi + small staff
-  B: 65_000,   // ~40 shinobi + full staff
-  A: 100_000,  // ~48 shinobi + elite staff
-  S: 150_000,  // ~50 elite shinobi + all staff roles
+  D: 24_000,   // ~starting 22-shinobi roster + a little headroom — early game is tight
+  C: 38_000,   // ~25 shinobi
+  B: 65_000,   // ~40 shinobi
+  A: 100_000,  // ~48 shinobi
+  S: 150_000,  // ~50 elite shinobi
 }
 
 /** Ryo charged per ryo of payroll above the cap (applied monthly). */

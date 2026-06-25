@@ -49,6 +49,9 @@ export function rFi() {
   // Expenditure breakdown
   const shinobiSal = G.shinobi.reduce((a, s) => a + s.salary, 0)
   const staffSal = (G.staff || []).reduce((a, st) => a + st.salary, 0)
+  // Cap counts shinobi payroll only (staff exempt; twoWay farm players exempt).
+  const capPayroll = G.shinobi.filter(s => !s.twoWay).reduce((a, s) => a + s.salary, 0)
+  const luxuryTax = capStatus(G.prestigeTier || 'D', capPayroll).luxuryTax
   let maintenance = 0
   Object.keys(G.upgrades).forEach(k => {
     const lv = G.upgrades[k]
@@ -59,7 +62,10 @@ export function rFi() {
   const _baseIncome = villageRev + trI + coI + jkI + daimyoB + (fin.examFees||0) + (fin.loanFees||0)
   const natBonus = G._ff_nationHud ? Math.round(_baseIncome * nationMods(G.nationId).ryoMod) : 0
   const totalIncome = _baseIncome + natBonus
-  const totalExpend = shinobiSal + staffSal + maintenance
+  // Scout report costs are a real recurring outflow (and already shown as a line item),
+  // so they belong in the net — previously rendered but omitted from the total.
+  const scoutCost = fin.scoutCostThisMonth || 0
+  const totalExpend = shinobiSal + staffSal + maintenance + luxuryTax + scoutCost
   const netNow = totalIncome - totalExpend
 
   // Shinobi breakdown by rank
@@ -124,9 +130,10 @@ export function rFi() {
       <div style="font-size:8px;letter-spacing:2px;color:#f66;text-transform:uppercase;margin-bottom:8px">Expenditure / Month</div>
       ${row('Shinobi Wages (' + G.shinobi.length + ' active)', '-' + fmt(shinobiSal), '#f66')}
       ${rankSal}
-      ${staffSal > 0 ? row('Staff Salaries (' + (G.staff||[]).length + ' staff)', '-' + fmt(staffSal), '#f99') : ''}
+      ${staffSal > 0 ? row('Staff Salaries (' + (G.staff||[]).length + ' staff · cap-exempt)', '-' + fmt(staffSal), '#f99') : ''}
       ${maintenance > 0 ? row('Building Maintenance', '-' + fmt(maintenance), '#fa0') : ''}
       ${(fin.scoutCostThisMonth||0) > 0 ? row('Scout Costs', '-' + fmt(fin.scoutCostThisMonth), '#fa0') : ''}
+      ${luxuryTax > 0 ? row('Luxury Tax (over cap)', '-' + fmt(luxuryTax), '#f44') : ''}
       <div style="padding:4px 0;margin-top:2px;border-top:1px solid #2e2a22;display:flex;justify-content:space-between">
         <span style="font-size:9px;color:#e8e0cc;font-weight:bold">TOTAL</span>
         <span style="font-size:9px;color:#f66;font-weight:bold">-${fmt(totalExpend)}</span>
@@ -136,7 +143,7 @@ export function rFi() {
     </div>
 
     <!-- Salary cap -->
-    ${_capHtml(shinobiSal + staffSal)}
+    ${_capHtml(capPayroll)}
     ${_budgetPriorityHtml()}
 
     <!-- Net -->

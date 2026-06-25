@@ -26,6 +26,7 @@ import { withSeed } from './helpers/rng.js'
 import { initSeasonTable, playMatchday, sortedTable } from '../shared/utils/season.js'
 import { tickRivalStrength } from '../shared/utils/rivalSim.js'
 import { villageRevenue, REP_SOFT_CAP } from '../shared/utils/economy.js'
+import { capStatus } from '../shared/constants/salaryCap.js'
 import {
   newKageDev, addKageXp, spendKagePoint, applyKagePath, KAGE_ATTR_CAP, KAGE_ATTRS,
 } from '../shared/constants/kageDev.js'
@@ -97,7 +98,10 @@ function runDynasty(seed) {
         // Infrastructure upkeep grows with the village (prestige), reduced ~10% by the
         // default infra budget slider — mirrors the maintenance line in the live finances panel.
         const upkeep = Math.round((2500 + pIdx * 1500) * 0.9)
-        const net = income - wages - staffBill - upkeep
+        // Luxury tax — shinobi payroll over the prestige cap (staff exempt), a real
+        // treasury outflow the old sweep ignored entirely.
+        const luxuryTax = capStatus(G.prestigeTier, wages).luxuryTax
+        const net = income - wages - staffBill - upkeep - luxuryTax
         yearNetSum += net
         G.ryo = Math.max(0, G.ryo + net)
 
@@ -209,7 +213,12 @@ describe('Dynasty balance sweep — 20-year deterministic', () => {
     const income = villageRevenue(10, 'D')           // real curve → 32,000 at launch
     const shinobiWages = 19450                        // 22-shinobi starting roster (verified in-game)
     const staffBill = 19290                           // 7 seeded staff (verified in-game)
-    const passiveNet = income - shinobiWages - staffBill
+    // Root-cause guard: the default starting roster must be LEGAL under its own cap.
+    // (The bug was a fresh village sitting ~2× over the D cap, bleeding a hidden luxury
+    // tax. Staff are now cap-exempt, so the cap sees shinobi wages only.)
+    const startTax = capStatus('D', shinobiWages).luxuryTax
+    expect(startTax, `fresh roster pays ${startTax} luxury tax — it should be cap-legal`).toBe(0)
+    const passiveNet = income - shinobiWages - staffBill - startTax
     expect(passiveNet, 'passive net should be a gentle deficit, not steep').toBeGreaterThan(-9000)
     const runwayMonths = passiveNet >= 0 ? Infinity : startRyo / -passiveNet
     expect(runwayMonths, `passive runway only ${runwayMonths.toFixed(1)} months`).toBeGreaterThanOrEqual(6)

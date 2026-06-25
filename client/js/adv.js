@@ -2160,9 +2160,14 @@ export function adv() {
   G.ryo -= shinobiSal + staffSal + maintenance
 
   // ── Salary cap check ─────────────────────────────────────────────────────
-  const _cs = capStatus(G.prestigeTier || 'D', capPayroll + staffSal)
+  // Cap counts shinobi payroll only — staff are exempt infrastructure (see salaryCap.js).
+  const _cs = capStatus(G.prestigeTier || 'D', capPayroll)
   G.capStatus = _cs
   G._capHardBlock = _cs.hardBlock
+  // Luxury tax is a real treasury outflow, so fold it into the recorded net below —
+  // otherwise every displayed "monthly net" understates the true burn by the tax.
+  const luxuryTax = _cs.overBy > 0 ? _cs.luxuryTax : 0
+  const netAfterTax = monthlyNet - luxuryTax
   if (_cs.overBy > 0) {
     G._mandateLuxTaxMonths = (G._mandateLuxTaxMonths || 0) + 1
     G.ryo = Math.max(0, G.ryo - _cs.luxuryTax)
@@ -2187,8 +2192,8 @@ export function adv() {
   const snap = {
     year: G.year, month: G.month,
     income: { tradeRoutes:trI, contracts:coI, jinchuriki:jkI, daimyoBonus:daimyoB, villageRevenue:villageRev, missionCommissions:commTotal, examFees:examFeeAmt, loanFees:loanFeeAmt, sponsorship:sponsorshipIncome, nationBonus: totalIncome - (trI + coI + jkI + daimyoB + villageRev + examFeeAmt + loanFeeAmt + sponsorshipIncome) },
-    expenditure: { shinobiWages:shinobiSal, staffWages:staffSal, maintenance, scoutCost:G.finances.scoutCostThisMonth||0 },
-    totalIncome, totalExpend, net:monthlyNet,
+    expenditure: { shinobiWages:shinobiSal, staffWages:staffSal, maintenance, luxuryTax, scoutCost:G.finances.scoutCostThisMonth||0 },
+    totalIncome, totalExpend: totalExpend + luxuryTax, net:netAfterTax,
     missionBreakdown: { ...commByRank },
     shinobiByRank: {
       Genin: G.shinobi.filter(s=>s.ri===0).length,
@@ -2200,19 +2205,19 @@ export function adv() {
   }
   G.finances.history.push(snap)
   if (G.finances.history.length > 12) G.finances.history.shift()
-  G.finances.lastMonthNet = monthlyNet
+  G.finances.lastMonthNet = netAfterTax
 
-  // Determine health tier
-  const tier = computeFinanceTier(monthlyNet)
+  // Determine health tier — on the true net, so "Stable" can't hide a luxury-tax drain.
+  const tier = computeFinanceTier(netAfterTax)
   G.finances.healthTier = tier.n
   if (tier.morale !== 0) G.morale = clamp(G.morale + tier.morale, 0, 100)
 
   // Telemetry (side-effect-only buffer; never alters game logic)
-  emit('economy_tick', { year: G.year, month: G.month, ryo: G.ryo, net: monthlyNet, deficitMonths: G.finances.deficitMonths, tier: tier.n })
+  emit('economy_tick', { year: G.year, month: G.month, ryo: G.ryo, net: netAfterTax, deficitMonths: G.finances.deficitMonths, tier: tier.n })
   emit('integrity_check', integrityCheck(G))
 
   // Deficit tracking & debt spiral
-  if (monthlyNet < 0) {
+  if (netAfterTax < 0) {
     G.finances.deficitMonths = (G.finances.deficitMonths || 0) + 1
     if (G.finances.deficitMonths >= 3 && Math.random() < 0.25) {
       const ev = pk(FINANCIAL_EVENTS)

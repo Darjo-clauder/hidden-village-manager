@@ -2,6 +2,7 @@ import { G, fmt } from '../state.js'
 import { RANKS } from '../constants.js'
 import { NATIONS, nationMods } from '../../../shared/constants/nations.js'
 import { villageRevenue } from '../../../shared/utils/economy.js'
+import { capStatus } from '../../../shared/constants/salaryCap.js'
 import { getInboxDigest, getInboxCount } from './inbox.js'
 import { xpForLevel, PATH_BY_ID } from '../../../shared/constants/kageDev.js'
 
@@ -68,7 +69,11 @@ export function rDash() {
   const staffCost   = (G.staff   || []).reduce((a, s) => a + (s.salary || 0), 0)
   const shinobiSal  = (G.shinobi || []).reduce((a, s) => a + (s.salary || 0), 0)
   const villageRev = villageRevenue(G.reputation || 0, G.prestigeTier || 'D')
-  const monthlyNet = villageRev + tradeIncome + contractIncome - staffCost - shinobiSal
+  // Cap counts shinobi payroll only (staff exempt); luxury tax is a real outflow.
+  const capPayroll = (G.shinobi || []).filter(s => !s.twoWay).reduce((a, s) => a + (s.salary || 0), 0)
+  const luxuryTax = capStatus(G.prestigeTier || 'D', capPayroll).luxuryTax
+  const scoutCost = G.finances?.scoutCostThisMonth || 0
+  const monthlyNet = villageRev + tradeIncome + contractIncome - staffCost - shinobiSal - luxuryTax - scoutCost
   const financeHealth = G.ryo > 50000 ? 'strong' : G.ryo > 15000 ? 'stable' : G.ryo > 3000 ? 'tight' : 'critical'
   const financeColor = { strong: 'var(--green)', stable: 'var(--gold)', tight: 'var(--orange)', critical: 'var(--red)' }[financeHealth]
 
