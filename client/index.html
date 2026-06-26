@@ -327,20 +327,20 @@
         <div id="p-lobby" style="display:none"></div>
 
         <!-- roster -->
-        <div id="p-roster"><div class="pt">Shinobi Force</div><div id="rl"></div></div>
-        <div id="p-clans" style="display:none"><div class="pt">Clan Roster</div><div id="clan-main"></div></div>
-        <div id="p-safehouses" style="display:none"><div class="pt">Scout Safehouses</div><div id="sh-main"></div></div>
+        <div id="p-roster"><div class="pt" data-i18n="panel.roster">Shinobi Force</div><div id="rl"></div></div>
+        <div id="p-clans" style="display:none"><div class="pt" data-i18n="panel.clans">Clan Roster</div><div id="clan-main"></div></div>
+        <div id="p-safehouses" style="display:none"><div class="pt" data-i18n="panel.safehouses">Scout Safehouses</div><div id="sh-main"></div></div>
 
         <!-- squads -->
         <div id="p-squads" style="display:none">
-          <div class="pt">Squads</div>
+          <div class="pt" data-i18n="panel.squads">Squads</div>
           <button class="gb" onclick="oCS()" style="margin-bottom:14px">+ Form Squad</button>
           <div id="sql"></div>
         </div>
 
         <!-- missions -->
         <div id="p-missions" style="display:none">
-          <div class="pt">Missions</div>
+          <div class="pt" data-i18n="panel.missions">Missions</div>
           <div id="wce-banner" style="display:none;background:var(--blue-bg);border:1px solid var(--blue);padding:9px 11px;margin-bottom:12px;cursor:pointer" onclick="openWorldChoice()">
             <div style="font-size:8px;color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px">⚡ World Event — Response Required</div>
             <div style="font-size:9px;color:var(--text)" id="wce-banner-name"></div>
@@ -376,7 +376,7 @@
         </div>
 
         <!-- upgrades -->
-        <div id="p-upgrades" style="display:none"><div class="pt">Village Upgrades</div><div id="upl"></div></div>
+        <div id="p-upgrades" style="display:none"><div class="pt" data-i18n="panel.upgrades">Village Upgrades</div><div id="upl"></div></div>
 
         <!-- academy -->
         <div id="p-academy" style="display:none">
@@ -391,7 +391,7 @@
 
         <!-- economy -->
         <div id="p-economy" style="display:none">
-          <div class="pt">Trade Routes &amp; Contracts</div>
+          <div class="pt" data-i18n="panel.economy">Trade Routes &amp; Contracts</div>
           <div class="tabs">
             <div class="tab active" onclick="eTab('trade')" id="et-trade">Trade Routes</div>
             <div class="tab" onclick="eTab('contracts')" id="et-contracts">Contracts</div>
@@ -403,99 +403,99 @@
         </div>
 
         <!-- village overview -->
-        <div id="p-village" style="display:none"><div class="pt">Village Overview</div><div class="vg" id="vst"></div></div>
+        <div id="p-village" style="display:none"><div class="pt" data-i18n="panel.village">Village Overview</div><div class="vg" id="vst"></div></div>
 
         <!-- tailed beasts -->
         <div id="p-beasts" style="display:none"></div>
 
         <!-- kage council -->
-        <div id="p-kage" style="display:none"><div class="pt">Five Kage Summit</div><div id="kgl"></div></div>
+        <div id="p-kage" style="display:none"><div class="pt" data-i18n="panel.summit">Five Kage Summit</div><div id="kgl"></div></div>
 
         <!-- chunin exam -->
-        <div id="p-exam" style="display:none"><div class="pt">Chunin Exam</div><div id="exl"></div></div>
+        <div id="p-exam" style="display:none"><div class="pt" data-i18n="panel.exam">Chunin Exam</div><div id="exl"></div></div>
 
         <!-- intel -->
-        <div id="p-intel" style="display:none"><div class="pt">Intel Operations</div><div id="itl"></div></div>
-        <div id="p-calendar" style="display:none"><div class="pt">World Events Calendar</div><div id="p-calendar-inner"></div></div>
+        <div id="p-intel" style="display:none"><div class="pt" data-i18n="panel.intel">Intel Operations</div><div id="itl"></div></div>
+        <div id="p-calendar" style="display:none"><div class="pt" data-i18n="panel.calendar">World Events Calendar</div><div id="p-calendar-inner"></div></div>
 
         <!-- log -->
-        <div id="p-log" style="display:none"><div class="pt">Event Log</div><div id="logl"></div></div>
+        <div id="p-log" style="display:none"><div class="pt" data-i18n="panel.log">Event Log</div><div id="logl"></div></div>
 
         <!-- chronicles -->
         <div id="p-chronicles" style="display:none">
-          <div class="pt">Village Chronicles</div>
+          <div class="pt" data-i18n="panel.chronicles">Village Chronicles</div>
           <div style="font-size:9px;color:var(--text-dim);margin-bottom:12px">Major moments in your village's history, recorded automatically.</div>
           <div id="chl"></div>
         </div>
 
         <!-- memorial wall -->
         <div id="p-memorial" style="display:none">
-          <div class="pt">Memorial Wall</div>
+          <div class="pt" data-i18n="panel.memorial">Memorial Wall</div>
           <div style="font-size:9px;color:var(--text-dim);margin-bottom:12px">Those who gave their lives in service of the village.</div>
           <div id="meml"></div>
         </div>
 
         <!-- finances -->
         <div id="p-finances" style="display:none">
-          <div class="pt">Village Finances</div>
+          <div class="pt" data-i18n="panel.finances">Village Finances</div>
           <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Monthly income vs expenditure breakdown. Advance month to update.</div>
           <div id="fil"></div>
         </div>
 
         <!-- staff -->
         <div id="p-staff" style="display:none">
-          <div class="pt">Staff Management</div>
+          <div class="pt" data-i18n="panel.staff">Staff Management</div>
           <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Staff provide passive bonuses. Salaries are deducted monthly.</div>
           <div id="stfl"></div>
         </div>
 
         <!-- scouting network -->
         <div id="p-scouting" style="display:none">
-          <div class="pt">Scouting Network</div>
+          <div class="pt" data-i18n="panel.scouting">Scouting Network</div>
           <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Deploy Scout Jonin to regions to surface prospects and gather intel.</div>
           <div id="scol"></div>
         </div>
 
         <!-- youth academy -->
         <div id="p-youthacademy" style="display:none">
-          <div class="pt">Youth Academy</div>
+          <div class="pt" data-i18n="panel.youthAcademy">Youth Academy</div>
           <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Annual April intake. Set development tracks and intensity for each student.</div>
           <div id="yal"></div>
         </div>
 
         <!-- people management / meetings -->
         <div id="p-meetings" style="display:none">
-          <div class="pt">People Management</div>
+          <div class="pt" data-i18n="panel.people">People Management</div>
           <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">One-on-one meetings, dressing room harmony, and individual morale.</div>
           <div id="meetl"></div>
         </div>
 
         <!-- transfer market -->
         <div id="p-transfers" style="display:none">
-          <div class="pt">Transfer Market &amp; Bingo Book</div>
+          <div class="pt" data-i18n="panel.transfers">Transfer Market &amp; Bingo Book</div>
           <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Sign free agents, negotiate village transfers, manage loans and sell pressure.</div>
           <div id="trl"></div>
         </div>
 
         <!-- legacy -->
         <div id="p-legacy" style="display:none">
-          <div class="pt">Legacy &amp; Prestige</div>
+          <div class="pt" data-i18n="panel.legacy">Legacy &amp; Prestige</div>
           <div id="legl"></div>
         </div>
 
         <div id="p-kagedev" style="display:none">
-          <div class="pt">Kage Path</div>
+          <div class="pt" data-i18n="panel.kagePath">Kage Path</div>
           <div id="kdl"></div>
         </div>
 
         <!-- world map (multiplayer) -->
         <div id="p-world" style="display:none">
-          <div class="pt">World Map</div>
+          <div class="pt" data-i18n="panel.worldMap">World Map</div>
           <div class="wmap-wrap">
             <canvas id="wmap"></canvas>
             <div class="wmap-empty" id="wmap-empty">Connecting to world...</div>
           </div>
-          <div class="pt" style="margin-top:4px">Active Villages</div>
+          <div class="pt" style="margin-top:4px" data-i18n="panel.activeVillages">Active Villages</div>
           <div id="wvl"></div>
         </div>
 
