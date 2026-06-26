@@ -331,4 +331,44 @@ export const en = {
   'safehouses.establishFirst': 'Establish a safehouse to launch deep cover ops.',
   'safehouses.noEligible': 'No eligible shinobi.',
   'safehouses.deploy': 'Deploy',
+
+  // ── Long-tail panels (P2 tranche 13) ────────────────────────────────────
+  // Economy / trade routes
+  'economy.closeRoute': 'Close Route',
+  'economy.offBooksLedger': 'Off-Books Ledger',
+  'economy.underworldHeat': 'Underworld Heat',
+  // Depth chart
+  'depthchart.noSquads': 'No squads formed. Create a squad first.',
+  'depthchart.noStudents': 'No students. Intake opens in April.',
+  // Event log
+  'log.none': 'No events.',
+  // World calendar
+  'worldcalendar.chooseResponse': 'Choose Your Response',
+  'worldcalendar.nextMonth': 'Next Month',
+  'worldcalendar.annualCalendar': 'Annual Calendar',
+  'worldcalendar.recentHistory': 'Recent History',
+  // Five Kage Summit
+  'kage.relations': 'Relations',
+  'kage.strength': 'Strength',
+  'kage.demandTribute': 'Demand tribute',
+  'kage.rattleSabres': 'Rattle sabres',
+  'kage.powerStandings': 'Power Standings',
+  'kage.village': 'Village',
+  'kage.councilConfidence': 'Council Confidence',
+  'kage.recentHistory': 'Recent history',
+  'kage.resign': 'Resign (end dynasty)',
+  'kage.coachingPhilosophy': 'Coaching Philosophy',
+  'kage.noStatMods': 'No stat modifiers.',
+  // Intel operations
+  'intel.noData': 'No rival village data available.',
+  'intel.relations': 'Relations',
+  'intel.strength': 'Strength',
+  'intel.shadowScout': 'Shadow Scout',
+  'intel.anbuOp': 'ANBU Op',
+  'intel.noOps': 'No active operations.',
+  'intel.dispatchOp': 'Dispatch New Op',
+  'intel.noCaptured': 'No agents in foreign custody.',
+  'intel.abandon': 'Abandon',
+  'intel.counterIntel': 'Counter-Intelligence',
+  'intel.counterMax': 'Counter-intel network at maximum base rating.',
 }

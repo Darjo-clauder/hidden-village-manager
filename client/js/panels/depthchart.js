@@ -2,6 +2,7 @@ import { G, sPow, sn } from '../state.js'
 import { RANKS, SQUAD_ROLES } from '../constants.js'
 import { ensureDepthEntry, assignDepthSlot, toggleDepthLock, evalDepth, resolveActiveShinobi } from '../depthEngine.js'
 import { aL, ntf, upUI } from '../ui.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 import { openContextMenu, showHoverPreview, hideHoverPreview } from '../uikit.js'
 
 const RANK_LABELS = RANKS
@@ -51,7 +52,7 @@ export function rDep() {
   const warnGaps = gaps.filter(g => g.severity === 'warn').length
 
   el.innerHTML = `
-    <div class="pt">Depth Chart</div>
+    <div class="pt">${tr("nav.depth")}</div>
 
     ${(criticalGaps + warnGaps > 0) ? `
     <div style="margin-bottom:12px;padding:9px 12px;background:${criticalGaps > 0 ? '#1a0505' : '#1a1305'};border:1px solid ${criticalGaps > 0 ? '#8b1a1a' : '#5a4800'}">
@@ -63,7 +64,7 @@ export function rDep() {
     </div>` : ''}
 
     <!-- Per-squad role depth table -->
-    ${G.squads.length === 0 ? '<div style="color:var(--text-dim);font-size:9px;padding:12px 0">No squads formed. Create a squad first.</div>' : ''}
+    ${G.squads.length === 0 ? `<div style="color:var(--text-dim);font-size:9px;padding:12px 0">${tr("depthchart.noSquads")}</div>` : ''}
     ${G.squads.map(sq => _squadDepthTable(sq)).join('')}
 
     <!-- Roster tier summary -->
@@ -97,7 +98,7 @@ export function rDep() {
         ${(G.intakeClass||[]).length} students enrolled
         ${graduating.length > 0 ? ` · <span style="color:var(--green)">↑ ${graduating.length} graduating soon</span>` : ''}
       </div>
-      ${(G.intakeClass||[]).length === 0 ? '<div style="font-size:9px;color:var(--text-dim)">No students. Intake opens in April.</div>' : `
+      ${(G.intakeClass||[]).length === 0 ? `<div style="font-size:9px;color:var(--text-dim)">${tr("depthchart.noStudents")}</div>` : `
         <div class="depth-row">
           ${(G.intakeClass||[]).map(s => {
             const mLeft = 12 - (s.monthsInClass || s.monthsEnrolled || 0)

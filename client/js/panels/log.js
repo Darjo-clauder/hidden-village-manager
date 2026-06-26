@@ -1,4 +1,5 @@
 import { G } from '../state.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 
 window._logFilter = window._logFilter || 'all'
 window._logSearch = window._logSearch || ''
@@ -16,7 +17,7 @@ const _COLOR = t => t === 'good' ? '#8fbc8f' : t === 'bad' ? '#f66' : t === 'war
 export function rLo() {
   const el = document.getElementById('logl')
   if (!el) return
-  if (!G.log.length) { el.innerHTML = '<div style="color:#7a7060;font-size:10px">No events.</div>'; return }
+  if (!G.log.length) { el.innerHTML = `<div style="color:#7a7060;font-size:10px">${tr("log.none")}</div>`; return }
 
   const f = window._logFilter
   const q = (window._logSearch || '').toLowerCase()
@@ -36,7 +37,7 @@ export function rLo() {
   ).join('')
 
   const rows = filtered.length === 0
-    ? '<div style="color:#7a7060;font-size:9px;padding:14px 0">No entries match this filter.</div>'
+    ? `<div style="color:#7a7060;font-size:9px;padding:14px 0">${tr("chronicles.noMatch")}</div>`
     : filtered.map(e =>
         `<div style="padding:6px 0;border-bottom:1px solid #2e2a22;font-size:9px;line-height:1.6;color:${_COLOR(e.t)}"><span style="color:#c9a84c;font-weight:bold;margin-right:6px">Y${e.y}M${e.m}</span>${e.msg}</div>`
       ).join('')

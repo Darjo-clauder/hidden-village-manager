@@ -1,5 +1,6 @@
 import { G, ui, clamp, sn, fmt } from '../state.js'
 import { aL, ntf, upUI } from '../ui.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 import { strengthRatio, rankStandings } from '../../../shared/utils/rivalSim.js'
 import { MANDATE_BY_ID, DISMISSAL_THRESHOLD } from '../../../shared/utils/ownerMandate.js'
 import { resolveNoConfidence } from '../adv.js'
@@ -19,7 +20,7 @@ export function rKa() {
   }).join('')
   const standings = rankStandings(playerStr, (G.vName || 'Your Village'), G.villages)
   const standingsHtml = `<div class="ke-card" style="margin-bottom:14px">
-    <div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">Power Standings</div>
+    <div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">${tr("kage.powerStandings")}</div>
     <table style="width:100%;border-collapse:collapse;font-size:9px">
       <thead><tr style="color:#7a7060;text-align:left"><th style="padding:2px 5px">#</th><th>Village</th><th style="text-align:right;padding:2px 5px">Strength</th></tr></thead>
       <tbody>${standings.map(r => `<tr style="${r.isPlayer ? 'color:#c9a84c;font-weight:bold' : 'color:#e8e0cc'}"><td style="padding:2px 5px">${r.rank}</td><td>${r.name}${r.isPlayer ? ' (you)' : ''}</td><td style="text-align:right;padding:2px 5px">${r.strength}</td></tr>`).join('')}</tbody>
@@ -154,7 +155,7 @@ function _mandateHtml() {
     <div style="font-size:9px;letter-spacing:2px;color:${confColor};text-transform:uppercase;margin-bottom:8px">Council Mandate · Year ${G.year}</div>
     <div style="margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;font-size:8px;color:#7a7060;margin-bottom:4px">
-        <span>Council Confidence</span>
+        <span>${tr("kage.councilConfidence")}</span>
         <span style="color:${confColor};font-weight:bold">${conf}/100</span>
       </div>
       <div style="background:#111;border-radius:3px;overflow:hidden;height:8px">
@@ -165,7 +166,7 @@ function _mandateHtml() {
         : `<div style="font-size:8px;color:#555;margin-top:4px">Evaluated each December. Drops below ${DISMISSAL_THRESHOLD} for 2+ years → no-confidence vote.</div>`}
     </div>
     ${mandateRows}
-    ${history ? `<div style="margin-top:8px;border-top:1px solid #222;padding-top:6px"><div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">Recent history</div>${history}</div>` : ''}
+    ${history ? `<div style="margin-top:8px;border-top:1px solid #222;padding-top:6px"><div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px">${tr("kage.recentHistory")}</div>${history}</div>` : ''}
   </div>`
 }
 
@@ -176,7 +177,7 @@ function _noConfidenceHtml() {
     <div style="font-size:11px;color:#e8e0cc;margin-bottom:8px">The council demands a change of leadership after consecutive mandate failures.</div>
     <div style="font-size:9px;color:#7a7060;margin-bottom:12px">You may resign with honour or spend 15,000 ryo to rally council support and fight the vote.</div>
     <div style="display:flex;gap:8px">
-      <button class="gb gb-r" onclick="resNCV('resign')">Resign (end dynasty)</button>
+      <button class="gb gb-r" onclick="resNCV('resign')">${tr("kage.resign")}</button>
       <button class="gb gb-g" onclick="resNCV('fight')" ${(G.ryo||0) < 15000 ? 'disabled title="Need 15,000 ryo"' : ''}>Fight the vote (15k ryo)</button>
     </div>
   </div>`
@@ -206,9 +207,9 @@ function _philosophyHtml() {
     `<button class="btn${ph.id === current ? ' act' : ''}" style="font-size:8px;padding:3px 8px" onclick="setCoachingPhilosophy('${ph.id}')">${ph.n}</button>`
   ).join('')
   return `<div class="ke-card" style="margin-bottom:14px">
-    <div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">Coaching Philosophy</div>
+    <div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">${tr("kage.coachingPhilosophy")}</div>
     <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">${buttons}</div>
     <div style="font-size:9px;color:#e8e0cc;margin-bottom:3px">${p.n} — ${p.desc}</div>
-    ${modLine ? `<div style="font-size:8px;color:#7a7060">${modLine}</div>` : `<div style="font-size:8px;color:#555">No stat modifiers.</div>`}
+    ${modLine ? `<div style="font-size:8px;color:#7a7060">${modLine}</div>` : `<div style="font-size:8px;color:#555">${tr("kage.noStatMods")}</div>`}
   </div>`
 }

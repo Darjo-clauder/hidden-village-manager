@@ -1,6 +1,7 @@
 import { G, sn, clamp, rnd, pk, fmt, addChronicle } from '../state.js'
 import { ANBU_OPS } from '../constants.js'
 import { aL, ntf } from '../ui.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 import { openContextMenu } from '../uikit.js'
 
 // Right-click a rival village → intel verb menu (reuses the P1 portal).
@@ -44,7 +45,7 @@ function _intelBody() {
 // ── Route F: Rival Threat Board ──────────────────────────────────────────────
 function _threats() {
   const villages = G.villages || []
-  if (!villages.length) return `<div style="color:#555;font-size:11px;padding:20px 0">No rival village data available.</div>`
+  if (!villages.length) return `<div style="color:#555;font-size:11px;padding:20px 0">${tr("intel.noData")}</div>`
 
   const _tier = v => {
     if (v.rel < 25 && v.str > 65) return { label:'CRITICAL', col:'#f44' }
@@ -115,12 +116,12 @@ function _dossiers() {
         <div style="font-size:11px;color:#e8e0cc;font-weight:bold;margin-bottom:8px">${v.ico} ${v.n}</div>
         <div style="font-size:9px;color:#7a7060;margin-bottom:2px">${v.kageRank} ${v.kage}</div>
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-          <span style="font-size:8px;color:#7a7060;width:55px">Relations</span>
+          <span style="font-size:8px;color:#7a7060;width:55px">${tr("intel.relations")}</span>
           <div class="bar" style="flex:1"><div class="fill" style="width:${v.rel}%;background:${rc}"></div></div>
           <span style="font-size:9px;color:#7a7060">${v.rel}</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-          <span style="font-size:8px;color:#7a7060;width:55px">Strength</span>
+          <span style="font-size:8px;color:#7a7060;width:55px">${tr("intel.strength")}</span>
           <div class="bar" style="flex:1"><div class="fill" style="width:${v.str}%"></div></div>
           <span style="font-size:9px;color:#7a7060">${v.str}</span>
         </div>
@@ -130,8 +131,8 @@ function _dossiers() {
         ${deep ? `<div style="font-size:8px;color:#c9a84c;margin-bottom:2px">🕵 Defense ${deep.data.defenseRating}/20, ${deep.data.activeSquads} squads active</div>` : ''}
         ${assn ? `<div style="font-size:8px;color:#f88;margin-bottom:2px">💀 Kage rating ${assn.data.kageRating}/20 — weakness: ${assn.data.weaknesses}</div>` : ''}
         <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
-          <button class="btn" onclick="shadowScout('${v.id}')" style="font-size:8px;padding:2px 6px">Shadow Scout</button>
-          <button class="btn" onclick="dispatchAnbu('${v.id}')" style="font-size:8px;padding:2px 6px">ANBU Op</button>
+          <button class="btn" onclick="shadowScout('${v.id}')" style="font-size:8px;padding:2px 6px">${tr("intel.shadowScout")}</button>
+          <button class="btn" onclick="dispatchAnbu('${v.id}')" style="font-size:8px;padding:2px 6px">${tr("intel.anbuOp")}</button>
         </div>
       </div>`
     }).join('')}
@@ -157,8 +158,8 @@ function _anbu() {
             <span style="font-size:9px;color:#7a7060;float:right">${op.monthsLeft} mo left</span>
           </div>`
         }).join('')}
-      </div>` : '<div style="font-size:9px;color:#555;margin-bottom:10px">No active operations.</div>'}
-    <div style="font-size:10px;color:#e8e0cc;margin-bottom:8px">Dispatch New Op</div>
+      </div>` : `<div style="font-size:9px;color:#555;margin-bottom:10px">${tr("intel.noOps")}</div>`}
+    <div style="font-size:10px;color:#e8e0cc;margin-bottom:8px">${tr("intel.dispatchOp")}</div>
     <div style="display:grid;gap:6px;margin-bottom:10px">
       ${ANBU_OPS.map(op => `
         <div class="ke-card" style="padding:8px">
@@ -175,7 +176,7 @@ function _anbu() {
 // ── Caught ANBU ──────────────────────────────────────────────────────────────
 function _caught() {
   const caught = G.caughtAnbu || []
-  if (caught.length === 0) return `<div style="color:#555;font-size:11px;padding:20px 0">No agents in foreign custody.</div>`
+  if (caught.length === 0) return `<div style="color:#555;font-size:11px;padding:20px 0">${tr("intel.noCaptured")}</div>`
   return `<div style="display:grid;gap:8px">
     ${caught.filter(c => c.status !== 'resolved').map(c => {
       const v = (G.villages || []).find(v => v.id === c.targetVillageId)
@@ -185,7 +186,7 @@ function _caught() {
         ${c.status === 'imprisoned' ? `
           <div style="display:flex;gap:6px">
             <button class="btn" onclick="ransomAnbu('${c.id}')" style="font-size:9px">Ransom (15,000 ryo)</button>
-            <button class="btn" onclick="abandonAnbu('${c.id}')" style="font-size:9px;color:#f66">Abandon</button>
+            <button class="btn" onclick="abandonAnbu('${c.id}')" style="font-size:9px;color:#f66">${tr("intel.abandon")}</button>
           </div>` : '<div style="font-size:9px;color:#666">Agent is KIA — no recovery possible.</div>'}
       </div>`
     }).join('')}
@@ -202,7 +203,7 @@ function _counter() {
   const upgCost = 8000 + rating * 4000
   const canUpg = G.ryo >= upgCost && rating < 10
   return `<div>
-    <div style="font-size:11px;color:#e8e0cc;margin-bottom:12px">Counter-Intelligence</div>
+    <div style="font-size:11px;color:#e8e0cc;margin-bottom:12px">${tr("intel.counterIntel")}</div>
     <div class="ke-card" style="margin-bottom:10px">
       <div style="font-size:10px;color:#c9a84c;margin-bottom:8px">Effective Rating: ${effective}/20</div>
       <div style="font-size:9px;color:#7a7060;margin-bottom:4px">Intel Building: +${intelBld * 2} (Lvl ${intelBld})</div>
@@ -213,7 +214,7 @@ function _counter() {
           Train Counter-Intel Network — ${fmt(upgCost)} ryo ►
         </button>
         <div style="font-size:8px;color:#7a7060;margin-top:4px">Each rank reduces enemy ANBU success chance by ~5%.</div>
-      ` : `<div style="font-size:9px;color:#8fbc8f">Counter-intel network at maximum base rating.</div>`}
+      ` : `<div style="font-size:9px;color:#8fbc8f">${tr("intel.counterMax")}</div>`}
     </div>
     <div style="font-size:9px;color:#7a7060;line-height:1.5">
       Higher counter-intel rating reduces enemy ANBU success against your village. Upgrade the Intel building and hire an ANBU Commander for additional bonuses.

@@ -1,5 +1,6 @@
 import { G, fmt, clamp } from '../state.js'
 import { ntf, aL, upUI } from '../ui.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 import { WORLD_EVENTS, WE_BY_ID, getEventForMonth, getUpcomingEvent } from '../../../shared/constants/worldCalendar.js'
 
 export function rWorldCalendar() {
@@ -17,7 +18,7 @@ export function rWorldCalendar() {
         <div style="font-size:7px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">⚡ Active World Event</div>
         <div style="font-size:12px;color:#e8e0cc;margin-bottom:4px">${activeEv.icon} ${activeEv.name}</div>
         <div style="font-size:8px;color:#7a5030;margin-bottom:10px">${activeEv.desc}</div>
-        <div style="font-size:7px;letter-spacing:1px;color:#5a5040;text-transform:uppercase;margin-bottom:6px">Choose Your Response</div>
+        <div style="font-size:7px;letter-spacing:1px;color:#5a5040;text-transform:uppercase;margin-bottom:6px">${tr("worldcalendar.chooseResponse")}</div>
         <div style="display:grid;gap:6px">
           ${activeEv.choices.map(c => `
             <div onclick="resolveWorldEventChoice('${c.id}')" style="cursor:pointer;background:#0d0d0d;border:1px solid #3a2000;padding:8px;display:flex;justify-content:space-between;align-items:center">
@@ -37,12 +38,12 @@ export function rWorldCalendar() {
 
     ${!activeEv && upcoming ? `
       <div style="background:#0a0a00;border:1px solid #3a3000;padding:10px;margin-bottom:14px">
-        <div style="font-size:7px;letter-spacing:2px;color:#7a7030;text-transform:uppercase;margin-bottom:4px">Next Month</div>
+        <div style="font-size:7px;letter-spacing:2px;color:#7a7030;text-transform:uppercase;margin-bottom:4px">${tr("worldcalendar.nextMonth")}</div>
         <div style="font-size:10px;color:#e8e0cc">${WE_BY_ID[upcoming.eventId]?.icon} ${WE_BY_ID[upcoming.eventId]?.name || upcoming.eventId}</div>
         <div style="font-size:7px;color:#7a7060;margin-top:3px">${WE_BY_ID[upcoming.eventId]?.desc || ''}</div>
       </div>` : ''}
 
-    <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:8px">Annual Calendar</div>
+    <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:8px">${tr("worldcalendar.annualCalendar")}</div>
     <div style="display:grid;gap:4px;margin-bottom:14px">
       ${WORLD_EVENTS.map(ev => {
         const fired = G.worldCalendar?.[`fired_${G.year}_${ev.id}`]
@@ -59,7 +60,7 @@ export function rWorldCalendar() {
     </div>
 
     ${history.length ? `
-      <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:6px">Recent History</div>
+      <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:6px">${tr("worldcalendar.recentHistory")}</div>
       <div style="display:grid;gap:4px">
         ${history.map(h => {
           const ev = WE_BY_ID[h.eventId]

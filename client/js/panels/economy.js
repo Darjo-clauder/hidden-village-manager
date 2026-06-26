@@ -1,6 +1,7 @@
 import { G, ui, fmt } from '../state.js'
 import { BLACK_MARKET } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 
 export function eTab(t) {
   ui.ET = t
@@ -23,7 +24,7 @@ export function rTr() {
     const incomeLine = r.disrupted
       ? `<span>Monthly: <span style="color:#f66">+${fmt(r.income)} ryo</span> <span style="color:#7a7060">(was +${fmt(r._fullIncome || r.income * 2)})</span></span>`
       : `<span>Monthly: <span style="color:#8fbc8f">+${fmt(r.income)} ryo</span></span>`
-    return `<div class="tr-card" style="${r.disrupted ? 'border-left:2px solid #f66' : ''}"><div style="font-size:11px;color:#e8e0cc;font-weight:bold;margin-bottom:3px">${r.n}${statusTag}${disruptedTag}</div><div style="font-size:9px;color:#7a7060;margin-bottom:7px">${r.desc}${bl ? ` <span style="color:#f66">(Requires ${r.req === 'jk' ? 'Jinchuriki' : 'Intel Network'})</span>` : ''}</div><div style="display:flex;gap:14px;font-size:8px;color:#7a7060;margin-bottom:7px">${r.cost > 0 ? `<span>Setup: <span style="color:#e8e0cc">${fmt(r.cost)} ryo</span></span>` : ''}${incomeLine}</div>${r.disrupted ? `<button class="gb gb-g" onclick="secureRoute('${r.id}')" ${G.ryo < secureCost ? 'disabled' : ''}>Secure Route — ${fmt(secureCost)} ryo ►</button> ` : ''}${r.active ? `<button class="gb gb-r" onclick="tgTr('${r.id}',false)">Close Route</button>` : `<button class="gb gb-g" onclick="tgTr('${r.id}',true)" ${G.ryo < r.cost || bl ? 'disabled' : ''}>Open Route${r.cost > 0 ? ' — ' + fmt(r.cost) + ' ryo' : ' (free)'} ►</button>`}</div>`
+    return `<div class="tr-card" style="${r.disrupted ? 'border-left:2px solid #f66' : ''}"><div style="font-size:11px;color:#e8e0cc;font-weight:bold;margin-bottom:3px">${r.n}${statusTag}${disruptedTag}</div><div style="font-size:9px;color:#7a7060;margin-bottom:7px">${r.desc}${bl ? ` <span style="color:#f66">(Requires ${r.req === 'jk' ? 'Jinchuriki' : 'Intel Network'})</span>` : ''}</div><div style="display:flex;gap:14px;font-size:8px;color:#7a7060;margin-bottom:7px">${r.cost > 0 ? `<span>Setup: <span style="color:#e8e0cc">${fmt(r.cost)} ryo</span></span>` : ''}${incomeLine}</div>${r.disrupted ? `<button class="gb gb-g" onclick="secureRoute('${r.id}')" ${G.ryo < secureCost ? 'disabled' : ''}>Secure Route — ${fmt(secureCost)} ryo ►</button> ` : ''}${r.active ? `<button class="gb gb-r" onclick="tgTr('${r.id}',false)">${tr("economy.closeRoute")}</button>` : `<button class="gb gb-g" onclick="tgTr('${r.id}',true)" ${G.ryo < r.cost || bl ? 'disabled' : ''}>Open Route${r.cost > 0 ? ' — ' + fmt(r.cost) + ' ryo' : ' (free)'} ►</button>`}</div>`
   }).join('')
 }
 
@@ -49,7 +50,7 @@ export function tgTr(id, on) {
 
 export function rCo() {
   document.getElementById('ec-contracts').innerHTML = G.contracts.map(c =>
-    `<div class="tr-card"><div style="font-size:11px;color:#e8e0cc;font-weight:bold;margin-bottom:3px">${c.n}${c.active ? ' <span style="color:#8fbc8f;font-size:8px">● Active</span>' : ''}</div><div style="font-size:9px;color:#7a7060;margin-bottom:7px">${c.desc}</div><div style="display:flex;gap:14px;font-size:8px;color:#7a7060;margin-bottom:7px"><span>Setup: <span style="color:#e8e0cc">${fmt(c.cost)} ryo</span></span><span>Monthly: <span style="color:#8fbc8f">+${fmt(c.income)} ryo</span></span></div>${c.active ? `<button class="gb gb-r" onclick="tgCo('${c.id}',false)">Cancel</button>` : `<button class="gb gb-g" onclick="tgCo('${c.id}',true)" ${G.ryo < c.cost ? 'disabled' : ''}>Sign — ${fmt(c.cost)} ryo ►</button>`}</div>`
+    `<div class="tr-card"><div style="font-size:11px;color:#e8e0cc;font-weight:bold;margin-bottom:3px">${c.n}${c.active ? ' <span style="color:#8fbc8f;font-size:8px">● Active</span>' : ''}</div><div style="font-size:9px;color:#7a7060;margin-bottom:7px">${c.desc}</div><div style="display:flex;gap:14px;font-size:8px;color:#7a7060;margin-bottom:7px"><span>Setup: <span style="color:#e8e0cc">${fmt(c.cost)} ryo</span></span><span>Monthly: <span style="color:#8fbc8f">+${fmt(c.income)} ryo</span></span></div>${c.active ? `<button class="gb gb-r" onclick="tgCo('${c.id}',false)">${tr("btn.cancel")}</button>` : `<button class="gb gb-g" onclick="tgCo('${c.id}',true)" ${G.ryo < c.cost ? 'disabled' : ''}>Sign — ${fmt(c.cost)} ryo ►</button>`}</div>`
   ).join('')
 }
 
@@ -66,7 +67,7 @@ export function rBl() {
   const ledgerHtml = ledger.history.length ? `
     <div style="margin-bottom:14px;padding:10px 12px;border:1px solid #5a2a1a;background:#0d0905">
       <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:9px;color:#fa0;letter-spacing:1px;text-transform:uppercase">Off-Books Ledger</span>
+        <span style="font-size:9px;color:#fa0;letter-spacing:1px;text-transform:uppercase">${tr("economy.offBooksLedger")}</span>
         <span style="font-size:10px;color:#fa0;font-weight:bold">${fmt(ledger.balance)} ryo accumulated</span>
       </div>
       <div style="max-height:120px;overflow-y:auto">
@@ -83,7 +84,7 @@ export function rBl() {
   const heatHtml = `
     <div style="margin-bottom:12px;padding:9px 12px;border:1px solid #5a2a1a;background:#0d0905">
       <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-        <span style="font-size:8px;color:#fa0;letter-spacing:1px;text-transform:uppercase">Underworld Heat</span>
+        <span style="font-size:8px;color:#fa0;letter-spacing:1px;text-transform:uppercase">${tr("economy.underworldHeat")}</span>
         <span style="font-size:9px;color:${heatColor}">${heat}/100 · exposure ×${heatMult.toFixed(2)}</span>
       </div>
       <div style="background:#000;height:5px;border-radius:2px;overflow:hidden"><div style="background:${heatColor};height:5px;width:${heat}%"></div></div>
