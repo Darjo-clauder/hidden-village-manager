@@ -258,7 +258,7 @@ function _renderHireCandidates() {
 }
 
 export function scoutStaffCandidate(idx) {
-  if (G.ryo < 2000) { ntf('Not enough ryo (2,000 needed)'); return }
+  if (G.ryo < 2000) { ntf(tr('toast.common.notEnoughRyoNeed', { need: '2,000' })); return }
   const c = _hireCandidates[idx]
   if (!c || c.flawRevealed) return
   G.ryo -= 2000
@@ -266,11 +266,11 @@ export function scoutStaffCandidate(idx) {
   if (c.hiddenFlaw && Math.random() > 0.70) {
     // 30% chance to miss the flaw even with a scout
     c.hiddenFlaw = null
-    aL('Scouting complete — no concerns found about ' + c.fn + ' ' + c.ln + '. (Note: scout may have missed something.)', 'neutral')
+    aL(tr('toast.staff.scoutClean', { name: `${c.fn} ${c.ln}` }), 'neutral')
   } else if (c.hiddenFlaw) {
-    aL('Scout Report: ' + c.fn + ' ' + c.ln + ' has a hidden issue — ' + c.hiddenFlaw + '.', 'warn')
+    aL(tr('toast.staff.scoutFlaw', { name: `${c.fn} ${c.ln}`, flaw: c.hiddenFlaw }), 'warn')
   } else {
-    aL('Scout Report: ' + c.fn + ' ' + c.ln + ' has a clean record. No concerns.', 'good')
+    aL(tr('toast.staff.scoutCleanRecord', { name: `${c.fn} ${c.ln}` }), 'good')
   }
   upUI()
   _renderHireCandidates()
@@ -283,14 +283,14 @@ export function doStaffHire(idx) {
   const roleDef = STAFF_ROLES.find(r => r.id === _hireRoleId)
   const current = G.staff.filter(st => st.role === _hireRoleId)
   if (current.length >= (roleDef?.max || 1)) {
-    ntf('No open slots for ' + roleDef?.n)
+    ntf(tr('toast.staff.noOpenSlotsFor', { role: roleDef?.n }))
     cm('staffhire')
     return
   }
   G.staff.filter(st => st.role === _hireRoleId).forEach(st => { st.institutional = 0 })
   G.staff.push(candidate)
-  aL(candidate.fn + ' ' + candidate.ln + ' hired as ' + roleDef?.n + ' (Rating ' + candidate.rating + ').', 'good')
-  ntf(candidate.fn + ' joins as ' + roleDef?.n)
+  aL(tr('toast.staff.hired', { name: `${candidate.fn} ${candidate.ln}`, role: roleDef?.n, rating: candidate.rating }), 'good')
+  ntf(tr('toast.staff.joins', { name: candidate.fn, role: roleDef?.n }))
   cm('staffhire')
   upUI()
 }
@@ -300,7 +300,7 @@ export function releaseStaff(staffId) {
   const st = G.staff.find(x => x.id === staffId)
   if (!st) return
   G.staff = G.staff.filter(x => x.id !== staffId)
-  aL(st.fn + ' ' + st.ln + ' was released from their position.', 'neutral')
+  aL(tr('toast.staff.released', { name: `${st.fn} ${st.ln}` }), 'neutral')
   upUI(); rSt()
 }
 
@@ -312,11 +312,11 @@ export function designateAsstKage(staffId) {
     const st = G.staff.find(x => x.id === staffId)
     if (st) {
       st.asstKage = true
-      aL(st.fn + ' ' + st.ln + ' designated as Assistant Kage. They will handle minor meetings autonomously.', 'good')
-      ntf(st.fn + ' is now Assistant Kage.')
+      aL(tr('toast.staff.akDesignated', { name: `${st.fn} ${st.ln}` }), 'good')
+      ntf(tr('toast.staff.akNow', { name: st.fn }))
     }
   } else {
-    aL('Assistant Kage designation removed.', 'neutral')
+    aL(tr('toast.staff.akRemoved'), 'neutral')
   }
   upUI(); rSt()
 }
@@ -330,24 +330,24 @@ export function resolveStaffConflict(choice) {
     if (ts) {
       // Team sensei leaves
       G.staff = G.staff.filter(x => x.id !== ts.id)
-      aL('You backed the Head Sensei. ' + ts.fn + ' ' + ts.ln + ' resigned in response.', 'warn')
-      ntf(ts.fn + ' resigned.')
+      aL(tr('toast.staff.backedHead', { name: `${ts.fn} ${ts.ln}` }), 'warn')
+      ntf(tr('toast.staff.resigned', { name: ts.fn }))
       addChronicle('Staff Conflict Resolution', 'Backed Head Sensei — ' + ts.fn + ' ' + ts.ln + ' resigned.', 'staff')
     }
   } else if (choice === 'back_team') {
     if (hs) {
       hs.stats && Object.keys(hs.stats).forEach(k => { hs.stats[k] = Math.max(1, hs.stats[k] - 1) })
       hs.rating = Math.max(1, hs.rating - 1)
-      aL('You sided with the Team Sensei. ' + hs.fn + ' ' + hs.ln + '\'s loyalty and performance have fallen.', 'warn')
+      aL(tr('toast.staff.backedTeam', { name: `${hs.fn} ${hs.ln}` }), 'warn')
       addChronicle('Staff Conflict Resolution', 'Backed Team Sensei — Head Sensei ' + hs.fn + ' ' + hs.ln + ' demotivated.', 'staff')
     }
   } else if (choice === 'restructure') {
-    if (G.ryo < 5000) { ntf('Not enough ryo (5,000 needed for restructuring).'); return }
+    if (G.ryo < 5000) { ntf(tr('toast.staff.notEnoughRestructure')); return }
     G.ryo -= 5000
     // Both stay, slight harmony boost, mild stats loss
     if (hs) hs.stats && Object.keys(hs.stats).forEach(k => { hs.stats[k] = clamp(hs.stats[k] - 1, 1, 20) })
     G.harmonyScore = clamp((G.harmonyScore || 70) - 5, 0, 100)
-    aL('Roles restructured. Both staff members remain but there is lingering tension. 5,000 ryo spent.', 'neutral')
+    aL(tr('toast.staff.restructured'), 'neutral')
     addChronicle('Staff Conflict Resolution', 'Roles restructured — both staff remain. Tension lingers.', 'staff')
   }
 
@@ -358,13 +358,13 @@ export function resolveStaffConflict(choice) {
 export function matchPoachOffer() {
   if (!G.staffPoachOffer) return
   const offer = G.staffPoachOffer
-  if (G.ryo < offer.matchCost) { ntf('Not enough ryo (' + fmt(offer.matchCost) + ' needed).'); return }
+  if (G.ryo < offer.matchCost) { ntf(tr('toast.common.notEnoughRyoNeed', { need: fmt(offer.matchCost) })); return }
   G.ryo -= offer.matchCost
   const st = (G.staff||[]).find(x => x.id === offer.staffId)
   if (st) {
     st.salary = Math.round(st.salary * 1.10)  // small permanent salary bump
-    aL('Matched ' + offer.village + '\'s offer. ' + offer.staffName + ' stays — salary adjusted. ' + fmt(offer.matchCost) + ' ryo paid.', 'good')
-    ntf(offer.staffName + ' retained!')
+    aL(tr('toast.staff.matchedPoach', { village: offer.village, name: offer.staffName, cost: fmt(offer.matchCost) }), 'good')
+    ntf(tr('toast.staff.retained', { name: offer.staffName }))
   }
   G.staffPoachOffer = null
   upUI(); rSt()
@@ -376,14 +376,14 @@ export function dismissPoachOffer(mode) {
   if (mode === 'let') {
     const st = (G.staff||[]).find(x => x.id === offer.staffId)
     if (st) {
-      aL(offer.staffName + ' was let go to ' + offer.village + '. They leave on good terms.', 'neutral')
+      aL(tr('toast.staff.letGo', { name: offer.staffName, village: offer.village }), 'neutral')
       addChronicle('Staff Departure', offer.staffName + ' left for ' + offer.village + ' amicably.', 'staff')
       G.staff = G.staff.filter(x => x.id !== offer.staffId)
     }
   } else if (mode === 'block') {
     const v = G.villages.find(x => x.n === offer.village)
     if (v) v.rel = clamp(v.rel - 10, 0, 100)
-    aL('Blocked ' + offer.village + '\'s recruitment attempt. −10 relations with ' + offer.village + '.', 'warn')
+    aL(tr('toast.staff.blocked', { village: offer.village }), 'warn')
   }
   G.staffPoachOffer = null
   upUI(); rSt()
@@ -420,7 +420,7 @@ export function doRetireToStaff(shinobiId, roleId) {
   if (!G.staff) G.staff = []
   const roleDef = STAFF_ROLES.find(r => r.id === roleId)
   const current = G.staff.filter(st => st.role === roleId)
-  if (current.length >= (roleDef?.max || 1)) { ntf('No open slots.'); cm('retiretostaff'); return }
+  if (current.length >= (roleDef?.max || 1)) { ntf(tr('toast.staff.noOpenSlots')); cm('retiretostaff'); return }
 
   const avgStat = Math.round(Object.values(s.stats).reduce((a,b)=>a+b,0)/6)
   const derivedRating = Math.max(5, Math.min(20, Math.round(avgStat / 5)))
@@ -431,7 +431,7 @@ export function doRetireToStaff(shinobiId, roleId) {
 
   G.staff.push(staffMember)
   G.shinobi = G.shinobi.filter(x => x.id !== shinobiId)
-  aL(sn(s) + ' retired from active duty and joined the staff as ' + roleDef?.n + ' (Rating ' + derivedRating + ').', 'good')
+  aL(tr('toast.staff.retiredToStaff', { name: sn(s), role: roleDef?.n, rating: derivedRating }), 'good')
   addChronicle('Staff Transition', sn(s) + ' transitioned to ' + roleDef?.n + ' after ' + s.wins + ' missions.', 'shinobi')
   cm('retiretostaff')
   upUI()
@@ -442,12 +442,12 @@ export function staffPersonalMeeting(staffId) {
   if (!st || st.flawRevealed || !st.hiddenFlaw || (st.monthsServed || 0) < 6) return
   st.flawRevealed = true
   if (Math.random() < 0.65) {
-    aL(`Personal meeting with ${st.fn} ${st.ln}: "${st.hiddenFlaw}" — now fully disclosed.`, 'warn')
-    ntf(`Staff flaw revealed: ${st.fn} ${st.ln}`)
+    aL(tr('toast.staff.meetingFlaw', { name: `${st.fn} ${st.ln}`, flaw: st.hiddenFlaw }), 'warn')
+    ntf(tr('toast.staff.flawRevealed', { name: `${st.fn} ${st.ln}` }))
   } else {
     st.hiddenFlaw = null
-    aL(`Personal meeting with ${st.fn} ${st.ln}: concerns were unfounded — strong character confirmed.`, 'good')
-    ntf(`${st.fn} ${st.ln} cleared in personal review.`)
+    aL(tr('toast.staff.meetingClear', { name: `${st.fn} ${st.ln}` }), 'good')
+    ntf(tr('toast.staff.cleared', { name: `${st.fn} ${st.ln}` }))
   }
   rSt()
 }

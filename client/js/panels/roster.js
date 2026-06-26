@@ -682,19 +682,19 @@ export function dosTab(tab) { window._dosTab = tab; if (window._dosActiveId) oDo
 export function treatTrauma(sId) {
   const s = G.shinobi.find(x => x.id === sId)
   if (!s || !s.traumaStatus) return
-  if (G.ryo < 5000) { ntf('Not enough ryo (5,000 needed)'); return }
+  if (G.ryo < 5000) { ntf(tr('toast.common.notEnoughRyoNeed', { need: '5,000' })); return }
   G.ryo -= 5000
   s.traumaStatus = null
   s.traumaMonths = 0
-  aL(sn(s) + '\'s psychological trauma has been treated. 5,000 ryo spent on medical care.', 'good')
+  aL(tr('toast.roster.traumaTreated', { name: sn(s) }), 'good')
   cm('dossier'); upUI()
 }
 
 export function secondOpinion(sId) {
   const s = G.shinobi.find(x => x.id === sId)
   if (!s || s.status !== 'injured') return
-  if (G.ryo < 3000) { ntf('Not enough ryo (3,000 needed)'); return }
-  if (s.secondOpinionUsed) { ntf('Second opinion already obtained.'); return }
+  if (G.ryo < 3000) { ntf(tr('toast.common.notEnoughRyoNeed', { need: '3,000' })); return }
+  if (s.secondOpinionUsed) { ntf(tr('toast.roster.secondOpinionUsed')); return }
   G.ryo -= 3000
   s.secondOpinionUsed = true
   if (Math.random() < 0.25) {
@@ -704,9 +704,9 @@ export function secondOpinion(sId) {
     // Update history entry treatment note
     const last = (s.injuryHistory || []).slice(-1)[0]
     if (last) last.treatment = 'second-opinion'
-    aL('Second opinion for ' + sn(s) + ': revised estimate ' + s.injDays + ' months (was ' + old + ').', change < 0 ? 'good' : 'warn')
+    aL(tr('toast.roster.secondOpinionRevised', { name: sn(s), months: s.injDays, old }), change < 0 ? 'good' : 'warn')
   } else {
-    aL('Second opinion confirms original estimate — ' + sn(s) + ' needs ' + s.injDays + ' more month' + (s.injDays !== 1 ? 's' : '') + '.', 'neutral')
+    aL(tr('toast.roster.secondOpinionConfirm', { name: sn(s), n: s.injDays }), 'neutral')
   }
   upUI(); cm('dossier'); oDos(sId)
 }
@@ -715,9 +715,9 @@ export function specialistTreatment(sId, villageName) {
   const s = G.shinobi.find(x => x.id === sId)
   if (!s || s.status !== 'injured') return
   const v = G.villages.find(x => x.n === villageName)
-  if (!v || v.rel < 50) { ntf('Requires positive diplomatic relations (50+).'); return }
-  if (G.ryo < 12000) { ntf('Not enough ryo (12,000 needed)'); return }
-  if (s.specialistTreated) { ntf('Already sent for specialist treatment.'); return }
+  if (!v || v.rel < 50) { ntf(tr('toast.roster.needRelations')); return }
+  if (G.ryo < 12000) { ntf(tr('toast.common.notEnoughRyoNeed', { need: '12,000' })); return }
+  if (s.specialistTreated) { ntf(tr('toast.roster.alreadySpecialist')); return }
   G.ryo -= 12000
   v.rel = clamp(v.rel - 5, 0, 100)  // diplomatic favor used
   s.specialistTreated = true
@@ -726,7 +726,7 @@ export function specialistTreatment(sId, villageName) {
   s.injDays = Math.max(1, s.injDays - reduction)
   const last = (s.injuryHistory || []).slice(-1)[0]
   if (last) last.treatment = 'specialist-' + villageName
-  aL(sn(s) + ' sent to ' + villageName + ' for specialist care — ' + reduction + ' month(s) cut from recovery. 12,000 ryo, −5 relations with ' + villageName + '.', 'good')
+  aL(tr('toast.roster.specialistSent', { name: sn(s), village: villageName, n: reduction }), 'good')
   upUI(); cm('dossier'); oDos(sId)
 }
 
@@ -744,19 +744,19 @@ export function mkJK(sId, bN) {
   b.loreUnlocked = b.loreUnlocked || []
   b.loreBonusActive = b.loreBonusActive || false
   b.escapeHistory = b.escapeHistory || []
-  aL(`${sn(s)} chosen as Jinchuriki of ${bN}. Stage 1: Rejection begins.`, 'warn')
-  cm('dossier'); upUI(); ntf(`${s.fn} is now Jinchuriki of ${bN} — Stage 1 begins.`)
+  aL(tr('toast.roster.jkChosen', { name: sn(s), beast: bN }), 'warn')
+  cm('dossier'); upUI(); ntf(tr('toast.roster.jkNow', { name: s.fn, beast: bN }))
 }
 
 // ── Route C: Dev Path ────────────────────────────────────────────────────────
 
 export function setDevPath(sId, pathId) {
   const s = G.shinobi.find(x => x.id === sId); if (!s) return
-  if (s.devPath === pathId) { s.devPath = null; ntf('Development path cleared.') }
+  if (s.devPath === pathId) { s.devPath = null; ntf(tr('toast.roster.devPathCleared')) }
   else {
     s.devPath = pathId
     const path = _DEV_PATHS.find(p => p.id === pathId)
-    ntf(`Dev path set: ${path?.label || pathId}`)
+    ntf(tr('toast.roster.devPathSet', { path: path?.label || pathId }))
   }
   rRo()
 }
@@ -766,26 +766,26 @@ export function setDevPath(sId, pathId) {
 export function toggleNoTrade(sId) {
   const s = G.shinobi.find(x => x.id === sId); if (!s) return
   s.noTrade = !s.noTrade
-  ntf(s.noTrade ? 'No-trade clause added.' : 'No-trade clause removed.')
+  ntf(s.noTrade ? tr('toast.roster.noTradeAdded') : tr('toast.roster.noTradeRemoved'))
   upUI()
 }
 
 export function toggleTwoWay(sId) {
   const s = G.shinobi.find(x => x.id === sId); if (!s) return
   s.twoWay = !s.twoWay
-  ntf(s.twoWay ? 'Two-way clause: excluded from cap payroll.' : 'Two-way clause removed.')
+  ntf(s.twoWay ? tr('toast.roster.twoWayAdded') : tr('toast.roster.twoWayRemoved'))
   upUI()
 }
 
 export function executeBuyout(sId) {
   const s = G.shinobi.find(x => x.id === sId); if (!s) return
   const cost = s.buyoutCost || 0
-  if (G.ryo < cost) { ntf('Not enough ryo for buyout!'); return }
+  if (G.ryo < cost) { ntf(tr('toast.roster.notEnoughBuyout')); return }
   G.ryo -= cost
   G.shinobi = G.shinobi.filter(x => x.id !== sId)
   G.memorial.push({ name: (s.fn || '') + ' ' + (s.ln || ''), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][s.ri||0], clan: s.clan, year: G.year, month: G.month, wins: s.wins||0, lastWords: 'Released via buyout clause.', transfer: true })
-  aL((s.fn||'') + ' ' + (s.ln||'') + ' released — buyout cost ' + fmt(cost) + ' ryo.', 'warn')
-  ntf('Buyout executed.'); upUI()
+  aL(tr('toast.roster.buyoutReleased', { name: `${s.fn||''} ${s.ln||''}`, cost: fmt(cost) }), 'warn')
+  ntf(tr('toast.roster.buyoutDone')); upUI()
 }
 
 // ── Retirement actions ────────────────────────────────────────────────────────
@@ -793,7 +793,7 @@ export function executeBuyout(sId) {
 export function retireShinobi(sId) {
   const s = G.shinobi.find(x => x.id === sId)
   if (!s) return
-  if (s.jk) { ntf('Cannot retire a Jinchuriki while they carry a tailed beast.'); return }
+  if (s.jk) { ntf(tr('toast.roster.cannotRetireJk')); return }
   // Move to retired roster
   if (!G.retired) G.retired = []
   G.retired.push({
@@ -809,8 +809,8 @@ export function retireShinobi(sId) {
     if (sq.leaderId === sId) sq.leaderId = sq.members[0] || null
   })
   G.shinobi = G.shinobi.filter(x => x.id !== sId)
-  aL(`${sn(s)} has retired with honour after ${s.wins || 0} missions. Their legacy endures.`, 'good')
-  ntf(`${s.fn} ${s.ln} retired.`)
+  aL(tr('toast.roster.retiredHonour', { name: sn(s), wins: s.wins || 0 }), 'good')
+  ntf(tr('toast.roster.retired', { name: `${s.fn} ${s.ln}` }))
   document.getElementById('ov-dossier').classList.remove('open')
   upUI(); cm('retirement')
 }
@@ -818,7 +818,7 @@ export function retireShinobi(sId) {
 export function retireToCoach(sId) {
   const s = G.shinobi.find(x => x.id === sId)
   if (!s) return
-  if (s.jk) { ntf('Cannot transition a Jinchuriki while they carry a tailed beast.'); return }
+  if (s.jk) { ntf(tr('toast.roster.cannotTransitionJk')); return }
   if (!G.staff) G.staff = []
   // Create a coaching staff member from the shinobi
   const coachRating = Math.min(10, Math.round((s.wins || 0) / 10 + (s.ri || 0) * 1.5 + 2))
@@ -845,8 +845,8 @@ export function retireToCoach(sId) {
     if (sq.leaderId === sId) sq.leaderId = sq.members[0] || null
   })
   G.shinobi = G.shinobi.filter(x => x.id !== sId)
-  aL(`${sn(s)} transitions from the field to coaching. They join the staff as Sensei (rating ${coachRating}).`, 'good')
-  ntf(`${s.fn} is now a Sensei on staff.`)
+  aL(tr('toast.roster.toCoach', { name: sn(s), rating: coachRating }), 'good')
+  ntf(tr('toast.roster.nowSensei', { name: s.fn }))
   document.getElementById('ov-dossier').classList.remove('open')
   upUI(); cm('retirement')
 }
@@ -858,8 +858,8 @@ export function extendCareer(sId) {
   s.careerExtended = true
   // Slight commitment boost from respect shown
   s.commitment = Math.min(100, (s.commitment || 60) + 10)
-  aL(`${sn(s)} accepts one more year. Their commitment to the village is renewed.`, 'neutral')
-  ntf(`${s.fn} will continue their career for another year.`)
+  aL(tr('toast.roster.careerExtended', { name: sn(s) }), 'neutral')
+  ntf(tr('toast.roster.careerContinue', { name: s.fn }))
   upUI(); cm('dossier'); oDos(sId)
 }
 
@@ -868,8 +868,8 @@ export function extendCareer(sId) {
 export function setTrainingFocus(sId, statKey) {
   const s = G.shinobi.find(x => x.id === sId); if (!s) return
   s.trainingFocus = statKey || null
-  if (statKey) aL(`${sn(s)} is now focused on training ${statKey}. Expect steady gains (+workload).`, 'neutral')
-  else aL(`${sn(s)} returns to general training rotation.`, 'neutral')
+  if (statKey) aL(tr('toast.roster.trainingFocus', { name: sn(s), stat: statKey }), 'neutral')
+  else aL(tr('toast.roster.trainingGeneral', { name: sn(s) }), 'neutral')
   upUI(); oDos(sId)
 }
 
@@ -882,10 +882,10 @@ export function toggleJutsuLoadout(sId, jutsuId) {
 
 export function toggleRestMonth(sId) {
   const s = G.shinobi.find(x => x.id === sId); if (!s) return
-  if (s.status !== 'available') { ntf('Cannot rest a shinobi who is currently deployed or injured.'); return }
+  if (s.status !== 'available') { ntf(tr('toast.roster.cannotRest')); return }
   s.restMonth = !s.restMonth
-  if (s.restMonth) aL(`${sn(s)} is scheduled for a rest month — they'll recover workload faster.`, 'neutral')
-  else aL(`${sn(s)}'s rest month cancelled — back to regular rotation.`, 'neutral')
+  if (s.restMonth) aL(tr('toast.roster.restScheduled', { name: sn(s) }), 'neutral')
+  else aL(tr('toast.roster.restCancelled', { name: sn(s) }), 'neutral')
   upUI(); oDos(sId)
 }
 
@@ -893,13 +893,13 @@ export function openContractRenewal(sId) {
   const s = G.shinobi.find(x => x.id === sId); if (!s) return
   const demand = G.contractRenewalQueue?.find(r => r.shinobiId === sId)
   const demandSal = demand?.demandSalary || Math.round(s.salary * 1.15)
-  if (G.ryo < demandSal * 12) { ntf(`Can't afford renewal — need ~${(demandSal*12).toLocaleString()} ryo/year.`); return }
+  if (G.ryo < demandSal * 12) { ntf(tr('toast.roster.cantAffordRenewal', { amount: (demandSal*12).toLocaleString() })); return }
   s.salary = demandSal
   s.contractEnd = (G.year || 1) + 3
   s.contractRenewing = false
   G.contractRenewalQueue = (G.contractRenewalQueue || []).filter(r => r.shinobiId !== sId)
   s.commitment = Math.min(100, (s.commitment || 60) + 15)
-  aL(`${sn(s)} renewed for 3 years at ${demandSal.toLocaleString()} ryo/month. Commitment boosted.`, 'good')
-  ntf(`${s.fn} renewed!`)
+  aL(tr('toast.roster.renewed', { name: sn(s), salary: demandSal.toLocaleString() }), 'good')
+  ntf(tr('toast.roster.renewedShort', { name: s.fn }))
   upUI(); cm('contract'); oDos(sId)
 }

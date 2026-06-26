@@ -370,7 +370,7 @@ export function rAc() {
 }
 
 export function rec(id) {
-  if (G.ryo < 2000) { ntf('Not enough ryo!'); return }
+  if (G.ryo < 2000) { ntf(t('toast.common.notEnoughRyo')); return }
   const p = G.prospects.find(x => x.id === id); if (!p) return
   G.ryo -= 2000
 
@@ -406,8 +406,8 @@ export function rec(id) {
 export function oScout(prospectId) {
   const p = G.prospects.find(x => x.id === prospectId); if (!p) return
   const scouts = G.shinobi.filter(s => s.ri >= 2 && s.status === 'available')
-  if (!scouts.length) { ntf('No available Jonin+ for scouting!'); return }
-  if (G.ryo < 3000) { ntf('Need 3,000 ryo to scout!'); return }
+  if (!scouts.length) { ntf(t('toast.academy.noScouts')); return }
+  if (G.ryo < 3000) { ntf(t('toast.academy.needScoutRyo')); return }
 
   ui.scoutTarget = prospectId
   document.getElementById('scout-prospect-name').textContent = sn(p) + ' — ' + (p.archetype?.n || 'Unknown')
@@ -426,7 +426,7 @@ export function oScout(prospectId) {
 export function oSensei(prospectId) {
   const p = G.prospects.find(x => x.id === prospectId); if (!p) return
   const available = G.shinobi.filter(s => s.ri >= 2 && s.status === 'available' && !G.prospects.some(pr => pr.mentor === s.id))
-  if (!available.length) { ntf('No available Jonin+ free to mentor!'); return }
+  if (!available.length) { ntf(t('toast.academy.noMentors')); return }
   ui.scoutTarget = prospectId
   document.getElementById('sensei-prospect-name').textContent = sn(p)
   document.getElementById('sensei-list').innerHTML = available.map(s =>
@@ -447,8 +447,8 @@ export function doSensei(shinobiId) {
   const s = G.shinobi.find(x => x.id === shinobiId)
   if (!p || !s) { cm('sensei'); return }
   p.mentor = shinobiId
-  aL(sn(s) + ' assigned as sensei to ' + sn(p) + '. Training accelerated.', 'good')
-  ntf(sn(s) + ' mentoring ' + p.fn + '!')
+  aL(t('toast.academy.senseiAssigned', { sensei: sn(s), prospect: sn(p) }), 'good')
+  ntf(t('toast.academy.mentoring', { sensei: sn(s), name: p.fn }))
   cm('sensei'); upUI()
 }
 
@@ -457,7 +457,7 @@ export function doScout(shinobiId) {
   const p = G.prospects.find(x => x.id === prospectId)
   const s = G.shinobi.find(x => x.id === shinobiId)
   if (!p || !s) { cm('scout'); return }
-  if (G.ryo < 3000) { ntf('Not enough ryo!'); cm('scout'); return }
+  if (G.ryo < 3000) { ntf(t('toast.common.notEnoughRyo')); cm('scout'); return }
 
   G.ryo -= 3000
   s.status = 'mission'; s.missId = 'scout-' + prospectId
@@ -472,8 +472,8 @@ export function doScout(shinobiId) {
     isSquad: false,
   })
 
-  aL(sn(s) + ' sent to scout ' + sn(p) + '.', 'neutral')
-  ntf('Scouting ' + p.fn + '…')
+  aL(t('toast.academy.scoutSent', { scout: sn(s), prospect: sn(p) }), 'neutral')
+  ntf(t('toast.academy.scouting', { name: p.fn }))
   cm('scout'); upUI()
 }
 
@@ -481,13 +481,13 @@ export function matchRivalOffer(prospectId) {
   const p = G.prospects.find(x => x.id === prospectId)
   if (!p?.rivalOffer) return
   const cost = p.rivalOffer.offerRyo
-  if (G.ryo < cost) { ntf('Not enough ryo to match!'); return }
+  if (G.ryo < cost) { ntf(t('toast.academy.notEnoughMatch')); return }
   G.ryo -= cost
   const village = p.rivalOffer.village
   p.rivalOffer = null
   p.rivalInterest = false
-  aL(`Matched ${village}'s offer — ${p.fn} ${p.ln} signs with us for ${cost.toLocaleString()} ryo.`, 'good')
-  ntf(`${p.fn} ${p.ln} secured!`)
+  aL(t('toast.academy.matched', { village, name: `${p.fn} ${p.ln}`, cost: cost.toLocaleString() }), 'good')
+  ntf(t('toast.academy.secured', { name: `${p.fn} ${p.ln}` }))
   upUI()
 }
 
@@ -495,7 +495,7 @@ export function exceedRivalOffer(prospectId) {
   const p = G.prospects.find(x => x.id === prospectId)
   if (!p?.rivalOffer) return
   const cost = Math.round(p.rivalOffer.offerRyo * 1.2)
-  if (G.ryo < cost) { ntf('Not enough ryo to exceed!'); return }
+  if (G.ryo < cost) { ntf(t('toast.academy.notEnoughExceed')); return }
   G.ryo -= cost
   const village = p.rivalOffer.village
   p.rivalOffer = null
@@ -503,8 +503,8 @@ export function exceedRivalOffer(prospectId) {
   // Loyalty floor bonus for outbidding a rival
   if (p.pMatrix) p.pMatrix.loyalty = Math.max((p.pMatrix.loyalty || 0) + 3, 15)
   p.loyaltyBonus = true
-  aL(`Outbid ${village} — ${p.fn} ${p.ln} joins with loyalty bonus (+3 loyalty floor).`, 'good')
-  ntf(`${p.fn} ${p.ln} committed!`)
+  aL(t('toast.academy.outbid', { village, name: `${p.fn} ${p.ln}` }), 'good')
+  ntf(t('toast.academy.committed', { name: `${p.fn} ${p.ln}` }))
   upUI()
 }
 
@@ -512,7 +512,7 @@ export function declineRivalOffer(prospectId) {
   const p = G.prospects.find(x => x.id === prospectId)
   if (!p?.rivalOffer) return
   const village = p.rivalOffer.village
-  aL(`${village}'s offer for ${p.fn} ${p.ln} declined — they will sign elsewhere shortly.`, 'warn')
+  aL(t('toast.academy.declined', { village, name: `${p.fn} ${p.ln}` }), 'warn')
   G.prospects = G.prospects.filter(x => x.id !== prospectId)
   upUI()
 }
@@ -523,10 +523,10 @@ export function setTrainingPlan(prospectId, planId) {
   const plan = PLAN_BY_ID[planId]
   p.trainingPlanId = planId || null
   if (plan) {
-    aL(`${p.fn} ${p.ln} assigned to ${plan.label} training — ${plan.desc}`, 'neutral')
-    ntf(`${p.fn}: ${plan.label}`)
+    aL(t('toast.academy.planAssigned', { name: `${p.fn} ${p.ln}`, plan: plan.label, desc: plan.desc }), 'neutral')
+    ntf(t('toast.academy.planShort', { name: p.fn, plan: plan.label }))
   } else {
-    aL(`${p.fn} ${p.ln} removed from training plan.`, 'neutral')
+    aL(t('toast.academy.planRemoved', { name: `${p.fn} ${p.ln}` }), 'neutral')
   }
   upUI()
 }
