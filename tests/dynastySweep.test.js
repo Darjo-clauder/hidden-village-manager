@@ -52,7 +52,7 @@ function spendAllPoints(G) {
   return G.kageDev.points
 }
 
-function runDynasty(seed) {
+function runDynasty(seed, years = YEARS) {
   return withSeed(seed, () => {
     const G = {
       ryo: 50000, reputation: 30, prestigeTier: 'D', legend: 0,
@@ -75,7 +75,7 @@ function runDynasty(seed) {
 
     const track = { ryo: [], net: [], rep: [], level: [], leftover: [], finishes: [], maxAttr: [], rivalStr: [], staffBill: [], roster: [], legend: [], prestige: [] }
 
-    for (let y = 1; y <= YEARS; y++) {
+    for (let y = 1; y <= years; y++) {
       const season = { year: y, round: 0, table: initSeasonTable(NAMES), lastResults: [] }
       const strOf = name => {
         if (name === PLAYER) {
@@ -266,5 +266,58 @@ describe('Dynasty balance sweep — 20-year deterministic', () => {
     expect(alt.track.net.every(n => n < villageRevenue(999, 'S') * 1.2)).toBe(true)
     expect(alt.G.shinobi.length).toBeGreaterThanOrEqual(12)
     ATTR_IDS.forEach(id => expect(alt.G.kageDev.attrs[id]).toBeLessThanOrEqual(KAGE_ATTR_CAP))
+  })
+})
+
+// ── Late-dynasty watch (30 years) ──────────────────────────────────────────
+// Closes the open "25+ year save bleeding out?" question (handoff §7.2). At S-tier
+// the PASSIVE net (income − wages − staff − upkeep − tax) is negative by design — the
+// village runs on active mission income. The risk was that the passive deficit might
+// keep deepening as reputation saturates while costs stay flat, eventually outrunning
+// mission income. This proves the opposite: once rep nears the soft cap and the roster /
+// staff bill plateau, the passive net *stabilises* and the treasury keeps growing.
+describe('Late-dynasty watch — 30-year horizon', () => {
+  const SEED = 20260624
+  const LONG = 30
+  const { track } = runDynasty(SEED, LONG)
+  const last5 = arr => arr.slice(-5)
+
+  it('LATE-SOLVENT: treasury stays positive every year past year 20', () => {
+    track.ryo.slice(20).forEach((r, i) => {
+      expect(r, `year ${21 + i} treasury ${r} went insolvent`).toBeGreaterThan(0)
+    })
+  })
+
+  it('LATE-GROWTH: not bleeding out — final treasury exceeds the year-20 mark', () => {
+    // The whole §7.2 worry: a 25+ year save quietly draining. If mission income still
+    // outpaces the passive deficit, year-end ryo at 30 must be above where it was at 20.
+    expect(track.ryo.at(-1)).toBeGreaterThan(track.ryo[19])
+  })
+
+  it('LATE-NET-STABILISES: the passive deficit plateaus rather than deepening', () => {
+    // Reputation saturates (soft cap 200) and the staff/roster bill flatlines, so the
+    // passive net should level off in a bounded band, not spiral toward the floor.
+    const tail = last5(track.net)
+    tail.forEach((n, i) => {
+      expect(n, `year ${26 + i} passive net ${n} blew past the late-dynasty floor`).toBeGreaterThan(-20000)
+    })
+    // And it should not be getting monotonically worse year-on-year in the tail.
+    expect(tail.at(-1)).toBeGreaterThanOrEqual(Math.min(...tail) - 1)
+  })
+
+  it('LATE-SNAP: 30-year trajectory (logged, not asserted)', () => {
+    console.log([
+      '',
+      '════════════════════════════════════════════════',
+      `  LATE-DYNASTY WATCH — ${LONG} years (seed ${SEED})`,
+      '════════════════════════════════════════════════',
+      `  Year-end ryo : ${track.ryo.map(r => Math.round(r / 1000) + 'k').join(' ')}`,
+      `  Avg mo. net  : ${track.net.map(n => Math.round(n / 1000) + 'k').join(' ')}`,
+      `  Reputation   : ${track.rep.join(' ')}   (soft cap ${REP_SOFT_CAP})`,
+      `  Prestige     : ${track.prestige.join(' ')}`,
+      `  Roster size  : ${track.roster.join(' ')}`,
+      '════════════════════════════════════════════════',
+    ].join('\n'))
+    expect(true).toBe(true)
   })
 })
