@@ -201,4 +201,17 @@ export const en = {
   'squad.noDepthBonuses': 'No depth chart bonuses assigned.',
   'squad.tacticalApproach': "Tactical Approach — matched per mission's specialty",
   'squad.noMissions': 'No squad missions.',
+
+  // ── Academy (P2 tranche 8) ──────────────────────────────────────────────
+  'academy.title': 'Academy Prospects',
+  'academy.tab.prospects': 'Prospects',
+  'academy.tab.pipeline': 'Mentor Pipeline',
+  'academy.mentorships.none': 'No active mentorships. Open a shinobi dossier (Career tab) to assign one.',
+  'academy.endMentorship': 'End Mentorship',
+  'academy.letGo': 'Let go',
+  'academy.noPlan': 'No plan assigned',
+  'academy.assignSensei': 'Assign Sensei',
+  'academy.recruit': 'Recruit — 2,000 ryo ►',
+  'academy.prospects.none': 'No prospects. Advance month.',
+  'academy.assign': 'Assign ►',
 }

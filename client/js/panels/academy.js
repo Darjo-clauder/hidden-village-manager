@@ -7,6 +7,7 @@ import { TRAINING_PLANS, PLAN_BY_ID } from '../../../shared/constants/trainingPl
 import { applyGraduationBias } from '../prospectEngine.js'
 import { mentorshipSummary } from '../../../shared/utils/mentorship.js'
 import { openContextMenu, showHoverPreview, hideHoverPreview } from '../uikit.js'
+import { t } from '../../../shared/utils/i18n.js'
 
 let _acTab = 'prospects'
 
@@ -63,7 +64,7 @@ function renderPipeline() {
   if (mentorships.length === 0) {
     el.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--text-dim);font-size:10px">
       <div style="font-size:28px;margin-bottom:8px">📖</div>
-      No active mentorships. Open a shinobi dossier (Career tab) to assign one.
+      ${t('academy.mentorships.none')}
     </div>`
     return
   }
@@ -122,7 +123,7 @@ function renderPipeline() {
         ${!milestone12 ? `<span style="color:#7a7060"> → projected <span style="color:#c9a84c">${Math.min(99, student.stats[bonusStat] + 3)}</span> at graduation</span>` : '<span style="color:#8fbc8f"> (graduated)</span>'}
       </div>
 
-      <button class="gb" style="font-size:7px;border-color:#7a7060;color:#7a7060;padding:2px 8px" onclick="releaseMentor('${mentor.id}')">End Mentorship</button>
+      <button class="gb" style="font-size:7px;border-color:#7a7060;color:#7a7060;padding:2px 8px" onclick="releaseMentor('${mentor.id}')">${t('academy.endMentorship')}</button>
     </div>`
   }).join('')
 }
@@ -243,7 +244,7 @@ function _rivalOfferHtml(p) {
       <button class="gb" onclick="exceedRivalOffer('${p.id}')" ${canExceed ? '' : 'disabled'}
         style="font-size:7px;color:#c9a84c;border-color:#c9a84c">Exceed +20% — ${exceedCost.toLocaleString()} ryo</button>
       <button class="gb gb-r" onclick="confirm('Let ${p.fn} ${p.ln} go to ${offer.village}? They will sign elsewhere.') && declineRivalOffer('${p.id}')"
-        style="font-size:7px">Let go</button>
+        style="font-size:7px">${t('academy.letGo')}</button>
     </div>
   </div>`
 }
@@ -256,7 +257,7 @@ function _trainingPlanHtml(p) {
 
   const badge = active
     ? `<span style="font-size:7px;padding:1px 6px;border:1px solid ${active.color};color:${active.color};border-radius:2px">${active.icon} ${active.label}</span>`
-    : `<span style="font-size:7px;color:#555">No plan assigned</span>`
+    : `<span style="font-size:7px;color:#555">${t('academy.noPlan')}</span>`
 
   const coachHint = coachRevealed
     ? `<span style="font-size:7px;color:#cc7fb8;margin-left:6px" title="Coachability amplifies plan bonus">COA ${coachAttr.value}/20 +${Math.round(coachAttr.value / 20 * 10)}%</span>`
@@ -355,17 +356,17 @@ export function rAc() {
       ${_hiddenAttrsHtml(p)}
       ${_rivalOfferHtml(p)}
       <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
-        <button class="gb gb-g" onclick="rec('${p.id}')" ${canRecruit ? '' : 'disabled'}>Recruit — 2,000 ryo ►</button>
+        <button class="gb gb-g" onclick="rec('${p.id}')" ${canRecruit ? '' : 'disabled'}>${t('academy.recruit')}</button>
         ${scoutingAm
           ? `<div style="font-size:9px;color:#fa0;align-self:center">⟳ Being scouted…</div>`
           : p.scouted
             ? `<div style="font-size:9px;color:#8fbc8f;align-self:center">✓ Scouted</div>`
             : `<button class="gb" onclick="oScout('${p.id}')" ${G.ryo >= 3000 ? '' : 'disabled'}>Scout — 3,000 ryo ►</button>`
         }
-        ${!p.mentor ? `<button class="gb" onclick="oSensei('${p.id}')">Assign Sensei</button>` : ''}
+        ${!p.mentor ? `<button class="gb" onclick="oSensei('${p.id}')">${t('academy.assignSensei')}</button>` : ''}
       </div>
     </div>`
-  }).join('') || '<div style="color:#7a7060;font-size:10px">No prospects. Advance month.</div>'
+  }).join('') || `<div style="color:#7a7060;font-size:10px">${t('academy.prospects.none')}</div>`
 }
 
 export function rec(id) {
@@ -434,7 +435,7 @@ export function oSensei(prospectId) {
         <div style="font-size:10px;color:#e8e0cc">${sn(s)}</div>
         <div style="font-size:8px;color:#7a7060">${RANKS[s.ri]} · ${s.pers.n} · Pwr ${sPow(s)}</div>
       </div>
-      <span style="font-size:9px;color:#c9a84c">Assign ►</span>
+      <span style="font-size:9px;color:#c9a84c">${t('academy.assign')}</span>
     </div>`
   ).join('')
   document.getElementById('ov-sensei').classList.add('open')
