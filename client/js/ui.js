@@ -3,6 +3,7 @@ import { openBattleViewer } from './liveBattle.js'
 import { SEASONS, MONTHS } from './constants.js'
 import { nationIdentity, isValidNation } from '../../shared/constants/nations.js'
 import { schEx } from './state.js'
+import { t } from '../../shared/utils/i18n.js'
 
 // Panel renderers
 import { rRo } from './panels/roster.js'
@@ -144,16 +145,16 @@ function _updateContinueBtn() {
   btn.classList.remove('ct-ready', 'ct-pending', 'ct-blocked')
   if (p.state === 'blocked') {
     btn.classList.add('ct-blocked')
-    btn.innerHTML = 'Resolve to continue'
-    btn.title = 'A required decision is unresolved.'
+    btn.innerHTML = t('turn.blocked')
+    btn.title = t('turn.blocked.title')
   } else if (p.state === 'pending') {
     btn.classList.add('ct-pending')
-    btn.innerHTML = `End Turn ▸ <span class="ct-badge">${p.count}</span>`
-    btn.title = `${p.count} decision${p.count === 1 ? '' : 's'} pending in your inbox — you may still advance.`
+    btn.innerHTML = `${t('turn.pending')} <span class="ct-badge">${p.count}</span>`
+    btn.title = t('turn.pending.title', { n: p.count })
   } else {
     btn.classList.add('ct-ready')
-    btn.innerHTML = `End Turn ▸ ${monthName}`
-    btn.title = `Advance to ${monthName} Y${G.year}.`
+    btn.innerHTML = t('turn.ready', { month: monthName })
+    btn.title = t('turn.ready.title', { month: monthName, year: G.year })
   }
 }
 
@@ -164,7 +165,7 @@ export function continueTurn() {
     if (p.reason === 'worldchoice' && typeof window.openWorldChoice === 'function') window.openWorldChoice()
     else if (p.reason === 'exam' || p.reason === 'war') sp('exam')
     else sp('inbox')
-    ntf('Resolve the pending decision first.')
+    ntf(t('turn.resolveFirst'))
     return
   }
   if (typeof window.endTurn === 'function') window.endTurn()

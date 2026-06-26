@@ -5,6 +5,7 @@ import { villageRevenue } from '../../../shared/utils/economy.js'
 import { capStatus } from '../../../shared/constants/salaryCap.js'
 import { getInboxDigest, getInboxCount } from './inbox.js'
 import { xpForLevel, PATH_BY_ID } from '../../../shared/constants/kageDev.js'
+import { t } from '../../../shared/utils/i18n.js'
 
 // Compact Kage progression strip (clickable → Kage Path screen).
 function _kageStrip() {
@@ -28,19 +29,19 @@ function _decisionDigest() {
   const items = getInboxDigest(4)
   const n = getInboxCount()
   if (!items.length && !blocking) {
-    return `<div class="hd-digest is-clear"><div class="hd-digest-h">✓ No decisions pending</div>
-      <div style="font-size:9px;color:var(--text-dim)">The village runs smoothly. End the turn when ready.</div></div>`
+    return `<div class="hd-digest is-clear"><div class="hd-digest-h">${t('digest.clearTitle')}</div>
+      <div style="font-size:9px;color:var(--text-dim)">${t('digest.clearSub')}</div></div>`
   }
   const blockRow = blocking
-    ? `<div class="hd-item"><span class="hd-item-ico">⛔</span><span class="hd-item-t" style="color:var(--red)">${G.examActive ? 'Chunin Exam in progress' : G.warActive ? 'Nation War in progress' : 'A field decision must be resolved'}</span><button class="hd-item-go" onclick="sp('${G.examActive || G.warActive ? 'exam' : 'inbox'}')">Resolve ▸</button></div>`
+    ? `<div class="hd-item"><span class="hd-item-ico">⛔</span><span class="hd-item-t" style="color:var(--red)">${G.examActive ? t('digest.examInProgress') : G.warActive ? t('digest.warInProgress') : t('digest.fieldDecision')}</span><button class="hd-item-go" onclick="sp('${G.examActive || G.warActive ? 'exam' : 'inbox'}')">${t('digest.resolve')}</button></div>`
     : ''
   return `<div class="hd-digest">
-    <div class="hd-digest-h">⚑ Pending Decisions <span style="color:var(--text-dim)">— ${n}</span></div>
+    <div class="hd-digest-h">${t('digest.header')} <span style="color:var(--text-dim)">— ${n}</span></div>
     ${blockRow}
     ${items.map(it => `<div class="hd-item">
       <span class="hd-item-ico">${it.icon || '•'}</span>
       <span class="hd-item-t">${it.title}</span>
-      <button class="hd-item-go" onclick="sp('inbox')">Go ▸</button>
+      <button class="hd-item-go" onclick="sp('inbox')">${t('digest.go')}</button>
     </div>`).join('')}
   </div>`
 }
@@ -129,14 +130,14 @@ export function rDash() {
   const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
   el.innerHTML = `
-    <div class="pt">Dashboard — Y${G.year} M${G.month}</div>
+    <div class="pt">${t('dash.title', { year: G.year, month: G.month })}</div>
 
     ${_kageStrip()}
     ${_decisionDigest()}
 
     ${G._ff_nationHud ? `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">
-      <span style="font-size:8px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">Nation</span>
+      <span style="font-size:8px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">${t('dash.nation')}</span>
       ${Object.entries(NATIONS).map(([id, n]) => `
         <button onclick="setNation('${id}')" style="font-size:8px;padding:3px 9px;cursor:pointer;background:${G.nationId === id ? n.accent : 'transparent'};color:${G.nationId === id ? '#0d0d0f' : n.accent};border:1px solid ${n.accent}">${n.crest} ${n.name}${G._a11yColorblind ? ' ·' + n.pattern : ''}</button>`).join('')}
       <button onclick="toggleColorblind()" title="Colorblind mode: show pattern tags" style="font-size:8px;padding:3px 9px;cursor:pointer;background:transparent;color:var(--text-dim);border:1px solid var(--border)">${G._a11yColorblind ? '◑ CB on' : '◐ CB'}</button>
@@ -145,7 +146,7 @@ export function rDash() {
 
     <!-- Tactics quick-bar -->
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-      <span style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-right:2px">Stance</span>
+      <span style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-right:2px">${t('dash.stance')}</span>
       ${[['aggressive','⚔','#c9a84c','suc +8% kia +4%'],['balanced','⚖','#8fbc8f','default'],['defensive','🛡','#87ceeb','suc −6% kia −3%']].map(([id,icon,col,hint]) =>
         `<button onclick="setMissionPrep('${id}')" style="font-size:8px;padding:3px 10px;cursor:pointer;border:1px solid ${G.missionPrep===id ? col : '#3a3630'};background:${G.missionPrep===id ? col+'22' : 'transparent'};color:${G.missionPrep===id ? col : '#7a7060'}">${icon} ${id.charAt(0).toUpperCase()+id.slice(1)}<span style="font-size:7px;color:#555;margin-left:4px">${hint}</span></button>`
       ).join('')}
@@ -156,10 +157,10 @@ export function rDash() {
     <!-- Health snapshot -->
     <div class="dash-grid">
       <div class="dash-card ${G.ryo < 5000 ? 'alert' : G.ryo > 50000 ? 'good' : ''}">
-        <div class="dash-card-title">Treasury</div>
+        <div class="dash-card-title">${t('card.treasury')}</div>
         <div class="dash-stat" style="color:${financeColor}">${fmt(G.ryo)}</div>
         <div class="dash-stat-sub" style="color:${monthlyNet >= 0 ? 'var(--green)' : 'var(--red)'}">
-          ${monthlyNet >= 0 ? '+' : ''}${fmt(monthlyNet)} / month
+          ${monthlyNet >= 0 ? '+' : ''}${fmt(monthlyNet)} ${t('dash.perMonth')}
         </div>
         ${(() => {
           // Runway — the single most useful number for a new GM: how many months the
@@ -175,7 +176,7 @@ export function rDash() {
       </div>
 
       <div class="dash-card">
-        <div class="dash-card-title">Roster Depth</div>
+        <div class="dash-card-title">${t('card.rosterDepth')}</div>
         <div class="dash-stat">${G.shinobi.length}</div>
         <div class="dash-stat-sub">
           <span style="color:var(--green)">${available} available</span> ·
@@ -188,23 +189,23 @@ export function rDash() {
       </div>
 
       <div class="dash-card">
-        <div class="dash-card-title">Academy</div>
+        <div class="dash-card-title">${t('card.academy')}</div>
         <div class="dash-stat">${(G.intakeClass || []).length}</div>
-        <div class="dash-stat-sub">students in training</div>
+        <div class="dash-stat-sub">${t('card.academy.students')}</div>
         <div class="dash-stat-sub" style="margin-top:3px">
-          ${(G.prospects || []).length} prospects available
+          ${t('card.academy.prospects', { n: (G.prospects || []).length })}
         </div>
       </div>
 
       <div class="dash-card ${injured > 3 ? 'alert' : ''}">
-        <div class="dash-card-title">Morale</div>
+        <div class="dash-card-title">${t('card.morale')}</div>
         <div class="dash-stat" style="color:${(G.morale||75)>=70?'var(--green)':(G.morale||75)>=45?'var(--gold)':'var(--red)'}">${G.morale || 75}</div>
         <div class="dash-stat-sub">Reputation: ${G.reputation} · Prestige: ${G.prestigeTier || 'D'}</div>
         <div class="dash-stat-sub" style="margin-top:3px">Legend: ${G.legend || 0}${G._moraleFloor ? ` · Floor: ${G._moraleFloor}` : ''}</div>
       </div>
 
       <div class="dash-card">
-        <div class="dash-card-title">Social</div>
+        <div class="dash-card-title">${t('card.social')}</div>
         <div class="dash-stat" style="color:${(G.citizenMorale||60)>=70?'var(--green)':(G.citizenMorale||60)>=40?'var(--gold)':'var(--red)'}">${G.citizenMorale || 60}<span style="font-size:9px;color:#555">%</span></div>
         <div class="dash-stat-sub">Citizens · Rev ×${((G._citizenRevMult||1)).toFixed(2)}</div>
         <div class="dash-stat-sub" style="margin-top:3px">Alumni: ${(G.alumni||[]).length} · Sponsor: ${G.sponsorship ? G.sponsorship.n.slice(0,12) : 'none'}</div>
@@ -216,9 +217,9 @@ export function rDash() {
 
       <!-- At-risk alerts -->
       <div style="background:var(--surface);border:1px solid var(--border);padding:13px">
-        <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">At-Risk Alerts</div>
+        <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.alerts')}</div>
         ${alerts.length === 0
-          ? '<div style="font-size:9px;color:var(--text-dim);padding:6px 0">No alerts — village is in good standing.</div>'
+          ? `<div style="font-size:9px;color:var(--text-dim);padding:6px 0">${t('section.alerts.none')}</div>`
           : alerts.slice(0,6).map(a => `
           <div class="alert-item ${a.urgency}">
             <div class="alert-icon">${a.icon}</div>
@@ -232,7 +233,7 @@ export function rDash() {
 
       <!-- Upcoming calendar -->
       <div style="background:var(--surface);border:1px solid var(--border);padding:13px">
-        <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">Upcoming Events</div>
+        <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.events')}</div>
         ${calendar.slice(0,6).map(e => `
           <div class="cal-item">
             <div class="cal-date">${MONTH_NAMES[(e.m-1)%12]}</div>
@@ -244,9 +245,9 @@ export function rDash() {
 
     <!-- Monthly summary -->
     <div style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-bottom:12px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">Last Month's Events</div>
+      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.lastMonth')}</div>
       ${recentLog.length === 0
-        ? '<div style="font-size:9px;color:var(--text-dim)">No events recorded yet. Advance a month to begin.</div>'
+        ? `<div style="font-size:9px;color:var(--text-dim)">${t('section.lastMonth.none')}</div>`
         : recentLog.map(e => {
             const col = e.t === 'good' ? 'var(--green)' : e.t === 'bad' ? 'var(--red)' : e.t === 'warn' ? 'var(--orange)' : 'var(--text-dim)'
             return `<div style="padding:4px 0;border-bottom:1px solid var(--border-dim);font-size:9px;color:${col}">${e.msg}</div>`
@@ -257,7 +258,7 @@ export function rDash() {
     <!-- Active world events -->
     ${activeEvents.length > 0 ? `
     <div style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-bottom:12px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">Active World Events</div>
+      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.worldEvents')}</div>
       ${activeEvents.map(n => `
         <div style="padding:5px 0;border-bottom:1px solid var(--border-dim);font-size:9px;color:var(--blue)">${n.text || n.msg || ''}</div>
       `).join('')}

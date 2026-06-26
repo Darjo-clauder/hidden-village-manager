@@ -3,6 +3,7 @@ import { sp } from '../ui.js'
 import { WE_BY_ID } from '../../../shared/constants/worldCalendar.js'
 import { sortedThreads } from '../../../shared/utils/narrativeThreads.js'
 import { TONE_BY_ID } from '../../../shared/utils/pressConference.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 
 // Priority: urgent > standard > info
 const PRIORITY = { urgent: 0, standard: 1, info: 2 }
@@ -484,46 +485,46 @@ export function rInbox() {
   const infoCount     = filtered.filter(i => i.priority === 'info').length
 
   const tabBar = `<div style="display:flex;gap:6px;margin-bottom:12px">
-    <button class="tab${_activeTab !== 'threads' ? ' active' : ''}" style="padding:5px 10px;font-size:8px" onclick="inboxTab('active')">Inbox (${active.length})</button>
-    <button class="tab${_activeTab === 'threads' ? ' active' : ''}" style="padding:5px 10px;font-size:8px" onclick="inboxTab('threads')">Story Threads${threadCount > 0 ? ' (' + threadCount + ')' : ''}</button>
+    <button class="tab${_activeTab !== 'threads' ? ' active' : ''}" style="padding:5px 10px;font-size:8px" onclick="inboxTab('active')">${tr('inbox.tab.active', { n: active.length })}</button>
+    <button class="tab${_activeTab === 'threads' ? ' active' : ''}" style="padding:5px 10px;font-size:8px" onclick="inboxTab('threads')">${tr('inbox.tab.threads')}${threadCount > 0 ? ' (' + threadCount + ')' : ''}</button>
   </div>`
 
   if (_activeTab === 'threads') {
-    el.innerHTML = `<div class="pt">Inbox</div>${tabBar}${renderThreadsPanel(threads)}`
+    el.innerHTML = `<div class="pt">${tr('inbox.title')}</div>${tabBar}${renderThreadsPanel(threads)}`
     return
   }
 
   const infoToDismiss = filtered.filter(i => i.priority === 'info').length
   el.innerHTML = `
-    <div class="pt">Inbox</div>
+    <div class="pt">${tr('inbox.title')}</div>
     ${tabBar}
 
     <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
       ${cats.map(c => `
         <button class="tab${_activeFilter === c ? ' active' : ''}" style="padding:5px 10px;font-size:8px" onclick="inboxFilter('${c}')">
-          ${c === 'all' ? 'All (' + filtered.length + ')' : c}
+          ${c === 'all' ? tr('inbox.filter.all', { n: filtered.length }) : c}
         </button>
       `).join('')}
-      ${infoToDismiss > 0 ? `<button onclick="dismissAllInfo()" style="margin-left:auto;font-size:7px;padding:3px 8px;border:1px solid #3a3630;color:#7a7060;background:transparent;cursor:pointer">Dismiss ${infoToDismiss} info ✕</button>` : ''}
+      ${infoToDismiss > 0 ? `<button onclick="dismissAllInfo()" style="margin-left:auto;font-size:7px;padding:3px 8px;border:1px solid #3a3630;color:#7a7060;background:transparent;cursor:pointer">${tr('inbox.dismissInfo', { n: infoToDismiss })}</button>` : ''}
     </div>
 
     ${urgentCount > 0 ? `
       <div style="font-size:7px;letter-spacing:2px;color:var(--red);text-transform:uppercase;margin-bottom:7px;display:flex;align-items:center;gap:6px">
-        <span>⚠</span> Urgent (${urgentCount})
+        <span>⚠</span> ${tr('inbox.urgent', { n: urgentCount })}
       </div>
       ${filtered.filter(i => i.priority === 'urgent').map(item => renderItem(item)).join('')}
     ` : ''}
 
     ${standardCount > 0 ? `
       <div style="font-size:7px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin:${urgentCount > 0 ? '14px 0 7px' : '0 0 7px'};display:flex;align-items:center;gap:6px">
-        Standard (${standardCount})
+        ${tr('inbox.standard', { n: standardCount })}
       </div>
       ${filtered.filter(i => i.priority === 'standard').map(item => renderItem(item)).join('')}
     ` : ''}
 
     ${infoCount > 0 ? `
       <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin:${urgentCount + standardCount > 0 ? '14px 0 7px' : '0 0 7px'}">
-        Info (${infoCount})
+        ${tr('inbox.info', { n: infoCount })}
       </div>
       ${filtered.filter(i => i.priority === 'info').map(item => renderItem(item)).join('')}
     ` : ''}
@@ -531,18 +532,19 @@ export function rInbox() {
     ${filtered.length === 0 ? `
       <div style="text-align:center;padding:40px 0;color:var(--text-dim);font-size:10px">
         <div style="font-size:28px;margin-bottom:8px">📬</div>
-        Inbox clear — no pending items.
+        ${tr('inbox.clear')}
       </div>
     ` : ''}
   `
 }
 
 // ── Thread state metadata ─────────────────────────────────────────────────────
+// Colors are static; labels resolve through the string table at render time (see usage).
 const THREAD_STATE_META = {
-  open:       { label: 'Open',       color: '#87ceeb' },
-  escalating: { label: 'Escalating', color: '#f0a030' },
-  resolved:   { label: 'Resolved',   color: '#8fbc8f' },
-  tragedy:    { label: 'Tragedy',    color: '#f66' },
+  open:       { labelKey: 'thread.state.open',       color: '#87ceeb' },
+  escalating: { labelKey: 'thread.state.escalating', color: '#f0a030' },
+  resolved:   { labelKey: 'thread.state.resolved',   color: '#8fbc8f' },
+  tragedy:    { labelKey: 'thread.state.tragedy',    color: '#f66' },
 }
 const THREAD_TYPE_ICONS = {
   grudge: '⚡', bond: '🤝', rivalry: '⚔', redemption: '✨',
@@ -553,7 +555,7 @@ function renderThreadsPanel(threads) {
   if (!threads || threads.length === 0) {
     return `<div style="text-align:center;padding:40px 0;color:var(--text-dim);font-size:10px">
       <div style="font-size:28px;margin-bottom:8px">📖</div>
-      No active story threads. Play missions to build them.
+      ${tr('inbox.threads.none')}
     </div>`
   }
 
@@ -579,7 +581,7 @@ function renderThreadsPanel(threads) {
           <span style="font-size:13px">${icon}</span>
           <span style="font-size:9px;color:#e8e0cc;font-weight:bold">${t.title}</span>
         </div>
-        <span style="font-size:7px;color:${meta.color};text-transform:uppercase;letter-spacing:1px;padding:2px 6px;border:1px solid ${meta.color}44">${meta.label}</span>
+        <span style="font-size:7px;color:${meta.color};text-transform:uppercase;letter-spacing:1px;padding:2px 6px;border:1px solid ${meta.color}44">${tr(meta.labelKey)}</span>
       </div>
       <div style="display:flex;gap:12px;font-size:8px;color:#7a7060;margin-bottom:6px">
         <span>${t.events.length} event${t.events.length !== 1 ? 's' : ''}</span>

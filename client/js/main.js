@@ -69,11 +69,17 @@ window._depthEngine = { roleBonus }
 import { t, setLocale, getLocale, registerLocale, makePseudoLocale, formatNum, formatRyo } from '../../shared/utils/i18n.js'
 import { en } from '../../shared/i18n/en.js'
 import { ipName, setIpOverrides } from '../../shared/i18n/ipNames.js'
+import { localizeDom } from './i18nDom.js'
 registerLocale('en', en)
 registerLocale('en-XA', makePseudoLocale(en))   // pseudo-locale for +30% truncation QA
 setLocale('en')
+// Apply the string table to static markup once the DOM is ready, then again on any
+// locale switch so the `setLocale('en-XA')` truncation QA pass live-swaps the chrome.
+function applyLocale(code) { setLocale(code); localizeDom() }
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => localizeDom())
+else localizeDom()
 // Exposed for inline handlers, console QA (`setLocale('en-XA')`), and a future IP-neutral build.
-Object.assign(window, { t, setLocale, getLocale, ipName, setIpOverrides, _i18nFmt: { formatNum, formatRyo } })
+Object.assign(window, { t, setLocale: applyLocale, getLocale, ipName, setIpOverrides, _i18nFmt: { formatNum, formatRyo } })
 
 // Inject adv into room.js to break circular dep
 setAdvFn(adv)

@@ -4,6 +4,9 @@ import {
   hasKey, formatNum, formatRyo, pseudoMessage, makePseudoLocale,
 } from '../shared/utils/i18n.js'
 import { ipName, setIpOverrides, IP_RANKS } from '../shared/i18n/ipNames.js'
+import { en } from '../shared/i18n/en.js'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
 describe('i18n formatter (mini-ICU)', () => {
   it('interpolates named params', () => {
@@ -111,5 +114,21 @@ describe('IP namespace (swap point)', () => {
   it('unknown id falls back to the id string, never throws', () => {
     expect(ipName('rank', 99)).toBe('99')
     expect(ipName('clan', 'nope')).toBe('nope')
+  })
+})
+
+describe('DOM localization coverage (P2 guardrail)', () => {
+  // Every data-i18n key wired into the static markup must resolve in the en table —
+  // catches typo'd keys and guards against a converted label silently losing coverage.
+  const html = readFileSync(fileURLToPath(new URL('../client/index.html', import.meta.url)), 'utf8')
+  const keys = [...html.matchAll(/data-i18n="([^"]+)"/g)].map(m => m[1])
+
+  it('index.html actually carries data-i18n keys', () => {
+    expect(keys.length).toBeGreaterThan(20)   // nav + status strip converted
+  })
+
+  it('every data-i18n key exists in the en string table', () => {
+    const missing = [...new Set(keys)].filter(k => !(k in en))
+    expect(missing, `unkeyed data-i18n attrs: ${missing.join(', ')}`).toEqual([])
   })
 })
