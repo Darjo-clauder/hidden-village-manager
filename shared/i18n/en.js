@@ -181,4 +181,12 @@ export const en = {
   'fin.sponsorship': 'Sponsorship',
   'fin.blackMarket': 'Black Market Ledger (Off-Books)',
   'fin.report': 'Year {year} Financial Report',
+
+  // ── Roster list (P2 tranche 6; dossier internals deferred) ──────────────
+  'roster.clanComposition': 'Clan Composition',
+  'roster.developmentPath': 'Development Path',
+  'roster.none': 'No shinobi. Recruit from Academy.',
+  'roster.noAssignments': 'No active assignments.',
+  'roster.header': 'Roster — {n} shinobi',
+  'roster.fullDossier': 'Full Dossier ▸',
 }

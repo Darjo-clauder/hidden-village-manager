@@ -8,6 +8,7 @@ import { jutsuLoadoutBonus, toggleLoadoutSlot, LOADOUT_MAX } from '../../../shar
 import { BOND_TYPES } from '../../../shared/bonds/bondTypes.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { PHASE_META, ensureCareerFields } from '../careerEngine.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 import { computeStrain, strainBand } from '../../../shared/utils/strain.js'
 import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort, tblHidden, tblToggleCol, tblSortRows, tblHeaderHtml, tblColumnManagerHtml, tblToggleColumnManager, activityGridHtml } from '../uikit.js'
 
@@ -48,7 +49,7 @@ function _clanBar() {
              : null
   return `<div style="background:#0d0c0a;border:1px solid var(--accent-border);padding:8px 10px;margin-bottom:10px">
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:${tier?'4px':'0'}">
-      <span style="font-size:7px;letter-spacing:1px;color:#555;text-transform:uppercase">Clan Composition</span>
+      <span style="font-size:7px;letter-spacing:1px;color:#555;text-transform:uppercase">${tr('roster.clanComposition')}</span>
       ${ranked.slice(0, 5).map(([n, c]) => `<span style="font-size:8px;color:#8a8070">${n} <b style="color:#e8e0cc">${c}</b></span>`).join('<span style="color:#333;font-size:8px"> · </span>')}
       ${ranked.length > 5 ? `<span style="font-size:8px;color:#444">+${ranked.length - 5} more</span>` : ''}
     </div>
@@ -66,7 +67,7 @@ const _DEV_PATHS = [
 function _devPathSelector(s) {
   const cur = s.devPath || null
   return `<div style="margin-top:8px">
-    <div style="font-size:7px;letter-spacing:1px;color:#555;text-transform:uppercase;margin-bottom:5px">Development Path</div>
+    <div style="font-size:7px;letter-spacing:1px;color:#555;text-transform:uppercase;margin-bottom:5px">${tr('roster.developmentPath')}</div>
     <div style="display:grid;gap:3px">
       ${_DEV_PATHS.map(p => `<div onclick="setDevPath('${s.id}','${p.id}')" style="padding:5px 8px;border:1px solid ${cur===p.id?'var(--accent)':'#2a2520'};background:${cur===p.id?'var(--accent-bg)':'transparent'};cursor:pointer;display:flex;align-items:center;gap:8px">
         <span style="font-size:11px">${p.icon}</span>
@@ -91,7 +92,7 @@ function _potential(s) {
 
 export function rRo() {
   const el = document.getElementById('rl')
-  if (!G.shinobi.length) { el.innerHTML = '<div style="color:#7a7060;font-size:10px;padding:12px">No shinobi. Recruit from Academy.</div>'; return }
+  if (!G.shinobi.length) { el.innerHTML = `<div style="color:#7a7060;font-size:10px;padding:12px">${tr('roster.none')}</div>`; return }
 
   // Sort: by rank desc, then power desc
   const sorted = [...G.shinobi].sort((a, b) => (b.ri - a.ri) || (sPow(b) - sPow(a)))
@@ -100,7 +101,7 @@ export function rRo() {
   const active = sorted.filter(s => s.status === 'mission' || s.status === 'exam' || s.status === 'injured')
 
   const assignedHtml = active.length === 0
-    ? `<div style="font-size:8px;color:#555;padding:10px 0">No active assignments.</div>`
+    ? `<div style="font-size:8px;color:#555;padding:10px 0">${tr('roster.noAssignments')}</div>`
     : active.map(s => {
         const sq = G.squads.find(q => q.members.includes(s.id))
         const mission = s.missId ? (G.missions || []).find(m => m.id === s.missId) : null
@@ -192,7 +193,7 @@ export function rRo() {
       <div>
         ${_clanBar()}
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;position:relative">
-          <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase">Roster — ${G.shinobi.length} shinobi</div>
+          <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase">${tr('roster.header', { n: G.shinobi.length })}</div>
           <div style="margin-left:auto;display:flex;gap:10px;align-items:center;font-size:8px;color:#555">
             <span><span style="color:#8fbc8f">●</span> Avail</span>
             <span><span style="color:#c9a84c">▶</span> Mission</span>
@@ -294,7 +295,7 @@ function _renderRosDetail(id) {
           <div style="font-size:11px;color:#e8e0cc;font-weight:bold">${sn(s)}</div>
           <div style="font-size:8px;color:#555">${s.clan || s.spec || ''} · Age ${s.age}</div>
         </div>
-        <button class="gb" style="margin-left:auto;font-size:7px;padding:2px 8px" onclick="oDos('${s.id}')">Full Dossier ▸</button>
+        <button class="gb" style="margin-left:auto;font-size:7px;padding:2px 8px" onclick="oDos('${s.id}')">${tr('roster.fullDossier')}</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
         ${['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed'].map(k => {
