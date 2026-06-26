@@ -137,35 +137,35 @@ export function rClans() {
 
 export function resolveClanCouncil(ruling) {
   const council = _activeClanCouncilEvent()
-  if (!council) { ntf('No council matter pending.'); return }
+  if (!council) { ntf(t('toast.clans.noCouncil')); return }
   G.clanApproval = G.clanApproval || {}
   const hi = council.high.clan.id, lo = council.low.clan.id
   const setA = (id, d) => { G.clanApproval[id] = clamp((G.clanApproval[id] ?? 80) + d, 0, 100) }
   if (ruling === 'high') {
     setA(hi, 8); setA(lo, -5)
-    aL(`Council ruling: backed the ${council.high.clan.name}. Your power base is rewarded.`, 'neutral')
+    aL(t('toast.clans.ruleBacked', { name: council.high.clan.name }), 'neutral')
   } else if (ruling === 'low') {
     setA(lo, 8); setA(hi, -5)
     G.morale = clamp((G.morale || 75) - 2, 0, 100)
-    aL(`Council ruling: elevated the ${council.low.clan.name}. The ${council.high.clan.name} are displeased.`, 'warn')
+    aL(t('toast.clans.ruleElevated', { low: council.low.clan.name, high: council.high.clan.name }), 'warn')
   } else {
     setA(hi, -3); setA(lo, -3)
     G.morale = clamp((G.morale || 75) + 3, 0, 100)
-    aL('Council ruling: impartial. The village respects your fairness.', 'good')
+    aL(t('toast.clans.ruleImpartial'), 'good')
   }
   G.clanCouncil.resolvedQuarter = _quarterKey()
-  ntf('Council matter resolved.')
+  ntf(t('toast.clans.councilResolved'))
   upUI()
 }
 
 export function clanGift(clanId) {
-  if ((G.ryo || 0) < 500) { ntf('Need 500 ryo to gift the clan.'); return }
+  if ((G.ryo || 0) < 500) { ntf(t('toast.clans.needGift')); return }
   const clan = CLAN_BY_ID[clanId]
   if (!clan) return
   G.ryo -= 500
   if (!G.clanApproval) G.clanApproval = {}
   G.clanApproval[clanId] = clamp((G.clanApproval[clanId] ?? 80) + 5, 0, 100)
-  aL(`${clan.icon} ${clan.name} gifted — approval now ${G.clanApproval[clanId]}%.`, 'good')
+  aL(t('toast.clans.gifted', { icon: clan.icon, name: clan.name, pct: G.clanApproval[clanId] }), 'good')
   rClans()
 }
 
@@ -174,13 +174,13 @@ export function launchClanChain(clanId, chainId) {
   const clan = CLAN_BY_ID[clanId]
   if (!chain || !clan) return
   const members = (G.shinobi || []).filter(s => s.clan?.toLowerCase() === clanId && s.status === 'available' && (s.ri || 0) >= (chain.reqRi || 0))
-  if (members.length < (chain.reqClanSize || 1)) { ntf(`Need ${chain.reqClanSize} eligible ${clan.name} members.`); return }
+  if (members.length < (chain.reqClanSize || 1)) { ntf(t('toast.clans.needMembers', { n: chain.reqClanSize, name: clan.name })); return }
 
   // Send clan-size members on the chain (use highest-rank first)
   const squad = [...members].sort((a, b) => (b.ri || 0) - (a.ri || 0)).slice(0, chain.reqClanSize || 1)
   for (const s of squad) { s.status = 'mission'; s.missId = chainId }
   if (!G.aM) G.aM = []
   G.aM.push({ id: 'cc_' + Date.now(), missionId: chainId, assignedTo: squad.map(s => s.id), isClanChain: true, clanId, chainId, daysLeft: 1 })
-  aL(`${clan.icon} ${squad.map(s => sn(s)).join(' & ')} launched "${chain.n}".`, 'warn')
+  aL(t('toast.clans.chainLaunched', { icon: clan.icon, members: squad.map(s => sn(s)).join(' & '), chain: chain.n }), 'warn')
   upUI()
 }

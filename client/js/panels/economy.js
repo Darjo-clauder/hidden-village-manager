@@ -31,20 +31,20 @@ export function rTr() {
 export function secureRoute(id) {
   const r = G.tradeRoutes.find(x => x.id === id); if (!r || !r.disrupted) return
   const cost = Math.round((r._fullIncome || r.income * 2) * 0.6)
-  if (G.ryo < cost) { ntf('Not enough ryo to secure the route.'); return }
+  if (G.ryo < cost) { ntf(tr('toast.economy.notEnoughSecure')); return }
   G.ryo -= cost
   r.income = r._fullIncome || r.income * 2
   delete r._fullIncome
   r.disrupted = false
-  aL(`"${r.n}" secured — full income restored.`, 'good')
-  ntf('Trade route secured!')
+  aL(tr('toast.economy.routeSecured', { name: r.n }), 'good')
+  ntf(tr('toast.economy.routeSecuredShort'))
   upUI()
 }
 
 export function tgTr(id, on) {
   const r = G.tradeRoutes.find(x => x.id === id); if (!r) return
-  if (on) { if (G.ryo < r.cost) { ntf('Not enough ryo!'); return }; G.ryo -= r.cost; r.active = true; aL('"' + r.n + '" opened.', 'good'); ntf('Trade route opened!') }
-  else { r.active = false; aL('"' + r.n + '" closed.', 'neutral') }
+  if (on) { if (G.ryo < r.cost) { ntf(tr('toast.common.notEnoughRyo')); return }; G.ryo -= r.cost; r.active = true; aL(tr('toast.economy.routeOpened', { name: r.n }), 'good'); ntf(tr('toast.economy.routeOpenedShort')) }
+  else { r.active = false; aL(tr('toast.economy.routeClosed', { name: r.n }), 'neutral') }
   upUI()
 }
 
@@ -56,8 +56,8 @@ export function rCo() {
 
 export function tgCo(id, on) {
   const c = G.contracts.find(x => x.id === id); if (!c) return
-  if (on) { if (G.ryo < c.cost) { ntf('Not enough ryo!'); return }; G.ryo -= c.cost; c.active = true; aL('"' + c.n + '" signed.', 'good') }
-  else { c.active = false; aL('"' + c.n + '" cancelled.', 'neutral') }
+  if (on) { if (G.ryo < c.cost) { ntf(tr('toast.common.notEnoughRyo')); return }; G.ryo -= c.cost; c.active = true; aL(tr('toast.economy.contractSigned', { name: c.n }), 'good') }
+  else { c.active = false; aL(tr('toast.economy.contractCancelled', { name: c.n }), 'neutral') }
   upUI()
 }
 
@@ -102,7 +102,7 @@ export function rBl() {
 
 export function doBl(id) {
   const bm = BLACK_MARKET.find(x => x.id === id); if (!bm) return
-  if (G.shinobi.some(s => s.pers.n === 'Honorable')) { aL('Honorable shinobi exposed the deal!', 'bad'); G.reputation = Math.max(0, G.reputation - 10); upUI(); ntf('Deal exposed!'); return }
+  if (G.shinobi.some(s => s.pers.n === 'Honorable')) { aL(tr('toast.economy.dealExposedHonor'), 'bad'); G.reputation = Math.max(0, G.reputation - 10); upUI(); ntf(tr('toast.economy.dealExposedShort')); return }
   G.ryo += bm.ryoGain; G.reputation = Math.max(0, G.reputation - bm.repLoss)
   // Off-books ledger — separate hidden tracker, accumulates exposure risk over time
   if (!G.blackLedger) G.blackLedger = { balance: 0, history: [] }
@@ -112,8 +112,8 @@ export function doBl(id) {
   // Underworld heat scales exposure risk and rises with each deal
   const heatMult = 1 + (G.blackMarketHeat || 0) / 100
   const effRisk = Math.min(0.95, bm.risk * heatMult)
-  if (Math.random() < effRisk) { G.reputation = Math.max(0, G.reputation - bm.repLoss * 2); aL('"' + bm.n + '" exposed! Double penalty.', 'bad'); ntf('Exposed!') }
-  else { aL('"' + bm.n + '" completed. +' + fmt(bm.ryoGain) + ' ryo.', 'warn') }
+  if (Math.random() < effRisk) { G.reputation = Math.max(0, G.reputation - bm.repLoss * 2); aL(tr('toast.economy.dealExposedDouble', { name: bm.n }), 'bad'); ntf(tr('toast.economy.exposed')) }
+  else { aL(tr('toast.economy.dealDone', { name: bm.n, ryo: fmt(bm.ryoGain) }), 'warn') }
   G.blackMarketHeat = Math.min(100, (G.blackMarketHeat || 0) + bm.repLoss + 8)
   upUI()
 }
@@ -122,14 +122,14 @@ export function acceptSponsorship() {
   if (!G.sponsorshipOffer) return
   G.sponsorship = G.sponsorshipOffer
   G.sponsorshipOffer = null
-  aL('Sponsorship deal with ' + G.sponsorship.n + ' accepted.', 'good')
-  ntf('Sponsorship accepted: ' + G.sponsorship.n)
+  aL(tr('toast.economy.sponsorAccepted', { name: G.sponsorship.n }), 'good')
+  ntf(tr('toast.economy.sponsorAcceptedShort', { name: G.sponsorship.n }))
   upUI()
 }
 
 export function declineSponsorship() {
   if (!G.sponsorshipOffer) return
-  aL('Declined sponsorship offer from ' + G.sponsorshipOffer.n + '.', 'neutral')
+  aL(tr('toast.economy.sponsorDeclined', { name: G.sponsorshipOffer.n }), 'neutral')
   G.sponsorshipOffer = null
   upUI()
 }
