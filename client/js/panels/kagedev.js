@@ -1,6 +1,7 @@
 import { G } from '../state.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { KAGE_ATTRS, KAGE_PATHS, KAGE_ATTR_CAP, ATTR_BY_ID, PATH_BY_ID, xpForLevel, newKageDev, spendKagePoint, applyKagePath } from '../../../shared/constants/kageDev.js'
+import { t } from '../../../shared/utils/i18n.js'
 
 export function rKageDev() {
   const el = document.getElementById('kdl')
@@ -16,7 +17,7 @@ export function rKageDev() {
     <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
       <span style="font-size:16px;color:var(--accent);font-weight:bold">${G.kName || 'Kage'}</span>
       <span style="font-size:9px;color:#7a7060">Level ${k.level}${path ? ` · ${path.icon} ${path.n}` : ''}</span>
-      ${k.points > 0 ? `<span style="margin-left:auto;font-size:9px;color:#8fbc8f">● ${k.points} development point${k.points !== 1 ? 's' : ''} to spend</span>` : '<span style="margin-left:auto;font-size:8px;color:#555">No points to spend</span>'}
+      ${k.points > 0 ? `<span style="margin-left:auto;font-size:9px;color:#8fbc8f">● ${k.points} development point${k.points !== 1 ? 's' : ''} to spend</span>` : `<span style="margin-left:auto;font-size:8px;color:#555">${t('kagedev.noPoints')}</span>`}
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
       <span style="font-size:7px;color:#7a7060;text-transform:uppercase;letter-spacing:1px;width:24px">XP</span>
@@ -46,7 +47,7 @@ export function rKageDev() {
 
   // ── Attributes ─────────────────────────────────────────────────────────────
   const attrsHtml = `<div>
-    <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:8px">Attributes</div>
+    <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:8px">${t('kagedev.attributes')}</div>
     <div style="display:grid;gap:6px">
       ${KAGE_ATTRS.map(a => {
         const v = k.attrs[a.id] || 0

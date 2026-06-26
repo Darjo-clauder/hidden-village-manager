@@ -241,4 +241,41 @@ export const en = {
   'panel.kagePath': 'Kage Path',
   'panel.worldMap': 'World Map',
   'panel.activeVillages': 'Active Villages',
+
+  // ── Village overview (P2 tranche 10) ────────────────────────────────────
+  'village.card.prestige': 'Prestige Standing',
+  'village.card.finances': 'Monthly Finances',
+  'village.card.roster': 'Roster',
+  'village.card.morale': 'Morale & Standing',
+  'village.card.infrastructure': 'Infrastructure',
+  'village.card.climate': 'World Climate',
+  'village.card.beasts': 'Tailed Beasts',
+  'village.income': 'Income',
+  'village.expenses': 'Expenses',
+  'village.net': 'Net',
+  'village.economy': 'Economy',
+  'village.region': 'Region',
+  'village.doctrine': 'Doctrine',
+
+  // ── Kage Path (P2 tranche 10) ───────────────────────────────────────────
+  'kagedev.noPoints': 'No points to spend',
+  'kagedev.attributes': 'Attributes',
+
+  // ── Legacy & Prestige (P2 tranche 10) ───────────────────────────────────
+  'legacy.villagePrestige': 'Village Prestige',
+  'legacy.kageReputation': 'Kage Reputation',
+  'legacy.recordedUpsets': 'Recorded Upsets',
+  'legacy.currentSuccessor': 'Current Successor',
+  'legacy.clearDesignation': 'Clear Designation',
+  'legacy.designateFromShinobi': 'Designate from Shinobi',
+  'legacy.designate': 'Designate',
+  'legacy.noEligibleJonin': 'No eligible Jonin+ shinobi.',
+  'legacy.designateFromStaff': 'Designate from Staff',
+  'legacy.noStaff': 'No staff available.',
+  'legacy.pastDecisions': 'Past Legacy Decisions',
+  'legacy.noAwards': 'No awards data.',
+  'legacy.standings': 'Standings',
+  'legacy.winLeaders': 'Win Leaders',
+  'legacy.noData': 'No data',
+  'legacy.awards': 'Awards',
 }
