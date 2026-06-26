@@ -62,13 +62,12 @@ function runDynasty(seed) {
         { n: 'Gangakure',   strength: 48 }, { n: 'Raikurokure', strength: 72 },
       ],
       shinobi: Array.from({ length: 12 }, (_, i) => ({ ri: i < 2 ? 2 : i < 6 ? 1 : 0, salary: 500 + (i < 2 ? 2 : i < 6 ? 1 : 0) * 400 })),
-      // Staff bill — the REAL game seeds 7 staff (~19.3k/mo: 2 starters + 5 scout
-      // network). This is the cost line the old sweep omitted, which let the year-1
-      // deficit bug slip past. Higher prestige lets the player field elite command
-      // staff, so the bill scales modestly with tier (see staff-hire-on-promotion below).
+      // Staff bill — the lean start seeds just 2 staff (~7.5k/mo: starter scout +
+      // team sensei). Higher prestige lets the player field elite command staff, so the
+      // bill scales with tier (see staff-hire-on-promotion below). This is the cost line
+      // the old sweep omitted entirely, which let the year-1 deficit bug slip past.
       staff: [
-        { salary: 3570 }, { salary: 3920 },                                  // starter scout + team sensei
-        { salary: 2700 }, { salary: 2200 }, { salary: 1900 }, { salary: 2200 }, { salary: 2800 }, // 5 seeded scouts
+        { salary: 3570 }, { salary: 3920 },   // starter scout + team sensei (initState)
       ],
     }
     applyKagePath(G, 'administrator')   // a representative build
@@ -216,26 +215,26 @@ describe('Dynasty balance sweep — 20-year deterministic', () => {
     expect(Math.max(...finalYear), 'a rival saturated at the 200 cap').toBeLessThan(195)
   })
 
-  it('ECON-RUNWAY: a passive fresh village survives the intended ~8-month runway', () => {
-    // Encodes the design target that the year-1 deficit bug violated. A brand-new
-    // village (rep 10, D-tier) that plays PASSIVELY — earning no mission income —
-    // must not bankrupt almost immediately; it should have a multi-month grace period
-    // (~8mo by design) to learn the systems. Uses the REAL villageRevenue curve plus
-    // the verified live starting cost structure (22 shinobi + 7 seeded staff), so a
-    // regression to BASE_REVENUE or the seeded staff load flips this assertion.
+  it('ECON-RUNWAY: a passive fresh village sits near break-even on the lean start', () => {
+    // Encodes the lean-start design: a brand-new village (rep 10, D-tier) playing
+    // PASSIVELY — no mission income — should hover near break-even, neither bleeding out
+    // in a few months nor printing money. Deficit pressure is meant to come from the
+    // player's own spending (signings, hiring scouts), not from unchosen costs. Uses the
+    // REAL villageRevenue curve + the lean starting cost (22 shinobi + 2 starter staff),
+    // so a regression to BASE_REVENUE or the seeded staff load flips this assertion.
     const startRyo = 60000
-    const income = villageRevenue(10, 'D')           // real curve → 32,000 at launch
+    const income = villageRevenue(10, 'D')           // real curve → 26,000 at launch
     const shinobiWages = 19450                        // 22-shinobi starting roster (verified in-game)
-    const staffBill = 19290                           // 7 seeded staff (verified in-game)
+    const staffBill = 7490                            // 2 starter staff (scout + team sensei)
     // Root-cause guard: the default starting roster must be LEGAL under its own cap.
     // (The bug was a fresh village sitting ~2× over the D cap, bleeding a hidden luxury
     // tax. Staff are now cap-exempt, so the cap sees shinobi wages only.)
     const startTax = capStatus('D', shinobiWages).luxuryTax
     expect(startTax, `fresh roster pays ${startTax} luxury tax — it should be cap-legal`).toBe(0)
     const passiveNet = income - shinobiWages - staffBill - startTax
-    expect(passiveNet, 'passive net should be a gentle deficit, not steep').toBeGreaterThan(-9000)
-    const runwayMonths = passiveNet >= 0 ? Infinity : startRyo / -passiveNet
-    expect(runwayMonths, `passive runway only ${runwayMonths.toFixed(1)} months`).toBeGreaterThanOrEqual(6)
+    // Near break-even: a gentle deficit, not steep, and not a passive surplus.
+    expect(passiveNet, `passive net ${passiveNet} should be a gentle deficit`).toBeGreaterThan(-6000)
+    expect(passiveNet, `passive net ${passiveNet} should not be a free surplus`).toBeLessThan(2000)
   })
 
   it('SNAP: dynasty trajectory (logged, not asserted)', () => {

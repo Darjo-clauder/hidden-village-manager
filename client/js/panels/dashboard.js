@@ -161,13 +161,16 @@ export function rDash() {
         <div class="dash-stat-sub" style="color:${monthlyNet >= 0 ? 'var(--green)' : 'var(--red)'}">
           ${monthlyNet >= 0 ? '+' : ''}${fmt(monthlyNet)} / month
         </div>
-        ${monthlyNet < 0 ? (() => {
+        ${(() => {
           // Runway — the single most useful number for a new GM: how many months the
-          // treasury lasts at the current burn. Run missions (or trim staff) to extend it.
+          // treasury lasts at the current burn. Only shown when the deficit is steep
+          // enough to actually matter (< 24mo); a near-break-even drain isn't a warning.
+          if (monthlyNet >= 0) return ''
           const months = Math.floor(G.ryo / -monthlyNet)
+          if (months >= 24) return ''
           const col = months < 3 ? 'var(--red)' : months < 6 ? 'var(--orange)' : 'var(--text-dim)'
           return `<div class="dash-stat-sub" style="margin-top:2px;color:${col}">~${months} mo runway · missions extend it</div>`
-        })() : ''}
+        })()}
         <div class="dash-stat-sub" style="margin-top:3px;text-transform:uppercase;font-size:7px;letter-spacing:1px;color:${financeColor}">${financeHealth}</div>
       </div>
 

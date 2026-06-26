@@ -1,13 +1,12 @@
 /**
- * Phase 1 seed data for manual QA.
- * Import and call seedPhase1(G) after initState() to inject sample entities.
+ * Starting-kit seed for a new village. Called from setup.js after initState() to
+ * populate the opening academy prospect pool and the mission-template library.
+ * (Scouts are no longer seeded — the village starts lean and builds scouting itself.)
  *
- * Usage (browser console):  seedPhase1(G)  — then refresh the Scouting / Academy panels.
- * Usage (server tests):     import { seedPhase1 } from '../../seeds/phase1.js'
+ * Usage (server tests):  import { seedPhase1 } from '../../seeds/phase1.js'
  */
 
 import { createProspect } from '../shared/types/Prospect.js'
-import { createScout } from '../shared/types/Scout.js'
 import { dlog } from '../shared/utils/debug.js'
 import { createMissionTemplate } from '../shared/types/MissionTemplate.js'
 import { createDepthChart } from '../shared/types/DepthChart.js'
@@ -35,15 +34,6 @@ export const SEED_PROSPECTS = [
   { fn: 'Sota',    ln: 'Matsumoto',age:15, positionRole: 'vanguard',  potentialRange: { min: 82, max: 97 }, developmentCurve: 'early_peak', personalityTraits: ['Ambitious', 'Determined'] },
   { fn: 'Hinata',  ln: 'Ogawa',   age: 13, positionRole: 'medical',   potentialRange: { min: 71, max: 86 }, developmentCurve: 'linear', personalityTraits: ['Compassionate', 'Loyal'] },
 ].map(p => createProspect(p))
-
-// ── 5 Regional Scouts ─────────────────────────────────────────────────────────
-export const SEED_SCOUTS = [
-  { fn: 'Genzo',  ln: 'Takeda', knowledge: 14, judgement: 13, bias:  1, region: 'fire',      role: 'head_scout' },
-  { fn: 'Ruri',   ln: 'Hane',   knowledge: 10, judgement: 12, bias: -2, region: 'lightning',  role: 'scout_jonin' },
-  { fn: 'Masao',  ln: 'Okita',  knowledge:  9, judgement: 10, bias:  3, region: 'water',      role: 'scout_jonin' },
-  { fn: 'Etsuko', ln: 'Doi',    knowledge: 11, judgement: 11, bias:  0, region: 'wind',       role: 'scout_jonin' },
-  { fn: 'Yoshi',  ln: 'Maki',   knowledge: 13, judgement: 15, bias: -1, region: 'earth',      role: 'scout_jonin' },
-].map(s => createScout(s))
 
 // ── 3 Mission Templates ───────────────────────────────────────────────────────
 export const SEED_MISSION_TEMPLATES = [
@@ -81,18 +71,11 @@ export function seedPhase1(G) {
   const existingIds = new Set(G.prospects.map(p => p.id))
   SEED_PROSPECTS.forEach(p => { if (!existingIds.has(p.id)) G.prospects.push(p) })
 
-  // Scouts → stored as staff with scout roles
+  // NOTE: a new village no longer inherits a free 5-scout regional network. It starts
+  // lean — with the single starter scout seeded in initState() — and the player builds
+  // out scouting by hiring through the Staff panel. (The old auto-seeded scouts put a
+  // fresh village ~11.8k/mo into staff cost it never chose; see salaryCap.js history.)
   if (!G.staff) G.staff = []
-  const existingStaffIds = new Set(G.staff.map(s => s.id))
-  SEED_SCOUTS.forEach(s => {
-    if (!existingStaffIds.has(s.id)) {
-      const base = Math.round((s.knowledge + s.judgement) / 2)
-      const stats = s.role === 'head_scout'
-        ? { perception: s.knowledge, judgement: s.judgement, intelligence: s.knowledge, leadership: base }
-        : { perception: s.knowledge, judgement: s.judgement, stealth: base, adaptability: base }
-      G.staff.push({ ...s, regionAssigned: s.region, salary: s.costPerReport, stats, ambition: base, monthsServed: 0 })
-    }
-  })
 
   // Mission templates (stored on G for runtime use)
   if (!G.missionTemplates) G.missionTemplates = []

@@ -27,7 +27,7 @@ describe('monthlySnapshot — economy formula lock (I-ECON)', () => {
 describe('villageRevenue — baseline franchise income', () => {
   it('a fresh village (rep 10, D-tier) gets a workable operating base', () => {
     const r = villageRevenue(10, 'D')
-    expect(r).toBe(BASE_REVENUE + 10 * 400) // 32000
+    expect(r).toBe(BASE_REVENUE + 10 * 400) // 26000
   })
   it('scales up with reputation', () => {
     expect(villageRevenue(50, 'D')).toBeGreaterThan(villageRevenue(10, 'D'))

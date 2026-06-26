@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SEED_PROSPECTS, SEED_SCOUTS, SEED_MISSION_TEMPLATES, seedPhase1 } from '../seeds/phase1.js'
+import { SEED_PROSPECTS, SEED_MISSION_TEMPLATES, seedPhase1 } from '../seeds/phase1.js'
 
 describe('Phase 1 seed data', () => {
   it('exports exactly 20 prospects', () => {
@@ -12,16 +12,6 @@ describe('Phase 1 seed data', () => {
       expect(p.potential).toBeGreaterThanOrEqual(p.potentialRange.min)
       expect(p.potential).toBeLessThanOrEqual(p.potentialRange.max)
     })
-  })
-
-  it('exports exactly 5 scouts', () => {
-    expect(SEED_SCOUTS).toHaveLength(5)
-  })
-
-  it('all scouts cover distinct regions', () => {
-    const regions = SEED_SCOUTS.map(s => s.region)
-    const unique = new Set(regions)
-    expect(unique.size).toBe(5)
   })
 
   it('exports exactly 3 mission templates', () => {
@@ -37,11 +27,11 @@ describe('Phase 1 seed data', () => {
 })
 
 describe('seedPhase1()', () => {
-  it('injects prospects, staff, and mission templates into G', () => {
+  it('injects prospects and mission templates into G (lean start — no auto-seeded scouts)', () => {
     const G = { prospects: [], staff: [], squads: [] }
     seedPhase1(G)
     expect(G.prospects.length).toBe(20)
-    expect(G.staff.length).toBe(5)
+    expect(G.staff.length).toBe(0)   // village builds its own scouting
     expect(G.missionTemplates.length).toBe(3)
   })
 
@@ -50,7 +40,6 @@ describe('seedPhase1()', () => {
     seedPhase1(G)
     seedPhase1(G)
     expect(G.prospects.length).toBe(20)
-    expect(G.staff.length).toBe(5)
   })
 
   it('initialises depthChart for existing squads', () => {
