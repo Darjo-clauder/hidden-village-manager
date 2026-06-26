@@ -371,4 +371,16 @@ export const en = {
   'intel.abandon': 'Abandon',
   'intel.counterIntel': 'Counter-Intelligence',
   'intel.counterMax': 'Counter-intel network at maximum base rating.',
+
+  // ── Toasts (P2 — aL/ntf extraction, tranche 1) ──────────────────────────
+  'toast.common.notEnoughRyo': 'Not enough ryo!',
+  'toast.upgrades.doctrineLocked': 'A doctrine is already locked in.',
+  'toast.upgrades.doctrineAdopted': '{icon} {name} adopted — the village commits to its path.',
+  'toast.upgrades.doctrineAdoptedShort': 'Doctrine adopted: {name}',
+  'toast.upgrades.alreadyBuilt': 'Already built or building.',
+  'toast.upgrades.alreadyConstructing': 'Already constructing a district — wait for it to finish.',
+  'toast.upgrades.constructionBegun': 'Construction of {name} has begun — completes in {n, plural, one {# month} other {# months}}.',
+  'toast.upgrades.constructionStarted': '{icon} {name} — construction started!',
+  'toast.upgrades.upgraded': '{name} upgraded to Lv{lv}.',
+  'toast.upgrades.upgradedShort': '{name} upgraded!',
 }

@@ -28,11 +28,11 @@ function _doctrineHtml() {
 }
 
 export function chooseDoctrine(id) {
-  if (G.villageDoctrine) { ntf('A doctrine is already locked in.'); return }
+  if (G.villageDoctrine) { ntf(t('toast.upgrades.doctrineLocked')); return }
   const d = DOCTRINE_BY_ID[id]; if (!d) return
   G.villageDoctrine = id
-  aL(`${d.icon} ${d.n} adopted — the village commits to its path.`, 'good')
-  ntf(`Doctrine adopted: ${d.n}`)
+  aL(t('toast.upgrades.doctrineAdopted', { icon: d.icon, name: d.n }), 'good')
+  ntf(t('toast.upgrades.doctrineAdoptedShort', { name: d.n }))
   upUI()
 }
 
@@ -126,21 +126,21 @@ export function rUp() {
 
 export function buildDistrict(id) {
   if (!G.districts) G.districts = []
-  if (G.districts.find(d => d.id === id)) { ntf('Already built or building.'); return }
-  if (G.districts.find(d => d.status === 'building')) { ntf('Already constructing a district — wait for it to finish.'); return }
+  if (G.districts.find(d => d.id === id)) { ntf(t('toast.upgrades.alreadyBuilt')); return }
+  if (G.districts.find(d => d.status === 'building')) { ntf(t('toast.upgrades.alreadyConstructing')); return }
   const def = DISTRICTS.find(d => d.id === id)
   if (!def) return
-  if (G.ryo < def.cost) { ntf('Not enough ryo!'); return }
+  if (G.ryo < def.cost) { ntf(t('toast.common.notEnoughRyo')); return }
   G.ryo -= def.cost
   G.districts.push({ id, status: 'building', buildMonthsLeft: def.buildMonths })
-  aL(`Construction of ${def.n} has begun — completes in ${def.buildMonths} month${def.buildMonths > 1 ? 's' : ''}.`, 'good')
-  ntf(`${def.icon} ${def.n} — construction started!`)
+  aL(t('toast.upgrades.constructionBegun', { name: def.n, n: def.buildMonths }), 'good')
+  ntf(t('toast.upgrades.constructionStarted', { icon: def.icon, name: def.n }))
   upUI()
 }
 
 export function buyUp(id) {
   const u = UPGRADES_DEF.find(x => x.id === id), lv = G.upgrades[id], cost = u.cost[lv + 1]
-  if (G.ryo < cost) { ntf('Not enough ryo!'); return }
+  if (G.ryo < cost) { ntf(t('toast.common.notEnoughRyo')); return }
   G.ryo -= cost; G.upgrades[id]++
-  aL(u.n + ' upgraded to Lv' + G.upgrades[id] + '.', 'good'); ntf(u.n + ' upgraded!'); upUI()
+  aL(t('toast.upgrades.upgraded', { name: u.n, lv: G.upgrades[id] }), 'good'); ntf(t('toast.upgrades.upgradedShort', { name: u.n })); upUI()
 }
