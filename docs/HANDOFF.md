@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-26 · **HEAD:** `e8a9d74` · **Branch:** `master` · **Tests:** 680 passing / 54 files
+**Last updated:** 2026-06-26 · **HEAD:** `a2fab04` · **Branch:** `master` · **Tests:** 680 passing / 54 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -168,7 +168,7 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 
 ## 6. Known open items
 
-- **Localization — foundation DONE, P2 extraction well underway (2026-06-26):** P0/P1 shipped 2026-06-24 (see `docs/L10N_PLAN.md`). `shared/utils/i18n.js` (`t()` mini-ICU formatter), `shared/i18n/en.js` (string table, now ~270 keys), `shared/i18n/ipNames.js` (`ipName(kind,id)` IP swap point). **P2 (12 tranches done):** a new DOM localizer **`client/js/i18nDom.js`** (`data-i18n="key"` → `t(key)`, re-runnable on `setLocale`) handles static markup; `main.js` runs `localizeDom()` on DOM-ready and `window.setLocale` re-localizes for the `en-XA` QA pass. Extracted so far: nav + status strip + turn-loop ContinueButton + **all 26 static panel titles** + the panel chrome of dashboard, inbox, missions, finances, roster, squads, academy, village, kage path, legacy, staff, transfers. Guardrail test in `tests/i18n.test.js` asserts every `data-i18n` key resolves. **Convention:** import `t` directly, or `import { t as tr }` when the panel uses `t` as a loop var. **Remaining:** long-tail low-traffic panels (clans, safehouses, scouting, intel, chronicles, memorial, people, upgrades, world map, exam, summit, beasts) + the ~656 `ntf`/`aL` toasts (toasts embed live names/counts — interpolate, don't pre-concatenate). Accessibility half of polish IS done (P5).
+- **Localization — foundation DONE, P2 static chrome ≈COMPLETE (2026-06-26):** P0/P1 shipped 2026-06-24 (see `docs/L10N_PLAN.md`). `shared/utils/i18n.js` (`t()` mini-ICU formatter), `shared/i18n/en.js` (string table, ~320 keys), `shared/i18n/ipNames.js` (`ipName(kind,id)` IP swap point). **P2 (14 tranches):** DOM localizer **`client/js/i18nDom.js`** (`data-i18n="key"` → `t(key)`, re-runnable on `setLocale`) handles static markup; `main.js` runs `localizeDom()` on DOM-ready and `window.setLocale` re-localizes for the `en-XA` QA pass. **Done:** nav + status strip + turn-loop ContinueButton + **all 26 static panel titles** + the visible chrome (headers/buttons/empty-states) of dashboard, inbox, missions, finances, roster, squads, academy, village, kage path, legacy, staff, transfers, chronicles, memorial, upgrades, clans, safehouses, economy, depth chart, log, world calendar, summit, intel. Guardrail test asserts every `data-i18n` key resolves. **Convention:** import `t` directly, or `import { t as tr }` when the file uses `t` as a loop var; for static-HTML use `data-i18n`. **WATCH OUT:** when bulk-editing JS template strings with `perl`, `${t(...)}` only interpolates inside backticks — perl kept landing it inside single-quoted literals (silent: shows literal text, not a build error). Grep `'[^']*\$\{t` and browser-check for literal `${t(` after a bulk pass. **Remaining:** (a) deep panels scouting/meetings/beasts + the big exam panel (sparse static text amid heavy dynamic content); (b) **the ~657 `ntf`/`aL` toasts** — the headline remaining item: 424 `aL` + 233 `ntf`, **271 in adv.js**; ~317 fully static (key like chrome), ~171 template-literals needing ICU params (`t('key', {name: sn(s), n})`). Multi-session. Accessibility half of polish IS done (P5).
 - **Grand Tournament internal naming:** display says "Grand Tournament" but state/chronicle keys are still `warSched`/`warActive`/`Nation War` internals (kept for save compat). Harmless; just don't be confused by the mismatch.
 - **War/Exam stage logic lives in panels**, not unit-tested. Worth extracting stage math to shared pure utils.
 - **Grand Tournament KIA on rivals** permanently removes roster ninja; replenishment is light — watch for rival roster depletion over many years.
@@ -182,14 +182,14 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 
 As of 2026-06-25 the build is a "functioning sports sim that feels like one" with a now-**coherent, playtest-validated economy** (see the economy-overhaul block below) and a new-player polish pass across all four demo screens (dashboard / missions / season / roster dossier). It's at a clean, deployable checkpoint — a strong state to hand to playtesters. Candidate next targets (user's call):
 
-1. **Localization P2 — long tail** (in progress, §6): all high/medium-traffic panel chrome is keyed; remaining is the low-traffic panels (clans, safehouses, scouting, intel, chronicles, memorial, people, upgrades, world map, exam, summit, beasts) and the ~656 `ntf`/`aL` toasts. Incremental, stop-anytime. **The main remaining roadmap item.**
+1. **Localization P2 — toasts** (§6): static panel chrome is ≈complete (24 panels keyed). The remaining headline item is the **~657 `ntf`/`aL` toasts** (271 in adv.js; ~317 static, ~171 interpolated). Recipe: static → `t('toast.<area>.<id>')`; interpolated → `t('toast...', { name: sn(s), n })` (ICU plural/select in the value). Incremental, stop-anytime. Also deferred: deep panels scouting/meetings/beasts + exam dynamic content.
 2. **`adv.js` modularity** (now ~3580 lines) — continue extracting cohesive tick slices into `client/js/tick/*` (first slice landed: rivals). Candidates next: season-table block, academy/youth-dev tick, staff tick. **No vitest net for adv.js** — each slice needs build + browser playtest.
 3. **Mid-season pressure follow-ups** / **live battle for solo missions** — smaller flavor items; solo missions still resolve without a Watch option (squad-only by design so far).
 
 **Recently done (2026-06-26 — modularity + dynasty watch + L10N P2 session):**
 - **adv.js modularity, first slice** (`53aae60`): rival sim extracted to `client/js/tick/rivals.js` (`tickRivalSim`/`tickRivalGMMoves`), shared `pushNarrative` → `tick/inbox.js`. Established the `tick/` pattern. adv.js 3667→3580. **Discovered adv() has no test net** (DOM/socket-coupled imports) — verified via build + 14-month browser playtest.
 - **Late-dynasty economy watch — §7.2 CLOSED** (`2635312`): extended `tests/dynastySweep.test.js` to a 30-year horizon. Verdict: does NOT bleed out — year-end ryo grows monotonically 2.0M→4.7M and the passive net flips *positive* (−5k→+13k/mo) as rep lifts income past the soft cap while staff/roster plateau. Locked by 4 tests (LATE-SOLVENT / LATE-GROWTH / LATE-NET-STABILISES / LATE-SNAP).
-- **Localization P2 — 12 tranches** (`c75f069`…`e8a9d74`): DOM localizer `client/js/i18nDom.js`; nav + status + turn-loop + all 26 panel titles + dashboard/inbox/missions/finances/roster/squads/academy/village/kagedev/legacy/staff/transfers chrome. ~270 keys; guardrail test. Each verified with a live `en-XA` pseudo-loc pass. See §6.
+- **Localization P2 — 14 tranches, static chrome ≈complete** (`c75f069`…`a2fab04`): DOM localizer `client/js/i18nDom.js`; nav + status + turn-loop + all 26 panel titles + the chrome of 24 panels (dashboard, inbox, missions, finances, roster, squads, academy, village, kagedev, legacy, staff, transfers, chronicles, memorial, upgrades, clans, safehouses, economy, depthchart, log, worldcalendar, summit/kage, intel). ~320 keys; guardrail test. Each verified with a live `en-XA` pseudo-loc pass. See §6. Next: the ~657 toasts.
 
 **Recently done (2026-06-25 — production-prep + economy overhaul session):**
 - **ECONOMY OVERHAUL (4 commits, one root cause).** The starting state and the balance constants had been authored independently and never reconciled. Traced through four layers, each fix exposing the next:
@@ -224,7 +224,7 @@ As of 2026-06-25 the build is a "functioning sports sim that feels like one" wit
 ## 9. First moves for the new session
 
 1. Read this doc + the auto-memory (`MEMORY.md` index loads automatically; `project_state.md` has the running log).
-2. `git -C C:\Users\Tyler\ninja\hidden-village-manager log --oneline -5` — confirm HEAD matches above (`e8a9d74`).
+2. `git -C C:\Users\Tyler\ninja\hidden-village-manager log --oneline -5` — confirm HEAD matches above (`a2fab04`).
 3. `npx vitest run` — expect 680 passing / 54 files.
 4. `npx vite build` before any browser playtest (see §6 build + socket-race notes).
 5. Ask the user which target to take next (see §7), or continue whatever they were mid-stream on.
