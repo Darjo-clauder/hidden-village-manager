@@ -189,4 +189,16 @@ export const en = {
   'roster.noAssignments': 'No active assignments.',
   'roster.header': 'Roster — {n} shinobi',
   'roster.fullDossier': 'Full Dossier ▸',
+
+  // ── Squads (P2 tranche 7) ───────────────────────────────────────────────
+  'squad.none': 'No squads.',
+  'squad.fitMatrix': 'Squad Fit Matrix — by mission specialty',
+  'squad.formation': 'Formation',
+  'squad.fallen': 'Fallen',
+  'squad.noJonin': 'No available Jonin+.',
+  'squad.noSynergy': 'No synergy detected.',
+  'squad.synergyPreview': 'Synergy Preview',
+  'squad.noDepthBonuses': 'No depth chart bonuses assigned.',
+  'squad.tacticalApproach': "Tactical Approach — matched per mission's specialty",
+  'squad.noMissions': 'No squad missions.',
 }
