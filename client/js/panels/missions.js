@@ -8,6 +8,7 @@ import { resolveMission } from '../../../shared/types/MissionTemplate.js'
 import { BLACK_MARKET_MISSIONS, BM_MISSION_BY_ID, getUnderworldTier, UNDERWORLD_TIERS } from '../../../shared/constants/blackMarket.js'
 import { MISSION_APPROACHES } from '../../../shared/utils/missionEngine.js'
 import { openBattleViewer } from '../liveBattle.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 
 /** Replay the last mission as a live, watch-it-unfold battle. */
 export function watchLastBattle() { if (G.lastMissionReport) openBattleViewer(G.lastMissionReport) }
@@ -60,7 +61,7 @@ export function rMissionInspector() {
   const el = document.getElementById('ms-inspector'); if (!el) return
   const m = (G.avM || []).find(x => x.id === ui.msSel && !x.sq)
   if (!m) {
-    el.innerHTML = `<div style="border:1px solid #2e2a22;background:#0d0c0a;padding:14px;font-size:8px;color:#555;text-align:center;line-height:1.6">Select a mission to see its briefing, intel and best-fit squad.</div>`
+    el.innerHTML = `<div style="border:1px solid #2e2a22;background:#0d0c0a;padding:14px;font-size:8px;color:#555;text-align:center;line-height:1.6">${tr('mission.inspector.empty')}</div>`
     return
   }
   if (!ui.aApproach) ui.aApproach = 'balanced'
@@ -70,7 +71,7 @@ export function rMissionInspector() {
   const aM = G.aM.find(a => a.missionId === m.id && !a.isSquad)
   el.innerHTML = `
     <div style="border:1px solid var(--accent-border);background:#0d0c0a;padding:12px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">Mission Briefing</div>
+      <div style="font-size:7px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">${tr('mission.briefing')}</div>
       <div style="font-size:11px;color:#e8e0cc;font-weight:bold;margin-bottom:3px">${m.n}</div>
       <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${m.rk}-Rank · ${fmt(m.ryo)} ryo · +${m.rep} rep · ${m.dur}m · Risk ${Math.round(m.risk * 100)}% · Min pwr ${m.mp}</div>
       ${_missionIntel(m)}
@@ -84,7 +85,7 @@ export function rMissionInspector() {
              return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid #1a1814">
                <div style="flex:1"><div style="font-size:9px;color:#e8e0cc">${sn(c.s)}</div><div style="font-size:7px;color:#555">${RANKS[c.s.ri]} · Pwr ${c.pw}</div></div>
                <span style="font-size:9px;color:${col};font-family:var(--font-num,'Courier New',monospace)">${Math.round(c.sc * 100)}%</span>
-               <button class="gb" style="font-size:7px;padding:2px 7px" onclick="deployFromInspector('${c.s.id}')">Deploy</button>
+               <button class="gb" style="font-size:7px;padding:2px 7px" onclick="deployFromInspector('${c.s.id}')">${tr('mission.deploy')}</button>
              </div>`
            }).join('') : `<div style="font-size:8px;color:#f66">No eligible shinobi (need power ${m.mp}+).</div>`}`}
     </div>`
@@ -276,7 +277,7 @@ export function rSoloM() {
       ${_missionIntel(m)}
       ${aM
         ? `<div style="font-size:9px;color:#fa0">⟳ ${sn(G.shinobi.find(s => s.id === aM.assignedTo) || {fn:'?',ln:''})} — ${aM.daysLeft}m left</div>`
-        : `<div style="display:flex;gap:4px;flex-wrap:wrap">${bestFitBtn}<button class="gb" onclick="oA('${m.id}')" ${av.length ? '' : 'disabled'}>Assign ►</button></div>`
+        : `<div style="display:flex;gap:4px;flex-wrap:wrap">${bestFitBtn}<button class="gb" onclick="oA('${m.id}')" ${av.length ? '' : 'disabled'}>${tr('mission.assign')}</button></div>`
       }
     </div>`
   }
@@ -291,7 +292,7 @@ export function rSoloM() {
     : ''
 
   const civilianSection = civilian.length === 0 ? '' : `
-    <div style="font-size:7px;letter-spacing:2px;color:#3a3630;text-transform:uppercase;margin:14px 0 6px">Civilian Contracts (D-rank)</div>
+    <div style="font-size:7px;letter-spacing:2px;color:#3a3630;text-transform:uppercase;margin:14px 0 6px">${tr('mission.civilianContracts')}</div>
     <div style="opacity:0.7">${civilian.map(_mCard).join('')}</div>`
 
   const aspirationalSection = aspirational.length === 0 ? '' : `
@@ -444,7 +445,7 @@ export function rSqM() {
         <span>Duration: <span style="color:#e8e0cc">${m.dur}m</span></span>
         ${m.risk != null ? `<span>Risk: <span style="color:${_riskColor(m.risk)};font-weight:bold">${Math.round(m.risk * 100)}%</span></span>` : ''}
       </div>
-      ${aM ? `<div style="font-size:9px;color:#fa0">⟳ Squad on mission — ${aM.daysLeft}m left</div>` : `<button class="gb" onclick="pickSq('${m.id}')">Assign Squad ►</button>`}
+      ${aM ? `<div style="font-size:9px;color:#fa0">⟳ Squad on mission — ${aM.daysLeft}m left</div>` : `<button class="gb" onclick="pickSq('${m.id}')">${tr('mission.assignSquad')}</button>`}
     </div>`
   }).join('') || '<div style="color:#7a7060;font-size:10px">No squad missions.</div>'
 }
@@ -457,7 +458,7 @@ export function pickSq(mId) {
 
 export function rDef() {
   const el = document.getElementById('ms-def')
-  if (!G.raid || G.raid.resolved) { el.innerHTML = '<div style="color:#7a7060;font-size:10px">No active threats.</div>'; return }
+  if (!G.raid || G.raid.resolved) { el.innerHTML = `<div style="color:#7a7060;font-size:10px">${tr('mission.noThreats')}</div>`; return }
   const wD = (G.upgrades.wall === 1 ? 15 : G.upgrades.wall === 2 ? 35 : 0) + (G.upgrades.seal === 1 ? 10 : G.upgrades.seal === 2 ? 25 : 0) + (G.tempDef || 0)
   const def = G.defSh ? G.shinobi.find(s => s.id === G.defSh) : null
   const av = G.shinobi.filter(s => s.status === 'available')
@@ -473,7 +474,7 @@ export function rChains() {
   const RK_COLORS = { D:'#8fbc8f', C:'#87ceeb', B:'#c9a84c', A:'#f0a030', S:'#f66' }
 
   const activeHtml = active.length === 0
-    ? '<div style="color:#7a7060;font-size:9px;margin-bottom:12px">No active mission chains. They spawn randomly each month (8% chance).</div>'
+    ? `<div style="color:#7a7060;font-size:9px;margin-bottom:12px">${tr('mission.chains.none')}</div>`
     : active.map(chain => {
         const completedCount = chain.completedSteps.length
         const totalSteps = chain.steps.length
@@ -534,9 +535,9 @@ export function rChains() {
       }).join('')
 
   el.innerHTML = `
-    <div style="font-size:7px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Active Chains</div>
+    <div style="font-size:7px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">${tr('mission.chains.active')}</div>
     ${activeHtml}
-    <div style="font-size:7px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-top:14px;margin-bottom:8px">Completed Chains</div>
+    <div style="font-size:7px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-top:14px;margin-bottom:8px">${tr('mission.chains.completed')}</div>
     ${completedHtml}
   `
 }
@@ -701,7 +702,7 @@ export function rMissionLog() {
           ${f.label}
         </button>`).join('')}
     </div>
-    ${visible.length === 0 ? '<div style="color:var(--text-dim);font-size:9px">No missions logged yet.</div>' : ''}
+    ${visible.length === 0 ? `<div style="color:var(--text-dim);font-size:9px">${tr('mission.log.none')}</div>` : ''}
     ${visible.map(e => {
       const statusColor = e.success ? 'var(--green)' : 'var(--red)'
       const rankColor = e.rank === 'S' ? '#c9a84c' : e.rank === 'A' ? '#87ceeb' : e.rank === 'B' ? '#8fbc8f' : '#888'

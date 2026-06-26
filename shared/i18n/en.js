@@ -145,4 +145,17 @@ export const en = {
   'thread.state.escalating': 'Escalating',
   'thread.state.resolved': 'Resolved',
   'thread.state.tragedy': 'Tragedy',
+
+  // ── Missions board (P2 tranche 4) ───────────────────────────────────────
+  'mission.inspector.empty': 'Select a mission to see its briefing, intel and best-fit squad.',
+  'mission.briefing': 'Mission Briefing',
+  'mission.deploy': 'Deploy',
+  'mission.assign': 'Assign ►',
+  'mission.assignSquad': 'Assign Squad ►',
+  'mission.civilianContracts': 'Civilian Contracts (D-rank)',
+  'mission.noThreats': 'No active threats.',
+  'mission.chains.none': 'No active mission chains. They spawn randomly each month (8% chance).',
+  'mission.chains.active': 'Active Chains',
+  'mission.chains.completed': 'Completed Chains',
+  'mission.log.none': 'No missions logged yet.',
 }
