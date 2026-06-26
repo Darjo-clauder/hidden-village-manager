@@ -59,13 +59,13 @@ function _rivalDemandHtml() {
 
 export function payRivalDemand() {
   const d = G.rivalDemand; if (!d || d.resolvedQuarter) return
-  if (G.ryo < d.amount) { ntf('Not enough ryo.'); return }
+  if (G.ryo < d.amount) { ntf(tr('toast.common.notEnoughRyoDot')); return }
   G.ryo -= d.amount
   const v = G.villages.find(x => x.n === d.villageName)
   if (v) v.rel = clamp(v.rel + 12, 0, 100)
   d.resolvedQuarter = _diploQuarter()
-  aL(`Paid ${fmt(d.amount)} ryo tribute to ${d.villageName}. Tensions ease.`, 'neutral')
-  ntf('Tribute paid.'); upUI()
+  aL(tr('toast.kage.tributePaid', { amount: fmt(d.amount), village: d.villageName }), 'neutral')
+  ntf(tr('toast.kage.tributePaidShort')); upUI()
 }
 
 export function refuseRivalDemand() {
@@ -73,8 +73,8 @@ export function refuseRivalDemand() {
   const v = G.villages.find(x => x.n === d.villageName)
   if (v) { v.rel = clamp(v.rel - 15, 0, 100); v.threat = clamp((v.threat || 0) + 25, 0, 100) }
   d.resolvedQuarter = _diploQuarter()
-  aL(`Refused ${d.villageName}'s tribute demand. They will not forget this.`, 'warn')
-  ntf('Demand refused.'); upUI()
+  aL(tr('toast.kage.tributeRefused', { village: d.villageName }), 'warn')
+  ntf(tr('toast.kage.demandRefused')); upUI()
 }
 
 export function demandTribute(n) {
@@ -84,49 +84,49 @@ export function demandTribute(n) {
   if (edge >= 1.1 && Math.random() < clamp(0.35 + (edge - 1) * 0.6, 0.2, 0.85)) {
     const gain = Math.round(2500 + (v.strength || 50) * 90)
     G.ryo += gain; v.rel = clamp(v.rel - 8, 0, 100)
-    aL(`${n} yielded to your demand — extracted ${fmt(gain)} ryo. They resent it.`, 'good')
-    ntf(`Tribute extracted: +${fmt(gain)} ryo`)
+    aL(tr('toast.kage.demandYielded', { village: n, gain: fmt(gain) }), 'good')
+    ntf(tr('toast.kage.tributeExtracted', { gain: fmt(gain) }))
   } else {
     v.rel = clamp(v.rel - 12, 0, 100); v.threat = clamp((v.threat || 0) + 18, 0, 100)
-    aL(`${n} rebuffed your demand — relations worsen and their hostility grows.`, 'bad')
-    ntf('Demand rebuffed.')
+    aL(tr('toast.kage.demandRebuffed', { village: n }), 'bad')
+    ntf(tr('toast.kage.demandRebuffedShort'))
   }
   upUI()
 }
 
 export function appease(n) {
-  if (G.ryo < 4000) { ntf('Not enough ryo!'); return }
+  if (G.ryo < 4000) { ntf(tr('toast.common.notEnoughRyo')); return }
   const v = G.villages.find(x => x.n === n); if (!v) return
   G.ryo -= 4000
   v.threat = clamp((v.threat || 0) - 30, 0, 100); v.rel = clamp(v.rel + 5, 0, 100)
-  aL(`Appeased ${n} — their war footing eases.`, 'good'); ntf('Tensions reduced.'); upUI()
+  aL(tr('toast.kage.appeased', { village: n }), 'good'); ntf(tr('toast.kage.tensionsReduced')); upUI()
 }
 
 export function resKE(i) {
   if (!ui.pKE) return
   ui.pKE.choices[i].fn(G, aL)
-  ui.pKE = null; upUI(); ntf('Decision made.')
+  ui.pKE = null; upUI(); ntf(tr('toast.kage.decisionMade'))
 }
 
 export function sGift(n) {
-  if (G.ryo < 5000) { ntf('Not enough ryo!'); return }
+  if (G.ryo < 5000) { ntf(tr('toast.common.notEnoughRyo')); return }
   const v = G.villages.find(x => x.n === n); G.ryo -= 5000
   const gain = Math.round(10 * (1 + kageMod(G, 'diplomacy')))   // Kage Diplomacy boosts goodwill
   v.rel = clamp(v.rel + gain, 0, 100)
-  aL(`Gifts sent to ${n} (+${gain} relations).`, 'good'); ntf('Relations improved!'); upUI()
+  aL(tr('toast.kage.giftsSent', { village: n, gain }), 'good'); ntf(tr('toast.kage.relationsImproved')); upUI()
 }
 
 export function propAl(n) {
   const cost = Math.round(10000 * (kagePerk(G) === 'alliance' ? 0.7 : 1))   // Diplomat signature
-  if (G.ryo < cost) { ntf('Not enough ryo!'); return }
+  if (G.ryo < cost) { ntf(tr('toast.common.notEnoughRyo')); return }
   const v = G.villages.find(x => x.n === n); G.ryo -= cost
   v.rel = clamp(v.rel + 25 + Math.round(25 * kageMod(G, 'diplomacy')), 0, 100); v.allied = true
-  aL(`Alliance with ${n}! (${fmt(cost)} ryo)`, 'good'); ntf('Allied with ' + n + '!'); upUI()
+  aL(tr('toast.kage.alliance', { village: n, cost: fmt(cost) }), 'good'); ntf(tr('toast.kage.alliedWith', { village: n })); upUI()
 }
 
 export function rattle(n) {
   const v = G.villages.find(x => x.n === n); v.rel = clamp(v.rel - 15, 0, 100); v.threat = clamp((v.threat || 0) + 20, 0, 100)
-  aL('Rattled sabres at ' + n + '.', 'warn'); upUI()
+  aL(tr('toast.kage.rattled', { village: n }), 'warn'); upUI()
 }
 
 function _mandateHtml() {
@@ -188,7 +188,7 @@ export function resNCV(choice) { resolveNoConfidence(choice) }
 export function setCoachingPhilosophy(id) {
   if (!PHILOSOPHY_BY_ID[id]) return
   G.coachingPhilosophy = id
-  ntf('Coaching philosophy: ' + PHILOSOPHY_BY_ID[id].n)
+  ntf(tr('toast.kage.philosophy', { name: PHILOSOPHY_BY_ID[id].n }))
   upUI()
 }
 

@@ -337,7 +337,7 @@ export function refreshTransferPool() {
   if (!G.transferMarket) return
   G.transferMarket.pool = genTransferPool()
   rTr()
-  ntf('Transfer pool refreshed.')
+  ntf(t('toast.transfers.poolRefreshed'))
 }
 
 export function openNegotiation(poolId) {
@@ -430,19 +430,19 @@ export function confirmTransfer() {
   const p = _termTarget
   if (!p) return
   if (G.sponsorship?.restrictedVillage && p.originVillage === G.sponsorship.restrictedVillage) {
-    ntf('Sponsorship terms forbid trading with ' + G.sponsorship.restrictedVillage + '.'); return
+    ntf(t('toast.transfers.sponsorForbid', { village: G.sponsorship.restrictedVillage })); return
   }
   const fee = _negFee || p.askingFee
-  if (G.ryo < fee) { ntf('Not enough ryo for transfer fee!'); return }
+  if (G.ryo < fee) { ntf(t('toast.transfers.notEnoughFee')); return }
   const roleGuar = document.getElementById('pt-role-guar')?.checked || false
   const rankTL = parseInt(document.getElementById('pt-rank-tl')?.value || '0', 10)
   const sigBonus = parseInt(document.getElementById('pt-sig-bonus')?.value || '0', 10)
   const agentFee = p.agent ? Math.round(sigBonus * (p.agent.feePercent / 100)) : 0
   const totalCost = fee + sigBonus + agentFee
-  if (G.ryo < totalCost) { ntf('Not enough ryo including signing bonus and agent fee!'); return }
+  if (G.ryo < totalCost) { ntf(t('toast.transfers.notEnoughTotal')); return }
 
   G.ryo -= totalCost
-  if (agentFee > 0) aL(p.agent.name + ' (agent) took ' + fmt(agentFee) + ' ryo as a fee.', 'neutral')
+  if (agentFee > 0) aL(t('toast.transfers.agentFee', { agent: p.agent.name, fee: fmt(agentFee) }), 'neutral')
   const catDef = TRANSFER_CATS.find(c => c.id === p.transferCategory)
   p.commitment = clamp(50 + (catDef?.loyaltyBonus || 0) * 4 + (roleGuar ? 10 : 0) + Math.floor(sigBonus / 500), 0, 100)
   p.roleGuarantee = roleGuar
@@ -456,7 +456,7 @@ export function confirmTransfer() {
   // Missing-nin diplomatic risk
   if (p.transferCategory === 'missing_nin') {
     const v = pk(G.villages || [])
-    if (v) { v.rel = clamp(v.rel - 10, 0, 100); aL('Signing a missing-nin angered ' + v.n + '.', 'warn') }
+    if (v) { v.rel = clamp(v.rel - 10, 0, 100); aL(t('toast.transfers.missingNinAngered', { village: v.n }), 'warn') }
   }
   // Loan-in option
   const loanDur = parseInt(document.getElementById('pt-loan-dur')?.value || '0', 10)
@@ -473,8 +473,8 @@ export function confirmTransfer() {
   G.transferMarket.pool = (G.transferMarket.pool || []).filter(x => x.id !== p.id)
   G.transferMarket.completedDeals = G.transferMarket.completedDeals || []
   G.transferMarket.completedDeals.push({ name: p.fn + ' ' + p.ln, direction: 'in', fee, year: G.year, month: G.month })
-  aL(p.fn + ' ' + p.ln + ' signed! Fee: ' + fmt(fee) + ' ryo' + (sigBonus ? ' + ' + fmt(sigBonus) + ' signing bonus' : '') + '.', 'good')
-  ntf(p.fn + ' ' + p.ln + ' signed!')
+  aL(t('toast.transfers.signed', { name: `${p.fn} ${p.ln}`, fee: fmt(fee), bonus: sigBonus ? t('toast.transfers.signingBonus', { bonus: fmt(sigBonus) }) : '' }), 'good')
+  ntf(t('toast.transfers.signedShort', { name: `${p.fn} ${p.ln}` }))
   document.getElementById('ov-personalterms').classList.remove('open')
   _negTarget = null; _negFee = 0; _termTarget = null
   rTr(); upUI()
@@ -484,10 +484,10 @@ export function poachAttempt(poolId) {
   const p = (G.transferMarket?.pool || []).find(x => x.id === poolId)
   if (!p) return
   if (G.sponsorship?.restrictedVillage && p.originVillage === G.sponsorship.restrictedVillage) {
-    ntf('Sponsorship terms forbid trading with ' + G.sponsorship.restrictedVillage + '.'); return
+    ntf(t('toast.transfers.sponsorForbid', { village: G.sponsorship.restrictedVillage })); return
   }
   const poachFee = Math.round(p.askingFee * 0.70)
-  if (G.ryo < poachFee) { ntf('Not enough ryo to poach (' + fmt(poachFee) + ' needed).'); return }
+  if (G.ryo < poachFee) { ntf(t('toast.transfers.notEnoughPoach', { need: fmt(poachFee) })); return }
   const loyLow = (p.pMatrix?.loyalty || 10) < 10
   const success = Math.random() < (loyLow ? 0.68 : 0.40)
   if (success) {
@@ -497,8 +497,8 @@ export function poachAttempt(poolId) {
     G.transferMarket.pool = (G.transferMarket.pool || []).filter(x => x.id !== p.id)
     G.transferMarket.completedDeals = G.transferMarket.completedDeals || []
     G.transferMarket.completedDeals.push({ name: p.fn + ' ' + p.ln, direction: 'in', fee: poachFee, year: G.year, month: G.month })
-    aL(p.fn + ' ' + p.ln + ' approached directly and agreed — signed for ' + fmt(poachFee) + ' ryo!', 'good')
-    ntf(p.fn + ' signed via direct approach!')
+    aL(t('toast.transfers.poachSigned', { name: `${p.fn} ${p.ln}`, fee: fmt(poachFee) }), 'good')
+    ntf(t('toast.transfers.poachSignedShort', { name: p.fn }))
     rTr(); upUI()
   } else {
     // Diplomatic incident
@@ -507,16 +507,16 @@ export function poachAttempt(poolId) {
       if (v) {
         v.rel = clamp(v.rel - 15, 0, 100)
         v.grudgeTicks = (v.grudgeTicks || 0) + 4
-        aL('Poaching attempt on ' + p.fn + ' ' + p.ln + ' failed — diplomatic incident with ' + v.n + '!', 'bad')
+        aL(t('toast.transfers.poachFailIncident', { name: `${p.fn} ${p.ln}`, village: v.n }), 'bad')
       }
     } else {
-      aL('Poaching attempt on ' + p.fn + ' ' + p.ln + ' failed.', 'bad')
+      aL(t('toast.transfers.poachFail', { name: `${p.fn} ${p.ln}` }), 'bad')
     }
     // Failed pursuit fallout: small prestige hit, target remembers the approach
     G.reputation = clamp(G.reputation - 1, 0, 999)
     if (!p.pursuedByVillages) p.pursuedByVillages = []
     if (!p.pursuedByVillages.includes(G.vName)) p.pursuedByVillages.push(G.vName)
-    ntf('Poach failed!')
+    ntf(t('toast.transfers.poachFailShort'))
     rTr()
   }
 }
@@ -528,7 +528,7 @@ export function sellPressureBlock(shinobiId) {
   if (v) v.rel = clamp(v.rel - 5, 0, 100)
   G.sellPressure = (G.sellPressure || []).filter(x => x.shinobiId !== shinobiId)
   const s = G.shinobi.find(x => x.id === shinobiId)
-  aL('Blocked ' + sp.villageName + '\'s approach on ' + (s ? sn(s) : 'shinobi') + '.', 'neutral')
+  aL(t('toast.transfers.blockedApproach', { village: sp.villageName, name: s ? sn(s) : 'shinobi' }), 'neutral')
   rTr(); upUI()
 }
 
@@ -543,13 +543,13 @@ export function sellPressureAccept(shinobiId) {
   G.transferMarket = G.transferMarket || {}
   G.transferMarket.completedDeals = G.transferMarket.completedDeals || []
   G.transferMarket.completedDeals.push({ name: s ? sn(s) : 'Unknown', direction: 'out', fee: sp.offerRyo, year: G.year, month: G.month })
-  aL((s ? sn(s) : 'Shinobi') + ' sold to ' + sp.villageName + ' for ' + fmt(sp.offerRyo) + ' ryo.', 'neutral')
+  aL(t('toast.transfers.sold', { name: s ? sn(s) : 'Shinobi', village: sp.villageName, fee: fmt(sp.offerRyo) }), 'neutral')
   if (s) {
     // Sell-on clause: a cut of this sale is owed to whoever sold them to us originally
     if (s.sellOnClause) {
       const cut = Math.round(sp.offerRyo * (s.sellOnClause.percent / 100))
       G.ryo -= cut
-      aL('Sell-on clause triggered: ' + cut + ' ryo (' + s.sellOnClause.percent + '%) paid to ' + s.sellOnClause.village + '.', 'warn')
+      aL(t('toast.transfers.sellOn', { cut, pct: s.sellOnClause.percent, village: s.sellOnClause.village }), 'warn')
     }
     G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, year: G.year, month: G.month, wins: s.wins, lastWords: 'Transferred to ' + sp.villageName + '.', transfer: true })
     G.shinobi = G.shinobi.filter(x => x.id !== shinobiId)
@@ -584,13 +584,13 @@ export function sendLoan() {
   const shinobiId = document.getElementById('loan-out-shinobi')?.value
   const duration = parseInt(document.getElementById('loan-out-dur')?.value || '3', 10)
   const s = G.shinobi.find(x => x.id === shinobiId)
-  if (!s) { ntf('Select a shinobi to loan.'); return }
+  if (!s) { ntf(t('toast.transfers.selectLoan')); return }
   const monthlyFee = Math.round(s.salary * 1.5)
   s.status = 'mission'  // unavailable while on loan
   G.transferMarket.loanOut = G.transferMarket.loanOut || []
   G.transferMarket.loanOut.push({ shinobiId: s.id, monthsRemaining: duration, monthlyFee })
-  aL(sn(s) + ' sent on a ' + duration + '-month loan. Earns ' + fmt(monthlyFee) + '/mo.', 'good')
-  ntf(sn(s) + ' on loan for ' + duration + 'mo.')
+  aL(t('toast.transfers.loanSent', { name: sn(s), dur: duration, fee: fmt(monthlyFee) }), 'good')
+  ntf(t('toast.transfers.loanShort', { name: sn(s), dur: duration }))
   rTr(); upUI()
 }
 
@@ -600,7 +600,7 @@ export function recallLoan(shinobiId) {
   G.transferMarket.loanOut = (G.transferMarket.loanOut || []).filter(x => x.shinobiId !== shinobiId)
   const s = G.shinobi.find(x => x.id === shinobiId)
   if (s) { s.status = 'available'; s.commitment = clamp((s.commitment || 70) - 8, 0, 100) }
-  aL((s ? sn(s) : 'Shinobi') + ' recalled from loan early. Commitment penalty applied.', 'warn')
+  aL(t('toast.transfers.loanRecalled', { name: s ? sn(s) : 'Shinobi' }), 'warn')
   rTr(); upUI()
 }
 
@@ -608,10 +608,10 @@ export function bingoSuppress(shinobiId) {
   const s = G.shinobi.find(x => x.id === shinobiId)
   if (!s) return
   const cost = 8000
-  if (G.ryo < cost) { ntf('Not enough ryo (' + fmt(cost) + ' needed).'); return }
+  if (G.ryo < cost) { ntf(t('toast.common.notEnoughRyoNeed', { need: fmt(cost) })); return }
   G.ryo -= cost
   s.bingoBookSuppressed = true
-  aL(sn(s) + '\'s Bingo Book entry suppressed for now.', 'neutral')
+  aL(t('toast.transfers.bingoSuppressed', { name: sn(s) }), 'neutral')
   rTr(); upUI()
 }
 
@@ -619,11 +619,11 @@ export function bingoPromote(shinobiId) {
   const s = G.shinobi.find(x => x.id === shinobiId)
   if (!s || s.bingoBookPresence >= 3) return
   const cost = 3000
-  if (G.ryo < cost) { ntf('Not enough ryo (' + fmt(cost) + ' needed).'); return }
+  if (G.ryo < cost) { ntf(t('toast.common.notEnoughRyoNeed', { need: fmt(cost) })); return }
   G.ryo -= cost
   s.bingoBookPresence = Math.min(3, (s.bingoBookPresence || 1) + 1)
   const tier = BINGO_TIERS[s.bingoBookPresence]
-  aL(sn(s) + ' promoted in the Bingo Book to: ' + tier.n + '.', 'warn')
+  aL(t('toast.transfers.bingoPromoted', { name: sn(s), tier: tier.n }), 'warn')
   rTr(); upUI()
 }
 

@@ -224,13 +224,13 @@ function _counter() {
 
 export function upgradeCounterIntel() {
   const rating = G.counterIntelRating || 2
-  if (rating >= 10) { ntf('Already at maximum base rating.'); return }
+  if (rating >= 10) { ntf(tr('toast.intel.maxRating')); return }
   const cost = 8000 + rating * 4000
-  if (G.ryo < cost) { ntf('Not enough ryo.'); return }
+  if (G.ryo < cost) { ntf(tr('toast.common.notEnoughRyoDot')); return }
   G.ryo -= cost
   G.counterIntelRating = rating + 1
-  aL(`Counter-intel network trained. Base rating now ${G.counterIntelRating}/10.`, 'good')
-  ntf('Counter-Intel upgraded!')
+  aL(tr('toast.intel.counterTrained', { rating: G.counterIntelRating }), 'good')
+  ntf(tr('toast.intel.counterUpgraded'))
   rIn()
 }
 
@@ -239,19 +239,19 @@ export function intelTab(t) { window._intelTab = t; rIn() }
 
 export function dispatchAnbu(villageId) {
   const anbuCmd = (G.staff || []).find(st => st.role === 'anbu_commander')
-  if (!anbuCmd) { ntf('Hire an ANBU Commander first.'); return }
+  if (!anbuCmd) { ntf(tr('toast.intel.needCommander')); return }
   // Open op selection via prompt (simplified — pick via buttons in panel)
-  ntf('Select an operation type from the ANBU tab.')
+  ntf(tr('toast.intel.selectOp'))
   window._intelTab = 'anbu'
   rIn()
 }
 
 export function launchAnbu(opId, villageId) {
   const anbuCmd = (G.staff || []).find(st => st.role === 'anbu_commander')
-  if (!anbuCmd) { ntf('ANBU Commander required.'); return }
+  if (!anbuCmd) { ntf(tr('toast.intel.commanderRequired')); return }
   const op = ANBU_OPS.find(o => o.id === opId)
   if (!op) return
-  if (G.ryo < op.cost) { ntf('Insufficient ryo for this operation.'); return }
+  if (G.ryo < op.cost) { ntf(tr('toast.intel.insufficientOp')); return }
   G.ryo -= op.cost
   G.anbuOps = G.anbuOps || []
   G.anbuOps.push({
@@ -260,14 +260,14 @@ export function launchAnbu(opId, villageId) {
     monthsLeft: rnd(op.minDur, op.maxDur),
     catchRisk: op.catchRisk,
   })
-  aL(`ANBU ${op.n} dispatched. Cost: ${fmt(op.cost)} ryo.`, 'neutral')
-  ntf('ANBU operation dispatched.')
+  aL(tr('toast.intel.anbuDispatched', { op: op.n, cost: fmt(op.cost) }), 'neutral')
+  ntf(tr('toast.intel.anbuDispatchedShort'))
   rIn()
 }
 
 export function shadowScout(villageId) {
   const scout = (G.staff || []).find(st => st.role === 'scout_jonin')
-  if (!scout) { ntf('Scout Jonin required.'); return }
+  if (!scout) { ntf(tr('toast.intel.scoutRequired')); return }
   const v = (G.villages || []).find(v => v.id === villageId)
   const rosterEst = rnd(5, 18)
   const now = (G.year - 1) * 12 + G.month
@@ -277,23 +277,23 @@ export function shadowScout(villageId) {
   const report = { villageId, type: 'recon', data: { rosterSize: rosterEst, economyLevel: rnd(1, 3) }, expiresMonth: now + 2 }
   if (existing) Object.assign(existing, report)
   else G.intelReports.push(report)
-  aL(`Shadow scouting complete — ${v?.n || 'target'} roster estimated at ~${rosterEst}.`, 'neutral')
-  ntf('Shadow scout report filed.')
+  aL(tr('toast.intel.shadowDone', { village: v?.n || 'target', est: rosterEst }), 'neutral')
+  ntf(tr('toast.intel.shadowFiled'))
   rIn()
 }
 
 export function ransomAnbu(agentId) {
-  if (G.ryo < 15000) { ntf('Need 15,000 ryo for ransom.'); return }
+  if (G.ryo < 15000) { ntf(tr('toast.intel.needRansom')); return }
   G.ryo -= 15000
   const agent = (G.caughtAnbu || []).find(c => c.id === agentId)
-  if (agent) { agent.status = 'resolved'; aL('Ransomed captured ANBU agent for 15,000 ryo.', 'neutral') }
-  ntf('Agent ransomed.')
+  if (agent) { agent.status = 'resolved'; aL(tr('toast.intel.ransomed'), 'neutral') }
+  ntf(tr('toast.intel.ransomedShort'))
   rIn()
 }
 
 export function abandonAnbu(agentId) {
   const agent = (G.caughtAnbu || []).find(c => c.id === agentId)
-  if (agent) { agent.status = 'resolved'; aL('Abandoned captured ANBU agent to their fate.', 'bad') }
-  ntf('Agent abandoned.')
+  if (agent) { agent.status = 'resolved'; aL(tr('toast.intel.abandoned'), 'bad') }
+  ntf(tr('toast.intel.abandonedShort'))
   rIn()
 }
