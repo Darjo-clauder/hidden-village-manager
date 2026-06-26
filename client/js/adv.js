@@ -33,6 +33,7 @@ import { applyDebt } from '../../shared/utils/debt.js'
 import { nationMods } from '../../shared/constants/nations.js'
 import { activeBloodlineBonus, netBloodlineMod, canActivate, BLOODLINE_MULTIPLIER, ACTIVATION_COST, ACTIVATION_MIN_STAGE, ACTIVE_DURATION, COOLDOWN, AGGRO_INCREASE, DEBUFF_DURATION } from '../../shared/utils/bloodline.js'
 import { capStatus } from '../../shared/constants/salaryCap.js'
+import { prestigeFromLegend } from '../../shared/constants/prestige.js'
 import { pickMandates, evaluateMandates, MANDATE_BY_ID, CONFIDENCE_START, DISMISSAL_THRESHOLD } from '../../shared/utils/ownerMandate.js'
 import { getPhilosophyMods } from '../../shared/constants/coachingPhilosophy.js'
 import { snapshotSeasonStats, leagueLeaders } from '../../shared/utils/seasonStats.js'
@@ -2886,8 +2887,7 @@ export function adv() {
   }
 
   // ── Prestige tier tick ──────────────────────────────────────────────────────
-  const PTIERS = [{ id:'D', min:0 }, { id:'C', min:50 }, { id:'B', min:150 }, { id:'A', min:300 }, { id:'S', min:500 }]
-  const newPTier = [...PTIERS].reverse().find(t => (G.legend || 0) >= t.min)?.id || 'D'
+  const newPTier = prestigeFromLegend(G.legend)
   if (newPTier !== G.prestigeTier) {
     const was = G.prestigeTier; G.prestigeTier = newPTier
     addChronicle('Prestige Milestone', `${G.vName} has risen to Prestige Tier ${newPTier} (from ${was}). Legend: ${G.legend}.`, 'milestone')

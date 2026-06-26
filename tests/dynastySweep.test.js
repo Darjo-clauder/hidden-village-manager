@@ -27,6 +27,7 @@ import { initSeasonTable, playMatchday, sortedTable } from '../shared/utils/seas
 import { tickRivalStrength } from '../shared/utils/rivalSim.js'
 import { villageRevenue, REP_SOFT_CAP } from '../shared/utils/economy.js'
 import { capStatus } from '../shared/constants/salaryCap.js'
+import { prestigeFromLegend } from '../shared/constants/prestige.js'
 import {
   newKageDev, addKageXp, spendKagePoint, applyKagePath, KAGE_ATTR_CAP, KAGE_ATTRS,
 } from '../shared/constants/kageDev.js'
@@ -54,7 +55,7 @@ function spendAllPoints(G) {
 function runDynasty(seed) {
   return withSeed(seed, () => {
     const G = {
-      ryo: 50000, reputation: 30, prestigeTier: 'D',
+      ryo: 50000, reputation: 30, prestigeTier: 'D', legend: 0,
       kageDev: newKageDev(),
       villages: [
         { n: 'Kazegakure',  strength: 55 }, { n: 'Shimogakure', strength: 65 },
@@ -73,7 +74,7 @@ function runDynasty(seed) {
     applyKagePath(G, 'administrator')   // a representative build
     const PRESTIGE_IDX = { D: 0, C: 1, B: 2, A: 3, S: 4 }
 
-    const track = { ryo: [], net: [], rep: [], level: [], leftover: [], finishes: [], maxAttr: [], rivalStr: [], staffBill: [], roster: [] }
+    const track = { ryo: [], net: [], rep: [], level: [], leftover: [], finishes: [], maxAttr: [], rivalStr: [], staffBill: [], roster: [], legend: [], prestige: [] }
 
     for (let y = 1; y <= YEARS; y++) {
       const season = { year: y, round: 0, table: initSeasonTable(NAMES), lastResults: [] }
@@ -106,11 +107,19 @@ function runDynasty(seed) {
         G.ryo = Math.max(0, G.ryo + net)
 
         // Missions → reputation ramp (climbs well past the soft cap over 20y).
+        // Mission payout scales with prestige — higher-tier villages run higher-rank
+        // contracts (D ~3k → S ~9k per win), so income grows alongside the cost base
+        // instead of staying frozen while staff/wages climb.
         let wins = 0
+        const missionReward = 3000 + pIdx * 1500
         for (let i = 0; i < 3; i++) {
-          if (Math.random() < 0.62) { wins++; G.ryo += 3000 }
+          if (Math.random() < 0.62) { wins++; G.ryo += missionReward }
         }
         G.reputation = clamp(G.reputation + (Math.random() < 0.5 ? 1 : 0), 0, 999)
+        // Legend → prestige. Mirrors the live driver: missions grant legend per win
+        // (~B-rank proxy, addLegend in adv.js), tournament/exam wins add annual lumps
+        // (below). Prestige is derived from legend, NOT reputation.
+        G.legend = (G.legend || 0) + wins * 2
 
         // Kage XP — base monthly + win bonus, then spend points greedily.
         addKageXp(G, 4 + wins * 2)
@@ -132,21 +141,26 @@ function runDynasty(seed) {
         while (G.shinobi.length < rosterTarget) G.shinobi.push({ ri: 0, salary: 500, injured: false })
       }
 
-      // Prestige climbs with reputation.
+      const myPos = sortedTable(season.table).findIndex(r => r.name === PLAYER) + 1
+      // Year-end legend lumps: Grand Tournament win (+30, war.js) for the top seed,
+      // a Chunin Exam / strong-finish bonus (+15) for a podium finish, plus a small
+      // academy-graduates baseline (+10). Then derive prestige from legend.
+      if (myPos === 1) G.legend += 30
+      if (myPos <= 3) G.legend += 15
+      G.legend += 10
       const prevTier = G.prestigeTier
-      G.prestigeTier = ([['S', 200], ['A', 120], ['B', 70], ['C', 30], ['D', 0]].find(([, t]) => G.reputation >= t) || ['D'])[0]
+      G.prestigeTier = prestigeFromLegend(G.legend)
       // On a prestige promotion the player unlocks and hires elite command staff —
       // the staff bill climbs with the village, not just the wage bill.
       if ((PRESTIGE_IDX[G.prestigeTier] || 0) > (PRESTIGE_IDX[prevTier] || 0)) {
         G.staff.push({ salary: 6000 + (PRESTIGE_IDX[G.prestigeTier] || 0) * 1500 })
       }
-
-      const myPos = sortedTable(season.table).findIndex(r => r.name === PLAYER) + 1
       track.ryo.push(G.ryo); track.net.push(Math.round(yearNetSum / 12)); track.rep.push(G.reputation)
       track.level.push(G.kageDev.level); track.leftover.push(G.kageDev.points)
       track.finishes.push(myPos); track.maxAttr.push(Math.max(...ATTR_IDS.map(id => G.kageDev.attrs[id])))
       track.rivalStr.push(G.villages.map(v => Math.round(v.strength)))
       track.staffBill.push(G.staff.reduce((a, s) => a + s.salary, 0)); track.roster.push(G.shinobi.length)
+      track.legend.push(G.legend); track.prestige.push(G.prestigeTier)
     }
     return { G, track }
   })
@@ -237,6 +251,8 @@ describe('Dynasty balance sweep — 20-year deterministic', () => {
       `  Roster size  : ${track.roster.join(' ')}`,
       `  Staff bill   : ${track.staffBill.map(s => Math.round(s / 1000) + 'k').join(' ')}`,
       `  Reputation   : ${track.rep.join(' ')}   (soft cap ${REP_SOFT_CAP})`,
+      `  Legend       : ${track.legend.join(' ')}`,
+      `  Prestige     : ${track.prestige.join(' ')}`,
       `  Kage level   : ${track.level.join(' ')}`,
       `  Unspent pts  : ${track.leftover.join(' ')}`,
       `  Finishes     : ${track.finishes.join(' ')}  (1=top, ${NAMES.length}=last)`,
