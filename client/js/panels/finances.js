@@ -4,6 +4,7 @@ import { nationMods } from '../../../shared/constants/nations.js'
 import { villageRevenue } from '../../../shared/utils/economy.js'
 import { capStatus, SALARY_CAP } from '../../../shared/constants/salaryCap.js'
 import { lineChartSvg, barRowsSvg } from '../uikit.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 
 function tierColor(name) {
   const t = FINANCE_TIERS.find(x => x.n === name)
@@ -25,7 +26,7 @@ function row(label, value, color) {
 
 export function rFi() {
   const fin = G.finances
-  if (!fin) { document.getElementById('fil').innerHTML = '<div style="color:#7a7060;font-size:9px">No financial data yet.</div>'; return }
+  if (!fin) { document.getElementById('fil').innerHTML = `<div style="color:#7a7060;font-size:9px">${tr('fin.none')}</div>`; return }
 
   const snap = fin.history[fin.history.length - 1]
   const tier = FINANCE_TIERS.find(t => t.n === fin.healthTier) || FINANCE_TIERS[1]
@@ -99,7 +100,7 @@ export function rFi() {
   document.getElementById('fil').innerHTML = `
     <!-- Health tier -->
     <div style="background:rgba(${tc==='#c9a84c'?'201,168,76':tc==='#8fbc8f'?'143,188,143':tc==='#f0a030'?'240,160,48':tc==='#f99'?'255,153,153':'255,102,102'},0.08);border:1px solid ${tc};padding:12px 14px;margin-bottom:14px">
-      <div style="font-size:8px;letter-spacing:2px;color:${tc};text-transform:uppercase;margin-bottom:3px">Financial Health</div>
+      <div style="font-size:8px;letter-spacing:2px;color:${tc};text-transform:uppercase;margin-bottom:3px">${tr('fin.health')}</div>
       <div style="font-size:18px;font-weight:bold;color:${tc}">${fin.healthTier}</div>
       <div style="font-size:9px;color:#7a7060;margin-top:3px">${tier.desc}</div>
       ${fin.deficitMonths > 0 ? `<div style="margin-top:6px;font-size:9px;color:#f99">⚠ Deficit streak: ${fin.deficitMonths} month${fin.deficitMonths!==1?'s':''} — debt spiral triggers at 3.</div>` : ''}
@@ -109,7 +110,7 @@ export function rFi() {
 
     <!-- INCOME -->
     <div style="background:#1a1814;border:1px solid #2e2a22;padding:12px">
-      <div style="font-size:8px;letter-spacing:2px;color:#8fbc8f;text-transform:uppercase;margin-bottom:8px">Income / Month</div>
+      <div style="font-size:8px;letter-spacing:2px;color:#8fbc8f;text-transform:uppercase;margin-bottom:8px">${tr('fin.incomeMonth')}</div>
       ${row('Village Revenue (tax base · rep ' + (G.reputation||0) + ')', '+' + fmt(villageRev), '#8fbc8f')}
       ${row('Trade Routes (' + G.tradeRoutes.filter(r=>r.active).length + ' active)', '+' + fmt(trI), '#8fbc8f')}
       ${row('Contracts (' + G.contracts.filter(c=>c.active).length + ' active)', '+' + fmt(coI), '#8fbc8f')}
@@ -119,7 +120,7 @@ export function rFi() {
       ${fin.loanFees > 0 ? row('Loan Fees Received', '+' + fmt(fin.loanFees), '#8fbc8f') : ''}
       ${natBonus !== 0 ? row('Nation Bonus', (natBonus >= 0 ? '+' : '') + fmt(natBonus), natBonus >= 0 ? '#c9a84c' : '#fa0') : ''}
       <div style="padding:4px 0;margin-top:2px;border-top:1px solid #2e2a22;display:flex;justify-content:space-between">
-        <span style="font-size:9px;color:#e8e0cc;font-weight:bold">TOTAL</span>
+        <span style="font-size:9px;color:#e8e0cc;font-weight:bold">${tr('fin.total')}</span>
         <span style="font-size:9px;color:#8fbc8f;font-weight:bold">+${fmt(totalIncome)}</span>
       </div>
       ${commissions ? `<div style="margin-top:6px;font-size:8px;color:#7a7060;letter-spacing:1px">MISSIONS THIS MONTH:</div><div style="margin-top:3px">${commissions}</div>` : ''}
@@ -127,7 +128,7 @@ export function rFi() {
 
     <!-- EXPENDITURE -->
     <div style="background:#1a1814;border:1px solid #2e2a22;padding:12px">
-      <div style="font-size:8px;letter-spacing:2px;color:#f66;text-transform:uppercase;margin-bottom:8px">Expenditure / Month</div>
+      <div style="font-size:8px;letter-spacing:2px;color:#f66;text-transform:uppercase;margin-bottom:8px">${tr('fin.expenditureMonth')}</div>
       ${row('Shinobi Wages (' + G.shinobi.length + ' active)', '-' + fmt(shinobiSal), '#f66')}
       ${rankSal}
       ${staffSal > 0 ? row('Staff Salaries (' + (G.staff||[]).length + ' staff · cap-exempt)', '-' + fmt(staffSal), '#f99') : ''}
@@ -135,7 +136,7 @@ export function rFi() {
       ${(fin.scoutCostThisMonth||0) > 0 ? row('Scout Costs', '-' + fmt(fin.scoutCostThisMonth), '#fa0') : ''}
       ${luxuryTax > 0 ? row('Luxury Tax (over cap)', '-' + fmt(luxuryTax), '#f44') : ''}
       <div style="padding:4px 0;margin-top:2px;border-top:1px solid #2e2a22;display:flex;justify-content:space-between">
-        <span style="font-size:9px;color:#e8e0cc;font-weight:bold">TOTAL</span>
+        <span style="font-size:9px;color:#e8e0cc;font-weight:bold">${tr('fin.total')}</span>
         <span style="font-size:9px;color:#f66;font-weight:bold">-${fmt(totalExpend)}</span>
       </div>
     </div>
@@ -149,33 +150,33 @@ export function rFi() {
     <!-- Net -->
     <div style="background:#0d0b08;border:1px solid ${netNow>=0?'#8fbc8f':'#f66'};padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
       <div>
-        <div style="font-size:8px;letter-spacing:2px;color:#7a7060;text-transform:uppercase">Monthly Net</div>
+        <div style="font-size:8px;letter-spacing:2px;color:#7a7060;text-transform:uppercase">${tr('fin.monthlyNet')}</div>
         <div style="font-size:22px;font-weight:bold;color:${netNow>=0?'#8fbc8f':'#f66'}">${netNow>=0?'+':''}${fmt(netNow)}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:8px;color:#7a7060">Treasury</div>
+        <div style="font-size:8px;color:#7a7060">${tr('fin.treasury')}</div>
         <div style="font-size:16px;color:#c9a84c;font-weight:bold">${fmt(G.ryo)}</div>
       </div>
     </div>
 
     <!-- Transfer vs Wage budget summary -->
     <div style="background:#1a1814;border:1px solid #2e2a22;padding:12px;margin-bottom:14px">
-      <div style="font-size:8px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:8px">Budget Pools</div>
+      <div style="font-size:8px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:8px">${tr('fin.budgetPools')}</div>
       <div style="display:flex;gap:16px">
         <div>
-          <div style="font-size:7px;color:#7a7060;margin-bottom:2px">WAGE BUDGET</div>
+          <div style="font-size:7px;color:#7a7060;margin-bottom:2px">${tr('fin.wageBudget')}</div>
           <div style="font-size:14px;color:#f99;font-weight:bold">-${fmt(shinobiSal + staffSal)}</div>
           <div style="font-size:8px;color:#7a7060">${G.shinobi.length} shinobi · ${(G.staff||[]).length} staff</div>
         </div>
         <div>
-          <div style="font-size:7px;color:#7a7060;margin-bottom:2px">TRANSFER BUDGET</div>
+          <div style="font-size:7px;color:#7a7060;margin-bottom:2px">${tr('fin.transferBudget')}</div>
           <div style="font-size:14px;color:#fa0;font-weight:bold">-${fmt(maintenance + (fin.scoutCostThisMonth||0))}</div>
-          <div style="font-size:8px;color:#7a7060">Maintenance · Scouts</div>
+          <div style="font-size:8px;color:#7a7060">${tr('fin.maintScouts')}</div>
         </div>
         <div>
-          <div style="font-size:7px;color:#7a7060;margin-bottom:2px">PASSIVE INCOME</div>
+          <div style="font-size:7px;color:#7a7060;margin-bottom:2px">${tr('fin.passiveIncome')}</div>
           <div style="font-size:14px;color:#8fbc8f;font-weight:bold">+${fmt(trI + coI + jkI + daimyoB)}</div>
-          <div style="font-size:8px;color:#7a7060">Routes · Contracts · Bonuses</div>
+          <div style="font-size:8px;color:#7a7060">${tr('fin.routesContracts')}</div>
         </div>
       </div>
     </div>
@@ -183,7 +184,7 @@ export function rFi() {
     <!-- History -->
     ${hist.length > 0 ? `
     <div style="background:#1a1814;border:1px solid #2e2a22;padding:12px;margin-bottom:14px">
-      <div style="font-size:8px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:6px">Monthly History (last ${hist.length})</div>
+      <div style="font-size:8px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:6px">${tr('fin.history', { n: hist.length })}</div>
       ${hist.map(h => `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #111;font-size:8px">
         <span style="color:#3a3630">Y${h.year}M${h.month}</span>
         <span style="color:#7a7060">+${fmt(h.totalIncome)} income</span>
@@ -191,7 +192,7 @@ export function rFi() {
         <span style="color:${h.net>=0?'#8fbc8f':'#f66'};font-weight:bold">${h.net>=0?'+':''}${fmt(h.net)}</span>
       </div>`).join('')}
       ${sparkline}
-      <div style="font-size:8px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin:12px 0 6px">Income Mix</div>
+      <div style="font-size:8px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin:12px 0 6px">${tr('fin.incomeMix')}</div>
       ${barRowsSvg([
         { label: 'Village rev', value: villageRev, color: '#8fbc8f' },
         { label: 'Trade routes', value: trI, color: '#8fbc8f' },
@@ -231,7 +232,7 @@ function _budgetPriorityHtml() {
     infra:    `Maintenance ×${(1 - (bp.infra / 100) * 0.3).toFixed(2)}`,
   }
   return `<div style="background:#1a1814;border:1px solid #2e2a22;padding:12px 14px;margin-bottom:14px">
-    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">Budget Priority</div>
+    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">${tr('fin.budgetPriority')}</div>
     ${['training','warPrep','infra'].map(k => {
       const labels = { training:'Training', warPrep:'War Prep', infra:'Infrastructure' }
       return `<div style="margin-bottom:8px">
@@ -261,7 +262,7 @@ function _capHtml(payroll) {
   const nextCap = nextTier ? SALARY_CAP[nextTier] : null
   return `<div style="background:#1a1814;border:1px solid ${cs.color}44;padding:12px;margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-      <div style="font-size:8px;letter-spacing:2px;color:${cs.color};text-transform:uppercase">Salary Cap · Prestige ${G.prestigeTier||'D'}</div>
+      <div style="font-size:8px;letter-spacing:2px;color:${cs.color};text-transform:uppercase">${tr('fin.salaryCap', { tier: G.prestigeTier||'D' })}</div>
       <div style="font-size:9px;color:${cs.color};font-weight:bold">${cs.label}</div>
     </div>
     <div style="background:#111;border-radius:3px;overflow:hidden;height:8px;margin-bottom:6px">
@@ -345,7 +346,7 @@ function _daimyoObjectivesHtml() {
   if (!obj) return ''
   const defs = obj.ids.map(id => DAIMYO_OBJECTIVES.find(o => o.id === id)).filter(Boolean)
   return `<div style="background:#1a1814;border:1px solid #c9a84c44;padding:12px;margin-bottom:14px">
-    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">Daimyo Objectives — Year ${obj.year}</div>
+    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">${tr('fin.daimyoObjectives', { year: obj.year })}</div>
     ${defs.map(d => `<div style="padding:4px 0;border-bottom:1px solid #111"><div style="font-size:9px;color:#e8e0cc">${d.n}</div><div style="font-size:8px;color:#7a7060">${d.desc}</div></div>`).join('')}
     <div style="font-size:8px;color:#7a7060;margin-top:8px">Budget multiplier: <b style="color:${(G.daimyoBudgetMult||1)>=1?'#8fbc8f':'#f66'}">${(G.daimyoBudgetMult||1).toFixed(2)}x</b>. Meet all 3 by December for a budget increase — miss any for a cut.</div>
   </div>`
@@ -356,7 +357,7 @@ function _sponsorshipHtml() {
   const active = G.sponsorship
   if (!offer && !active) return ''
   return `<div style="background:#1a1814;border:1px solid #cc7fb844;padding:12px;margin-bottom:14px">
-    <div style="font-size:8px;letter-spacing:2px;color:#cc7fb8;text-transform:uppercase;margin-bottom:8px">Sponsorship</div>
+    <div style="font-size:8px;letter-spacing:2px;color:#cc7fb8;text-transform:uppercase;margin-bottom:8px">${tr('fin.sponsorship')}</div>
     ${active ? `<div style="font-size:9px;color:#e8e0cc;margin-bottom:4px">${active.n} — active</div>
       <div style="font-size:8px;color:#8fbc8f;margin-bottom:4px">+${fmt(active.monthlyRyo)} ryo/month</div>
       <div style="font-size:8px;color:#7a7060">Obligation: ${active.obligation}</div>` : ''}
@@ -371,7 +372,7 @@ function _blackLedgerHtml() {
   const ledger = G.blackLedger || { balance: 0, history: [] }
   if (ledger.balance === 0 && ledger.history.length === 0) return ''
   return `<div style="background:#1a0d0d;border:1px solid #74444;padding:12px;margin-bottom:14px">
-    <div style="font-size:8px;letter-spacing:2px;color:#f66;text-transform:uppercase;margin-bottom:8px">Black Market Ledger (Off-Books)</div>
+    <div style="font-size:8px;letter-spacing:2px;color:#f66;text-transform:uppercase;margin-bottom:8px">${tr('fin.blackMarket')}</div>
     <div style="font-size:9px;color:#e8e0cc;margin-bottom:6px">Accumulated exposure: <b style="color:#f0a030">${fmt(ledger.balance)}</b></div>
     <div style="font-size:8px;color:#7a7060;margin-bottom:6px">Higher balances raise the monthly chance rival intel exposes your dealings — a major diplomatic and financial penalty.</div>
     ${ledger.history.slice(-5).reverse().map(h => `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:8px;color:#7a7060"><span>Y${h.year}M${h.month}</span><span style="color:${h.amount>=0?'#8fbc8f':'#f66'}">${h.amount>=0?'+':''}${fmt(h.amount)}</span></div>`).join('')}
@@ -383,7 +384,7 @@ function _yearEndHtml() {
   if (!reports.length) return ''
   const r = reports[reports.length - 1]
   return `<div style="background:#1a1814;border:1px solid #2e2a22;padding:12px;margin-bottom:14px">
-    <div style="font-size:8px;letter-spacing:2px;color:#8fbc8f;text-transform:uppercase;margin-bottom:8px">Year ${r.year} Financial Report</div>
+    <div style="font-size:8px;letter-spacing:2px;color:#8fbc8f;text-transform:uppercase;margin-bottom:8px">${tr('fin.report', { year: r.year })}</div>
     <div style="display:flex;gap:14px;margin-bottom:8px">
       <div><div style="font-size:7px;color:#7a7060">Income</div><div style="font-size:12px;color:#8fbc8f;font-weight:bold">${fmt(r.totalIncome)}</div></div>
       <div><div style="font-size:7px;color:#7a7060">Expenditure</div><div style="font-size:12px;color:#f66;font-weight:bold">${fmt(r.totalExpend)}</div></div>
