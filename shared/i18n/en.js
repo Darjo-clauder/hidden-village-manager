@@ -301,4 +301,34 @@ export const en = {
   'transfers.sendOnLoan': 'Send on Loan',
   'transfers.acceptCounter': 'Accept Counter',
   'transfers.noCompleted': 'No completed transfers yet.',
+
+  // ── Long-tail panels (P2 tranche 12) ────────────────────────────────────
+  // Chronicles
+  'chronicles.noEntries': 'No entries yet. Major events are recorded here automatically.',
+  'chronicles.noMatch': 'No entries match this filter.',
+  'chronicles.all': 'All',
+  'chronicles.search': 'Search…',
+  // Memorial
+  'memorial.none': 'No fallen shinobi recorded. May it stay this way.',
+  'memorial.fallen': 'Fallen',
+  'memorial.honored': 'Honored',
+  'memorial.missionsServed': 'Missions Served',
+  'memorial.inMemory': 'In memory of those who served',
+  // Upgrades
+  'upgrades.defenseRating': 'Defense Rating',
+  'upgrades.upkeep': 'Upkeep / Month',
+  'upgrades.maintNote': 'Maintenance scales with building levels',
+  'upgrades.districts': 'Districts',
+  // Clans
+  'clans.noMembers': 'No clan members active',
+  'clans.activePassives': 'Active Bloodline Passives — Village Total',
+  'clans.chains': 'Clan Chains',
+  'clans.launch': 'Launch',
+  // Safehouses
+  'safehouses.abort': 'Abort (recall agent)',
+  'safehouses.networkStatus': 'Network Status',
+  'safehouses.deepCover': 'Deep Cover Operations',
+  'safehouses.establishFirst': 'Establish a safehouse to launch deep cover ops.',
+  'safehouses.noEligible': 'No eligible shinobi.',
+  'safehouses.deploy': 'Deploy',
 }

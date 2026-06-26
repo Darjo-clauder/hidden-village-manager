@@ -1,4 +1,5 @@
 import { G } from '../state.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 import { MONTHS } from '../constants.js'
 
 const TYPE_META = {
@@ -19,7 +20,7 @@ export function rCh() {
   if (!el) return
 
   if (!G.chronicles?.length) {
-    el.innerHTML = '<div style="color:var(--text-dim);font-size:10px;padding:16px 0">No entries yet. Major events are recorded here automatically.</div>'
+    el.innerHTML = `<div style="color:var(--text-dim);font-size:10px;padding:16px 0">${tr("chronicles.noEntries")}</div>`
     return
   }
 
@@ -35,16 +36,16 @@ export function rCh() {
       ${types.map(t => {
         const meta = TYPE_META[t] || TYPE_META.event
         return `<button class="tab${_filterType === t ? ' active' : ''}" style="font-size:7px;padding:4px 9px" onclick="chrFilter('${t}')">
-          ${t === 'all' ? 'All' : (meta.icon + ' ' + meta.label)}
+          ${t === 'all' ? tr("chronicles.all") : (meta.icon + ' ' + meta.label)}
         </button>`
       }).join('')}
-      <input type="text" placeholder="Search…" value="${_searchText}"
+      <input type="text" placeholder="${tr("chronicles.search")}" value="${_searchText}"
         oninput="chrSearch(this.value)"
         style="margin-left:auto;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:8px;padding:4px 8px;width:130px;outline:none">
     </div>
 
     <!-- Entries -->
-    ${filtered.length === 0 ? '<div style="color:var(--text-dim);font-size:9px">No entries match this filter.</div>' : ''}
+    ${filtered.length === 0 ? `<div style="color:var(--text-dim);font-size:9px">${tr("chronicles.noMatch")}</div>` : ''}
     ${filtered.map(e => {
       const meta = TYPE_META[e.type || 'event'] || TYPE_META.event
       const monthName = MONTHS[(e.month ?? 1) - 1]?.n || 'M' + e.month

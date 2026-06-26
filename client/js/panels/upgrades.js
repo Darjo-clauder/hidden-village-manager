@@ -1,6 +1,7 @@
 import { G, fmt } from '../state.js'
 import { UPGRADES_DEF, BUILDING_MAINTENANCE, VILLAGE_DOCTRINES, DOCTRINE_BY_ID } from '../constants.js'
 import { DISTRICTS, getDistrictPassives } from '../../../shared/constants/districts.js'
+import { t } from '../../../shared/utils/i18n.js'
 import { aL, ntf, upUI } from '../ui.js'
 
 // ── Village Doctrine — one-time mutually-exclusive specialization ──────────────
@@ -59,17 +60,17 @@ export function rUp() {
   const summaryHtml = `
     <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:10px 13px;background:var(--surface,#1a1814);border:1px solid var(--border,#2e2a22)">
       <div>
-        <div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px">Defense Rating</div>
+        <div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px">${t("upgrades.defenseRating")}</div>
         <div style="font-size:16px;color:${defColor};font-family:'Courier New',monospace">${def.total}</div>
         <div style="font-size:7px;color:#7a7060;margin-top:2px">Walls +${def.wall} · Seals +${def.seal}${def.temp ? ` · Temp +${def.temp}` : ''}${def.doc ? ` · Doctrine ${def.doc > 0 ? '+' : ''}${def.doc}` : ''}</div>
       </div>
       <div>
-        <div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px">Upkeep / Month</div>
+        <div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px">${t("upgrades.upkeep")}</div>
         <div style="font-size:16px;color:#f66;font-family:'Courier New',monospace">-${fmt(maint)}</div>
-        <div style="font-size:7px;color:#7a7060;margin-top:2px">Maintenance scales with building levels</div>
+        <div style="font-size:7px;color:#7a7060;margin-top:2px">${t("upgrades.maintNote")}</div>
       </div>
       <div>
-        <div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px">Districts</div>
+        <div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px">${t("upgrades.districts")}</div>
         <div style="font-size:16px;color:#87ceeb;font-family:'Courier New',monospace">${builtCount}</div>
         <div style="font-size:7px;color:#7a7060;margin-top:2px">${building ? `⚒ ${building.id} (${building.buildMonthsLeft}mo)` : 'None under construction'}</div>
       </div>

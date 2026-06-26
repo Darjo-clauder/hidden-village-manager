@@ -1,6 +1,7 @@
 import { G, sn, fmt, clamp } from '../state.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { CLANS, CLAN_BY_ID, CLAN_CHAINS, getClanPassives, availableClanChains, clanCouncilInfluence } from '../../../shared/constants/clans.js'
+import { t } from '../../../shared/utils/i18n.js'
 
 // Human-readable name for each passive effect key.
 const _PASSIVE_LABEL = {
@@ -60,7 +61,7 @@ export function rClans() {
 
   el.innerHTML = councilHtml + `
     <div style="background:#0a0a0a;border:1px solid #222;padding:10px;margin-bottom:12px">
-      <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:6px">Active Bloodline Passives — Village Total</div>
+      <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:6px">${t("clans.activePassives")}</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:8px">
         ${clP.successMod     ? `<span style="color:#8fbc8f">+${(clP.successMod*100).toFixed(0)}% mission success</span>` : ''}
         ${clP.growthBonus    ? `<span style="color:#8fbc8f">+${(clP.growthBonus*100).toFixed(0)}% growth</span>` : ''}
@@ -68,7 +69,7 @@ export function rClans() {
         ${clP.kiaRiskMod     ? `<span style="color:#8fbc8f">${(clP.kiaRiskMod*100).toFixed(1)}% KIA risk</span>` : ''}
         ${clP.anbuSuccessBonus ? `<span style="color:#8fbc8f">+${(clP.anbuSuccessBonus*100).toFixed(0)}% ANBU</span>` : ''}
         ${clP.scoutConfidenceBonus ? `<span style="color:#8fbc8f">+${(clP.scoutConfidenceBonus*100).toFixed(0)}% scouting</span>` : ''}
-        ${!activeClanIds.size ? '<span style="color:#3a3630">No clan members active</span>' : ''}
+        ${!activeClanIds.size ? `<span style="color:#3a3630">${t("clans.noMembers")}</span>` : ''}
       </div>
     </div>
     <div style="display:grid;gap:10px">
@@ -107,7 +108,7 @@ export function rClans() {
             </div>` : ''}
           ${chains.length ? `
             <div style="margin-top:8px">
-              <div style="font-size:7px;letter-spacing:1px;color:#5a5040;text-transform:uppercase;margin-bottom:4px">Clan Chains</div>
+              <div style="font-size:7px;letter-spacing:1px;color:#5a5040;text-transform:uppercase;margin-bottom:4px">${t("clans.chains")}</div>
               ${chains.map(({ chainId, chain, eligible, canRun }) => `
                 <div style="background:#0a0a0a;border:1px solid #2a2000;padding:6px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center">
                   <div>
@@ -118,7 +119,7 @@ export function rClans() {
                   <div style="text-align:right">
                     <div style="font-size:8px;color:#8fbc8f">+${chain.ryo.toLocaleString()} ryo</div>
                     ${canRun
-                      ? `<button onclick="launchClanChain('${clan.id}','${chainId}')" style="font-size:7px;padding:2px 6px;background:#2a2000;color:#c9a84c;border:1px solid #4a3000;cursor:pointer;margin-top:3px">Launch</button>`
+                      ? `<button onclick="launchClanChain('${clan.id}','${chainId}')" style="font-size:7px;padding:2px 6px;background:#2a2000;color:#c9a84c;border:1px solid #4a3000;cursor:pointer;margin-top:3px">${t("clans.launch")}</button>`
                       : `<div style="font-size:7px;color:#555">Need ${chain.reqClanSize} member(s)</div>`}
                   </div>
                 </div>`).join('')}

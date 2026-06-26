@@ -1,5 +1,6 @@
 import { G, sn, fmt, clamp } from '../state.js'
 import { ntf, aL, upUI } from '../ui.js'
+import { t } from '../../../shared/utils/i18n.js'
 import {
   SAFEHOUSE_LOCATIONS, SH_LOCATION_BY_ID,
   DEEP_COVER_OPS, DC_OP_BY_ID,
@@ -41,7 +42,7 @@ export function rSafehouses() {
               </div>
             </div>
             <div style="background:#111;height:4px;border-radius:2px;overflow:hidden"><div style="background:#c9a84c;height:4px;width:${pct}%"></div></div>
-            <div style="text-align:right;margin-top:4px"><button class="gb gb-r" style="font-size:7px;padding:2px 7px" onclick="abortDeepCover('${am.id}')">Abort (recall agent)</button></div>
+            <div style="text-align:right;margin-top:4px"><button class="gb gb-r" style="font-size:7px;padding:2px 7px" onclick="abortDeepCover('${am.id}')">${t("safehouses.abort")}</button></div>
           </div>`
         }).join('')}
       </div>
@@ -49,7 +50,7 @@ export function rSafehouses() {
 
   el.innerHTML = `
     <div style="background:#0a0a0a;border:1px solid #222;padding:10px;margin-bottom:12px">
-      <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:6px">Network Status</div>
+      <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:6px">${t("safehouses.networkStatus")}</div>
       <div style="display:flex;gap:12px;font-size:8px">
         <span style="color:#e8e0cc">Safehouses: ${active.length} / ${MAX_SAFEHOUSES}</span>
         <span style="color:#c9a84c">Active ops: ${activeOps.length}</span>
@@ -80,9 +81,9 @@ export function rSafehouses() {
     }).join('')}
     </div>
 
-    <div style="font-size:8px;color:#7a7060;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Deep Cover Operations</div>
+    <div style="font-size:8px;color:#7a7060;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">${t("safehouses.deepCover")}</div>
     ${active.length === 0
-      ? '<div style="font-size:8px;color:#3a3630">Establish a safehouse to launch deep cover ops.</div>'
+      ? `<div style="font-size:8px;color:#3a3630">${t("safehouses.establishFirst")}</div>`
       : `<div style="display:grid;gap:8px">
         ${DEEP_COVER_OPS.map(op => {
           const eligible = available.filter(s => (s.ri || 0) >= op.reqRi)
@@ -99,7 +100,7 @@ export function rSafehouses() {
               </div>
               <div style="font-size:7px;color:#7a5030;margin-bottom:6px">${op.desc}</div>
               ${eligible.length === 0
-                ? '<div style="font-size:7px;color:#555">No eligible shinobi.</div>'
+                ? `<div style="font-size:7px;color:#555">${t("safehouses.noEligible")}</div>`
                 : `<div style="display:flex;gap:6px;align-items:center">
                     <select id="dc-sh-${op.id}" style="font-size:8px;padding:3px;background:#111;color:#e8e0cc;border:1px solid #333">
                       ${active.map(sh => `<option value="${sh.id}">${SH_LOCATION_BY_ID[sh.locationId]?.name || sh.id}</option>`).join('')}
@@ -108,7 +109,7 @@ export function rSafehouses() {
                       <option value="">— shinobi —</option>
                       ${eligible.map(s => `<option value="${s.id}">${sn(s)}</option>`).join('')}
                     </select>
-                    <button onclick="launchDeepCover('${op.id}')" style="font-size:8px;padding:3px 8px;background:#1a2a1a;color:#8fbc8f;border:1px solid #2a4a2a;cursor:pointer">Deploy</button>
+                    <button onclick="launchDeepCover('${op.id}')" style="font-size:8px;padding:3px 8px;background:#1a2a1a;color:#8fbc8f;border:1px solid #2a4a2a;cursor:pointer">${t("safehouses.deploy")}</button>
                   </div>`}
             </div>`
         }).join('')}
