@@ -2,6 +2,7 @@ import { G, sn, sPow, clamp, fmt, rnd, pk, pDesc, personalityJudge, genTransferP
 import { TRANSFER_CATS, TRANSFER_WINDOWS, BINGO_TIERS, RANKS, VILLAGES_DEF } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort } from '../uikit.js'
+import { t } from '../../../shared/utils/i18n.js'
 
 // Market sort (P1 kit reuse — card grid, so a sort bar instead of table headers).
 const _TR_SORTS = [
@@ -67,7 +68,7 @@ export function rTr() {
         </div>
       </div>
       ${tm.windowOpen
-        ? `<button onclick="refreshTransferPool()" style="background:#2a2a1a;border:1px solid #554;color:#c9a84c;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.75rem">Refresh Pool</button>`
+        ? `<button onclick="refreshTransferPool()" style="background:#2a2a1a;border:1px solid #554;color:#c9a84c;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.75rem">${t("transfers.refreshPool")}</button>`
         : ''}
     </div>
     ${tm.deadlinePressure ? `<div style="background:#2e1500;border:1px solid #a64;border-radius:6px;padding:8px 14px;margin-bottom:14px;font-size:.78rem;color:#f0a030">⏰ Deadline pressure — final stretch of the window. Prices have inflated 10–20% and rival villages are making panic signings.</div>` : ''}
@@ -106,7 +107,7 @@ function renderMarket(tm, judgeLevel) {
   const sdef = _TR_SORTS.find(s => s.key === sort.key) || _TR_SORTS[0]
   const sorted = [...pool].sort((a, b) => (sdef.val(a) - sdef.val(b)) * (sort.dir === 'asc' ? 1 : -1))
   const sortBar = `<div style="display:flex;gap:5px;align-items:center;margin-bottom:10px;font-size:8px;color:#555">
-    <span style="text-transform:uppercase;letter-spacing:1px">Sort</span>
+    <span style="text-transform:uppercase;letter-spacing:1px">${t("transfers.sort")}</span>
     ${_TR_SORTS.map(s => { const a = sort.key === s.key; return `<button class="tbl-colbtn"${a ? ' style="color:var(--accent);border-color:var(--accent-border)"' : ''} onclick="trSort('${s.key}')">${s.label}${a ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}</button>` }).join('')}
     <span style="margin-left:auto;color:#3a3630">right-click a card for actions</span>
   </div>`
@@ -151,7 +152,7 @@ function marketCard(p, judgeLevel) {
     ${showMatrix ? `<div style="margin-bottom:8px;line-height:1.8">${matTraits}</div>` : judgeLevel < 6 ? `<div style="font-size:.7rem;color:#444;margin-bottom:8px">Staff personality judgment too low to read character.</div>` : ''}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
       <span style="font-size:.8rem;color:#c9a84c;font-weight:bold">${fmt(p.askingFee)} ryo</span>
-      ${!signable ? `<span style="font-size:.7rem;color:#f66">Insufficient funds</span>` : ''}
+      ${!signable ? `<span style="font-size:.7rem;color:#f66">${t("transfers.insufficientFunds")}</span>` : ''}
     </div>
     <div style="display:flex;gap:6px">
       ${canDirectSign
@@ -198,7 +199,7 @@ function renderSellPressure() {
           💰 Accept offer<br><span style="font-size:.68rem;color:#666">+${fmt(pressure.offerRyo)} ryo</span>
         </button>
         <button onclick="sellPressureLetDecide('${pressure.shinobiId}')" style="flex:1;background:#2e1a1a;border:1px solid #744;color:#f99;border-radius:4px;padding:6px;cursor:pointer;font-size:.75rem">
-          🤔 Let them decide<br><span style="font-size:.68rem;color:#666">Loyalty check</span>
+          🤔 Let them decide<br><span style="font-size:.68rem;color:#666">${t("transfers.loyaltyCheck")}</span>
         </button>
       </div>
     </div>`
@@ -218,7 +219,7 @@ function renderLoans(tm) {
             <div style="flex:1"><span style="color:#e8d5a3">${sn(s)}</span> <span style="color:#888">· ${RANKS[s.ri]}</span></div>
             <div style="color:#8fbc8f">+${fmt(lo.monthlyFee)}/mo</div>
             <div style="color:#c9a84c">${lo.monthsRemaining}mo left</div>
-            <button onclick="recallLoan('${lo.shinobiId}')" style="background:#2e1a1a;border:1px solid #744;color:#f99;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:.72rem">Recall early</button>
+            <button onclick="recallLoan('${lo.shinobiId}')" style="background:#2e1a1a;border:1px solid #744;color:#f99;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:.72rem">${t("transfers.recallEarly")}</button>
           </div>` : ''
         }).join('')
     }
@@ -236,7 +237,7 @@ function renderLoans(tm) {
     }
     <!-- Send out loan form -->
     <div style="background:#111;border:1px solid #333;border-radius:6px;padding:12px;margin-top:10px">
-      <div style="font-size:.8rem;color:#aaa;margin-bottom:8px">Send Shinobi on Loan</div>
+      <div style="font-size:.8rem;color:#aaa;margin-bottom:8px">${t("transfers.sendOnLoanHdr")}</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <select id="loan-out-shinobi" style="background:#1a1a1a;color:#e8d5a3;border:1px solid #555;border-radius:4px;padding:4px 8px;font-size:.78rem;flex:1">
           <option value="">Select shinobi…</option>
@@ -246,7 +247,7 @@ function renderLoans(tm) {
           <option value="3">3 months</option>
           <option value="6">6 months</option>
         </select>
-        <button onclick="sendLoan()" style="background:#1a2e1a;border:1px solid #4a7a4a;color:#8fbc8f;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:.78rem">Send on Loan</button>
+        <button onclick="sendLoan()" style="background:#1a2e1a;border:1px solid #4a7a4a;color:#8fbc8f;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:.78rem">${t("transfers.sendOnLoan")}</button>
       </div>
       <div style="font-size:.7rem;color:#555;margin-top:4px">Monthly fee earned: salary × 1.5. Commitment decays slightly while on loan.</div>
     </div>
@@ -306,7 +307,7 @@ function renderOffers(tm) {
         </div>
         <span style="color:${statusColor};font-size:.75rem">${o.status.toUpperCase()}</span>
         ${o.status === 'countered'
-          ? `<button onclick="acceptCounter('${o.id}')" style="background:#1a2e1a;border:1px solid #4a7a4a;color:#8fbc8f;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:.72rem">Accept Counter</button>`
+          ? `<button onclick="acceptCounter('${o.id}')" style="background:#1a2e1a;border:1px solid #4a7a4a;color:#8fbc8f;border-radius:4px;padding:3px 8px;cursor:pointer;font-size:.72rem">${t("transfers.acceptCounter")}</button>`
           : ''}
       </div>`
     }).join('')}
@@ -315,7 +316,7 @@ function renderOffers(tm) {
 
 function renderHistory(tm) {
   const deals = tm.completedDeals || []
-  if (deals.length === 0) return `<div style="color:#555;text-align:center;padding:30px;font-size:.85rem">No completed transfers yet.</div>`
+  if (deals.length === 0) return `<div style="color:#555;text-align:center;padding:30px;font-size:.85rem">${t("transfers.noCompleted")}</div>`
   return `<div>${deals.slice().reverse().map(d => {
     const dirColor = d.direction === 'in' ? '#8fbc8f' : '#f66'
     const dirLabel = d.direction === 'in' ? '▶ IN' : '◀ OUT'

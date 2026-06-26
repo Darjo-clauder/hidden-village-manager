@@ -2,6 +2,7 @@ import { G, fmt, sn, rnd, pk, clamp, mStaff, genStaffCandidates } from '../state
 import { STAFF_ROLES, RANKS, FNAMES, LNAMES, STAFF_CONFLICT_RESPONSES } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { openContextMenu, showHoverPreview, hideHoverPreview } from '../uikit.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 
 // Right-click a staff card → verb menu (P1 entity grammar).
 export function staffCtx(e, id) {
@@ -113,7 +114,7 @@ function _rosterTab() {
             <div style="font-size:9px;color:#7a7060;margin-top:2px">${roleDef.desc}</div>
             <div style="font-size:8px;color:#c9a84c;margin-top:2px;font-style:italic">${roleDef.effectDesc}</div>
           </div>
-          ${!isFull ? `<button class="gb" onclick="openStaffHire('${roleId}')">Hire ▸</button>` : ''}
+          ${!isFull ? `<button class="gb" onclick="openStaffHire('${roleId}')">${tr("staff.hire")}</button>` : ''}
         </div>`
 
       if (current.length === 0) {
@@ -137,10 +138,10 @@ function _rosterTab() {
                 ${st.fromShinobi ? `<div style="font-size:8px;color:#c9a84c">↳ Transitioned from active duty</div>` : ''}
               </div>
               <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-                <button class="gb gb-r" onclick="confirm('Release ${st.fn} ${st.ln}? This cannot be undone.') && releaseStaff('${st.id}')" style="font-size:7px;padding:3px 7px">Release</button>
-                ${canBeAK ? `<button class="gb" onclick="designateAsstKage('${st.id}')" style="font-size:7px;padding:3px 7px;border-color:#87ceeb;color:#87ceeb">Designate AK</button>` : ''}
-                ${isAsstKage ? `<button class="gb" onclick="designateAsstKage(null)" style="font-size:7px;padding:3px 7px;border-color:#555;color:#555">Remove AK</button>` : ''}
-                ${(st.monthsServed||0) >= 6 && st.hiddenFlaw && !st.flawRevealed ? `<button class="gb" onclick="staffPersonalMeeting('${st.id}')" style="font-size:7px;padding:3px 7px;border-color:#c9a84c;color:#c9a84c">1-on-1 Meeting</button>` : ''}
+                <button class="gb gb-r" onclick="confirm('Release ${st.fn} ${st.ln}? This cannot be undone.') && releaseStaff('${st.id}')" style="font-size:7px;padding:3px 7px">${tr("staff.release")}</button>
+                ${canBeAK ? `<button class="gb" onclick="designateAsstKage('${st.id}')" style="font-size:7px;padding:3px 7px;border-color:#87ceeb;color:#87ceeb">${tr("staff.designateAK")}</button>` : ''}
+                ${isAsstKage ? `<button class="gb" onclick="designateAsstKage(null)" style="font-size:7px;padding:3px 7px;border-color:#555;color:#555">${tr("staff.removeAK")}</button>` : ''}
+                ${(st.monthsServed||0) >= 6 && st.hiddenFlaw && !st.flawRevealed ? `<button class="gb" onclick="staffPersonalMeeting('${st.id}')" style="font-size:7px;padding:3px 7px;border-color:#c9a84c;color:#c9a84c">${tr("staff.meeting")}</button>` : ''}
               </div>
             </div>
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px">
@@ -157,7 +158,7 @@ function _rosterTab() {
   })
 
   // ── Retire to Staff ───────────────────────────────────────────────────────
-  html += `<div class="pt" style="margin-top:14px">Retire to Staff</div>
+  html += `<div class="pt" style="margin-top:14px">${tr("staff.retireToStaff")}</div>
     <div style="font-size:9px;color:#7a7060;margin-bottom:8px">Shinobi with 20+ wins can transition to a staff role upon retirement.</div>`
   const eligible = G.shinobi.filter(s => s.wins >= 20 && s.ri >= 2)
   if (eligible.length === 0) {
@@ -177,8 +178,8 @@ function _rosterTab() {
   // ── Assistant Kage log ────────────────────────────────────────────────────
   const akLog = G.asstKageLog || []
   if (akLog.length > 0) {
-    html += `<div class="pt" style="margin-top:14px">Assistant Kage Decisions</div>
-      <div style="font-size:9px;color:#7a7060;margin-bottom:6px">Autonomous decisions made on minor meetings.</div>`
+    html += `<div class="pt" style="margin-top:14px">${tr("staff.akDecisions")}</div>
+      <div style="font-size:9px;color:#7a7060;margin-bottom:6px">${tr("staff.akAutonomous")}</div>`
     html += akLog.slice(0, 8).map(entry =>
       `<div style="font-size:8px;color:#7a7060;border-left:2px solid #2e2820;padding:4px 8px;margin-bottom:4px"><span style="color:#3a3630">Yr${entry.year}·M${entry.month}</span> ${entry.text}</div>`
     ).join('')
@@ -192,7 +193,7 @@ function _legacyTab() {
   if (hof.length === 0) {
     return `<div style="color:#555;text-align:center;padding:40px;font-size:.85rem">No inductees yet. Staff who serve 8+ years before retiring earn a permanent legacy entry.</div>`
   }
-  let html = `<div style="font-size:9px;color:#7a7060;margin-bottom:10px">Staff who served 8+ years are enshrined here permanently. Their legacy endures.</div>`
+  let html = `<div style="font-size:9px;color:#7a7060;margin-bottom:10px">${tr("staff.hallNote")}</div>`
   html += hof.map(entry => {
     const roleDef = STAFF_ROLES.find(r => r.id === entry.role)
     return `<div style="border:1px solid #2e2a22;background:#1a1814;padding:11px;margin-bottom:8px">
@@ -249,8 +250,8 @@ function _renderHireCandidates() {
       ${scouted && c.hiddenFlaw ? `<div style="font-size:8px;color:#f99;margin-bottom:6px;padding:4px 6px;border:1px solid #8b1a1a;background:#0d0505">⚠ Scout Report: Hidden flaw detected — "${c.hiddenFlaw}"</div>` : ''}
       ${scouted && !c.hiddenFlaw ? `<div style="font-size:8px;color:#8fbc8f;margin-bottom:6px;padding:4px 6px;border:1px solid #1a3a1a;background:#050d05">✓ Scout Report: No concerns — well-regarded by former colleagues.</div>` : ''}
       <div style="display:flex;gap:6px">
-        <button class="gb gb-g" onclick="doStaffHire(${i})" style="font-size:7px">Hire ▸</button>
-        ${!scouted ? `<button class="gb" onclick="scoutStaffCandidate(${i})" style="font-size:7px;border-color:#87ceeb;color:#87ceeb">Scout (2,000 ryo) ▸</button>` : ''}
+        <button class="gb gb-g" onclick="doStaffHire(${i})" style="font-size:7px">${tr("staff.hire")}</button>
+        ${!scouted ? `<button class="gb" onclick="scoutStaffCandidate(${i})" style="font-size:7px;border-color:#87ceeb;color:#87ceeb">${tr("staff.scout")}</button>` : ''}
       </div>
     </div>`
   }).join('')

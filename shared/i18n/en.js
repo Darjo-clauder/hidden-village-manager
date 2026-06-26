@@ -278,4 +278,27 @@ export const en = {
   'legacy.winLeaders': 'Win Leaders',
   'legacy.noData': 'No data',
   'legacy.awards': 'Awards',
+
+  // ── Staff (P2 tranche 11) ───────────────────────────────────────────────
+  'staff.hire': 'Hire ▸',
+  'staff.release': 'Release',
+  'staff.designateAK': 'Designate AK',
+  'staff.removeAK': 'Remove AK',
+  'staff.meeting': '1-on-1 Meeting',
+  'staff.retireToStaff': 'Retire to Staff',
+  'staff.akDecisions': 'Assistant Kage Decisions',
+  'staff.akAutonomous': 'Autonomous decisions made on minor meetings.',
+  'staff.hallNote': 'Staff who served 8+ years are enshrined here permanently. Their legacy endures.',
+  'staff.scout': 'Scout (2,000 ryo) ▸',
+
+  // ── Transfers (P2 tranche 11) ───────────────────────────────────────────
+  'transfers.refreshPool': 'Refresh Pool',
+  'transfers.sort': 'Sort',
+  'transfers.insufficientFunds': 'Insufficient funds',
+  'transfers.loyaltyCheck': 'Loyalty check',
+  'transfers.recallEarly': 'Recall early',
+  'transfers.sendOnLoanHdr': 'Send Shinobi on Loan',
+  'transfers.sendOnLoan': 'Send on Loan',
+  'transfers.acceptCounter': 'Accept Counter',
+  'transfers.noCompleted': 'No completed transfers yet.',
 }
