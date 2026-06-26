@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-25 · **HEAD:** `bd82520` · **Branch:** `master` · **Tests:** 674 passing / 54 files
+**Last updated:** 2026-06-25 · **HEAD:** `8b93922` · **Branch:** `master` · **Tests:** 674 passing / 54 files
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -180,11 +180,12 @@ Earlier session work (pre-FHM-pivot): audit fixes (B-IDEMP-1 beast inflation, O-
 
 ## 7. Next targets
 
-Build is re-audited (2026-06-22) as a "functioning sports sim that feels like one." The FM-spine, stat layer, presentation, GM progression, and a balance pass are all in. **Schedule depth (#2) is now done** — `c1e4e8d` added the League Fixture Grid to the SEASON tab (`_seasonFixtureGrid` in `panels/exam.js`): every village's matchup round-by-round with results + look-ahead. Candidate next targets (user's call):
+As of 2026-06-25 the build is a "functioning sports sim that feels like one" with a now-**coherent, playtest-validated economy** (see the economy-overhaul block below) and a new-player polish pass across all four demo screens (dashboard / missions / season / roster dossier). It's at a clean, deployable checkpoint — a strong state to hand to playtesters. Candidate next targets (user's call):
 
 1. **Localization P2+ extraction** — foundation is in (§6, `docs/L10N_PLAN.md`); next is keying the ~656 `ntf`/`aL` toasts + nav/buttons/dashboard/inbox, with a grep guardrail. Incremental. **The main remaining roadmap item.**
-2. **Mid-season pressure events follow-ups** — could escalate to council-mandate stakes or wire standings beats into press conferences.
-3. **Live battle for solo missions** — the viewer currently covers squad missions, matchday, exam, tournament; solo missions still resolve without a Watch option (squad-only by design so far).
+2. **Late-dynasty economy watch** — the corrected harness is solvent across 20yr but the structural passive net goes deeply negative at S-tier (big roster + back office); only active mission income keeps it positive. Fine by design, but worth eyeing if a playtester reports a 25+ year save bleeding out.
+3. **`adv.js` modularity** (3.7k lines) — extract rival-sim / season / scheduler blocks. Multi-session; needs the test suite as a net.
+4. **Mid-season pressure follow-ups** / **live battle for solo missions** — smaller flavor items; solo missions still resolve without a Watch option (squad-only by design so far).
 
 **Recently done (2026-06-25 — production-prep + economy overhaul session):**
 - **ECONOMY OVERHAUL (4 commits, one root cause).** The starting state and the balance constants had been authored independently and never reconciled. Traced through four layers, each fix exposing the next:
@@ -196,6 +197,8 @@ Build is re-audited (2026-06-22) as a "functioning sports sim that feels like on
 - **Production hardening** (`cdff97b`): new `shared/utils/debug.js` (`DEBUG` via `?debug=1` or `localStorage.hvm_debug`; `dlog`/`dwarn` no-op in prod) — gated the 5 unconditional console.logs in `socket.js`/`phase1.js`.
 - **New-player polish** (`315cf89`/`6d2ccac`/`25ab4bd`): dashboard Treasury **runway readout** (`~N mo runway`, recolors <6/<3mo, hidden >24mo) + deficit onboarding step; missions board **color-tiered risk** (green≤15/amber≤30/red, `_riskColor`) + gold rewards + risk on squad cards; season standings **Edge column** (seed→Grand Tournament combat bonus, exact mirror of `war.js` `seedBonus`) + leader 👑.
 - **AUDIT NOTE:** code itself is clean (7 debug markers in 23.8k LOC, all growth arrays capped, no listener leaks). The recurring bug class this session was *balance-constant vs seeded-state* drift, not code cruft. The DRY extraction of `prestigeFromLegend` + the harness fixes close that class. Largest remaining modularity target is `adv.js` (3.7k lines), a multi-session job. Tournament internal naming still `warSched`/`warActive` (display-only Grand Tournament rename).
+- **Dossier polish** (`8b93922`): roster Full Dossier header now leads with at-a-glance `Ability ★ · Potential ★ · Pwr` (was buried at the bottom). Uses the table's `_potential()` helper — also fixed a pre-existing table-vs-dossier inconsistency (table showed potential stars, dossier hid them as `???`).
+- **Lean-start playtest-validated** (4-yr active play, not just the harness): year-1 dip to ~30k (tighten up, never near bankruptcy) → steady growth 46k→81k→117k; prestige D→C→B via legend; no errors. **Roster attrition is BY DESIGN** — mission-KIA thins the roster down to a hard floor of 14 (`adv.js:1247` auto-signs the best prospect below 14); graduates feed the prospects pool, player recruits to grow past the floor. Not a bug; it's the "engage the academy" pressure.
 - **Schedule depth** (`c1e4e8d`, League Fixture Grid); **mid-season pressure notices** (`seasonPressNotice`); **dynasty balance sweep** (`tests/dynastySweep.test.js` + rival mean-reversion fix in `rivalSim.js`); **P1 kit** on Academy + Depth Chart.
 - **Localization foundation P0+P1** (`shared/utils/i18n.js`, `shared/i18n/en.js` + `ipNames.js`; see `docs/L10N_PLAN.md`).
 - **Season experience M1–M4** (all in `season.js` pure helpers + `panels/exam.js` `_seasonTab`): M1 matchday scorelines + form guide + GD (`styledScore`/`teamForm`, `_seasonResultsCard`); M2 next-match build-up (`matchPreview`); M3 title-race banner (`seasonState`); M4 off-season awards ceremony (`_seasonReviewCard`).
