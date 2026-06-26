@@ -1,4 +1,4 @@
-import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice, computeMarketValue, mS, genVillageRoster, getMissionSpecBonus } from './state.js'
+import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice, computeMarketValue, mS, getMissionSpecBonus } from './state.js'
 import { RANKS, RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS, EXAM_FORMATS, LEGACY_DECISIONS, PRESTIGE_TIERS, DOCTRINE_BY_ID } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
 import { tickBeast, applyBeastPairEffects, getBeastPassives, BEAST_DATA, getSyncStage, captureChance } from './beastEngine.js'
@@ -14,7 +14,6 @@ import { evalDepth, roleBonus } from './depthEngine.js'
 import { jutsuLoadoutBonus } from '../../shared/jutsu/loadout.js'
 import { DISTRICTS, getDistrictPassives } from '../../shared/constants/districts.js'
 import { COUNCIL_FACTIONS, COUNCIL_PROPOSALS, getCouncilPerks } from '../../shared/constants/council.js'
-import { tickRivalStrength, shouldFireRivalEvent, pickRivalEvent, computePlayerStrength } from '../../shared/utils/rivalSim.js'
 import { initSeasonTable, playMatchday, seasonPressNotice } from '../../shared/utils/season.js'
 import { villageRevenue } from '../../shared/utils/economy.js'
 import { resolveMission, qualityEffects, missionApproachMod } from '../../shared/utils/missionEngine.js'
@@ -40,27 +39,17 @@ import { snapshotSeasonStats, leagueLeaders } from '../../shared/utils/seasonSta
 import { computeAwards } from '../../shared/utils/awards.js'
 import { PRESS_QUESTIONS, PRESS_TONES, TONE_BY_ID, TONE_TRIGGER_OVERRIDES, hydrateQuestion } from '../../shared/utils/pressConference.js'
 import { updateConfidence, confidenceMod, formGrudge, grudgePenalty, pairChemistryBonus, assignRoleTag, setEmotionalState, tickEmotionalState, emotionalScMod, getArchetypeQuote } from '../../shared/utils/personality.js'
-import { genMissionBlurb, genKIABlurb, genRankUpBlurb, genBondBlurb, genGrudgeBlurb, genCounterStrategyBlurb } from '../../shared/utils/narrativeEngine.js'
-import { recordPlayerTactic, getPlayerTendency, applyCounterStrategy, rivalScPenalty, observePlayerTactic, explainStanceChange, rollMetaEvent, ensureRivalProfile } from '../../shared/utils/adaptiveAI.js'
+import { genMissionBlurb, genKIABlurb, genRankUpBlurb, genBondBlurb, genGrudgeBlurb } from '../../shared/utils/narrativeEngine.js'
+import { recordPlayerTactic, rivalScPenalty, observePlayerTactic } from '../../shared/utils/adaptiveAI.js'
 import { addMemory, decayMemories, memoryMoraleMod, memoryStateBlurb } from '../../shared/utils/memorySystem.js'
-import { linkToThread, pruneOldThreads } from '../../shared/utils/narrativeThreads.js'
 import { tickMentorships } from '../../shared/utils/mentorship.js'
+import { pushNarrative } from './tick/inbox.js'
+import { tickRivalSim, tickRivalGMMoves } from './tick/rivals.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
 // ── Narrative inbox + thread helper ───────────────────────────────────────────
-function pushNarrative(blurb, actorIds = []) {
-  if (!G.narrativeInbox) G.narrativeInbox = []
-  if (!G.narrativeThreads) G.narrativeThreads = []
-  const entry = { id: Math.random().toString(36).slice(2), ...blurb, actorIds, year: G.year, month: G.month }
-  // Thread linking
-  const thread = linkToThread(G.narrativeThreads, entry.id, entry.tag, actorIds, entry.title, { year: G.year, month: G.month })
-  if (thread) entry.threadId = thread.id
-  G.narrativeInbox.push(entry)
-  if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
-  // Prune stale threads yearly
-  if (G.month === 1) G.narrativeThreads = pruneOldThreads(G.narrativeThreads, G.year, G.month)
-}
+// pushNarrative lives in ./tick/inbox.js (shared with extracted tick modules); imported above.
 
 // ── Mission log ────────────────────────────────────────────────────────────────
 function pushMissionLog(entry) {
@@ -1704,85 +1693,9 @@ export function adv() {
     }
   })
 
-  // ── Rival village strength simulation ─────────────────────────────────────
-  G.villages.forEach(v => {
-    if (!v.strength) v.strength = 50 + Math.round(Math.random() * 40)
-    if (!v.roster || !v.roster.length) v.roster = genVillageRoster(v)  // backfill rosters on older saves
-    // Replenish war/mission losses so rivals stay viable — recruit fresh genin toward a floor.
-    if (v.roster.length < 40 && Math.random() < 0.5) {
-      const recruit = mS(rnd(0, 1)); recruit.homeVillage = v.n; v.roster.push(recruit)
-    }
-    // Adaptive AI — rivals re-evaluate tactics each season (once per year minimum)
-    ensureRivalProfile(v)
-    if (G.month === 1 || !v.counterStrategy) {
-      const tendency = getPlayerTendency(G.rivalTendencies || {})
-      const { changed, strategy } = applyCounterStrategy(v, tendency)
-      if (changed && strategy.id !== 'balanced') {
-        const explainedDesc = explainStanceChange(v, strategy)
-        pushNarrative(genCounterStrategyBlurb(v.n, strategy.label, explainedDesc), [v.n])
-        v.rivalProfile.lastStance = strategy.id
-        v.rivalProfile.stanceHistory = [...(v.rivalProfile.stanceHistory || []).slice(-4), { stance: strategy.id, year: G.year, month: G.month }]
-      }
-    }
-    // Meta-event: once per year, ~8% chance of league-wide shift
-    if (G.month === 6) {
-      const meta = rollMetaEvent(G.villages, { year: G.year, month: G.month })
-      if (meta.fired) pushNarrative({ title: 'League Shift', body: meta.desc, tag: 'intel', link: null }, [])
-    }
-    // Apply counter-strategy strength tick multiplier
-    v._ctBonus = v.counterTickBonus ?? 1
-    tickRivalStrength(v)
-    // Soft decay above 150 — prevents aggressive villages from permanently walling at 200
-    if (v.strength > 150 && Math.random() < 0.25) v.strength = Math.max(150, v.strength - rnd(2, 4))
-    if (shouldFireRivalEvent(v)) {
-      const ev = pickRivalEvent(v)
-      const msg = ev.template.replace('{village}', v.n)
-      if (ev.id === 'border_threat') v.rel = clamp((v.rel || 50) - 5, 0, 100)
-      if (ev.id === 'internal_strife' || ev.id === 'natural_disaster') v.strength = Math.max(10, v.strength - 15)
-      if (ev.id === 'poach_prospect') G.councilApproval && (G.councilApproval.academy = clamp((G.councilApproval.academy || 50) - 3, 0, 100))
-      aL(msg, ev.severity)
-    }
-  })
-  G._playerStrength = computePlayerStrength(G)
-
-  // ── Rival GM moves — rivals act on the transfer market each month ─────────
-  if (!G.rivalOffers) G.rivalOffers = []
-  // Rivals bid on unrecruted prospects (high-urgency or high-potential)
-  if (G.prospects.length > 0 && Math.random() < 0.18) {
-    const target = G.prospects.filter(p => (p.potential || 0) >= 50 || (p.urgencyMonths || 0) <= 2).sort((a, b) => (b.potential || 0) - (a.potential || 0))[0]
-    if (target && !G.rivalOffers.find(o => o.prospectId === target.id)) {
-      const bidder = pk(G.villages)
-      const offerId = Math.random().toString(36).slice(2)
-      G.rivalOffers.push({ id: offerId, type: 'prospect_bid', prospectId: target.id, village: bidder.n, expires: G.month + 2 > 12 ? 1 : G.month + 2, expiresYear: G.month + 2 > 12 ? G.year + 1 : G.year })
-      G.narrativeInbox.push({ id: offerId, type: 'rival_bid', tag: 'academy', title: bidder.n + ' wants ' + (target.fn || 'your prospect'), body: bidder.n + ' has offered to recruit ' + (target.fn || '') + ' ' + (target.ln || '') + ' directly. Respond within 2 months or they sign elsewhere.', prospectId: target.id, village: bidder.n, year: G.year, month: G.month })
-      if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
-      ntf(bidder.n + ' is scouting ' + (target.fn || 'your prospect') + '!')
-    }
-  }
-  // Expire rival prospect bids — remove prospect if player ignored
-  G.rivalOffers = G.rivalOffers.filter(o => {
-    const expired = o.expiresYear < G.year || (o.expiresYear === G.year && o.expires < G.month)
-    if (expired && o.type === 'prospect_bid') {
-      const p = G.prospects.find(x => x.id === o.prospectId)
-      if (p) {
-        G.prospects = G.prospects.filter(x => x.id !== o.prospectId)
-        aL(o.village + ' signed ' + (p.fn || 'prospect') + ' — opportunity window closed.', 'bad')
-      }
-    }
-    return !expired
-  })
-  // Rivals propose trades — offer one of their shinobi for one of yours (once per quarter)
-  if (G.month % 3 === 0 && G.shinobi.length >= 4 && Math.random() < 0.25) {
-    const rival = pk(G.villages)
-    const theirOffer = rival.roster ? pk(rival.roster.filter(s => s.ri >= 1)) : null
-    const yourTarget = G.shinobi.filter(s => s.ri >= 1 && s.status === 'available')[Math.floor(Math.random() * G.shinobi.filter(s => s.ri >= 1).length)]
-    if (theirOffer && yourTarget) {
-      const tradeId = Math.random().toString(36).slice(2)
-      G.narrativeInbox.push({ id: tradeId, type: 'trade_offer', tag: 'people', title: 'Trade offer: ' + rival.n, body: rival.n + ' proposes trading ' + (theirOffer.fn || '') + ' ' + (theirOffer.ln || '') + ' (' + ['Genin','Chunin','Jonin','ANBU','Sannin'][theirOffer.ri || 0] + ', Pow ' + (sPow(theirOffer) || '?') + ') for ' + sn(yourTarget) + '. Accept or decline.', rivalVillage: rival.n, offeredId: theirOffer.id, offeredName: (theirOffer.fn || '') + ' ' + (theirOffer.ln || ''), offeredRi: theirOffer.ri, offeredPow: sPow(theirOffer), targetId: yourTarget.id, targetName: sn(yourTarget), year: G.year, month: G.month })
-      if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
-      ntf(rival.n + ' proposes a trade!')
-    }
-  }
+  // ── Rival village strength simulation + GM moves (see ./tick/rivals.js) ────
+  tickRivalSim()
+  tickRivalGMMoves()
 
   // ── Season league table — the regular-season spine that seeds the exam ────
   {
