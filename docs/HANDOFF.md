@@ -20,7 +20,7 @@ This is a **private Naruto-IP build** — **keep all Naruto namesakes and IP** (
 - **Stale mirror:** `C:\Users\Tyler\hidden-village-manager` (the "Darjo" copy) — **never edit**; fast-forward only.
 - **GitHub:** `github.com/Darjo-clauder/hidden-village-manager` (Railway auto-deploys master).
 - **Every commit:** push origin from `ninja`, then in the mirror: `git fetch origin && git merge --ff-only origin/master`.
-- Commit messages end with: `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`.
+- Commit messages end with: `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>` (the current session's co-author; match whichever model you are).
 - Platform is **Windows / PowerShell** primary; a Bash tool is also available (Git Bash). `dist/` is gitignored.
 
 ### Build vs. dev — READ THIS
