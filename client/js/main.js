@@ -47,17 +47,17 @@ function assignMentor(mentorId, studentId) {
   const mentor  = _G.shinobi.find(s => s.id === mentorId)
   const student = _G.shinobi.find(s => s.id === studentId)
   if (!mentor || !student) return
-  if (!isMentorEligible(mentor, _G.mentorships)) { ntf('That shinobi cannot mentor right now.'); return }
-  if (!isStudentEligible(student, _G.mentorships)) { ntf('That student already has a mentor.'); return }
+  if (!isMentorEligible(mentor, _G.mentorships)) { ntf(t('toast.mentor.cannotMentor')); return }
+  if (!isStudentEligible(student, _G.mentorships)) { ntf(t('toast.mentor.hasMentor')); return }
   _G.mentorships.push(createMentorship(mentorId, studentId, { year: _G.year, month: _G.month }))
-  ntf(`${mentor.fn} is now mentoring ${student.fn}.`)
+  ntf(t('toast.mentor.nowMentoring', { mentor: mentor.fn, student: student.fn }))
   upUI()
 }
 
 function releaseMentor(shinobiId) {
   if (!_G.mentorships) return
   const removed = removeMentorship(_G.mentorships, shinobiId)
-  if (removed) { ntf('Mentorship ended.'); upUI() }
+  if (removed) { ntf(t('toast.mentor.ended')); upUI() }
 }
 import { chrFilter, chrSearch } from './panels/chronicles.js'
 import { roleBonus } from './depthEngine.js'

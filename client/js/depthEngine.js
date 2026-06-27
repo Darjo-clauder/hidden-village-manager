@@ -2,6 +2,7 @@ import { G, sn, sPow } from './state.js'
 import { SQUAD_ROLES } from './constants.js'
 import { aL, ntf } from './ui.js'
 import { isEnabled } from '../../config/features.js'
+import { t } from '../../shared/utils/i18n.js'
 import { resolveActiveStarter } from '../../shared/types/DepthChart.js'
 
 /**
@@ -91,7 +92,7 @@ export function evalDepth(G) {
         const active = activeId ? G.shinobi.find(s => s.id === activeId) : null
         if (active && active.id !== starter.id) {
           const reason = starter.status === 'mission' ? 'deployed' : starter.status === 'injured' ? 'injured' : 'unavailable'
-          aL(`Depth: ${active.fn} ${active.ln} promoted to ${roleDef.n} (${squad.n} — starter ${sn(starter)} is ${reason}).`, 'neutral')
+          aL(t('toast.depth.promoted', { name: `${active.fn} ${active.ln}`, role: roleDef.n, squad: squad.n, starter: sn(starter), reason }), 'neutral')
         }
       }
 

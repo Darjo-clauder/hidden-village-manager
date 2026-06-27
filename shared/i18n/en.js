@@ -934,4 +934,12 @@ export const en = {
   'toast.adv.tradeCompleted': 'Trade completed — {name} joins the village.',
   'toast.adv.tradeDeclined': 'Trade declined.',
   'toast.adv.needTrainingCamp': 'Not enough ryo — Training Camp costs 8,000 ryo.',
+
+  // ── Remaining engine/boot toasts ────────────────────────────────────────
+  'toast.depth.promoted': 'Depth: {name} promoted to {role} ({squad} — starter {starter} is {reason}).',
+  'toast.mentor.cannotMentor': 'That shinobi cannot mentor right now.',
+  'toast.mentor.hasMentor': 'That student already has a mentor.',
+  'toast.mentor.nowMentoring': '{mentor} is now mentoring {student}.',
+  'toast.mentor.ended': 'Mentorship ended.',
+  'toast.setup.tenureBegins': 'Your tenure as Kage begins.',
 }

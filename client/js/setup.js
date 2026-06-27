@@ -2,6 +2,7 @@ import { G, spIcon, setSpIcon, initState, schEx, applyScenario } from './state.j
 import { VILLAGE_ICONS, START_SCENARIOS } from './constants.js'
 import { upUI, sp, aL } from './ui.js'
 import { initSocket, socket } from './socket.js'
+import { t } from '../../shared/utils/i18n.js'
 import { RS, parseInviteCode } from './room.js'
 import { seedPhase1 } from '../../seeds/phase1.js'
 
@@ -100,7 +101,7 @@ function _startGame(vname, kname, icon, scenario = 'standard') {
   seedPhase1(G)
   applyScenario(G, scenario)
   schEx()
-  aL('Your tenure as Kage begins.', 'neutral')
+  aL(t('toast.setup.tenureBegins'), 'neutral')
   sp('dashboard')
   upUI()
   initSocket(vname, kname, icon)
