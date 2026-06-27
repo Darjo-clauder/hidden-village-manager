@@ -1137,10 +1137,10 @@ export function adv() {
     G.morale = clamp(G.morale - 10, 0, 100)
     // Emergency pool: 3 extra free-agent prospects for 2 months
     for (let i = 0; i < 3; i++) G.prospects.push(mS(rnd(0, 1)))
-    aL('⚠ INJURY CRISIS — ' + injuredCount + ' shinobi sidelined simultaneously. Emergency recruitment window open for 2 months. Daimyo has been notified. Morale −10.', 'bad')
+    aL(tr('toast.adv.injuryCrisis', { n: injuredCount }), 'bad')
     addChronicle('Injury Crisis', injuredCount + ' shinobi injured at the same time. Emergency recruitment authorised by the Daimyo.', 'event')
     addNotice('CRISIS: ' + injuredCount + ' shinobi are injured. Emergency recruitment window is open.', 'bad')
-    ntf('Injury Crisis! Emergency window open — check Academy.')
+    ntf(tr('toast.adv.injuryCrisisShort'))
   }
   // Close emergency window when time expires or injuries drop
   if (G.emergencyRecruitWindow && G.emergencyWindowEnd) {
@@ -1148,7 +1148,7 @@ export function adv() {
     if (expired || injuredCount < 2) {
       G.emergencyRecruitWindow = false
       G.emergencyWindowEnd = null
-      aL('Emergency recruitment window has closed.', 'neutral')
+      aL(tr('toast.adv.emergencyClosed'), 'neutral')
     }
   }
 
@@ -1162,13 +1162,13 @@ export function adv() {
       if (topCount >= 7) {
         G.ryo += 500
         G.morale = clamp((G.morale || 75) + 1, 0, 100)
-        if (G.month === 1) aL(`${topClan} clan legendary synergy — +500 ryo/month, +1 morale.`, 'good')
+        if (G.month === 1) aL(tr('toast.adv.clanLegendary', { clan: topClan }), 'good')
       } else if (topCount >= 5) {
         G.ryo += 250
-        if (G.month === 1) aL(`${topClan} clan identity synergy — +250 ryo/month.`, 'good')
+        if (G.month === 1) aL(tr('toast.adv.clanIdentity', { clan: topClan }), 'good')
       } else if (topCount >= 3) {
         G.morale = clamp((G.morale || 75) + 1, 0, 100)
-        if (G.month === 1) aL(`${topClan} clan synergy — +1 morale/month.`, 'neutral')
+        if (G.month === 1) aL(tr('toast.adv.clanSynergy', { clan: topClan }), 'neutral')
       }
     }
   }
@@ -1185,7 +1185,7 @@ export function adv() {
         r._fullIncome = r.income
         r.income = Math.round(r.income / 2)
         r.disrupted = true
-        aL(`⚠ "${r.n}" disrupted by rival interference — income halved until secured.`, 'warn')
+        aL(tr('toast.adv.routeDisrupted', { route: r.n }), 'warn')
         addNotice(`Trade route "${r.n}" disrupted — secure it from the Economy panel.`, 'warn')
       }
     }
@@ -1207,7 +1207,7 @@ export function adv() {
       aL(sn(p) + ' lost patience and left the academy.', 'neutral')
       // 10% chance dropout becomes a missing-nin event
       if (Math.random() < 0.10) {
-        aL('⚠ ' + sn(p) + ' turned rogue. Rumoured to appear on the black market...', 'warn')
+        aL(tr('toast.adv.turnedRogue', { name: sn(p) }), 'warn')
         addChronicle('Dropout Gone Rogue', sn(p) + ' departed the academy and turned missing-nin.', 'shinobi')
       }
       return false
@@ -1261,7 +1261,7 @@ export function adv() {
     G.pendingComplications.push({ id: compId, assignmentId: am.id, missionName: m.n, choice: null, options: ev.options, created: { year: G.year, month: G.month } })
     G.narrativeInbox.push({ id: compId, type: 'complication', tag: 'mission', title: ev.title + ' — ' + m.n, body: ev.body, assignmentId: am.id, missionName: m.n, options: ev.options, year: G.year, month: G.month })
     if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
-    ntf('Field decision needed — ' + m.n + '!')
+    ntf(tr('toast.adv.fieldDecision', { mission: m.n }))
   })
   // Apply resolved complication choices to the assignment + immediate effects.
   G.pendingComplications.forEach(pc => {
@@ -1299,10 +1299,10 @@ export function adv() {
           prospect.potential = Math.max(45, prospect.potential - decay)
         }
         prospect.scouted = true
-        aL('Intel on ' + sn(prospect) + ' confirmed — Potential: ' + prospect.potential + (degraded ? ' ⚠ degraded.' : '.'), degraded ? 'warn' : 'good')
+        aL(tr('toast.adv.intelConfirmed', { name: sn(prospect), potential: prospect.potential, suffix: degraded ? ' ⚠ degraded.' : '.' }), degraded ? 'warn' : 'good')
         ntf(prospect.fn + '\'s potential revealed' + (degraded ? ' (degraded!)' : '') + '!')
       } else {
-        aL('Scouting complete — prospect has already moved on.', 'neutral')
+        aL(tr('toast.adv.prospectMovedOn'), 'neutral')
       }
       return
     }
@@ -1396,7 +1396,7 @@ export function adv() {
           if (m.rk === 'S') {
             s.winsS = (s.winsS || 0) + 1; s._seasonSRankWins = (s._seasonSRankWins || 0) + 1
             if (s.winsS === 1) {
-              aL(`${sn(s)} completed their first S-rank mission — a new legend rises.`, 'good')
+              aL(tr('toast.adv.firstSrank', { name: sn(s) }), 'good')
               G.narrativeInbox = G.narrativeInbox || []
               G.narrativeInbox.push({ id: Math.random().toString(36).slice(2), type: 'milestone', tag: 'career', title: `First S-Rank: ${sn(s)}`, body: `${sn(s)} has cleared their first S-rank mission. This is the moment careers are made of.`, year: G.year, month: G.month })
             }
@@ -1412,7 +1412,7 @@ export function adv() {
             G.pairChemistryLog[key] = (G.pairChemistryLog[key] || 0) + 1
             if (G.pairChemistryLog[key] === 5) {
               const sA = G.shinobi.find(x => x.id === mIds[a]), sB = G.shinobi.find(x => x.id === mIds[b])
-              if (sA && sB) aL(`${sn(sA)} and ${sn(sB)} have built strong field chemistry after 5 missions together.`, 'good')
+              if (sA && sB) aL(tr('toast.adv.fieldChemistry', { a: sn(sA), b: sn(sB) }), 'good')
             }
           }
         }
@@ -1467,7 +1467,7 @@ export function adv() {
                 sA.indMorale = clamp((sA.indMorale || 70) + ev.moraleMod, 0, 100)
                 sB.indMorale = clamp((sB.indMorale || 70) + ev.moraleMod, 0, 100)
               }
-              aL('🤝 ' + ev.text.replace('{a}', sn(sA)).replace('{b}', sn(sB)), 'good')
+              aL(tr('toast.adv.bondEvent', { text: ev.text.replace('{a}', sn(sA)).replace('{b}', sn(sB)) }), 'good')
               fired = true; break
             }
           }
@@ -1516,7 +1516,7 @@ export function adv() {
               formGrudge(survivor, antagonist.n, antagonist.n, 'kia_partner', { year: G.year, month: G.month })
               const quote = getArchetypeQuote(survivor)
               if (fallen) pushNarrative(genGrudgeBlurb(survivor.fn + ' ' + survivor.ln, fallen.name, 'Fallen Comrade', 3), [survivor.id])
-              aL(`"${quote}" — ${sn(survivor)}`, 'warn')
+              aL(tr('toast.adv.lastWords', { quote, name: sn(survivor) }), 'warn')
             }
           })
         } else {
@@ -1558,7 +1558,7 @@ export function adv() {
       // Hanaku Lucky Scales: failed mission becomes marginal success once per month
       const chomeiActive = hasUniqueAbility(s.id, 'Hanaku') && !G._hanakuLuckyUsed
       const rollResult = Math.random()
-      const missionPassed = rollResult < sc || (rollResult >= sc && chomeiActive && (() => { G._hanakuLuckyUsed = true; aL(`${sn(s)}'s Hanaku Lucky Scales turned failure to success!`, 'good'); return true })())
+      const missionPassed = rollResult < sc || (rollResult >= sc && chomeiActive && (() => { G._hanakuLuckyUsed = true; aL(tr('toast.adv.hanakuLucky', { name: sn(s) }), 'good'); return true })())
       const _mev = resolveMission(sc, Math.random, { success: missionPassed })
       const _mq = qualityEffects(_mev.quality)
       G._formThisMonth.marginSum += _mev.margin
@@ -1610,7 +1610,7 @@ export function adv() {
           const ripple = kiaRipple(s.id, G.shinobi.filter(x => x.id !== s.id))
           ripple.forEach(r => {
             const affected = G.shinobi.find(x => x.id === r.shinobiId)
-            if (affected) { affected.morale = clamp((affected.morale || 50) + r.delta, 0, 100); aL(`${sn(affected)} is shaken by the loss of ${sn(s)}.`, 'bad') }
+            if (affected) { affected.morale = clamp((affected.morale || 50) + r.delta, 0, 100); aL(tr('toast.adv.shakenByLoss', { name: sn(affected), fallen: sn(s) }), 'bad') }
           })
           G.shinobi = G.shinobi.filter(x => x.id !== s.id)
           G.reputation = clamp(G.reputation - 5, 0, 999)
@@ -1622,7 +1622,7 @@ export function adv() {
           const injType = pickInjuryType(m.rk)
           if (injType) {
             applyInjury(s, injType, hL, dp.injDayReduction)
-            aL('"' + m.n + '" failed — ' + sn(s) + ' has a ' + injType.n + ' (' + s.injDays + 'mo). ' + pickNarrative(m.rk, 'failure', sn(s), s.pers.n, { wins: s.wins, streak: s.streak, season }), 'bad')
+            aL(tr('toast.adv.missionFailedInjury', { mission: m.n, name: sn(s), injury: injType.n, days: s.injDays, narrative: pickNarrative(m.rk, 'failure', sn(s), s.pers.n, { wins: s.wins, streak: s.streak, season }) }), 'bad')
           }
           // Re-injury risk for those returning from long absence
           if ((s.returningForm || 100) < 80 && Math.random() < 0.20) {
@@ -1658,7 +1658,7 @@ export function adv() {
             addedYear: G.year || 1,
             isFollowUp: true,
           })
-          aL('A recovery op appeared — the mission can still be salvaged.', 'neutral')
+          aL(tr('toast.adv.recoveryOp'), 'neutral')
         }
         recordPlayerTactic(G.rivalTendencies, m.rk, _mev.quality, false)
         G.villages.forEach(v => observePlayerTactic(v, m.rk, false))
@@ -1680,7 +1680,7 @@ export function adv() {
     if (Math.random() < (0.12 + aggressiveBonus) * _climateRaid) {
       const ev = pk(RAID_POOL), warn = G.upgrades.intel >= 2 ? 2 : G.upgrades.intel >= 1 ? 1 : 0
       G.raid = { ...ev, resolved: false }; G.raidW = warn
-      aL('⚠ Threat: ' + ev.n + '! ' + (warn > 0 ? 'Arrives in ' + warn + 'm.' : 'Arriving now!'), 'warn')
+      aL(tr('toast.adv.threat', { name: ev.n, arrival: warn > 0 ? 'Arrives in ' + warn + 'm.' : 'Arriving now!' }), 'warn')
       if (warn === 0) resRaid()
     }
   }
@@ -1740,7 +1740,7 @@ export function adv() {
       })
       G._lastSeasonPressMonth = G.month
       G._lastSeasonPressKind = _notice.kind
-      ntf('📊 ' + _notice.title)
+      ntf(tr('toast.adv.noticeNtf', { title: _notice.title }))
     }
   }
 
