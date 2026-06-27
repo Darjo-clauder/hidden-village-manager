@@ -1860,8 +1860,8 @@ export function adv() {
       ? teamSenseis.find(ts => (ts.monthsServed || 0) >= 6) : null)
     if (clashCandidate) {
       G.staffConflict = { headSenseiId: headSensei.id, teamSenseiId: clashCandidate.id, month: G.month, year: G.year }
-      aL('⚠ Staff Conflict: ' + headSensei.fn + ' ' + headSensei.ln + ' and ' + clashCandidate.fn + ' ' + clashCandidate.ln + ' are clashing. Mediate in Staff panel.', 'warn')
-      ntf('Staff conflict — mediation required!')
+      aL(tr('toast.adv.staffConflict', { a: `${headSensei.fn} ${headSensei.ln}`, b: `${clashCandidate.fn} ${clashCandidate.ln}` }), 'warn')
+      ntf(tr('toast.adv.staffConflictShort'))
       addNotice('A conflict between your Head Sensei and a Team Sensei has escalated. Mediation needed.', 'warn')
     }
   }
@@ -1876,8 +1876,8 @@ export function adv() {
       const expMonth = G.month === 12 ? 1 : G.month + 1
       const expYear = G.month === 12 ? G.year + 1 : G.year
       G.staffPoachOffer = { staffId: target.id, staffName: target.fn + ' ' + target.ln, village: poachVillage, matchCost, expiresMonth: expMonth, expiresYear: expYear }
-      aL('⚠ ' + poachVillage + ' is trying to recruit ' + target.fn + ' ' + target.ln + '. Respond in the Staff panel within 1 month.', 'warn')
-      ntf('Rival village targeting your staff!')
+      aL(tr('toast.adv.staffPoach', { village: poachVillage, name: `${target.fn} ${target.ln}` }), 'warn')
+      ntf(tr('toast.adv.staffPoachShort'))
       addNotice(target.fn + ' ' + target.ln + ' has received an offer from ' + poachVillage + '. Your response is required.', 'warn')
     }
   }
@@ -1916,7 +1916,7 @@ export function adv() {
         const logText = asstKage.fn + ' ' + asstKage.ln + ' handled ' + sn(s) + '\'s request ' + (isFirm ? 'firmly — direct and uncompromising.' : 'supportively — warmth and reassurance.')
         G.asstKageLog.unshift({ year: G.year, month: G.month, text: logText, shinobiName: sn(s) })
         if (G.asstKageLog.length > 25) G.asstKageLog.pop()
-        aL('[AK] ' + logText, 'neutral')
+        aL(tr('toast.adv.akLog', { text: logText }), 'neutral')
       }
     }
   }
@@ -1928,7 +1928,7 @@ export function adv() {
   if (G.month === 1) {
     const ids = [...DAIMYO_OBJECTIVES].sort(() => Math.random() - 0.5).slice(0, 3).map(o => o.id)
     G.daimyoObjectives = { ids, year: G.year, startRel: G.villages.map(v => ({ n: v.n, rel: v.rel })) }
-    aL('The Daimyo has set 3 objectives for the year — check Finances.', 'ev')
+    aL(tr('toast.adv.daimyoObjectives'), 'ev')
     addChronicle('Daimyo Objectives', 'This year\'s objectives: ' + ids.map(id => DAIMYO_OBJECTIVES.find(o=>o.id===id)?.n).join(', ') + '.', 'event')
   }
   if (G.month === 12 && G.daimyoObjectives && G.daimyoObjectives.year === G.year) {
@@ -1947,12 +1947,12 @@ export function adv() {
     const allMet = met.every(Boolean)
     if (allMet) {
       G.daimyoBudgetMult = clamp((G.daimyoBudgetMult || 1) + 0.15, 1, 2)
-      aL('The Daimyo is pleased — all objectives met! Budget increased for next season.', 'good')
+      aL(tr('toast.adv.daimyoPleased'), 'good')
       addChronicle('Daimyo Satisfied', 'All 3 objectives met this year. Daimyo budget multiplier now ' + G.daimyoBudgetMult.toFixed(2) + 'x.', 'milestone')
     } else {
       G.daimyoBudgetMult = clamp((G.daimyoBudgetMult || 1) - 0.10, 0.5, 2)
       G.reputation = clamp(G.reputation - 5, 0, 999)
-      aL('The Daimyo is disappointed — objectives missed. Budget cut, relationship damaged.', 'bad')
+      aL(tr('toast.adv.daimyoDisappointed'), 'bad')
       addChronicle('Daimyo Disappointed', met.filter(m=>!m).length + ' objective(s) missed. Budget multiplier now ' + G.daimyoBudgetMult.toFixed(2) + 'x.', 'event')
     }
     G.daimyoObjectiveHistory = G.daimyoObjectiveHistory || []
@@ -1969,7 +1969,7 @@ export function adv() {
     const lastIds = G.ownerMandate.ids || []
     G.ownerMandate.ids = pickMandates(lastIds)
     const names = G.ownerMandate.ids.map(id => MANDATE_BY_ID[id]?.n || id).join(', ')
-    aL(`Council mandate for Year ${G.year}: ${names}. See Kage tab.`, 'ev')
+    aL(tr('toast.adv.councilMandate', { year: G.year, names }), 'ev')
     addChronicle('Council Mandate', `Year ${G.year} mandates: ${names}.`, 'event')
   }
   if (G.month === 12 && G.ownerMandate.ids.length) {
@@ -1987,20 +1987,20 @@ export function adv() {
     if (G.ownerMandate.history.length > 10) G.ownerMandate.history.shift()
     const summary = results.map(r => (r.met ? '✓' : '✗') + ' ' + (MANDATE_BY_ID[r.id]?.n || r.id)).join(' · ')
     if (allMet) {
-      aL(`Council review: all mandates met — confidence ${prev}→${G.ownerMandate.confidence}. ${summary}`, 'good')
+      aL(tr('toast.adv.councilReviewAll', { prev, conf: G.ownerMandate.confidence, summary }), 'good')
       addChronicle('Mandate Review', `Year ${G.year}: all mandates met. Confidence ${G.ownerMandate.confidence}.`, 'milestone')
     } else {
-      aL(`Council review: ${metCount}/${results.length} mandates met — confidence ${prev}→${G.ownerMandate.confidence}. ${summary}`, badYear ? 'bad' : 'neutral')
+      aL(tr('toast.adv.councilReviewPartial', { met: metCount, total: results.length, prev, conf: G.ownerMandate.confidence, summary }), badYear ? 'bad' : 'neutral')
       addChronicle('Mandate Review', `Year ${G.year}: ${metCount}/${results.length} mandates met. Confidence ${G.ownerMandate.confidence}.`, 'event')
     }
     // No-confidence trigger
     if (G.ownerMandate.confidence < DISMISSAL_THRESHOLD && G.ownerMandate.consecutiveBadYears >= 2) {
       G.noConfidenceVote = true
-      aL('⚠ The council has lost confidence in your leadership — a no-confidence vote has been called! See Kage tab.', 'bad')
-      ntf('No-confidence vote called!')
+      aL(tr('toast.adv.noConfidence'), 'bad')
+      ntf(tr('toast.adv.noConfidenceShort'))
       addChronicle('No-Confidence Vote', `After ${G.ownerMandate.consecutiveBadYears} consecutive poor years, the council demands a change of leadership.`, 'legend')
     } else if (G.ownerMandate.confidence < DISMISSAL_THRESHOLD) {
-      aL(`⚠ Council confidence is critically low (${G.ownerMandate.confidence}). One more bad year risks dismissal.`, 'bad')
+      aL(tr('toast.adv.confidenceLow', { conf: G.ownerMandate.confidence }), 'bad')
       addNotice(`Council confidence: ${G.ownerMandate.confidence}/100. Meet mandates next year or face a vote.`, 'bad')
     }
   }
@@ -2011,7 +2011,7 @@ export function adv() {
     if (eligible.length) {
       G.sponsorshipOffer = pk(eligible)
       aL(G.sponsorshipOffer.n + ' has offered a sponsorship deal — check Finances.', 'ev')
-      ntf('Sponsorship offer: ' + G.sponsorshipOffer.n)
+      ntf(tr('toast.adv.sponsorOffer', { name: G.sponsorshipOffer.n }))
     }
   }
   let sponsorshipIncome = 0
@@ -2035,7 +2035,7 @@ export function adv() {
       G.ryo = Math.max(0, G.ryo - penalty)
       if (v) v.rel = clamp(v.rel - 25, 0, 100)
       G.reputation = clamp(G.reputation - 15, 0, 999)
-      aL('⚠ Rival intel uncovered black market dealings — massive diplomatic and financial penalty!', 'bad')
+      aL(tr('toast.adv.bmUncovered'), 'bad')
       addChronicle('Black Market Exposed', 'Off-books dealings exposed. Penalty: ' + fmt(penalty) + ' ryo, relations and reputation damaged.', 'event')
       G.blackLedger.history.push({ year: G.year, month: G.month, type: 'caught', amount: -penalty })
       G.blackLedger.balance = 0
@@ -2087,9 +2087,9 @@ export function adv() {
     G._mandateLuxTaxMonths = (G._mandateLuxTaxMonths || 0) + 1
     G.ryo = Math.max(0, G.ryo - _cs.luxuryTax)
     if (_cs.hardBlock) {
-      aL(`⚠ Hard cap exceeded (${Math.round(_cs.pct * 100)}% of cap) — signings BLOCKED until payroll drops. Luxury tax: -${fmt(_cs.luxuryTax)} ryo.`, 'bad')
+      aL(tr('toast.adv.hardCapExceeded', { pct: Math.round(_cs.pct * 100), tax: fmt(_cs.luxuryTax) }), 'bad')
     } else {
-      aL(`Payroll over cap — luxury tax: -${fmt(_cs.luxuryTax)} ryo (${_cs.label}).`, 'warn')
+      aL(tr('toast.adv.luxuryTax', { tax: fmt(_cs.luxuryTax), label: _cs.label }), 'warn')
     }
   }
 
@@ -2097,7 +2097,7 @@ export function adv() {
   if (G._ff_debt && G.ryo < 0) {
     const d = applyDebt(G.ryo)
     G.ryo = d.ryo; G.debt = d.debt
-    if (d.interestCharged > 0) aL(`Treasury in arrears — ${fmt(d.interestCharged)} ryo interest accrued (debt ${fmt(d.debt)}).`, 'bad')
+    if (d.interestCharged > 0) aL(tr('toast.adv.arrears', { interest: fmt(d.interestCharged), debt: fmt(d.debt) }), 'bad')
   }
 
   // Record finance snapshot
@@ -2139,7 +2139,7 @@ export function adv() {
       G.ryo = Math.max(0, G.ryo + ev.ryo)
       if (ev.rep) G.reputation = clamp(G.reputation + ev.rep, 0, 999)
       if (ev.morale) G.morale = clamp(G.morale + ev.morale, 0, 100)
-      aL('⚠ Financial Crisis: "' + ev.n + '" — ' + ev.desc, 'bad')
+      aL(tr('toast.adv.financialCrisis', { name: ev.n, desc: ev.desc }), 'bad')
       addChronicle('Financial Crisis', ev.n + ': ' + ev.desc, 'event')
     }
   } else {
@@ -2208,7 +2208,7 @@ export function adv() {
   G.finances.scoutCostThisMonth = 0
 
   // When debt is enabled, the overdraft mechanic owns the negative balance (no implicit zero-floor).
-  if (!G._ff_debt && G.ryo < 0) { aL('Treasury empty! Morale suffers.', 'bad'); G.morale = clamp(G.morale - 8, 0, 100); G.ryo = 0 }
+  if (!G._ff_debt && G.ryo < 0) { aL(tr('toast.adv.treasuryEmpty'), 'bad'); G.morale = clamp(G.morale - 8, 0, 100); G.ryo = 0 }
   else if (G._ff_debt && G.ryo < 0) { G.morale = clamp(G.morale - 4, 0, 100) }
 
   // ── Diplomacy drift ──────────────────────────────────────────────────────
@@ -2219,7 +2219,7 @@ export function adv() {
       let dir = v.personality === 'Mercantile' ? rnd(-3, 8) : v.personality === 'Isolationist' ? rnd(-3, 3) : rnd(-7, 7)
       if (dir < 0) dir = Math.min(0, dir + fearMod)  // fear reduces hostility drift
       v.rel = clamp(v.rel + dir, 0, 100)
-      if (Math.abs(dir) > 4) aL('Diplomatic shift: ' + v.n + ' ' + (dir > 0 ? '+' : '') + dir + '.', 'neutral')
+      if (Math.abs(dir) > 4) aL(tr('toast.adv.diploShift', { village: v.n, delta: (dir > 0 ? '+' : '') + dir }), 'neutral')
     }
   })
 
@@ -2227,7 +2227,7 @@ export function adv() {
   G.keCD = (G.keCD || 0) - 1
   if (!ui.pKE && G.keCD <= 0 && Math.random() < 0.25) {
     const ev = G.keQ.shift()
-    if (ev) { ui.pKE = ev; G.keCD = rnd(4, 7); aL('Kage Event: "' + ev.n + '" — check Kage Council!', 'ev'); ntf('New Kage event!') }
+    if (ev) { ui.pKE = ev; G.keCD = rnd(4, 7); aL(tr('toast.adv.kageEvent', { name: ev.n }), 'ev'); ntf(tr('toast.adv.kageEventShort')) }
     if (!G.keQ.length) G.keQ = [...KAGE_EVENTS].sort(() => Math.random() - 0.5)
   }
 
@@ -2236,8 +2236,8 @@ export function adv() {
     const ev = pk(WORLD_CHOICE_EVENTS)
     G.pendingChoiceEvent = ev
     if (ev.effects?.worldFlag) G.worldFlags[ev.effects.worldFlag] = rnd(3, 6)
-    aL('World Event: "' + ev.n + '" — check Missions panel for response options!', 'ev')
-    ntf('World Event requires response!')
+    aL(tr('toast.adv.worldEventMissions', { name: ev.n }), 'ev')
+    ntf(tr('toast.adv.worldEventShort'))
   }
 
   // ── Regional meta shift tick ────────────────────────────────────────────────
@@ -2280,14 +2280,14 @@ export function adv() {
       if (i === prodigyIdx) {
         student.potential = Math.min(99, student.potential + rnd(15, 25))
         student.trait = 'Prodigy'
-        aL('A prodigy has entered the Academy this intake!', 'good')
+        aL(tr('toast.adv.prodigyEntered'), 'good')
         addChronicle('Prodigy Intake', student.fn + ' ' + student.ln + ' shows extraordinary talent.', 'shinobi')
         addLegend(5)
       }
       G.intakeClass.push(student)
     }
-    aL('Annual intake: ' + classSize + ' students joined the Academy (Year ' + G.year + ').', 'good')
-    ntf('New Academy intake — ' + classSize + ' students!')
+    aL(tr('toast.adv.annualIntake', { n: classSize, year: G.year }), 'good')
+    ntf(tr('toast.adv.annualIntakeShort', { n: classSize }))
   }
 
   // ── Mid-year walk-ins (October = month 10) ────────────────────────────────
