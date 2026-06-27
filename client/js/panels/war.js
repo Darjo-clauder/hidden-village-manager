@@ -3,6 +3,7 @@ import { RANKS } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { seedsFromTable } from '../../../shared/utils/season.js'
 import { queuePressConference } from '../adv.js'
+import { t } from '../../../shared/utils/i18n.js'
 import { kageMod, kagePerk } from '../../../shared/constants/kageDev.js'
 import { openBattleViewer } from '../liveBattle.js'
 
@@ -107,7 +108,7 @@ export function musterWar(id) {
 }
 
 export function startWar() {
-  if (!G.warCands.length) { ntf('Muster at least one elite squad!'); return }
+  if (!G.warCands.length) { ntf(t('toast.war.muster')); return }
   G.warActive = true
   ui.warSt = { round: 0 }
   ui.warField = _buildWarField()
@@ -127,7 +128,7 @@ function _killMember(s, entry, c, stageName) {
     if (c.sqRef) { c.sqRef.fallen = c.sqRef.fallen || []; c.sqRef.fallen.push({ name: sn(s), mission: 'Grand Tournament', year: G.year, month: G.month }) }
     G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: 'Grand Tournament — ' + stageName, year: G.year, month: G.month, wins: s.wins || 0, lastWords })
     if ((s.wins || 0) >= 30 || s.ri >= 3) { addChronicle('War Hero Fallen', `${sn(s)} (${RANKS[s.ri]}) was killed at ${stageName} in the Grand Tournament. The village mourns.`, 'shinobi'); addLegend(8) }
-    aL(`☠ ${sn(s)} KIA at ${stageName}.`, 'bad')
+    aL(t('toast.war.kia', { name: sn(s), stage: stageName }), 'bad')
     G.shinobi = G.shinobi.filter(x => x.id !== s.id)
   } else if (c.vRef) {
     c.vRef.roster = (c.vRef.roster || []).filter(x => x.id !== s.id)
@@ -243,12 +244,12 @@ function _runWarFinal(field, res) {
     G.warHistory.push({ year: G.year, champion: champ.name, player: playerWon })
     if (playerWon) {
       addLegend(30); G.reputation = clamp((G.reputation || 0) + 25, 0, 999); G.morale = clamp((G.morale || 50) + 10, 0, 100)
-      aL('🏯 ' + G.vName + ' WINS the Grand Tournament! The age belongs to us. +30 legend, +25 reputation.', 'good')
+      aL(t('toast.war.won', { village: G.vName }), 'good')
       addChronicle('Grand Tournament Champion', `${G.vName} triumphed over the great powers to win the Year ${G.year} Grand Tournament.`, 'legend')
       if (!G.pendingPress) queuePressConference('war_win')
     } else {
       G.morale = clamp((G.morale || 50) - 8, 0, 100)
-      aL('🏯 ' + champ.name + ' wins the Grand Tournament. ' + G.vName + ' counts its dead.', 'bad')
+      aL(t('toast.war.lost', { champ: champ.name, village: G.vName }), 'bad')
       addChronicle('Grand Tournament', `${champ.name} won the Year ${G.year} Grand Tournament.`, 'legend')
       if (!G.pendingPress) queuePressConference('war_loss')
     }
@@ -256,7 +257,7 @@ function _runWarFinal(field, res) {
 
   // Casualty tally + cleanup.
   const myFallen = playerEntry?.fallen?.length || 0
-  if (myFallen > 0) aL(`The Grand Tournament cost ${myFallen} of our shinobi their lives.`, 'bad')
+  if (myFallen > 0) aL(t('toast.war.cost', { n: myFallen }), 'bad')
 
   G.warCands.forEach(sqId => {
     const sq = G.squads.find(q => q.id === sqId); if (!sq) return

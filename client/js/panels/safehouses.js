@@ -123,8 +123,8 @@ export function abortDeepCover(amId) {
   const s = G.shinobi.find(x => x.id === am.assignedTo)
   if (s) { s.status = 'available'; s.missId = null }
   G.aM = G.aM.filter(x => x.id !== amId)
-  aL(`${s ? sn(s) : 'Agent'} recalled from deep cover — operation aborted, no payout.`, 'warn')
-  ntf('Operation aborted.')
+  aL(t('toast.safehouses.recalled', { name: s ? sn(s) : 'Agent' }), 'warn')
+  ntf(t('toast.safehouses.aborted'))
   upUI()
   rSafehouses()
 }
@@ -132,7 +132,7 @@ export function abortDeepCover(amId) {
 export function launchDeepCover(opId) {
   const shSel = document.getElementById('dc-sh-' + opId)
   const sSel = document.getElementById('dc-s-' + opId)
-  if (!sSel?.value) { ntf('Select a shinobi.'); return }
-  if (!shSel?.value) { ntf('Select a safehouse.'); return }
+  if (!sSel?.value) { ntf(t('toast.safehouses.selectShinobi')); return }
+  if (!shSel?.value) { ntf(t('toast.safehouses.selectSafehouse')); return }
   window.assignDeepCoverOp(opId, sSel.value, shSel.value)
 }

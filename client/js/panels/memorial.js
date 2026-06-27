@@ -43,12 +43,12 @@ export function rMem() {
 
 export function honorFallen(key) {
   G.honoredFallen = G.honoredFallen || []
-  if (G.honoredFallen.includes(key)) { ntf('Already honored.'); return }
+  if (G.honoredFallen.includes(key)) { ntf(t('toast.memorial.alreadyHonored')); return }
   G.honoredFallen.push(key)
   const name = key.split('_')[0]
   G.legend = (G.legend || 0) + 5
   G.morale = clamp((G.morale || 75) + 3, 0, 100)
-  aL(`${name} honored at the memorial. The village remembers. +5 legend, +3 morale.`, 'good')
-  ntf(`${name} honored — +5 legend, +3 morale.`)
+  aL(t('toast.memorial.honored', { name }), 'good')
+  ntf(t('toast.memorial.honoredShort', { name }))
   upUI()
 }

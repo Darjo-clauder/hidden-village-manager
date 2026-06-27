@@ -619,4 +619,30 @@ export const en = {
   'toast.depthchart.treasuryEmpty': 'Cannot call up — treasury empty.',
   'toast.depthchart.calledUp': '{name} called up early from the academy due to roster crisis.',
   'toast.depthchart.calledUpShort': 'Emergency call-up: {name} joins the active roster.',
+  // Grand Tournament (war)
+  'toast.war.muster': 'Muster at least one elite squad!',
+  'toast.war.kia': '☠ {name} KIA at {stage}.',
+  'toast.war.won': '🏯 {village} WINS the Grand Tournament! The age belongs to us. +30 legend, +25 reputation.',
+  'toast.war.lost': '🏯 {champ} wins the Grand Tournament. {village} counts its dead.',
+  'toast.war.cost': 'The Grand Tournament cost {n} of our shinobi their lives.',
+  // Youth academy
+  'toast.youthacademy.alreadySparred': 'Kage already sparred this year.',
+  // Kage Path
+  'toast.kagedev.attrRaised': '{attr} raised to {value}.',
+  'toast.kagedev.noPoints2': 'No development points available.',
+  'toast.kagedev.pathChosen': 'You have chosen the path of {name}. {signature}',
+  'toast.kagedev.pathChosenShort': 'Path chosen: {name}',
+  'toast.kagedev.pathExists': 'A path is already chosen.',
+  // Memorial
+  'toast.memorial.alreadyHonored': 'Already honored.',
+  'toast.memorial.honored': '{name} honored at the memorial. The village remembers. +5 legend, +3 morale.',
+  'toast.memorial.honoredShort': '{name} honored — +5 legend, +3 morale.',
+  // Missions board
+  'toast.missions.noSquads': 'No available squads!',
+  'toast.missions.selectShinobi': 'Select a shinobi first.',
+  // Safehouses
+  'toast.safehouses.recalled': '{name} recalled from deep cover — operation aborted, no payout.',
+  'toast.safehouses.aborted': 'Operation aborted.',
+  'toast.safehouses.selectShinobi': 'Select a shinobi.',
+  'toast.safehouses.selectSafehouse': 'Select a safehouse.',
 }

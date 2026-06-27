@@ -452,7 +452,7 @@ export function rSqM() {
 
 export function pickSq(mId) {
   const fq = G.squads.filter(sq => sq.members.every(id => { const s = G.shinobi.find(x => x.id === id); return s && s.status === 'available' }))
-  if (!fq.length) { ntf('No available squads!'); return }
+  if (!fq.length) { ntf(tr('toast.missions.noSquads')); return }
   ui.sqAT = fq[0].id; oSqA(fq[0].id)
 }
 
@@ -805,6 +805,6 @@ export function rUnderground() {
 
 export function assignBM(missionId) {
   const sel = document.getElementById('bm-sel-' + missionId)
-  if (!sel?.value) { ntf('Select a shinobi first.'); return }
+  if (!sel?.value) { ntf(tr('toast.missions.selectShinobi')); return }
   window.assignBlackMarket(missionId, sel.value)
 }

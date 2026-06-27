@@ -2,6 +2,7 @@ import { G } from '../state.js'
 import { DEV_TRACKS, INTENSITY_LEVELS, DEV_CURVES } from '../constants.js'
 import { aL, ntf } from '../ui.js'
 import { clamp } from '../state.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 
 window._yaTab = 'class'
 
@@ -210,7 +211,7 @@ export function yaSetAllIntensity(intensityId) {
 }
 
 export function yaKageTraining(studentId) {
-  if ((G.kageTrainingUsedYear || 0) >= G.year) { ntf('Kage already sparred this year.'); return }
+  if ((G.kageTrainingUsedYear || 0) >= G.year) { ntf(tr('toast.youthacademy.alreadySparred')); return }
   const s = (G.intakeClass || []).find(st => st.id === studentId)
   if (!s) return
   s.kageTraining = true

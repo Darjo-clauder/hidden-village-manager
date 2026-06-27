@@ -77,20 +77,20 @@ export function rKageDev() {
 export function spendKagePt(attrId) {
   if (spendKagePoint(G, attrId)) {
     const a = ATTR_BY_ID[attrId]
-    ntf(`${a?.n || attrId} raised to ${G.kageDev.attrs[attrId]}.`)
+    ntf(t('toast.kagedev.attrRaised', { attr: a?.n || attrId, value: G.kageDev.attrs[attrId] }))
     upUI()
   } else {
-    ntf('No development points available.')
+    ntf(t('toast.kagedev.noPoints2'))
   }
 }
 
 export function chooseKagePath(pathId) {
   if (applyKagePath(G, pathId)) {
     const p = PATH_BY_ID[pathId]
-    aL(`You have chosen the path of ${p.n}. ${p.desc.split('Signature:')[1]?.trim() || ''}`, 'good')
-    ntf(`Path chosen: ${p.n}`)
+    aL(t('toast.kagedev.pathChosen', { name: p.n, signature: p.desc.split('Signature:')[1]?.trim() || '' }), 'good')
+    ntf(t('toast.kagedev.pathChosenShort', { name: p.n }))
     upUI()
   } else {
-    ntf('A path is already chosen.')
+    ntf(t('toast.kagedev.pathExists'))
   }
 }
