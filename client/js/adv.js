@@ -3069,7 +3069,7 @@ export function adv() {
       const available = LEGACY_DECISIONS.filter(d => !used.includes(d.id))
       if (available.length) {
         G.legacyDecisionPending = pk(available)
-        aL('A legacy moment has arisen. Check the Legacy panel.', 'warn')
+        aL(tr('toast.adv.legacyMoment'), 'warn')
       }
     }
   }
@@ -3085,7 +3085,7 @@ export function adv() {
     } else {
       // Successor retired/gone — auto-clear
       G.successorId = null; G.successorType = null
-      aL('Your designated successor has left the village. Appoint a new one in the Legacy panel.', 'warn')
+      aL(tr('toast.adv.successorLeft'), 'warn')
     }
   }
 
@@ -3128,7 +3128,7 @@ export function adv() {
           detail += ` ${sn(host)} was hurt containing it and is sidelined ${host.injDays}mo.`
         }
         ;(b.escapeHistory = b.escapeHistory || []).push({ year: G.year, month: G.month, kind: 'instability' })
-        aL(`⚠ Seal instability — ${detail}`, 'bad')
+        aL(tr('toast.adv.sealInstability', { detail }), 'bad')
         addNotice(`${b.n} instability — reinforce the seal in the Beasts panel.`, 'bad')
         addChronicle('Seal Instability', detail, 'event')
       }
@@ -3163,19 +3163,19 @@ export function adv() {
       const defPow = defShinobi.length ? Math.max(...defShinobi.map(s => sPow(s))) : 0
 
       if (defPow + wD >= extractStr) {
-        aL(`⚠ Extraction squad from ${attacker.n} attempted to seize ${b.n}! They were repelled.`, 'warn')
+        aL(tr('toast.adv.extractionRepelled', { attacker: attacker.n, beast: b.n }), 'warn')
         G.reputation = clamp(G.reputation + 3, 0, 999)
         attacker.rel = clamp((attacker.rel || 50) - 10, 0, 100)
         addChronicle(`Extraction Repelled — ${b.n}`, `${attacker.n} dispatched an extraction team targeting ${b.n}'s Jinchuriki. Village defenses held.`, 'war')
       } else {
-        aL(`⚠ Extraction raid from ${attacker.n} penetrated defenses! ${b.n}'s Jinchuriki was threatened — seal barely held.`, 'bad')
+        aL(tr('toast.adv.extractionPenetrated', { attacker: attacker.n, beast: b.n }), 'bad')
         G.morale = clamp(G.morale - 8, 0, 100)
         G.reputation = clamp(G.reputation - 5, 0, 999)
         const jk = G.shinobi.find(s => s.id === b.jk)
         if (jk) { jk.injDays = Math.max(jk.injDays || 0, 2); jk.status = 'injured' }
         addChronicle(`Extraction Breach — ${b.n}`, `${attacker.n} extraction agents breached the village. ${b.n}'s Jinchuriki was injured in the struggle.`, 'war')
       }
-      ntf(`Extraction attempt on ${b.n}!`)
+      ntf(tr('toast.adv.extractionAttempt', { beast: b.n }))
     }
   })
 
@@ -3220,9 +3220,9 @@ export function adv() {
     G._kageXpPending = 0
     const res = addKageXp(G, xp)
     if (res.leveled) {
-      aL(`Your Kage reached Level ${res.newLevel} — ${res.levels * 2} development point(s) to spend.`, 'good')
+      aL(tr('toast.adv.kageLevel', { level: res.newLevel, points: res.levels * 2 }), 'good')
       addNotice(`Kage Level ${res.newLevel} — spend development points on the Kage Path screen.`, 'good')
-      ntf(`⬆ Kage Level ${res.newLevel}!`)
+      ntf(tr('toast.adv.kageLevelShort', { level: res.newLevel }))
     }
   }
 
@@ -3237,7 +3237,7 @@ export function adv() {
   }
 
   G.month++; if (G.month > 12) { G.month = 1; G.year++; addChronicle('New Year', 'Year ' + G.year + ' begins. Legend: ' + G.legend + '. Shinobi: ' + G.shinobi.length + '.', 'event') }
-  upUI(); ntf('Month advanced → Y' + G.year + ' M' + G.month)
+  upUI(); ntf(tr('toast.adv.monthAdvanced', { year: G.year, month: G.month }))
 }
 
 // ── Bond bonus for squad missions ────────────────────────────────────────
@@ -3326,13 +3326,13 @@ function _tickContracts(G) {
       const demandSalary = Math.round(s.salary * perfMult * (1 + (s.ri * 0.1)))
       s.contractRenewing = true
       G.contractRenewalQueue.push({ shinobiId: s.id, demandSalary, year: G.year, month: G.month })
-      aL(`${sn(s)}'s contract expires next year — they want ${fmt(demandSalary)} ryo/month to renew.`, 'warn')
+      aL(tr('toast.adv.contractExpiring', { name: sn(s), salary: fmt(demandSalary) }), 'warn')
     }
     if (G.year >= s.contractEnd && G.month === 1 && !s.contractRenewing) {
       // Contract lapsed without renewal action
       s.commitment = clamp((s.commitment || 60) - 20, 0, 100)
       s.transferListed = true
-      aL(`${sn(s)}'s contract has expired. They're seeking a move.`, 'warn')
+      aL(tr('toast.adv.contractExpired', { name: sn(s) }), 'warn')
     }
   })
 }
@@ -3354,7 +3354,7 @@ function _tickSeniorGroup(G) {
     if (G.seniorGroupMorale < 40) {
       G.morale = clamp(G.morale - 2, 0, 100)
       if (!G._seniorGroupWarnedThisMonth) {
-        aL('Senior group morale is critically low — unrest is spreading through the ranks.', 'warn')
+        aL(tr('toast.adv.seniorUnrest'), 'warn')
         G._seniorGroupWarnedThisMonth = true
       }
     } else {
@@ -3411,7 +3411,7 @@ export function resolveNoConfidence(choice) {
   G.noConfidenceVote = false
   if (choice === 'resign') {
     const { grade, score } = computeDynastyGrade(G)
-    aL(`You resign as Kage. Dynasty Grade: ${grade} (${score} pts). Your legacy endures.`, 'neutral')
+    aL(tr('toast.adv.resign', { grade, score }), 'neutral')
     addChronicle('Kage Resigned', `${G.kN || 'The Kage'} stepped down after a no-confidence vote. Dynasty Grade: ${grade}.`, 'legend')
     G.gameOver = { reason: 'resignation', grade, score, year: G.year }
     upUI(); return
@@ -3423,10 +3423,10 @@ export function resolveNoConfidence(choice) {
     G.ownerMandate.confidence = clamp(G.ownerMandate.confidence + 20, 0, 100)
     G.ownerMandate.consecutiveBadYears = 0
     G.morale = clamp(G.morale - 10, 0, 100)
-    aL(`You successfully defend your position — confidence restored to ${G.ownerMandate.confidence}. Cost: -${fmt(cost)} ryo, -10 morale.`, 'good')
+    aL(tr('toast.adv.defendPosition', { conf: G.ownerMandate.confidence, cost: fmt(cost) }), 'good')
     addChronicle('Vote Survived', `${G.kN || 'The Kage'} survived a no-confidence vote by rallying council support.`, 'legend')
   } else {
-    aL('Not enough ryo to rally support — forced to resign.', 'bad')
+    aL(tr('toast.adv.forcedResign'), 'bad')
     const { grade, score } = computeDynastyGrade(G)
     addChronicle('Kage Ousted', `${G.kN || 'The Kage'} was removed after losing a no-confidence vote. Dynasty Grade: ${grade}.`, 'legend')
     G.gameOver = { reason: 'ousted', grade, score, year: G.year }
@@ -3461,7 +3461,7 @@ export function queuePressConference(triggerId, ctx = {}) {
     body: q.intro + '\n\n"' + q.question + '"',
     year: G.year, month: G.month, action: 'press', pressId: q.id, read: false,
   })
-  ntf('Press conference requested — check Inbox.')
+  ntf(tr('toast.adv.pressRequested'))
 }
 
 export function resolvePressConference(toneId, calloutVillage) {
@@ -3510,7 +3510,7 @@ export function resolveComplication(compId, choiceId) {
   if (!pc) return
   pc.choice = choiceId
   const opt = pc.options.find(o => o.id === choiceId)
-  if (opt) aL('Field decision — ' + opt.label + ': ' + opt.desc, 'neutral')
+  if (opt) aL(tr('toast.adv.fieldDecisionMade', { label: opt.label, desc: opt.desc }), 'neutral')
   if (G.narrativeInbox) G.narrativeInbox.forEach(n => { if (n.id === compId) n.dismissed = true })
   upUI()
 }
@@ -3522,7 +3522,7 @@ export function resolveRivalOffer(offerId, accept) {
   if (offer.type === 'prospect_bid') {
     if (!accept) {
       G.rivalOffers = G.rivalOffers.filter(o => o.id !== offerId)
-      aL('You blocked ' + offer.village + '\'s recruitment approach.', 'good')
+      aL(tr('toast.adv.blockedApproach', { village: offer.village }), 'good')
     } else {
       const p = G.prospects?.find(x => x.id === offer.prospectId)
       if (p) { G.prospects = G.prospects.filter(x => x.id !== offer.prospectId); aL(offer.village + ' signed ' + (p.fn || 'prospect') + '.', 'neutral') }
@@ -3538,9 +3538,9 @@ export function resolveRivalOffer(offerId, accept) {
         theirs.homeVillage = G.vName; theirs.status = 'available'; theirs.salary = Math.round(sPow(theirs) * 6)
         G.shinobi.push(theirs)
         if (theirs.homeVillage !== G.vName) { const rv = G.villages.find(v => v.n === offer.rivalVillage); if (rv?.roster) rv.roster = rv.roster.filter(s => s.id !== theirs.id) }
-        aL('Trade completed — ' + offer.offeredName + ' joins the village.', 'good')
+        aL(tr('toast.adv.tradeCompleted', { name: offer.offeredName }), 'good')
       }
-    } else aL('Trade declined.', 'neutral')
+    } else aL(tr('toast.adv.tradeDeclined'), 'neutral')
     G.rivalOffers = G.rivalOffers.filter(o => o.id !== offerId)
   }
   if (G.narrativeInbox) G.narrativeInbox.forEach(n => { if (n.id === offerId) n.dismissed = true })
@@ -3560,7 +3560,7 @@ export function resolveQuickDecision(eventId, choiceId) {
 
 export function runTrainingCamp() {
   const cost = 8000
-  if ((G.ryo || 0) < cost) { if (typeof ntf === 'function') ntf('Not enough ryo — Training Camp costs 8,000 ryo.'); return }
+  if ((G.ryo || 0) < cost) { if (typeof ntf === 'function') ntf(tr('toast.adv.needTrainingCamp')); return }
   G.ryo -= cost
   let boosted = 0
   G.shinobi.filter(s => s.status === 'available' || s.status === 'injured').forEach(s => {
