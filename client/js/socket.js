@@ -6,6 +6,7 @@ import { RS } from './room.js'
 import { rLob } from './panels/lobby.js'
 import { migrateBeastStats } from './beastEngine.js'
 import { dlog } from '../../shared/utils/debug.js'
+import { t } from '../../shared/utils/i18n.js'
 
 export let socket = null
 
@@ -95,7 +96,7 @@ export function initSocket(name, kageName, icon) {
       if (si) si.textContent = G.vIcon
     }
     upUI()
-    ntf('Session restored — welcome back, Kage.')
+    ntf(t('toast.socket.sessionRestored'))
     dlog(`[Socket] State restored: Y${G.year} M${G.month}, ${G.shinobi?.length || 0} shinobi, ${G.ryo} ryo`)
   })
 
@@ -132,7 +133,7 @@ export function initSocket(name, kageName, icon) {
 
   socket.on('war_declared', ({ fromId, fromName, fromIcon }) => {
     setRelLocal(fromId, 'war')
-    aL('⚠ ' + fromIcon + ' ' + fromName + ' declared WAR!', 'bad')
+    aL(t('toast.socket.warDeclared', { icon: fromIcon, name: fromName }), 'bad')
     showDip('⚠ War Declaration',
       fromIcon + ' <b style="color:#e8e0cc">' + fromName + '</b> has declared war on your village! Expect raids.',
       null, null)
@@ -141,8 +142,8 @@ export function initSocket(name, kageName, icon) {
 
   socket.on('alliance_proposed', ({ fromId, fromName, fromIcon }) => {
     WS.pendingAlliances.push({ fromId, fromName, fromIcon })
-    aL(fromIcon + ' ' + fromName + ' proposes an alliance — check World Map!', 'ev')
-    ntf('Alliance proposal from ' + fromName + '!')
+    aL(t('toast.socket.allianceProposesAL', { icon: fromIcon, name: fromName }), 'ev')
+    ntf(t('toast.socket.allianceProposal', { name: fromName }))
     showDip('Alliance Proposal',
       fromIcon + ' <b style="color:#e8e0cc">' + fromName + '</b> proposes a military alliance.',
       () => respondAlliance(fromId, true), () => respondAlliance(fromId, false))
@@ -151,20 +152,20 @@ export function initSocket(name, kageName, icon) {
 
   socket.on('alliance_accepted', ({ fromId, fromName, fromIcon }) => {
     setRelLocal(fromId, 'allied')
-    aL(fromIcon + ' ' + fromName + ' accepted your alliance!', 'good')
-    ntf('Allied with ' + fromName + '!')
+    aL(t('toast.socket.allianceAccepted', { icon: fromIcon, name: fromName }), 'good')
+    ntf(t('toast.socket.allied', { name: fromName }))
     rWo()
   })
 
   socket.on('alliance_declined', ({ fromName }) => {
-    aL(fromName + ' declined your alliance.', 'neutral')
-    ntf(fromName + ' declined.')
+    aL(t('toast.socket.allianceDeclinedAL', { name: fromName }), 'neutral')
+    ntf(t('toast.socket.declined', { name: fromName }))
   })
 
   socket.on('alliance_broken', ({ fromId, fromName, fromIcon }) => {
     setRelLocal(fromId, 'neutral')
-    aL(fromIcon + ' ' + fromName + ' broke the alliance!', 'warn')
-    ntf(fromName + ' broke the alliance!')
+    aL(t('toast.socket.allianceBrokeAL', { icon: fromIcon, name: fromName }), 'warn')
+    ntf(t('toast.socket.brokeShort', { name: fromName }))
     rWo()
   })
 
@@ -185,21 +186,21 @@ export function initSocket(name, kageName, icon) {
       if (res.won) {
         G.ryo += res.ryoStolen
         G.reputation = clamp(G.reputation + res.repChange, 0, 999)
-        aL('Raid on ' + res.targetName + ' succeeded! +' + fmt(res.ryoStolen) + ' ryo. (' + res.atkRoll + ' vs ' + res.defRoll + ')', 'good')
-        ntf('Raid won! +' + fmt(res.ryoStolen) + ' ryo')
+        aL(t('toast.socket.raidWon', { target: res.targetName, ryo: fmt(res.ryoStolen), atk: res.atkRoll, def: res.defRoll }), 'good')
+        ntf(t('toast.socket.raidWonShort', { ryo: fmt(res.ryoStolen) }))
       } else {
         G.reputation = clamp(G.reputation + (res.repChange || 0), 0, 999)
-        aL('Raid on ' + res.targetName + ' failed. (' + res.atkRoll + ' vs ' + res.defRoll + ')', 'bad')
-        ntf('Raid failed.')
+        aL(t('toast.socket.raidFailed', { target: res.targetName, atk: res.atkRoll, def: res.defRoll }), 'bad')
+        ntf(t('toast.socket.raidFailedShort'))
       }
     } else {
       if (res.won) {
-        aL('Repelled raid from ' + res.fromIcon + ' ' + res.fromName + '! (' + res.defRoll + ' vs ' + res.atkRoll + ')', 'good')
-        ntf('Raid repelled!')
+        aL(t('toast.socket.raidRepelled', { icon: res.fromIcon, name: res.fromName, def: res.defRoll, atk: res.atkRoll }), 'good')
+        ntf(t('toast.socket.raidRepelledShort'))
       } else {
         G.ryo = Math.max(0, G.ryo - res.ryoStolen)
-        aL('⚠ ' + res.fromIcon + ' ' + res.fromName + ' raided you! Lost ' + fmt(res.ryoStolen) + ' ryo.', 'bad')
-        ntf('⚠ Raided! -' + fmt(res.ryoStolen) + ' ryo')
+        aL(t('toast.socket.raided', { icon: res.fromIcon, name: res.fromName, ryo: fmt(res.ryoStolen) }), 'bad')
+        ntf(t('toast.socket.raidedShort', { ryo: fmt(res.ryoStolen) }))
       }
       showDip(
         res.won ? 'Raid Repelled!' : '⚠ Village Raided!',
@@ -216,19 +217,19 @@ export function initSocket(name, kageName, icon) {
     G.ryo += amount
     const curStatus = WS.myVillage?.relations?.[fromId]?.status || 'neutral'
     if (curStatus === 'war') setRelLocal(fromId, 'neutral')
-    aL(fromIcon + ' ' + fromName + ' sent gifts (+' + fmt(amount) + ' ryo).', 'good')
-    ntf('Gifts from ' + fromName + '! +' + fmt(amount) + ' ryo')
+    aL(t('toast.socket.giftsReceivedAL', { icon: fromIcon, name: fromName, amount: fmt(amount) }), 'good')
+    ntf(t('toast.socket.giftsFrom', { name: fromName, amount: fmt(amount) }))
     upUI(); rWo()
   })
 
-  socket.on('gift_sent',       ({ targetName }) => ntf('Gifts sent to ' + targetName + '.'))
+  socket.on('gift_sent',       ({ targetName }) => ntf(t('toast.socket.giftsSent', { target: targetName })))
   socket.on('sv_notification', msg              => ntf(msg))
 
   socket.on('world_event', ({ text, effect }) => {
     addNewsItem(text)
-    aL('[World] ' + text, 'ev')
+    aL(t('toast.socket.worldMsg', { text }), 'ev')
     if (effect) {
-      if (effect.ryo)        { G.ryo = clamp(G.ryo + effect.ryo, 0, Infinity); aL('World event: ' + (effect.ryo > 0 ? '+' : '') + fmt(effect.ryo) + ' ryo.', effect.ryo > 0 ? 'good' : 'bad') }
+      if (effect.ryo)        { G.ryo = clamp(G.ryo + effect.ryo, 0, Infinity); aL(t('toast.socket.worldEventRyo', { amount: (effect.ryo > 0 ? '+' : '') + fmt(effect.ryo) }), effect.ryo > 0 ? 'good' : 'bad') }
       if (effect.morale)     G.morale     = clamp((G.morale     || 75) + effect.morale,     0, 100)
       if (effect.reputation) G.reputation = clamp((G.reputation || 10) + effect.reputation, 0, 999)
       upUI()
@@ -244,7 +245,7 @@ export function initSocket(name, kageName, icon) {
     RS.mode     = null
     _updateRoomBadge(roomCode)
     rLob()
-    ntf('Room ' + roomCode + ' created — share the code to invite others!')
+    ntf(t('toast.socket.roomCreated', { code: roomCode }))
     dlog('[Room] Created:', roomCode)
   })
 
@@ -255,7 +256,7 @@ export function initSocket(name, kageName, icon) {
     RS.mode     = null
     _updateRoomBadge(roomCode)
     rLob()
-    ntf('Joined room ' + roomCode)
+    ntf(t('toast.socket.roomJoined', { code: roomCode }))
     dlog('[Room] Joined:', roomCode)
   })
 
@@ -277,7 +278,7 @@ export function initSocket(name, kageName, icon) {
   })
 
   socket.on('join_error', ({ reason }) => {
-    ntf('Cannot join: ' + reason)
+    ntf(t('toast.socket.cannotJoin', { reason }))
     const errEl = document.getElementById('lob-join-error')
     if (errEl) errEl.textContent = reason
   })
@@ -285,15 +286,15 @@ export function initSocket(name, kageName, icon) {
   socket.on('host_transferred', ({ newHostSocketId, newHostName }) => {
     if (newHostSocketId === socket.id) {
       RS.isHost = true
-      ntf('You are now the room host.')
+      ntf(t('toast.socket.nowHost'))
     } else {
-      ntf(newHostName + ' is now the room host.')
+      ntf(t('toast.socket.newHost', { name: newHostName }))
     }
     rLob()
   })
 
   socket.on('player_kicked', ({ reason }) => {
-    ntf('You were removed from the room: ' + (reason || ''))
+    ntf(t('toast.socket.removed', { reason: reason || '' }))
     RS.roomCode = null
     RS.snapshot = null
     RS.isHost   = false
@@ -305,8 +306,8 @@ export function initSocket(name, kageName, icon) {
     }
   })
 
-  socket.on('room_paused',  () => { ntf('Room paused by host.'); rLob() })
-  socket.on('room_resumed', () => { ntf('Room resumed.'); rLob() })
+  socket.on('room_paused',  () => { ntf(t('toast.socket.roomPaused')); rLob() })
+  socket.on('room_resumed', () => { ntf(t('toast.socket.roomResumed')); rLob() })
 
   socket.on('turn_resolved', ({ turnNumber, worldEvents }) => {
     _showTurnResolution(turnNumber, worldEvents)
