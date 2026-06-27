@@ -2423,7 +2423,7 @@ export function adv() {
       const gainKey = pk(['ninjutsu','taijutsu','speed','chakra'])
       student.stats[gainKey] = clamp(student.stats[gainKey] + rnd(3, 6), 0, 99)
       student.potential = Math.min(99, student.potential + rnd(2, 5))
-      aL('The Kage personally sparred with ' + sn(student) + ' — exceptional growth!', 'good')
+      aL(tr('toast.adv.kageSpar', { name: sn(student) }), 'good')
       addLegend(2)
     }
     // Graduation at 12 months
@@ -2457,7 +2457,7 @@ export function adv() {
         if (!cur || v > cur.value) {
           G.academyRecords[k] = { value: v, name: sn(student), year: G.year }
           addChronicle('Academy Record', sn(student) + ' set a new academy record in ' + k + ' (' + v + ').', 'milestone')
-          aL('NEW RECORD: ' + sn(student) + ' — ' + k + ' ' + v, 'good')
+          aL(tr('toast.adv.newRecord', { name: sn(student), stat: k, value: v }), 'good')
         }
       })
       // Post-graduation tracking entry
@@ -2520,7 +2520,7 @@ export function adv() {
       // Homegrown achievement — village-wide morale boost
       if (s.homegrown) {
         G.morale = clamp(G.morale + 5, 0, 100)
-        aL('The whole village takes pride — ' + sn(s) + ' is homegrown talent.', 'good')
+        aL(tr('toast.adv.homegrownPride', { name: sn(s) }), 'good')
         addNotice(sn(s) + ', raised in our own Academy, has become a Village Legend.', 'good')
       }
     }
@@ -2560,7 +2560,7 @@ export function adv() {
         G.meetingQueue.push({ id: Math.random().toString(36).slice(2), shinobiId: s.id, type: mType, month: G.month, year: G.year })
         s.meetingCooldown = 3
         aL(sn(s) + ' has requested a one-on-one meeting — check People Management!', 'ev')
-        ntf('Meeting request: ' + sn(s))
+        ntf(tr('toast.adv.meetingRequest', { name: sn(s) }))
       }
     }
 
@@ -2598,7 +2598,7 @@ export function adv() {
       const hasActiveRumor = G.rumors.some(r => r.shinobiId === s.id && !r.resolved)
       if (s.lowCommitMonths >= 2 && !hasActiveRumor && Math.random() < 0.25) {
         addRumor(s, pk(RUMOR_TEMPLATES))
-        ntf('A rumor is circulating about ' + sn(s) + ' — check People Management.')
+        ntf(tr('toast.adv.rumorCirculating', { name: sn(s) }))
       }
     } else {
       s.lowCommitMonths = 0
@@ -2631,7 +2631,7 @@ export function adv() {
         G.meetingQueue.push({ id: Math.random().toString(36).slice(2), shinobiId: vet.id, type: 'wage_tension', month: G.month, year: G.year })
         vet.meetingCooldown = 3
         aL(sn(vet) + ' learned a new signing earns more than they do — requesting a meeting.', 'warn')
-        ntf('Wage tension: ' + sn(vet))
+        ntf(tr('toast.adv.wageTension', { name: sn(vet) }))
       }
     })
   }
@@ -2645,7 +2645,7 @@ export function adv() {
     const ev = eligible.length ? pk(eligible) : HARMONY_EVENTS[0]
     G.morale = clamp(G.morale + ev.morale, 0, 100)
     G.shinobi.forEach(s => { s.indMorale = clamp((s.indMorale || 70) + ev.indMorale, 0, 100) })
-    aL('Dressing Room: "' + ev.n + '" — ' + ev.desc, 'bad')
+    aL(tr('toast.adv.dressingRoom', { name: ev.n, desc: ev.desc }), 'bad')
     addChronicle('Dressing Room Crisis', ev.n + ': ' + ev.desc, 'event')
     addNotice(ev.n + ': ' + ev.desc, 'bad')
   }
@@ -2713,7 +2713,7 @@ export function adv() {
         const victim = pk(G.transferMarket.pool)
         const rivalV = pk(G.villages)
         G.transferMarket.pool = G.transferMarket.pool.filter(p => p.id !== victim.id)
-        aL('📰 Deadline panic: ' + (rivalV?.n || 'a rival village') + ' signed ' + sn(victim) + ' in a late rush.', 'warn')
+        aL(tr('toast.adv.deadlinePanic', { village: rivalV?.n || 'a rival village', name: sn(victim) }), 'warn')
         addNotice('Deadline-day panic signing: ' + sn(victim) + ' has joined ' + (rivalV?.n || 'a rival village') + '.', 'warn')
       }
     }
@@ -2721,7 +2721,7 @@ export function adv() {
       G.transferMarket.windowOpen = false
       G.transferMarket.windowSeason = null
       G.transferMarket.deadlinePressure = false
-      aL('Transfer window closed. Market resets next season.', 'neutral')
+      aL(tr('toast.adv.windowClosed'), 'neutral')
     }
   }
 
@@ -2780,7 +2780,7 @@ export function adv() {
       const bTier = BINGO_TIERS[Math.min(s.bingoBookPresence, BINGO_TIERS.length - 1)]
       addLegend(bTier.prestigeBonus)
       if (Math.random() < bTier.assasRisk) {
-        aL('⚠ Assassination attempt on ' + sn(s) + '! (Bingo Book: ' + bTier.n + ')', 'bad')
+        aL(tr('toast.adv.assassination', { name: sn(s), tier: bTier.n }), 'bad')
         if (Math.random() < 0.30) {
           const injType = pickInjuryType(s.ri >= 4 ? 'S' : 'A')
           if (injType) { applyInjury(s, injType, hL); aL(sn(s) + ' was injured in the assassination attempt.', 'bad') }
@@ -2791,13 +2791,13 @@ export function adv() {
 
   // ── Prodigy event (1% per month in rfP) — handled in rfP ────────────────
   if (G.tempDef > 0) G.tempDef = Math.max(0, G.tempDef - 5)
-  if (G.examSched && G.month === G.examMonth) { aL('Chunin Exam is now! Go to Exam panel.', 'ev'); ntf('Chunin Exam!') }
+  if (G.examSched && G.month === G.examMonth) { aL(tr('toast.adv.chuninNow'), 'ev'); ntf(tr('toast.adv.chuninNowShort')) }
 
   // ── Grand Tournament — the deadly year-end playoff, seeded by the season ───
   if (G.month === 12 && !G.warActive && G.warDoneYear !== G.year) {
     G.warSched = true
-    aL('🏆 The Grand Tournament begins! Seeded by the season standings, the great villages clash to the death. Muster your elite in the Grand Tournament tab.', 'ev')
-    ntf('Grand Tournament — muster your elite!')
+    aL(tr('toast.adv.tournamentBegins'), 'ev')
+    ntf(tr('toast.adv.tournamentBeginsShort'))
   }
 
   // ── Prestige tier tick ──────────────────────────────────────────────────────
@@ -2805,7 +2805,7 @@ export function adv() {
   if (newPTier !== G.prestigeTier) {
     const was = G.prestigeTier; G.prestigeTier = newPTier
     addChronicle('Prestige Milestone', `${G.vName} has risen to Prestige Tier ${newPTier} (from ${was}). Legend: ${G.legend}.`, 'milestone')
-    aL('Village prestige: Tier ' + newPTier + '!', 'good')
+    aL(tr('toast.adv.prestigeTier', { tier: newPTier }), 'good')
   }
   if (G.dynastyRecords) G.dynastyRecords.peakLegend = Math.max(G.dynastyRecords.peakLegend || 0, G.legend || 0)
 
@@ -2823,8 +2823,8 @@ export function adv() {
   // ── Dynasty milestone notifications ────────────────────────────────────────
   if (G.year === DYNASTY_YEARS && G.month === 1 && !G.dynastyComplete) {
     const { grade } = computeDynastyGrade(G)
-    aL(`Year ${DYNASTY_YEARS} reached — dynasty clock complete. Grade ${grade}. Go to Legacy → Dynasty to pass the torch.`, 'good')
-    ntf(`Dynasty year ${DYNASTY_YEARS} — pass the torch in Legacy panel!`)
+    aL(tr('toast.adv.dynastyReached', { years: DYNASTY_YEARS, grade }), 'good')
+    ntf(tr('toast.adv.dynastyReachedShort', { years: DYNASTY_YEARS }))
   }
 
   if (!G.hallOfLegends) G.hallOfLegends = []
@@ -2855,7 +2855,7 @@ export function adv() {
     addChronicle('Generational Legacy — Year ' + G.year,
       `[${grade}] Development:${devScore} Diplomacy:${dipScore} Military:${milScore} Legacy:${legScore} — Overall:${overall}/100`,
       'milestone')
-    aL('Year ' + G.year + ' generational report: Grade ' + grade, 'good')
+    aL(tr('toast.adv.generationalReport', { year: G.year, grade }), 'good')
   }
 
   // ── Intel report expiry ─────────────────────────────────────────────────────
@@ -2881,7 +2881,7 @@ export function adv() {
       G.caughtAnbu = G.caughtAnbu || []
       G.caughtAnbu.push({ id: op.id, targetVillageId: op.targetVillageId, month: (G.year - 1) * 12 + G.month, status })
       if (targetV) targetV.rel = clamp((targetV.rel || 50) - 12, 0, 100)
-      aL(`ANBU agent caught by ${targetV?.n || 'enemy'} — ${status}.`, 'bad')
+      aL(tr('toast.adv.anbuCaught', { village: targetV?.n || 'enemy', status }), 'bad')
       addChronicle('ANBU Incident', `Our ${op.type} operative was ${status} by ${targetV?.n || 'enemy forces'}.`, 'bad')
     } else {
       // Success — generate intel report
@@ -2896,7 +2896,7 @@ export function adv() {
       }
       G.intelReports = G.intelReports || []
       G.intelReports.push({ villageId: op.targetVillageId, type: op.type, data: reportData, expiresMonth: now2 + 3 })
-      aL(`ANBU ${op.type} on ${targetV?.n || 'target'} complete.`, 'good')
+      aL(tr('toast.adv.anbuComplete', { op: op.type, village: targetV?.n || 'target' }), 'good')
     }
     return false
   })
@@ -2906,7 +2906,7 @@ export function adv() {
     G.warState.monthsLeft = (G.warState.monthsLeft || 1) - 1
     const warV = (G.villages || []).find(v => v.id === G.warState.villageId)
     if (G.warState.phase === 'mobilization') {
-      aL('War mobilization with ' + (warV?.n || 'enemy') + ' continues.', 'warn')
+      aL(tr('toast.adv.warMobilization', { village: warV?.n || 'enemy' }), 'warn')
       if (G.warState.monthsLeft <= 0) { G.warState.phase = 'conflict'; G.warState.monthsLeft = 3 }
     } else if (G.warState.phase === 'conflict') {
       // Monthly combat exchange
@@ -2915,15 +2915,15 @@ export function adv() {
       if (myStr >= theirStr) {
         G.reputation = clamp(G.reputation + 3, 0, 999); addLegend(2)
         G.warState.playerWins = (G.warState.playerWins || 0) + 1
-        aL('Combat exchange victory vs ' + (warV?.n || 'enemy') + '.', 'good')
+        aL(tr('toast.adv.combatVictory', { village: warV?.n || 'enemy' }), 'good')
       } else {
         G.morale = clamp(G.morale - 5, 0, 100)
         G.warState.playerLosses = (G.warState.playerLosses || 0) + 1
-        aL('Combat exchange loss vs ' + (warV?.n || 'enemy') + '.', 'bad')
+        aL(tr('toast.adv.combatLoss', { village: warV?.n || 'enemy' }), 'bad')
       }
       if (G.warState.monthsLeft <= 0) { G.warState.phase = 'ceasefire'; G.warState.monthsLeft = 1 }
     } else if (G.warState.phase === 'ceasefire') {
-      aL('Ceasefire negotiations with ' + (warV?.n || 'enemy') + '.', 'neutral')
+      aL(tr('toast.adv.ceasefire', { village: warV?.n || 'enemy' }), 'neutral')
       if (G.warState.monthsLeft <= 0) { G.warState.phase = 'reparations'; G.warState.monthsLeft = 6 }
     } else if (G.warState.phase === 'reparations') {
       const tribute = rnd(1500, 4000)
@@ -2955,13 +2955,13 @@ export function adv() {
           // Top 2 ambitious shinobi consider leaving
           const ambitious = G.shinobi.filter(s => (s.ambition || 0) >= 14 && s.status === 'available').slice(0, 2)
           ambitious.forEach(s => { s.morale = clamp((s.morale || 50) - 20, 0, 100) })
-          if (ambitious.length) aL(`Defeat in war — ${ambitious.map(s => sn(s)).join(', ')} are questioning their future here.`, 'bad')
-          aL(`Defeat: prestige dropped to ${newTier}. Academy intake quality penalised for 2 years.`, 'bad')
+          if (ambitious.length) aL(tr('toast.adv.warDefeatMorale', { names: ambitious.map(s => sn(s)).join(', ') }), 'bad')
+          aL(tr('toast.adv.warDefeatPrestige', { tier: newTier }), 'bad')
           addLegend(-15)
         } else {
           // Winner bonus
           addLegend(20); G.reputation = clamp(G.reputation + 30, 0, 999)
-          aL(`War victory vs ${warV?.n || 'enemy'} — prestige and legend boosted.`, 'good')
+          aL(tr('toast.adv.warVictory', { village: warV?.n || 'enemy' }), 'good')
         }
         G.warState = null
       }
@@ -2989,7 +2989,7 @@ export function adv() {
       const total = myVote + npcVotes
       const passed = total >= item.minVotes
       if (passed) {
-        if (item.effect === 'ryo_bonus') { G.ryo += 1500; aL('Summit: Trade Pact passed — +1,500 ryo/mo bonus.', 'good') }
+        if (item.effect === 'ryo_bonus') { G.ryo += 1500; aL(tr('toast.adv.summitTradePact'), 'good') }
         if (item.effect === 'bounty') { G.worldFlags.missingNinBounty = ((G.year - 1) * 12 + G.month) + 3 }
         if (item.effect === 'exam_expand') { G.worldFlags.examExpanded = true }
       }
@@ -3002,11 +3002,11 @@ export function adv() {
       // Owe a favor — slight rel penalty with bloc village (can't say no to them easily)
       const blocV = (G.villages || []).find(v => v.n === G.pendingSummitFavor.villageName)
       if (blocV) blocV.rel = clamp((blocV.rel || 50) - 5, 0, 100)
-      aL('Favor owed to ' + G.pendingSummitFavor.villageName + ' from summit alignment. Their standing with you has grown complicated.', 'warn')
+      aL(tr('toast.adv.summitFavor', { village: G.pendingSummitFavor.villageName }), 'warn')
       G.pendingSummitFavor = null
     }
     addChronicle('Five Kage Summit Y' + G.year, results.map(r => `${r.item}: ${r.passed ? 'PASSED' : 'FAILED'}`).join('; ') + (blocEntry ? ` [Bloc: ${blocEntry}]` : ''), 'event')
-    aL('Five Kage Summit completed. Check chronicles for results.', 'neutral')
+    aL(tr('toast.adv.summitComplete'), 'neutral')
   }
 
   // ── S-rank contract rotation (month 1, 4, 7, 10) ───────────────────────────
@@ -3031,7 +3031,7 @@ export function adv() {
       G.warConsequences.prestigePenaltyMonths--
       if (G.warConsequences.prestigePenaltyMonths <= 0) {
         G.warConsequences = null
-        aL('War consequences have faded — prestige penalty lifted.', 'neutral')
+        aL(tr('toast.adv.warConsequencesFaded'), 'neutral')
       }
     }
   }
