@@ -211,15 +211,15 @@ export function setPromotionRule(squadId, roleId, rule) {
 
 export function emergencyCallUp(studentId) {
   const s = (G.intakeClass || []).find(x => x.id === studentId)
-  if (!s) { ntf('Student not found.'); return }
-  if (G.ryo < 0) { ntf('Cannot call up — treasury empty.'); return }
+  if (!s) { ntf(tr('toast.depthchart.studentNotFound')); return }
+  if (G.ryo < 0) { ntf(tr('toast.depthchart.treasuryEmpty')); return }
   // Graduate early
   s.status = 'available'; s.ri = 0; s.salary = 500; s.wins = 0; s.winsB = 0; s.winsS = 0
   s.streak = 0; s.injDays = 0; s.missId = null; s.months = 0
   G.shinobi.push({ ...s })
   G.intakeClass = G.intakeClass.filter(x => x.id !== studentId)
-  aL(`${s.fn} ${s.ln} called up early from the academy due to roster crisis.`, 'warn')
-  ntf(`Emergency call-up: ${s.fn} ${s.ln} joins the active roster.`)
+  aL(tr('toast.depthchart.calledUp', { name: `${s.fn} ${s.ln}` }), 'warn')
+  ntf(tr('toast.depthchart.calledUpShort', { name: `${s.fn} ${s.ln}` }))
   evalDepth(G)
   rDep()
 }

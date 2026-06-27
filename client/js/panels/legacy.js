@@ -273,8 +273,8 @@ function _legacyReport() {
 }
 
 export function triggerDynastyHandoff() {
-  if ((G.year || 1) < DYNASTY_YEARS) { ntf(`Dynasty handoff requires year ${DYNASTY_YEARS}+.`); return }
-  if (!G.successorId) { ntf('Designate a successor first.'); return }
+  if ((G.year || 1) < DYNASTY_YEARS) { ntf(tr('toast.legacy.handoffRequires', { year: DYNASTY_YEARS })); return }
+  if (!G.successorId) { ntf(tr('toast.legacy.designateFirst')); return }
   const { grade, score } = computeDynastyGrade(G)
   const bonuses = inheritedBonuses(grade)
   const successor = G.shinobi?.find(x => x.id === G.successorId) || G.staff?.find(x => x.id === G.successorId)
@@ -289,10 +289,11 @@ export function triggerDynastyHandoff() {
   addChronicle('Dynasty Handoff',
     `${G.vName} dynasty concluded at Year ${G.year}. Grade ${grade} (${score}/130). ${successorName} takes leadership. Bonuses carry forward.`,
     'milestone')
-  aL(`The torch is passed to ${successorName}. Dynasty Grade: ${grade}. A new era begins.`, 'good')
+  aL(tr('toast.legacy.torchPassed', { name: successorName, grade }), 'good')
 
   bonuses.forEach(b => {
-    aL(`Inherited: ${b.desc} — ${typeof b.value === 'number' && b.value > 999 ? fmt(b.value) : b.value}${b.id.includes('ryo') ? ' ryo' : ''}`, 'good')
+    const value = `${typeof b.value === 'number' && b.value > 999 ? fmt(b.value) : b.value}${b.id.includes('ryo') ? ' ryo' : ''}`
+    aL(tr('toast.legacy.inherited', { desc: b.desc, value }), 'good')
   })
 
   G.dynastyComplete = true
@@ -388,11 +389,11 @@ function _records() {
 
 export function sellDraftPick() {
   if (!G.draftOrder || !G._draftPlayerPick) return
-  if (G.ryo < 8000) { ntf('Not enough ryo!'); return }
+  if (G.ryo < 8000) { ntf(tr('toast.common.notEnoughRyo')); return }
   G.ryo += 8000
   const oldPick = G._draftPlayerPick
   G.draftOrder = G.draftOrder.filter(n => n !== G.vName)
   G._draftPlayerPick = null
   addChronicle('Draft Pick Traded', `Sold academy intake pick #${oldPick} to rivals for 8,000 ryo.`, 'economy')
-  ntf('Pick #' + oldPick + ' sold for 8k ryo.'); upUI()
+  ntf(tr('toast.legacy.pickSold', { pick: oldPick })); upUI()
 }

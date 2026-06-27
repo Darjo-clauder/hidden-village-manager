@@ -3,6 +3,7 @@ import { REGIONS, REGION_EVENTS } from '../constants.js'
 import { aL, ntf } from '../ui.js'
 import { conductTrialDay } from '../scoutEngine.js'
 import { openContextMenu, showHoverPreview, hideHoverPreview } from '../uikit.js'
+import { t } from '../../../shared/utils/i18n.js'
 
 // Right-click / hover grammar for prospect cards (P1 kit).
 export function scoutCtx(e, id) {
@@ -384,18 +385,18 @@ export function toggleWatchlist(prospectId) {
 
 export function signProspect(prospectId) {
   const p = (G.prospects || []).find(x => x.id === prospectId)
-  if (!p) { ntf('Prospect not found.'); return }
+  if (!p) { ntf(t('toast.scouting.notFound')); return }
 
   // Signing cost: base 5000 + potential-tier premium + urgency premium
   const potTier = (p.potential || 50) >= 85 ? 3 : (p.potential || 50) >= 70 ? 2 : 1
   const urgencyPremium = p.urgencyMonths > 0 && p.urgencyMonths <= 2 ? 3000 : 0
   const cost = 4000 + potTier * 2500 + urgencyPremium
 
-  if (G.ryo < cost) { ntf(`Not enough ryo. Signing this prospect costs ${cost.toLocaleString()} ryo.`); return }
+  if (G.ryo < cost) { ntf(t('toast.scouting.notEnoughSign', { cost: cost.toLocaleString() })); return }
 
   // Rival snipe chance if urgency active
   if (p.urgencyMonths > 0 && Math.random() < 0.2) {
-    aL(`${p.fn} ${p.ln} was signed by a rival village before you could act!`, 'warn')
+    aL(t('toast.scouting.rivalSigned', { name: `${p.fn} ${p.ln}` }), 'warn')
     G.prospects = (G.prospects || []).filter(x => x.id !== prospectId)
     G.scoutWatchlist = (G.scoutWatchlist || []).filter(id => id !== prospectId)
     rSco(); return
@@ -453,7 +454,7 @@ export function signProspect(prospectId) {
   G.prospects = (G.prospects || []).filter(x => x.id !== prospectId)
   G.scoutWatchlist = (G.scoutWatchlist || []).filter(id => id !== prospectId)
 
-  aL(`${p.fn} ${p.ln} signed for ${cost.toLocaleString()} ryo and joins as a Genin!`, 'good')
-  ntf(`${p.fn} ${p.ln} signed!`)
+  aL(t('toast.scouting.signed', { name: `${p.fn} ${p.ln}`, cost: cost.toLocaleString() }), 'good')
+  ntf(t('toast.scouting.signedShort', { name: `${p.fn} ${p.ln}` }))
   rSco()
 }

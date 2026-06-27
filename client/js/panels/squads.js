@@ -166,14 +166,14 @@ export function rSynPrev() {
 }
 
 export function doCS() {
-  if (!ui.csL) { ntf('Pick a leader!'); return }
-  if (ui.csM.length !== 2) { ntf('Pick 2 members!'); return }
+  if (!ui.csL) { ntf(t('toast.squads.pickLeader')); return }
+  if (ui.csM.length !== 2) { ntf(t('toast.squads.pickMembers')); return }
   const name = document.getElementById('sqni').value.trim() || 'Squad ' + (G.squads.length + 1)
   const all = [ui.csL, ...ui.csM]
   const sq = { id: Math.random().toString(36).slice(2), n: name, leaderId: ui.csL, members: all, cohesion: 0 }
   G.squads.push(sq)
   all.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s) s.squadId = sq.id })
-  cm('csquad'); aL(name + ' formed.', 'neutral'); ntf(name + ' ready!'); upUI()
+  cm('csquad'); aL(t('toast.squads.formed', { name }), 'neutral'); ntf(t('toast.squads.ready', { name })); upUI()
 }
 
 export function disbSq(id) {
@@ -182,9 +182,9 @@ export function disbSq(id) {
   G.squads = G.squads.filter(q => q.id !== id)
   if (sq.identity) {
     sq.cohesion = Math.max(0, (sq.cohesion || 0) - 20)
-    aL('"' + sq.identity.title + '" (' + sq.n + ') has been disbanded. After ' + (sq.wins||0) + ' missions together, the unit dissolves. Some bonds don\'t survive bureaucracy.', 'warn')
+    aL(t('toast.squads.disbandedNamed', { title: sq.identity.title, name: sq.n, wins: sq.wins||0 }), 'warn')
   } else {
-    aL(sq.n + ' disbanded.', 'neutral')
+    aL(t('toast.squads.disbanded', { name: sq.n }), 'neutral')
   }
   upUI()
 }

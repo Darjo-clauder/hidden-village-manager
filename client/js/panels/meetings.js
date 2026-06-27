@@ -1,6 +1,7 @@
 import { G, sn, clamp, fmt, getLeadershipGroup, buildRelationshipWeb } from '../state.js'
 import { MEETING_TYPES, RANKS, SERVICE_AWARDS, REVIEW_RESPONSES } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 
 window._meetTab = 'overview'
 
@@ -302,14 +303,14 @@ export function doMeeting(meetingId, responseId) {
   if (eff.indMorale) s.indMorale = clamp((s.indMorale || 70) + eff.indMorale, 0, 100)
   if (eff.commitment) s.commitment = clamp((s.commitment || 70) + eff.commitment, 0, 100)
   if (eff.ryo) {
-    if (G.ryo < Math.abs(eff.ryo) && eff.ryo < 0) { ntf('Not enough ryo!'); return }
+    if (G.ryo < Math.abs(eff.ryo) && eff.ryo < 0) { ntf(tr('toast.common.notEnoughRyo')); return }
     G.ryo += eff.ryo
   }
   if (eff.promote && s.ri < 4) {
     s.ri++
     const baseSal = 500 + s.ri * 400
     s.salary = Math.round(baseSal * (1 + (s.pers?.effect?.salary || 0)))
-    aL(sn(s) + ' promoted to ' + RANKS[s.ri] + ' following the meeting.', 'good')
+    aL(tr('toast.meetings.promoted', { name: sn(s), rank: RANKS[s.ri] }), 'good')
   }
   if (eff.traumaClear) { s.traumaStatus = null; s.traumaMonths = 0 }
   if (eff.reassign && s.squadId) {
@@ -332,14 +333,14 @@ export function doMeeting(meetingId, responseId) {
   if (mtg.type === 'wage_tension' && responseId === 'raise') {
     const topNewSalary = Math.max(s.salary, ...G.shinobi.filter(x => (x.months || 0) <= 2).map(x => x.salary))
     s.salary = topNewSalary
-    aL(sn(s) + '\'s salary raised to ' + fmt(topNewSalary) + ' ryo to close the wage gap.', 'good')
+    aL(tr('toast.meetings.salaryRaised', { name: sn(s), salary: fmt(topNewSalary) }), 'good')
   }
 
   // Remove from queue
   G.meetingQueue = (G.meetingQueue || []).filter(m => m.id !== meetingId)
   s.meetingCooldown = 4
 
-  aL('Meeting with ' + sn(s) + ' (' + def.n + '): chose "' + resp.n + '".', 'neutral')
+  aL(tr('toast.meetings.meetingChose', { name: sn(s), role: def.n, choice: resp.n }), 'neutral')
   rMeet()
   upUI()
 }
@@ -394,8 +395,8 @@ export function rumorAction(rumorId, action) {
   if (action === 'investigate') {
     const s = G.shinobi.find(x => x.id === r.shinobiId)
     if (s) {
-      if (r.isFalse) ntf('Investigation finds no basis for the rumor about ' + sn(s) + '.')
-      else ntf(sn(s) + ' — commitment currently ' + (s.commitment ?? '?') + '/100. The rumor has merit.')
+      if (r.isFalse) ntf(tr('toast.meetings.rumorNoBasis', { name: sn(s) }))
+      else ntf(tr('toast.meetings.rumorMerit', { name: sn(s), commitment: s.commitment ?? '?' }))
     }
   }
   r.resolved = true
@@ -404,17 +405,17 @@ export function rumorAction(rumorId, action) {
 
 export function consultSeniorGroup() {
   const sg = G.seniorGroup || []
-  if (sg.length === 0) { ntf('No senior group members yet.'); return }
+  if (sg.length === 0) { ntf(tr('toast.meetings.noSeniors')); return }
   const morale = G.seniorGroupMorale ?? 75
   const reaction = morale >= 65 ? 'supportive' : morale >= 40 ? 'neutral' : 'skeptical'
   const msgs = {
-    supportive: 'The senior group backs your direction. Village confidence rises.',
-    neutral: 'The senior group has mixed views. No strong endorsement.',
-    skeptical: 'The senior group pushes back. Their concerns are noted.'
+    supportive: tr('toast.meetings.seniorSupportive'),
+    neutral: tr('toast.meetings.seniorNeutral'),
+    skeptical: tr('toast.meetings.seniorSkeptical'),
   }
   const moraleGain = morale >= 65 ? 3 : morale >= 40 ? 0 : -2
   G.morale = Math.max(0, Math.min(100, (G.morale || 70) + moraleGain))
-  aL('Senior consultation (' + reaction + '): ' + msgs[reaction], moraleGain >= 0 ? 'good' : 'warn')
-  ntf('Senior group consulted.')
+  aL(tr('toast.meetings.seniorConsult', { reaction, msg: msgs[reaction] }), moraleGain >= 0 ? 'good' : 'warn')
+  ntf(tr('toast.meetings.seniorConsulted'))
   rMeet(); upUI()
 }

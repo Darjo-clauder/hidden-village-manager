@@ -1,6 +1,7 @@
 import { G, sn, fmt } from '../state.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { BEAST_DATA, SYNC_STAGES, getSyncStage, getBeastPassives } from '../beastEngine.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 
 let _activeTab = 'overview'
 let _activeLoreId = null
@@ -391,7 +392,7 @@ export function lCap(bN) {
   const b = G.beasts.find(x => x.n === bN)
   if (!b) return
   const sh = G.shinobi.filter(s => s.ri >= 3 && s.status === 'available')
-  if (!sh.length) { ntf('Need ANBU or higher!'); return }
+  if (!sh.length) { ntf(tr('toast.beasts.needAnbu')); return }
   const s = sh[0]; s.status = 'mission'; s.missId = 'beast-' + bN
   const data = BEAST_DATA[bN] || {}
   G.aM.push({
@@ -401,20 +402,20 @@ export function lCap(bN) {
     daysLeft: data.captureMonths || 4,
     isSquad: false, isBeastCapture: true, beastName: bN,
   })
-  aL(`${sn(s)} deployed to capture ${bN}. Expected return: ${data.captureMonths || 4} months.`, 'warn')
-  ntf(`${bN} capture operation begun!`)
+  aL(tr('toast.beasts.captureDeployed', { name: sn(s), beast: bN, months: data.captureMonths || 4 }), 'warn')
+  ntf(tr('toast.beasts.captureBegun', { beast: bN }))
   upUI()
 }
 
 export function resolveEscape(beastName, action) {
   if (action === 'containment') {
-    if (G.ryo < 3000) { ntf('Not enough ryo (3,000 needed)'); return }
+    if (G.ryo < 3000) { ntf(tr('toast.common.notEnoughRyoNeed', { need: '3,000' })); return }
     G.ryo -= 3000
     const b = G.beasts.find(x => x.n === beastName)
     if (b) b._escapeContained = G.month + 3
-    aL(`Containment team deployed for ${beastName}. 3,000 ryo spent. Escape chance reduced for 3 months.`, 'good')
+    aL(tr('toast.beasts.containment', { beast: beastName }), 'good')
   } else {
-    aL(`${beastName} escape notice dismissed.`, 'neutral')
+    aL(tr('toast.beasts.escapeDismissed', { beast: beastName }), 'neutral')
   }
   G.notices = (G.notices || []).filter(n => !(n.type === 'beast_escape' && n.beastName === beastName))
   rBe(); upUI()
@@ -424,12 +425,12 @@ export function reinforceSeal(bN) {
   const b = G.beasts.find(x => x.n === bN)
   if (!b || !b.jk) return
   const cost = 2000 + b.tails * 1000
-  if ((b.control ?? 55) >= 95) { ntf('Seal already at peak control.'); return }
-  if (G.ryo < cost) { ntf(`Need ${fmt(cost)} ryo to reinforce the seal.`); return }
+  if ((b.control ?? 55) >= 95) { ntf(tr('toast.beasts.sealPeak')); return }
+  if (G.ryo < cost) { ntf(tr('toast.beasts.needSealRyo', { cost: fmt(cost) })); return }
   G.ryo -= cost
   b.control = Math.min(100, (b.control ?? 55) + 18)
-  aL(`Seal masters reinforced ${bN}'s containment. Control now ${b.control}/100.`, 'good')
-  ntf(`${bN} seal reinforced — control ${b.control}/100.`)
+  aL(tr('toast.beasts.sealReinforced', { beast: bN, control: b.control }), 'good')
+  ntf(tr('toast.beasts.sealReinforcedShort', { beast: bN, control: b.control }))
   rBe(); upUI()
 }
 
@@ -446,7 +447,7 @@ export function releaseJinchuriki(bN) {
   b.syncMonths = 0
   b.loreUnlocked = []
   b.loreBonusActive = false
-  aL(`The seal on ${bN} was released. The beast is freed.`, 'warn')
-  ntf(`${bN} seal released.`)
+  aL(tr('toast.beasts.sealReleased', { beast: bN }), 'warn')
+  ntf(tr('toast.beasts.sealReleasedShort', { beast: bN }))
   upUI()
 }

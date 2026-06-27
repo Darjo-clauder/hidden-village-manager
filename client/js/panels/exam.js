@@ -491,7 +491,7 @@ function _buildExamField() {
 }
 
 export function startEx() {
-  if (!G.examCands.length) { ntf('Add candidates!'); return }
+  if (!G.examCands.length) { ntf(t('toast.exam.addCandidates')); return }
   // Assign exam format if not already set
   if (!G.examFormat) G.examFormat = pk(EXAM_FORMATS)
   // Assign judge from a rival village (potential bias)
@@ -560,15 +560,15 @@ function rExA(el, tabHtml) {
 export function protestJudge() {
   if (!G.examJudgeBias?.isBiased || G.examJudgeProtested) return
   // Protest costs prestige (legend points) and has 50% chance of overturning
-  if ((G.legend || 0) < 5) { ntf('Need at least 5 legend to file a protest.'); return }
+  if ((G.legend || 0) < 5) { ntf(t('toast.exam.needLegendProtest')); return }
   G.legend = Math.max(0, G.legend - 5)
   G.examJudgeProtested = true
   if (Math.random() < 0.5) {
     G.examJudgeBias.biasMod = 0
     G.examJudgeBias.isBiased = false
-    aL('Protest upheld — judge bias removed. The panel reviewed the scoring rules.', 'good')
+    aL(t('toast.exam.protestUpheld'), 'good')
   } else {
-    aL('Protest rejected — judge bias stands. −5 legend spent.', 'warn')
+    aL(t('toast.exam.protestRejected'), 'warn')
   }
   rEx()
 }
@@ -584,9 +584,9 @@ export function sabotageSquad() {
     if (Math.random() < 0.4) {
       const v = (G.villages || []).find(x => x.n === target.vid)
       if (v) v.rel = clamp((v.rel || 50) - 8, 0, 100)
-      aL('Sabotage discovered — ' + target.name + ' relations damaged.', 'warn')
+      aL(t('toast.exam.sabotageDiscovered', { name: target.name }), 'warn')
     } else {
-      aL('Sabotage went undetected — ' + target.name + ' lost a combatant.', 'neutral')
+      aL(t('toast.exam.sabotageUndetected', { name: target.name }), 'neutral')
     }
   }
   rEx()
@@ -828,11 +828,11 @@ function _runFinals(field, biasMod) {
     if (playerWon) {
       G.examHistoricalRecords.championships = (G.examHistoricalRecords.championships || 0) + 1
       addLegend(15); G.reputation = clamp((G.reputation || 0) + 15, 0, 999)
-      aL('🏆 ' + G.vName + ' WINS the Chunin Exam Championship! +15 legend, +15 reputation.', 'good')
+      aL(t('toast.exam.won', { village: G.vName }), 'good')
       addChronicle('Exam Champion', `${G.vName} stood above all five villages to claim the Year ${G.year} Chunin Exam championship.`, 'milestone')
       if (!G.pendingPress) queuePressConference('exam_win')
     } else {
-      aL('🏆 ' + champ.name + ' wins the Chunin Exam championship. ' + G.vName + ' did not take the title.', 'neutral')
+      aL(t('toast.exam.lost', { champ: champ.name, village: G.vName }), 'neutral')
       addChronicle('Exam Champion', `${champ.name} claimed the Year ${G.year} Chunin Exam championship.`, 'milestone')
       if (!G.pendingPress) queuePressConference('exam_loss')
     }
@@ -853,7 +853,7 @@ function _runFinals(field, biasMod) {
     G.upsetHistory = G.upsetHistory || []
     G.upsetHistory.push({ year: G.year, desc: upsetDesc })
     addChronicle('Exam Upset', upsetDesc, 'milestone')
-    aL('⭐ Upset! ' + G.vName + ' was not expected to win — this will be remembered.', 'good')
+    aL(t('toast.exam.upset', { village: G.vName }), 'good')
     addLegend(8)
   }
 
@@ -867,7 +867,7 @@ function _runFinals(field, biasMod) {
       if ((s.injDays || 0) > 0) { s.status = 'injured'; woundedCount++ } else s.status = 'available'
     })
   })
-  if (woundedCount > 0) aL(`${woundedCount} nominee${woundedCount > 1 ? 's' : ''} returned from the exam injured.`, 'warn')
+  if (woundedCount > 0) aL(t('toast.exam.wounded', { n: woundedCount }), 'warn')
 
   // The exam was the playoff — archive the final season table and start a fresh season.
   if (G.season?.table) {
@@ -876,7 +876,7 @@ function _runFinals(field, biasMod) {
     const names = [G.vName, ...(G.villages || []).map(v => v.n)]
     G.season = { year: G.year, round: 0, table: initSeasonTable(names), lastResults: [] }
   }
-  if (G.examHosting) { G.ryo += 8000; aL('Hosting income from Chunin Exam: +8,000 ryo.', 'good'); G.examHosting = false }
+  if (G.examHosting) { G.ryo += 8000; aL(t('toast.exam.hostingIncome'), 'good'); G.examHosting = false }
   G.examFormat = null; G.examJudgeBias = null
   G.examResults.push(...res.map(x => ({ id: '', name: x.name, result: x.result, promoted: x.promoted })))
   G.examActive = false; G.examSched = false; G.examCands = []; ui.exSt = null
@@ -921,14 +921,14 @@ function _summitTab() {
 export function acceptSummitBloc() {
   if (!G.summitBlocOffer) return
   G.pendingSummitFavor = { villageName: G.summitBlocOffer.villageName, agendaItem: G.summitBlocOffer.agendaItem }
-  aL('Voting alliance formed with ' + G.summitBlocOffer.villageName + ' on "' + G.summitBlocOffer.agendaItem + '". A future favor is owed.', 'warn')
+  aL(t('toast.exam.allianceFormed', { village: G.summitBlocOffer.villageName, agenda: G.summitBlocOffer.agendaItem }), 'warn')
   G.summitBlocOffer = null
   rEx()
 }
 
 export function declineSummitBloc() {
   if (!G.summitBlocOffer) return
-  aL('Declined ' + G.summitBlocOffer.villageName + '\'s summit bloc offer. You\'ll vote independently.', 'neutral')
+  aL(t('toast.exam.allianceDeclined', { village: G.summitBlocOffer.villageName }), 'neutral')
   G.summitBlocOffer = null
   rEx()
 }
@@ -961,9 +961,9 @@ export function bidSrank(contractId) {
   const contract = (G.sRankContracts || []).find(c => c.id === contractId)
   if (!contract) return
   const now = (G.year - 1) * 12 + G.month
-  if (now > contract.deadline) { ntf('Contract expired.'); return }
+  if (now > contract.deadline) { ntf(t('toast.exam.contractExpired')); return }
   const elite = G.shinobi.filter(s => s.ri >= 3 && s.status === 'available')
-  if (!elite.length) { ntf('Need at least one Jonin to bid.'); return }
+  if (!elite.length) { ntf(t('toast.exam.needJonin')); return }
   const ourScore = elite.reduce((a, s) => a + sPow(s), 0) / elite.length + rnd(-5, 10)
   const npcScore = rnd(40, 70)
   contract.bids = contract.bids || []
@@ -973,15 +973,15 @@ export function bidSrank(contractId) {
     const failed = Math.random() < contract.risk
     if (!failed) {
       G.ryo += contract.baseRyo; G.reputation = clamp(G.reputation + contract.rep, 0, 999); addLegend(contract.prestige)
-      aL(`S-rank contract completed: ${contract.n}. +${fmt(contract.baseRyo)} ryo, +${contract.rep} rep.`, 'good')
+      aL(t('toast.exam.srankDone', { name: contract.n, ryo: fmt(contract.baseRyo), rep: contract.rep }), 'good')
       addChronicle('S-Rank Contract', `${contract.n} completed. Our forces proved decisive. Village earns ${fmt(contract.baseRyo)} ryo.`, 'milestone')
     } else {
       G.ryo += Math.round(contract.baseRyo * 0.3); G.reputation = clamp(G.reputation - 10, 0, 999)
-      aL(`S-rank mission failed: ${contract.n}. Partial payment only.`, 'bad')
+      aL(t('toast.exam.srankFailed', { name: contract.n }), 'bad')
     }
   } else {
     contract.winner = 'NPC'
-    aL(`Lost S-rank bid for: ${contract.n}. Outscored by rivals.`, 'neutral')
+    aL(t('toast.exam.srankLost', { name: contract.n }), 'neutral')
   }
   rEx()
 }
