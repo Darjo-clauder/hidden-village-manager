@@ -45,6 +45,7 @@ import { addMemory, decayMemories, memoryMoraleMod, memoryStateBlurb } from '../
 import { tickMentorships } from '../../shared/utils/mentorship.js'
 import { pushNarrative } from './tick/inbox.js'
 import { tickRivalSim, tickRivalGMMoves } from './tick/rivals.js'
+import { t as tr } from '../../shared/utils/i18n.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 
@@ -79,7 +80,7 @@ function jkKIAImmune(s) {
   if (!G._jkKIAImmuneYear) G._jkKIAImmuneYear = {}
   if (G._jkKIAImmuneYear[b.n] === G.year) return false
   G._jkKIAImmuneYear[b.n] = G.year
-  aL(`${sn(s)}'s ${b.n} aura deflected certain death — ${b.n === 'Kureni' ? 'Nine-Tails Mode' : 'Sand Armor'} activated!`, 'good')
+  aL(tr('toast.adv.jkDeflect', { name: sn(s), beast: b.n, mode: b.n === 'Kureni' ? 'Nine-Tails Mode' : 'Sand Armor' }), 'good')
   return true
 }
 
@@ -108,31 +109,31 @@ function applyInjury(s, injType, hL, extraReduction = 0) {
 
   // Injury-prone trait after 3+ career injuries
   if (s.injuryCount >= 3 && addTrait(s, 'InjuryProne')) {
-    aL(sn(s) + ' has now been injured ' + s.injuryCount + ' times — officially injury-prone.', 'warn')
+    aL(tr('toast.adv.injuryProne', { name: sn(s), count: s.injuryCount }), 'warn')
     addNotice(sn(s) + '\'s repeated injuries are becoming a pattern — scouts will take note.', 'warn')
   }
 
   if (injType.id === 'severe' && injType.statLoss && Math.random() < 0.3) {
     const k = pk(['ninjutsu','taijutsu','speed','chakra'])
     s.stats[k] = Math.max(5, s.stats[k] - rnd(1, 3))
-    aL(sn(s) + ' suffered permanent stat loss from their severe wound.', 'bad')
+    aL(tr('toast.adv.permStatLoss', { name: sn(s) }), 'bad')
   }
   // Career-threatening injury personality evolution (severe, 3+ months)
   if (injType.id === 'severe' && dur >= 3) {
     if (s.pers?.n === 'Reckless' && Math.random() < 0.40) {
       s.pers = { n:'Careful', cat:'pos', desc:'A serious injury changed everything. They now calculate before acting.', effect:{ riskMod:-0.10 } }
-      aL(sn(s) + '\'s recklessness burned out in the hospital bed — they returned Careful.', 'warn')
+      aL(tr('toast.adv.recklessBurnout', { name: sn(s) }), 'warn')
       addNotice(sn(s) + ' is a changed shinobi after their injury.', 'neutral')
     } else {
       const roll = Math.random()
       if (roll < 0.30) {
-        if (addTrait(s, 'Resilient')) aL(sn(s) + ' drew something from the hardship — emerged Resilient.', 'good')
+        if (addTrait(s, 'Resilient')) aL(tr('toast.adv.resilientTrait', { name: sn(s) }), 'good')
       } else if (roll < 0.50) {
         if (addTrait(s, 'Fragile')) {
           // Fragile: minor permanent stat reduction
           const k = pk(['ninjutsu','taijutsu','speed'])
           s.stats[k] = Math.max(5, s.stats[k] - 2)
-          aL(sn(s) + ' carries lasting damage — gained the Fragile trait.', 'bad')
+          aL(tr('toast.adv.fragileTrait', { name: sn(s) }), 'bad')
         }
       }
     }
@@ -154,7 +155,7 @@ function applyTrauma(s) {
   // Stat penalty while traumatised
   Object.keys(s.stats).forEach(k => { s.stats[k] = Math.max(5, s.stats[k] - 2) })
   G.morale = clamp(G.morale - 5, 0, 100)
-  aL(sn(s) + ' is suffering from psychological trauma — ' + s.traumaStatus + '.', 'warn')
+  aL(tr('toast.adv.trauma', { name: sn(s), status: s.traumaStatus }), 'warn')
   addChronicle('Psychological Trauma', sn(s) + ' developed a ' + s.traumaStatus + ' personality after traumatic events.', 'shinobi')
 }
 
@@ -170,7 +171,7 @@ function rollInjuryOnSuccess(s, m, hL, injDayReduction = 0) {
     const injType = pickInjuryType(m.rk)
     if (injType) {
       applyInjury(s, injType, hL, injDayReduction)
-      aL(sn(s) + ' sustained a ' + injType.n + ' completing "' + m.n + '".', 'warn')
+      aL(tr('toast.adv.missionInjury', { name: sn(s), injury: injType.n, mission: m.n }), 'warn')
     }
   }
 }
@@ -300,7 +301,7 @@ function checkJutsu(s) {
   if (eligible.length) {
     const j = eligible[Math.floor(Math.random() * eligible.length)]
     s.jutsu.push(j.id)
-    aL(sn(s) + ' learned ' + j.n + '! [' + j.tier + '] ' + j.desc, 'good')
+    aL(tr('toast.adv.learnedJutsu', { name: sn(s), jutsu: j.n, tier: j.tier, desc: j.desc }), 'good')
     addChronicle('Jutsu Mastered', sn(s) + ' learned ' + j.n + '.', 'shinobi')
     addLegend(j.tier === 'rare' ? 10 : j.tier === 'uncommon' ? 5 : 2)
   }
@@ -327,7 +328,7 @@ function tryFormBonds(sq) {
       if (a.darkMoment && b.darkMoment) type = 'Battle-Scarred'
       a.bonds.push({ otherId: b.id, type, formed: { year: G.year, month: G.month } })
       b.bonds.push({ otherId: a.id, type, formed: { year: G.year, month: G.month } })
-      aL(sn(a) + ' and ' + sn(b) + ' have formed a bond: ' + type + '.', 'good')
+      aL(tr('toast.adv.bondFormed', { a: sn(a), b: sn(b), type }), 'good')
       addChronicle('Bond Formed', sn(a) + ' and ' + sn(b) + ' are now ' + type + ' after ' + wins + ' missions together.', 'shinobi')
       addNotice(type === 'Rivals'
         ? sn(a) + ' and ' + sn(b) + ' have become rivals — sparks are flying in the training grounds.'
@@ -351,18 +352,18 @@ export function resolveChoiceEvent(fnKey) {
   const ev = G.pendingChoiceEvent
   G.pendingChoiceEvent = null
   if (!ev) return
-  if (fnKey.endsWith('_aid'))    { G.ryo -= 8000; G.morale = clamp(G.morale + 10, 0, 100); G.reputation = clamp(G.reputation + 5, 0, 999); G.worldFlags[ev.effects?.worldFlag || 'event'] = 0; aL('Aid distributed.', 'good') }
-  else if (fnKey.endsWith('_partial')) { G.ryo -= 3000; G.morale = clamp(G.morale + 3, 0, 100); aL('Partial aid sent.', 'neutral') }
-  else if (fnKey.endsWith('_none'))  { G.morale = clamp(G.morale - 8, 0, 100); G.reputation = clamp(G.reputation - 5, 0, 999); aL('No action taken.', 'bad') }
-  else if (fnKey.endsWith('_cure'))  { G.ryo -= 10000; G.reputation = clamp(G.reputation + 8, 0, 999); G.morale = clamp(G.morale + 6, 0, 100); aL('Medics deployed. Plague contained.', 'good') }
-  else if (fnKey.endsWith('_quar'))  { G.ryo -= 5000; G.morale = clamp(G.morale - 3, 0, 100); aL('District quarantined.', 'neutral') }
-  else if (fnKey === 'sage_accept')  { const eli = G.shinobi.filter(s => s.ri >= 2); if (eli.length) { const s = pk(eli); if (!s.jutsu) s.jutsu = []; const rare = JUTSU_LIST.filter(j => j.tier === 'rare' && !s.jutsu.includes(j.id)); if (rare.length) { const j = pk(rare); s.jutsu.push(j.id); aL('The Wandering Sage taught ' + sn(s) + ' — ' + j.n + '!', 'good'); addChronicle('Sage Taught', sn(s) + ' received rare jutsu from a Wandering Sage.', 'legend') } } }
-  else if (fnKey === 'sage_honor')   { G.reputation = clamp(G.reputation + 5, 0, 999); G.villages.forEach(v => v.rel = clamp(v.rel + 10, 0, 100)); aL('The Sage honored and seen off.', 'good') }
-  else if (fnKey === 'eclipse_fest') { G.morale = clamp(G.morale + 5, 0, 100); G.ryo -= 2000; aL('Festival held during the eclipse.', 'good') }
-  else if (fnKey === 'eclipse_def')  { G.tempDef = 20; aL('Defense mobilized during the eclipse.', 'neutral') }
-  else if (fnKey === 'scroll_study') { const eli = G.shinobi.filter(s => s.ri >= 1); if (eli.length) { const s = pk(eli); if (!s.jutsu) s.jutsu = []; const avail = JUTSU_LIST.filter(j => !s.jutsu.includes(j.id) && (!j.clan || s.clan === j.clan)); if (avail.length) { const j = pk(avail); s.jutsu.push(j.id); aL(sn(s) + ' studied the forbidden scroll and learned ' + j.n + '!', 'good') } } }
-  else if (fnKey === 'scroll_sell')  { G.ryo += 15000; aL('Forbidden scrolls sold for 15,000 ryo.', 'good') }
-  else if (fnKey === 'scroll_destroy') { G.reputation = clamp(G.reputation + 5, 0, 999); aL('Forbidden scrolls destroyed. Reputation improved.', 'good') }
+  if (fnKey.endsWith('_aid'))    { G.ryo -= 8000; G.morale = clamp(G.morale + 10, 0, 100); G.reputation = clamp(G.reputation + 5, 0, 999); G.worldFlags[ev.effects?.worldFlag || 'event'] = 0; aL(tr('toast.adv.aidDistributed'), 'good') }
+  else if (fnKey.endsWith('_partial')) { G.ryo -= 3000; G.morale = clamp(G.morale + 3, 0, 100); aL(tr('toast.adv.partialAid'), 'neutral') }
+  else if (fnKey.endsWith('_none'))  { G.morale = clamp(G.morale - 8, 0, 100); G.reputation = clamp(G.reputation - 5, 0, 999); aL(tr('toast.adv.noAction'), 'bad') }
+  else if (fnKey.endsWith('_cure'))  { G.ryo -= 10000; G.reputation = clamp(G.reputation + 8, 0, 999); G.morale = clamp(G.morale + 6, 0, 100); aL(tr('toast.adv.plagueContained'), 'good') }
+  else if (fnKey.endsWith('_quar'))  { G.ryo -= 5000; G.morale = clamp(G.morale - 3, 0, 100); aL(tr('toast.adv.quarantined'), 'neutral') }
+  else if (fnKey === 'sage_accept')  { const eli = G.shinobi.filter(s => s.ri >= 2); if (eli.length) { const s = pk(eli); if (!s.jutsu) s.jutsu = []; const rare = JUTSU_LIST.filter(j => j.tier === 'rare' && !s.jutsu.includes(j.id)); if (rare.length) { const j = pk(rare); s.jutsu.push(j.id); aL(tr('toast.adv.sageTaught', { name: sn(s), jutsu: j.n }), 'good'); addChronicle('Sage Taught', sn(s) + ' received rare jutsu from a Wandering Sage.', 'legend') } } }
+  else if (fnKey === 'sage_honor')   { G.reputation = clamp(G.reputation + 5, 0, 999); G.villages.forEach(v => v.rel = clamp(v.rel + 10, 0, 100)); aL(tr('toast.adv.sageHonored'), 'good') }
+  else if (fnKey === 'eclipse_fest') { G.morale = clamp(G.morale + 5, 0, 100); G.ryo -= 2000; aL(tr('toast.adv.eclipseFest'), 'good') }
+  else if (fnKey === 'eclipse_def')  { G.tempDef = 20; aL(tr('toast.adv.eclipseDef'), 'neutral') }
+  else if (fnKey === 'scroll_study') { const eli = G.shinobi.filter(s => s.ri >= 1); if (eli.length) { const s = pk(eli); if (!s.jutsu) s.jutsu = []; const avail = JUTSU_LIST.filter(j => !s.jutsu.includes(j.id) && (!j.clan || s.clan === j.clan)); if (avail.length) { const j = pk(avail); s.jutsu.push(j.id); aL(tr('toast.adv.scrollStudy', { name: sn(s), jutsu: j.n }), 'good') } } }
+  else if (fnKey === 'scroll_sell')  { G.ryo += 15000; aL(tr('toast.adv.scrollSell'), 'good') }
+  else if (fnKey === 'scroll_destroy') { G.reputation = clamp(G.reputation + 5, 0, 999); aL(tr('toast.adv.scrollDestroy'), 'good') }
   upUI()
 }
 
@@ -371,14 +372,14 @@ export function assignBlackMarket(missionId, shinobiId) {
   if (!bm) return
   const s = G.shinobi.find(x => x.id === shinobiId)
   if (!s) return
-  if (s.status !== 'available') { ntf('Shinobi must be available.'); return }
-  if ((s.ri || 0) < bm.reqRi) { ntf(`Requires ${['Genin','Chunin','Jonin','ANBU','S-Rank'][bm.reqRi]} or higher.`); return }
-  if (bm.reqAnbu && s.ri < 3) { ntf('ANBU required for this contract.'); return }
+  if (s.status !== 'available') { ntf(tr('toast.adv.mustBeAvailable')); return }
+  if ((s.ri || 0) < bm.reqRi) { ntf(tr('toast.adv.requiresRank', { rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][bm.reqRi] })); return }
+  if (bm.reqAnbu && s.ri < 3) { ntf(tr('toast.adv.anbuRequired')); return }
   s.status = 'mission'
   s.missId = 'bm_' + missionId
   if (!G.aM) G.aM = []
   G.aM.push({ id: 'bm_' + Date.now(), missionId: 'bm_' + missionId, assignedTo: shinobiId, isBM: true, bmId: missionId, daysLeft: 1 })
-  aL(`${sn(s)} assigned to black market: ${bm.n}.`, 'warn')
+  aL(tr('toast.adv.bmAssigned', { name: sn(s), mission: bm.n }), 'warn')
   upUI()
 }
 
@@ -397,26 +398,26 @@ export function resolveBlackMarket(assignmentId) {
     G.ryo += bm.ryo
     G.blackMarketRep = (G.blackMarketRep || 0) + 5
     s.status = 'available'; s.missId = null
-    aL(`${sn(s)} completed "${bm.n}" — +${bm.ryo.toLocaleString()} ryo.`, 'good')
+    aL(tr('toast.adv.bmCompleted', { name: sn(s), mission: bm.n, ryo: bm.ryo.toLocaleString() }), 'good')
     if (bm.rewardJutsu) {
       if (!s.jutsu) s.jutsu = []
       const rare = JUTSU_LIST.filter(j => j.tier === 'rare' && !s.jutsu.includes(j.id))
-      if (rare.length) { const j = pk(rare); s.jutsu.push(j.id); aL(`${sn(s)} seized the scroll — learned ${j.n}!`, 'good') }
+      if (rare.length) { const j = pk(rare); s.jutsu.push(j.id); aL(tr('toast.adv.bmScroll', { name: sn(s), jutsu: j.n }), 'good') }
     }
     if (bm.rewardIntel) {
       const v = pk(G.villages || [])
-      if (v) aL(`Intel from ${v.n}: ${Math.round(v.strength || 50)} strength, ${v.rel > 60 ? 'Allied' : v.rel > 30 ? 'Neutral' : 'Hostile'} disposition.`, 'good')
+      if (v) aL(tr('toast.adv.bmIntel', { village: v.n, strength: Math.round(v.strength || 50), disposition: v.rel > 60 ? 'Allied' : v.rel > 30 ? 'Neutral' : 'Hostile' }), 'good')
     }
     pushMissionLog({ missionName: bm.n, rank: bm.rk, success: true, ryo: bm.ryo, rep: 0, narrative: 'Underground contract completed.' })
   } else {
     const kR = clamp(bm.kiaBonus, 0.01, 0.15)
     if (Math.random() < kR && !jkKIAImmune(s)) {
-      aL(`${sn(s)} KIA on underground contract "${bm.n}".`, 'bad')
+      aL(tr('toast.adv.bmKia', { name: sn(s), mission: bm.n }), 'bad')
       G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: bm.n, year: G.year, month: G.month, wins: s.wins, lastWords: '"No witnesses."' })
       G.shinobi = G.shinobi.filter(x => x.id !== s.id)
     } else {
       s.status = 'available'; s.missId = null
-      aL(`${sn(s)} failed "${bm.n}" and returned empty-handed.`, 'bad')
+      aL(tr('toast.adv.bmFailed', { name: sn(s), mission: bm.n }), 'bad')
     }
     pushMissionLog({ missionName: bm.n, rank: bm.rk, success: false, ryo: 0, rep: 0 })
   }
@@ -429,7 +430,7 @@ export function resolveBlackMarket(assignmentId) {
     // Log to black ledger so exposure has a persistent record
     if (!G.blackLedger) G.blackLedger = { balance: 0, history: [] }
     G.blackLedger.history.push({ year: G.year, month: G.month, type: 'discovery', desc: `${bm.n} contract exposed`, repLoss: bm.repLoss })
-    aL(`The "${bm.n}" contract was discovered! −${bm.repLoss} reputation.`, 'bad')
+    aL(tr('toast.adv.bmDiscovered', { mission: bm.n, rep: bm.repLoss }), 'bad')
   }
 
   G.aM = G.aM.filter(x => x.id !== assignmentId)
@@ -439,13 +440,13 @@ export function resolveBlackMarket(assignmentId) {
 export function establishSafehouse(locationId) {
   const loc = SH_LOCATION_BY_ID[locationId]
   if (!loc) return
-  if ((G.ryo || 0) < SAFEHOUSE_COST) { ntf(`Need ${SAFEHOUSE_COST.toLocaleString()} ryo to establish a safehouse.`); return }
+  if ((G.ryo || 0) < SAFEHOUSE_COST) { ntf(tr('toast.adv.needSafehouse', { cost: SAFEHOUSE_COST.toLocaleString() })); return }
   if (!G.safehouses) G.safehouses = []
-  if (G.safehouses.filter(s => s.status === 'active').length >= MAX_SAFEHOUSES) { ntf('Maximum 3 safehouses active.'); return }
-  if (G.safehouses.find(s => s.locationId === locationId && s.status === 'active')) { ntf('Safehouse already active there.'); return }
+  if (G.safehouses.filter(s => s.status === 'active').length >= MAX_SAFEHOUSES) { ntf(tr('toast.adv.maxSafehouses')); return }
+  if (G.safehouses.find(s => s.locationId === locationId && s.status === 'active')) { ntf(tr('toast.adv.safehouseActiveThere')); return }
   G.ryo -= SAFEHOUSE_COST
   G.safehouses.push({ id: 'sh_' + locationId + '_' + Date.now(), locationId, status: 'active', established: G.year * 12 + G.month })
-  aL(`${loc.icon} ${loc.name} safehouse established.`, 'good')
+  aL(tr('toast.adv.safehouseEstablished', { icon: loc.icon, name: loc.name }), 'good')
   upUI()
 }
 
@@ -453,14 +454,14 @@ export function assignDeepCoverOp(opId, shinobiId, safehouseId) {
   const op = DC_OP_BY_ID[opId]
   if (!op) return
   const s = G.shinobi.find(x => x.id === shinobiId)
-  if (!s || s.status !== 'available') { ntf('Shinobi not available.'); return }
-  if ((s.ri || 0) < op.reqRi) { ntf(`Requires ${['Genin','Chunin','Jonin','ANBU','S-Rank'][op.reqRi]} or higher.`); return }
+  if (!s || s.status !== 'available') { ntf(tr('toast.adv.notAvailable')); return }
+  if ((s.ri || 0) < op.reqRi) { ntf(tr('toast.adv.requiresRank', { rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][op.reqRi] })); return }
   const sh = (G.safehouses || []).find(x => x.id === safehouseId && x.status === 'active')
-  if (!sh) { ntf('Invalid safehouse.'); return }
+  if (!sh) { ntf(tr('toast.adv.invalidSafehouse')); return }
   s.status = 'mission'; s.missId = opId
   if (!G.aM) G.aM = []
   G.aM.push({ id: 'dc_' + Date.now(), missionId: opId, assignedTo: shinobiId, isDeepCover: true, opId, safehouseId, daysLeft: op.daysActive })
-  aL(`${sn(s)} deployed on ${op.n} from ${SH_LOCATION_BY_ID[sh.locationId]?.name || 'safehouse'}.`, 'warn')
+  aL(tr('toast.adv.deployedOp', { name: sn(s), op: op.n, safehouse: SH_LOCATION_BY_ID[sh.locationId]?.name || 'safehouse' }), 'warn')
   upUI()
 }
 
@@ -482,14 +483,14 @@ export function resolveDeepCoverOp(assignmentId) {
     G.reputation = clamp((G.reputation || 0) + op.rep, 0, 999)
     if (op.id === 'dc_infiltrate') {
       const v = pk(G.villages || [])
-      if (v) aL(`Deep cover intel from ${v.n}: strength ${Math.round(v.strength || 50)}.`, 'good')
+      if (v) aL(tr('toast.adv.deepCoverIntel', { village: v.n, strength: Math.round(v.strength || 50) }), 'good')
     }
     if (op.id === 'dc_recruit') {
-      aL(`Double agent turned — rival intel network weakened.`, 'good')
+      aL(tr('toast.adv.doubleAgent'), 'good')
     }
-    aL(`${sn(s)} completed "${op.n}" — +${op.ryo.toLocaleString()} ryo.`, 'good')
+    aL(tr('toast.adv.opCompleted', { name: sn(s), op: op.n, ryo: op.ryo.toLocaleString() }), 'good')
   } else {
-    aL(`${sn(s)} failed "${op.n}" and returned.`, 'bad')
+    aL(tr('toast.adv.opFailed', { name: sn(s), op: op.n }), 'bad')
   }
 
   G.aM = G.aM.filter(x => x.id !== assignmentId)
@@ -498,7 +499,7 @@ export function resolveDeepCoverOp(assignmentId) {
 
 export function resolveWorldEventChoice(choiceId) {
   const ae = G.worldCalendar?.activeEvent
-  if (!ae) { ntf('No active world event.'); return }
+  if (!ae) { ntf(tr('toast.adv.noWorldEvent')); return }
   const ev = WE_BY_ID[ae.eventId]
   if (!ev) return
   const outcome = resolveWorldEvent(ae.eventId, choiceId)
@@ -537,9 +538,9 @@ export function resolveClanChain(assignmentId) {
     G.clanApproval[am.clanId] = clamp((G.clanApproval[am.clanId] ?? 80) + 3, 0, 100)
     if (chain.id === 'tsuchida_feast') G.morale = clamp((G.morale || 50) + 10, 0, 100)
     if (chain.id === 'formation_drill') members.forEach(s => { s.monthsActive = (s.monthsActive || 0) + 2 })
-    aL(`${clan?.icon || ''} "${chain.n}" succeeded — +${chain.ryo.toLocaleString()} ryo, +${chain.rep} rep.`, 'good')
+    aL(tr('toast.adv.clanChainSuccess', { icon: clan?.icon || '', chain: chain.n, ryo: chain.ryo.toLocaleString(), rep: chain.rep }), 'good')
   } else {
-    aL(`${clan?.icon || ''} "${chain.n}" failed. No reward.`, 'bad')
+    aL(tr('toast.adv.clanChainFailed', { icon: clan?.icon || '', chain: chain.n }), 'bad')
   }
 
   G.aM = G.aM.filter(x => x.id !== assignmentId)
@@ -555,15 +556,15 @@ export function resolveCouncilProposal(choice) {
   if (!G.councilApproval) G.councilApproval = {}
   G.councilApproval[prop.faction] = clamp((G.councilApproval[prop.faction] || 50) + approvalDelta, 0, 100)
   if (choice === 'yes') {
-    if (prop.id === 'war_footing')    { G._warFooting = true; aL('War Footing declared — missions doubled, KIA risk up.', 'warn') }
-    else if (prop.id === 'trade_treaty')  { if (G.ryo >= 8000) { G.ryo -= 8000; if (!G.districts) G.districts = []; G.districts.push({ id: '_trade_route', status: 'built', effect: { monthlyRyo: 1500 } }); aL('Trade route opened — +1,500 ryo/month.', 'good') } else { aL('Not enough ryo for treaty.', 'bad'); G.councilApproval[prop.faction] = clamp(G.councilApproval[prop.faction] - 5, 0, 100) } }
-    else if (prop.id === 'exam_funding')  { if (G.ryo >= 5000) { G.ryo -= 5000; G._examFundingBonus = true; aL('Exam funding approved — graduation rates up this cycle.', 'good') } else { aL('Not enough ryo.', 'bad') } }
-    else if (prop.id === 'curfew')        { G.morale = clamp(G.morale - 5, 0, 100); G.reputation = clamp(G.reputation + 8, 0, 999); aL('Curfew imposed — morale down, reputation up.', 'neutral') }
-    else if (prop.id === 'arms_stockpile'){ if (G.ryo >= 12000) { G.ryo -= 12000; G.tempDef = (G.tempDef || 0) + 10; aL('Arms stockpile complete — +10 defense.', 'good') } else { aL('Not enough ryo.', 'bad') } }
-    else if (prop.id === 'market_day')    { G.ryo += 3000; G.morale = clamp(G.morale + 5, 0, 100); aL('Grand Market Day held — +3,000 ryo, +5 morale.', 'good') }
-    aL(`${faction?.n || ''} proposal approved.`, 'good')
+    if (prop.id === 'war_footing')    { G._warFooting = true; aL(tr('toast.adv.warFooting'), 'warn') }
+    else if (prop.id === 'trade_treaty')  { if (G.ryo >= 8000) { G.ryo -= 8000; if (!G.districts) G.districts = []; G.districts.push({ id: '_trade_route', status: 'built', effect: { monthlyRyo: 1500 } }); aL(tr('toast.adv.tradeRoute'), 'good') } else { aL(tr('toast.adv.notEnoughTreaty'), 'bad'); G.councilApproval[prop.faction] = clamp(G.councilApproval[prop.faction] - 5, 0, 100) } }
+    else if (prop.id === 'exam_funding')  { if (G.ryo >= 5000) { G.ryo -= 5000; G._examFundingBonus = true; aL(tr('toast.adv.examFunding'), 'good') } else { aL(tr('toast.common.notEnoughRyoDot'), 'bad') } }
+    else if (prop.id === 'curfew')        { G.morale = clamp(G.morale - 5, 0, 100); G.reputation = clamp(G.reputation + 8, 0, 999); aL(tr('toast.adv.curfew'), 'neutral') }
+    else if (prop.id === 'arms_stockpile'){ if (G.ryo >= 12000) { G.ryo -= 12000; G.tempDef = (G.tempDef || 0) + 10; aL(tr('toast.adv.armsStockpile'), 'good') } else { aL(tr('toast.common.notEnoughRyoDot'), 'bad') } }
+    else if (prop.id === 'market_day')    { G.ryo += 3000; G.morale = clamp(G.morale + 5, 0, 100); aL(tr('toast.adv.marketDay'), 'good') }
+    aL(tr('toast.adv.proposalApproved', { faction: faction?.n || '' }), 'good')
   } else {
-    aL(`${faction?.n || ''} proposal declined. Approval −5.`, 'neutral')
+    aL(tr('toast.adv.proposalDeclined', { faction: faction?.n || '' }), 'neutral')
   }
   upUI()
 }
