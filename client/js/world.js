@@ -1,5 +1,6 @@
 import { G, WS, clamp, fmt, setDipCb, _dipCb } from './state.js'
 import { aL, ntf, upUI, cm, setOnline } from './ui.js'
+import { t } from '../../shared/utils/i18n.js'
 import { shiftKageRel, kageToneDialogue, getKageTier, ensureKageRels } from './rivalKage.js'
 
 export function rWo() { rWorldCanvas(); rWorldList() }
@@ -132,12 +133,12 @@ export function declareWarMP(id) {
   // War declaration tanks personal Kage relationship
   const npcV = G.villages?.find(x => x.n === v.name)
   if (npcV) shiftKageRel(npcV, -25, 'War declared', G)
-  aL('War declared on ' + v.icon + ' ' + v.name + '!', 'warn'); ntf('War declared on ' + v.name + '!'); rWo()
+  aL(t('toast.world.warDeclared', { icon: v.icon, name: v.name }), 'warn'); ntf(t('toast.world.warDeclaredShort', { name: v.name })); rWo()
 }
 
 export function propAllianceMP(id) {
   const v = WS.villages.find(x => x.id === id); if (!v || !_socket) return
-  _socket.emit('propose_alliance', { targetId: id }); ntf('Alliance proposal sent to ' + v.name + '.')
+  _socket.emit('propose_alliance', { targetId: id }); ntf(t('toast.world.allianceProposed', { name: v.name }))
 }
 
 export function respondAlliance(fromId, accepted) {
@@ -152,24 +153,24 @@ export function breakAllianceMP(id) {
   const v = WS.villages.find(x => x.id === id); if (!_socket) return
   _socket.emit('break_alliance', { targetId: id })
   setRelLocal(id, 'neutral')
-  aL('Alliance with ' + (v?.name || 'unknown') + ' dissolved.', 'warn'); ntf('Alliance broken.'); rWo()
+  aL(t('toast.world.allianceDissolved', { name: v?.name || 'unknown' }), 'warn'); ntf(t('toast.world.allianceBroken')); rWo()
 }
 
 export function launchRaidMP(id) {
   const v = WS.villages.find(x => x.id === id); if (!v || !_socket) return
   _socket.emit('launch_raid', { targetId: id })
-  aL('Raid launched on ' + v.icon + ' ' + v.name + '!', 'warn'); ntf('Raid launched on ' + v.name + '!')
+  aL(t('toast.world.raidLaunched', { icon: v.icon, name: v.name }), 'warn'); ntf(t('toast.world.raidLaunchedShort', { name: v.name }))
 }
 
 export function sendGiftMP(id) {
-  if (!_socket) { ntf('Not connected.'); return }
-  if (G.ryo < 5000) { ntf('Need 5,000 ryo!'); return }
+  if (!_socket) { ntf(t('toast.world.notConnected')); return }
+  if (G.ryo < 5000) { ntf(t('toast.world.need5k')); return }
   const v = WS.villages.find(x => x.id === id)
   G.ryo -= 5000; _socket.emit('send_gift', { targetId: id })
   // Gifts improve Kage personal relationship too
   const npcV = G.villages?.find(x => x.n === v?.name)
   if (npcV) shiftKageRel(npcV, 6, 'Diplomatic gift received', G)
-  aL('Diplomatic gifts sent to ' + (v?.name || 'unknown') + '.', 'good'); upUI()
+  aL(t('toast.world.giftsSent', { name: v?.name || 'unknown' }), 'good'); upUI()
 }
 
 export function setRelLocal(otherId, status) {

@@ -1,5 +1,6 @@
 import { G, rnd, clamp, sn } from './state.js'
 import { aL } from './ui.js'
+import { t } from '../../shared/utils/i18n.js'
 import { isEnabled } from '../../config/features.js'
 import { HIDDEN_ATTRIBUTE_KEYS } from '../../shared/constants/prospect.js'
 import { PLAN_BY_ID } from '../../shared/constants/trainingPlans.js'
@@ -94,7 +95,7 @@ function growProspect(p) {
     if (prevAbility < bp && p.currentAbility >= bp) {
       if (!p.milestones) p.milestones = []
       p.milestones.push({ ability: bp, year: G.year, month: G.month })
-      aL(`${p.fn} ${p.ln} reached ability ${bp} — a genuine talent is emerging.`, 'good')
+      aL(t("toast.prospect.talentEmerging", { name: ` `, ability: bp }), 'good')
     }
   }
 }
@@ -105,7 +106,7 @@ function maybeRevealCurve(p) {
   const confidence = p.bestConfidence ?? 0
   if (confidence >= 75) {
     p.curveRevealed = true
-    aL(`Scout confidence on ${p.fn} ${p.ln} now high enough — development curve identified: ${p.developmentCurve}.`, 'neutral')
+    aL(t("toast.prospect.curveIdentified", { name: ` `, curve: p.developmentCurve }), 'neutral')
   }
 }
 
@@ -129,7 +130,7 @@ export function applyGraduationBias(prospect) {
   })
 
   if (plan.id !== 'balanced') {
-    aL(`${prospect.fn} ${prospect.ln} graduated with ${plan.label} training — stats shaped accordingly.`, 'good')
+    aL(t("toast.prospect.graduated", { name: ` `, plan: plan.label }), 'good')
   }
 }
 
@@ -158,7 +159,7 @@ function maybeGenerateRivalOffer(p) {
   }
   p.rivalInterest = true
 
-  aL(`${village} has made an offer for ${p.fn} ${p.ln} — ${offerRyo.toLocaleString()} ryo. Respond within 2 months.`, 'warn')
+  aL(t("toast.prospect.offer", { village, name: ` `, ryo: offerRyo.toLocaleString() }), 'warn')
 }
 
 // ── Rival offer expiry ────────────────────────────────────────────────────────
@@ -169,7 +170,7 @@ function tickRivalOffers(G) {
     const expired = G.year > offer.expiresYear ||
       (G.year === offer.expiresYear && G.month > offer.expiresMonth)
     if (expired) {
-      aL(`${offer.village}'s offer for ${p.fn} ${p.ln} expired — they signed elsewhere.`, 'bad')
+      aL(t("toast.prospect.offerExpired", { village: offer.village, name: ` ` }), 'bad')
       G.prospects = G.prospects.filter(x => x.id !== p.id)
     }
   })

@@ -1,6 +1,7 @@
 import { G, rnd, pk, clamp, genRegionProspect, genScoutNarrative } from './state.js'
 import { REGIONS, REGION_EVENTS } from './constants.js'
 import { aL, ntf } from './ui.js'
+import { t } from '../../shared/utils/i18n.js'
 import { isEnabled } from '../../config/features.js'
 import { calcConfidence, confidenceToQuality, createScoutReport } from '../../shared/types/ScoutReport.js'
 import { HIDDEN_ATTRIBUTE_KEYS } from '../../shared/constants/prospect.js'
@@ -82,7 +83,7 @@ function updateExpertise(scout, regionId, contactLevel) {
   if (scout.expertise[regionId] === 'specialist') return
   scout.expertise[regionId] = 'specialist'
   const region = REGIONS.find(r => r.id === regionId)
-  aL(`${scout.fn} ${scout.ln} has become a specialist in ${region?.n || regionId} — +15% confidence bonus active.`, 'good')
+  aL(t('toast.scout.specialist', { name: `${scout.fn} ${scout.ln}`, region: region?.n || regionId }), 'good')
 }
 
 // Tracks consecutive high-fatigue months and triggers burnout/resignation
@@ -94,7 +95,7 @@ function tickBurnout(scout, G) {
   }
 
   if ((scout.burnoutMonths || 0) >= 3) {
-    aL(`⚠ ${scout.fn} ${scout.ln} has burned out after sustained exhaustion and resigned.`, 'bad')
+    aL(t('toast.scout.burnout', { name: `${scout.fn} ${scout.ln}` }), 'bad')
     G.staff = (G.staff || []).filter(s => s.id !== scout.id)
     return true  // resigned
   }
@@ -113,7 +114,7 @@ function maybePoach(scout, G) {
   const retentionCost = rating * 800
 
   scout.poachOffer = { village, retentionCost, expiresMonth: G.month + 2, expiresYear: G.month >= 11 ? G.year + 1 : G.year }
-  aL(`${village} is trying to poach ${scout.fn} ${scout.ln} — retention bonus of ${retentionCost.toLocaleString()} ryo required.`, 'warn')
+  aL(t('toast.scout.poachWarn', { village, name: `${scout.fn} ${scout.ln}`, cost: retentionCost.toLocaleString() }), 'warn')
 }
 
 // Graceful retirement after 48+ months active
@@ -126,7 +127,7 @@ function maybeRetire(scout, G) {
   const summary = specialisms.length
     ? `Retired a specialist in ${specialisms.join(', ')}.`
     : 'Retired after years of service.'
-  aL(`${scout.fn} ${scout.ln} has retired from field work. ${summary}`, 'neutral')
+  aL(t('toast.scout.retired', { name: `${scout.fn} ${scout.ln}`, summary }), 'neutral')
   G.staff = (G.staff || []).filter(s => s.id !== scout.id)
 }
 
@@ -158,7 +159,7 @@ export function tickScouts(G) {
 
     // High fatigue reduces effectiveness
     if ((scout.fatigue || 0) >= 90) {
-      aL(`${scout.fn} ${scout.ln} is exhausted — scouting effectiveness critically reduced.`, 'warn')
+      aL(t('toast.scout.exhausted', { name: `${scout.fn} ${scout.ln}` }), 'warn')
     }
 
     // Career arc: burnout check (may remove scout from G.staff)
@@ -190,7 +191,7 @@ export function tickScouts(G) {
           targetV.scoutIntel.squadDepth = rnd(3, 15)
           targetV.scoutIntel.avgPower = rnd(100, 500)
           targetV.scoutIntel.updatedY = G.year; targetV.scoutIntel.updatedM = G.month
-          aL(`${scout.fn} ${scout.ln} gathered shadow intel on ${targetV.n}.`, 'neutral')
+          aL(t('toast.scout.shadowIntel', { name: `${scout.fn} ${scout.ln}`, village: targetV.n }), 'neutral')
         }
       }
     }
@@ -300,7 +301,7 @@ function _generateReport(scout, regionId, region, mem, qualityMod) {
   mem.lastReportMonth = G.month
   mem.lastReportYear = G.year
 
-  aL(`Scout Report: ${scout.fn} ${scout.ln} filed a ${quality} report on ${prospect.fn} ${prospect.ln} (${region?.n || regionId}).`, 'neutral')
+  aL(t('toast.scout.report', { name: `${scout.fn} ${scout.ln}`, quality, prospect: `${prospect.fn} ${prospect.ln}`, region: region?.n || regionId }), 'neutral')
 }
 
 function _checkBiasPattern() {
@@ -311,7 +312,7 @@ function _checkBiasPattern() {
     const conflicting = scoutReports.filter(r => r.isSecondOpinion).length
     if (conflicting >= 3) {
       scout.biasDetected = true
-      aL(`⚠ Pattern detected in ${scout.fn} ${scout.ln}'s reports — possible scouting bias. Check their assessments carefully.`, 'warn')
+      aL(t('toast.scout.biasPattern', { name: `${scout.fn} ${scout.ln}` }), 'warn')
     }
   })
 }
@@ -319,22 +320,22 @@ function _checkBiasPattern() {
 // ── Scout retention / dismissal (called from inbox action buttons) ────────────
 export function retainScout(scoutId) {
   const scout = (G.staff || []).find(s => s.id === scoutId)
-  if (!scout?.poachOffer) { ntf('No active poach offer for this scout.'); return }
+  if (!scout?.poachOffer) { ntf(t('toast.scout.noPoachOffer')); return }
   const cost = scout.poachOffer.retentionCost
-  if (G.ryo < cost) { ntf(`Need ${cost.toLocaleString()} ryo to retain ${scout.fn} ${scout.ln}.`); return }
+  if (G.ryo < cost) { ntf(t('toast.scout.needRetain', { cost: cost.toLocaleString(), name: `${scout.fn} ${scout.ln}` })); return }
   G.ryo -= cost
   const village = scout.poachOffer.village
   scout.poachOffer = null
   // Loyalty boost for being retained
   if (scout.stats) scout.stats.loyalty = Math.min(20, (scout.stats.loyalty || 8) + 2)
-  aL(`${scout.fn} ${scout.ln} retained — turned down ${village}'s offer. Loyalty increased.`, 'good')
+  aL(t('toast.scout.retained', { name: `${scout.fn} ${scout.ln}`, village }), 'good')
 }
 
 export function dismissScout(scoutId) {
   const scout = (G.staff || []).find(s => s.id === scoutId)
   if (!scout) return
   const village = scout.poachOffer?.village || 'another village'
-  aL(`${scout.fn} ${scout.ln} departed for ${village}.`, 'neutral')
+  aL(t('toast.scout.departed', { name: `${scout.fn} ${scout.ln}`, village }), 'neutral')
   G.staff = (G.staff || []).filter(s => s.id !== scoutId)
 }
 
@@ -342,8 +343,8 @@ export function dismissScout(scoutId) {
 export function conductTrialDay(prospectId) {
   const p = G.prospects.find(x => x.id === prospectId)
   if (!p) return
-  if (p.trialDayDone) { ntf('Trial day already conducted for this prospect.'); return }
-  if (G.ryo < 2000) { ntf('Need 2,000 ryo to host a trial day.'); return }
+  if (p.trialDayDone) { ntf(t('toast.scout.trialDone')); return }
+  if (G.ryo < 2000) { ntf(t('toast.scout.needTrialRyo')); return }
 
   G.ryo -= 2000
   p.trialDayDone = true
@@ -375,6 +376,6 @@ export function conductTrialDay(prospectId) {
   ]
   p.trialDayReport = pk(narratives)
 
-  aL(`Trial day complete: ${p.fn} ${p.ln} assessed up close. Confidence now ${p.scoutConfidence}%.`, 'good')
-  ntf(`Trial day: ${p.fn} ${p.ln} — confidence updated to ${p.scoutConfidence}%`)
+  aL(t('toast.scout.trialComplete', { name: `${p.fn} ${p.ln}`, confidence: p.scoutConfidence }), 'good')
+  ntf(t('toast.scout.trialShort', { name: `${p.fn} ${p.ln}`, confidence: p.scoutConfidence }))
 }

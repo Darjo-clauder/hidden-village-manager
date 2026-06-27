@@ -1,6 +1,7 @@
 import { G, rnd, pk, clamp } from './state.js'
 import { MISS_POOL } from './constants.js'
 import { aL } from './ui.js'
+import { t as tr } from '../../shared/utils/i18n.js'
 
 // ── Contextual mission templates ──────────────────────────────────────────────
 const CONTEXTUAL_SOLO = [
@@ -48,7 +49,7 @@ export function pruneExpiredMissions(G) {
 export function refreshMissionBoard(G) {
   // 1. Prune expired missions
   const pruned = pruneExpiredMissions(G)
-  if (pruned > 0) aL(`${pruned} mission contract${pruned > 1 ? 's' : ''} expired.`, 'neutral')
+  if (pruned > 0) aL(tr('toast.missionGen.expired', { n: pruned }), 'neutral')
 
   // 2. Count current available (not active)
   const activeMIds = new Set(G.aM.map(am => am.missionId).filter(Boolean))
@@ -145,7 +146,7 @@ export function maybeSpawnChain(G) {
     startYear: G.year,
     startMonth: G.month,
   })
-  aL(`New mission chain unlocked: "${template.n}" — check the mission board.`, 'ev')
+  aL(tr('toast.missionGen.chainUnlocked', { name: template.n }), 'ev')
 }
 
 function _injectChainMissions(G) {
@@ -195,7 +196,7 @@ export function advanceChain(G, missionId, succeeded) {
       const bonusRep = chain.state.repAccumulated
       G.ryo = (G.ryo || 0) + bonusRyo
       G.reputation = Math.min(999, (G.reputation || 0) + bonusRep)
-      aL(`Mission chain "${chain.n}" completed! Chain bonus: +${bonusRyo.toLocaleString()} ryo, +${bonusRep} rep.`, 'good')
+      aL(tr('toast.missionGen.chainComplete', { name: chain.n, ryo: bonusRyo.toLocaleString(), rep: bonusRep }), 'good')
       if (!G.completedMissionChains) G.completedMissionChains = []
       G.completedMissionChains.push({ ...chain, completedYear: G.year, completedMonth: G.month })
       if (G.completedMissionChains.length > 20) G.completedMissionChains.shift()
@@ -203,7 +204,7 @@ export function advanceChain(G, missionId, succeeded) {
     } else {
       // Escalating injury risk for subsequent steps
       chain.state.injuryEscalation += 0.05
-      aL(`Chain step complete: "${m.n}" — ${chain.steps.length - chain.currentStep} step${chain.steps.length - chain.currentStep !== 1 ? 's' : ''} remaining.`, 'neutral')
+      aL(tr('toast.missionGen.chainStep', { name: m.n, n: chain.steps.length - chain.currentStep }), 'neutral')
     }
   } else {
     chain.failedSteps.push(chain.currentStep)
@@ -211,9 +212,9 @@ export function advanceChain(G, missionId, succeeded) {
     const partialRyo = Math.round((chain.state?.ryoAccumulated || 0) * 0.25)
     if (partialRyo > 0) {
       G.ryo = (G.ryo || 0) + partialRyo
-      aL(`Chain collapsed — partial payment: +${partialRyo.toLocaleString()} ryo for completed steps.`, 'warn')
+      aL(tr('toast.missionGen.chainCollapsed', { ryo: partialRyo.toLocaleString() }), 'warn')
     }
-    aL(`Mission chain "${chain.n}" failed at step ${chain.currentStep + 1}.`, 'warn')
+    aL(tr('toast.missionGen.chainFailed', { name: chain.n, step: chain.currentStep + 1 }), 'warn')
     G.missionChains = (G.missionChains || []).filter(c => c.id !== chain.id)
   }
 }

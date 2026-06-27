@@ -1,6 +1,7 @@
 import { G, rnd, pk, clamp, sn } from './state.js'
 import { DEV_CURVES } from './constants.js'
 import { aL, ntf } from './ui.js'
+import { t } from '../../shared/utils/i18n.js'
 
 // ── Ensure career fields exist (backward compat for old saves) ────────────────
 export function ensureCareerFields(s) {
@@ -70,8 +71,8 @@ export function tickCareers(G) {
         text: `${sn(s)} (age ${s.age}) is approaching the end of their active career. Consider transitioning them to staff or honoring their service.`,
         shinobiId: s.id,
       })
-      aL(`${sn(s)} is eligible for retirement (age ${s.age}, declining form).`, 'warn')
-      ntf(`${sn(s)} may be ready to retire.`)
+      aL(t("toast.career.retirementEligible", { name: sn(s), age: s.age }), 'warn')
+      ntf(t("toast.career.retirementReady", { name: sn(s) }))
     }
   })
 
