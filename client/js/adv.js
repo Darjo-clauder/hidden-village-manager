@@ -14,7 +14,13 @@ import { evalDepth, roleBonus } from './depthEngine.js'
 import { jutsuLoadoutBonus } from '../../shared/jutsu/loadout.js'
 import { DISTRICTS, getDistrictPassives } from '../../shared/constants/districts.js'
 import { COUNCIL_FACTIONS, COUNCIL_PROPOSALS, getCouncilPerks } from '../../shared/constants/council.js'
-import { initSeasonTable, playMatchday, seasonPressNotice } from '../../shared/utils/season.js'
+import { initSeasonTable, playMatchday, seasonPressNotice, simMatch, styledScore, roundPairings, sortedTable } from '../../shared/utils/season.js'
+import { identityFor } from '../../shared/constants/villageIdentity.js'
+import { tacticMod } from '../../shared/constants/matchdayTactics.js'
+import { resolvePromise, isPastDue } from '../../shared/utils/promises.js'
+import { updateH2H, pickDerbyRival } from '../../shared/utils/rivalry.js'
+import { MINOR_NATIONS, pickMinorNation, minorStrength, applyMinorOrigin } from '../../shared/constants/minorNations.js'
+import { addNewsItem } from './news.js'
 import { villageRevenue } from '../../shared/utils/economy.js'
 import { resolveMission, qualityEffects, missionApproachMod } from '../../shared/utils/missionEngine.js'
 import { kageMod, kagePerk, addKageXp } from '../../shared/constants/kageDev.js'
@@ -75,12 +81,12 @@ function jkKIAImmune(s) {
   const b = getBeastForJK(s.id); if (!b) return false
   const data = BEAST_DATA[b.n]; if (!data?.uniqueAbility) return false
   if (getSyncStage(b) < data.uniqueAbility.stage) return false
-  // Sakeru Sand Armor and Kureni Nine-Tails Mode both grant KIA immunity once per year
+  // Sakeru Sand Armor and Kureni Ninth Primal Mode both grant KIA immunity once per year
   if (b.n !== 'Sakeru' && b.n !== 'Kureni') return false
   if (!G._jkKIAImmuneYear) G._jkKIAImmuneYear = {}
   if (G._jkKIAImmuneYear[b.n] === G.year) return false
   G._jkKIAImmuneYear[b.n] = G.year
-  aL(tr('toast.adv.jkDeflect', { name: sn(s), beast: b.n, mode: b.n === 'Kureni' ? 'Nine-Tails Mode' : 'Sand Armor' }), 'good')
+  aL(tr('toast.adv.jkDeflect', { name: sn(s), beast: b.n, mode: b.n === 'Kureni' ? 'Ninth Primal Mode' : 'Sand Armor' }), 'good')
   return true
 }
 
@@ -373,7 +379,7 @@ export function assignBlackMarket(missionId, shinobiId) {
   const s = G.shinobi.find(x => x.id === shinobiId)
   if (!s) return
   if (s.status !== 'available') { ntf(tr('toast.adv.mustBeAvailable')); return }
-  if ((s.ri || 0) < bm.reqRi) { ntf(tr('toast.adv.requiresRank', { rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][bm.reqRi] })); return }
+  if ((s.ri || 0) < bm.reqRi) { ntf(tr('toast.adv.requiresRank', { rank: ['Initiate','Adept','Veteran','Shadow','S-Rank'][bm.reqRi] })); return }
   if (bm.reqAnbu && s.ri < 3) { ntf(tr('toast.adv.anbuRequired')); return }
   s.status = 'mission'
   s.missId = 'bm_' + missionId
@@ -455,7 +461,7 @@ export function assignDeepCoverOp(opId, shinobiId, safehouseId) {
   if (!op) return
   const s = G.shinobi.find(x => x.id === shinobiId)
   if (!s || s.status !== 'available') { ntf(tr('toast.adv.notAvailable')); return }
-  if ((s.ri || 0) < op.reqRi) { ntf(tr('toast.adv.requiresRank', { rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][op.reqRi] })); return }
+  if ((s.ri || 0) < op.reqRi) { ntf(tr('toast.adv.requiresRank', { rank: ['Initiate','Adept','Veteran','Shadow','S-Rank'][op.reqRi] })); return }
   const sh = (G.safehouses || []).find(x => x.id === safehouseId && x.status === 'active')
   if (!sh) { ntf(tr('toast.adv.invalidSafehouse')); return }
   s.status = 'mission'; s.missId = opId
@@ -748,11 +754,11 @@ export function adv() {
         { id:'fund', label:'Fund the festival', effect: g => { g.ryo = Math.max(0, g.ryo - 3000); g.morale = clamp((g.morale||50)+12,0,100); g.citizenMorale = clamp((g.citizenMorale||60)+8,0,100); aL(tr('toast.adv.festivalFunded'), 'good') } },
         { id:'skip', label:'Save the ryo', effect: g => { g.morale = clamp((g.morale||50)-4,0,100); aL(tr('toast.adv.festivalSkipped'), 'warn') } },
       ]},
-      { id:'defector', title:'Rival Village Defector', body:'An enemy chunin appeared at the gates claiming to have intelligence on a rival village\'s plans. Accept the risk or turn them away.', options:[
+      { id:'defector', title:'Rival Village Defector', body:'An enemy adept appeared at the gates claiming to have intelligence on a rival village\'s plans. Accept the risk or turn them away.', options:[
         { id:'accept', label:'Accept their intel', effect: g => { g.reputation = clamp((g.reputation||0)+5,0,999); if (!g.intelLog) g.intelLog = []; g.intelLog.push({ text:'Defector intel: rival village plans revealed.', year:g.year, month:g.month }); aL(tr('toast.adv.defectorIntel'), 'good') } },
         { id:'turnaway', label:'Turn them away', effect: g => { const rv = pk(g.villages); rv.rel = clamp((rv.rel||50)+5,0,100); aL(tr('toast.adv.defectorTurned', { village: rv.n }), 'neutral') } },
       ]},
-      { id:'sparring_incident', title:'Sparring Incident', body:'Two genin pushed too hard in training — one is bruised. Handle it officially or let them sort it between themselves.', options:[
+      { id:'sparring_incident', title:'Sparring Incident', body:'Two initiate pushed too hard in training — one is bruised. Handle it officially or let them sort it between themselves.', options:[
         { id:'official', label:'Official reprimand', effect: g => { g.morale = clamp((g.morale||50)-3,0,100); const s = g.shinobi.find(x => x.ri === 0 && x.status === 'available'); if (s) { s.injDays = 2; s.status = 'injured'; aL(sn(s) + ' benched 2 months — official reprimand.', 'warn') } } },
         { id:'let_go', label:'Let them settle it', effect: g => { g.morale = clamp((g.morale||50)+3,0,100); aL(tr('toast.adv.sparringRespected'), 'good') } },
       ]},
@@ -1051,7 +1057,7 @@ export function adv() {
     al.lastContactY = G.year
     const ALUMNI_MSGS = [
       { body: `${al.fn} ${al.ln} sent a gift from retirement — ryo and warm wishes.`, effect: g => { g.ryo += 1500; g.morale = clamp((g.morale||50)+3,0,100) }, label: '+1,500 ryo · morale +3' },
-      { body: `${al.fn} ${al.ln} dropped by to train the genin — an old master's lesson.`, effect: g => { const s = g.shinobi.filter(x => x.ri === 0 && x.status === 'available')[Math.floor(Math.random() * g.shinobi.filter(x=>x.ri===0).length)]; if (s) { const k = pk(['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed']); s.stats[k] = clamp((s.stats[k]||0)+3,0,99); aL(s.fn + ' got a lesson from ' + al.fn + ' — ' + k + ' +3.', 'good') } }, label: 'training +3 to a genin stat' },
+      { body: `${al.fn} ${al.ln} dropped by to train the initiate — an old master's lesson.`, effect: g => { const s = g.shinobi.filter(x => x.ri === 0 && x.status === 'available')[Math.floor(Math.random() * g.shinobi.filter(x=>x.ri===0).length)]; if (s) { const k = pk(['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed']); s.stats[k] = clamp((s.stats[k]||0)+3,0,99); aL(s.fn + ' got a lesson from ' + al.fn + ' — ' + k + ' +3.', 'good') } }, label: 'training +3 to a initiate stat' },
       { body: `${al.fn} ${al.ln} passed along field intelligence from their travels.`, effect: g => { g.reputation = clamp((g.reputation||0)+4,0,999); aL(tr('toast.adv.alumniIntel'), 'good') }, label: 'rep +4' },
       { body: `${al.fn} ${al.ln} vouched for the village to a passing merchant.`, effect: g => { g.ryo += 3000; aL(al.fn + '\'s endorsement brought trade — +3,000 ryo.', 'good') }, label: '+3,000 ryo' },
     ]
@@ -1097,12 +1103,12 @@ export function adv() {
     const rv = pk(G.villages)
     const RUMOR_TEMPLATES = [
       () => `Sources say ${rv.n} is quietly shopping one of their veterans — a trade may be imminent.`,
-      () => `Intel suggests ${rv.n} is investing heavily in their academy. Expect stronger genin next season.`,
-      () => `Whispers from ${rv.n}: a senior jonin is considering retirement. Their roster depth is at risk.`,
+      () => `Intel suggests ${rv.n} is investing heavily in their academy. Expect stronger initiate next season.`,
+      () => `Whispers from ${rv.n}: a senior veteran is considering retirement. Their roster depth is at risk.`,
       () => `${rv.n} appears to be hoarding ryo — a big signing or upgrade could be coming.`,
       () => `Reports from border scouts: ${rv.n} has been running high-intensity S-rank drills. War readiness is up.`,
       () => `Word on the road: ${rv.n} finished last season ${rv.strength >= 120 ? 'stronger than ever' : 'in disarray'}.`,
-      () => `A defector claims ${rv.n} lost a key jonin to injury — their next exam showing may suffer.`,
+      () => `A defector claims ${rv.n} lost a key veteran to injury — their next exam showing may suffer.`,
     ]
     const rumor = pk(RUMOR_TEMPLATES)()
     G.narrativeInbox.push({ id: Math.random().toString(36).slice(2), type: 'rumor', tag: 'intel', title: 'Rumor: ' + rv.n, body: rumor, village: rv.n, year: G.year, month: G.month })
@@ -1313,7 +1319,7 @@ export function adv() {
       s.status = 'available'; s.missId = null
       if (ok) {
         b.sealed = true
-        aL(b.n + ' captured! Assign a Jinchuriki.', 'good'); ntf(b.n + ' sealed!')
+        aL(b.n + ' captured! Assign a Vessel.', 'good'); ntf(b.n + ' sealed!')
         addChronicle('Beast Captured', b.n + ' was sealed by our forces.', 'legend')
         addLegend(20)
       } else {
@@ -1710,10 +1716,53 @@ export function adv() {
     const form = G._formThisMonth || { marginSum: 0 }
     const formBonus = clamp(form.marginSum * 2, -20, 20)
     G._seasonFormBonus = formBonus  // surfaced in UI
+    // Matchday tactic (player pick, persists monthly): a good read on this
+    // fixture's opponent style swings the player's effective strength ±.
+    const _pairs = roundPairings(names, G.season.round)
+    const _myFx = _pairs.find(([a, b]) => a === playerName || b === playerName)
+    const _myOpp = _myFx ? (_myFx[0] === playerName ? _myFx[1] : _myFx[0]) : null
+    const _tMod = _myOpp ? tacticMod(G.matchdayTactic || 'standard', identityFor(_myOpp).style) : 0
     const strOf = name => name === playerName
-      ? Math.max(10, (G._playerStrength || 50) + formBonus)
+      ? Math.max(10, Math.round(((G._playerStrength || 50) + formBonus) * (1 + _tMod)))
       : ((G.villages.find(v => v.n === name)?.strength) || 50)
-    playMatchday(G.season, names, strOf)
+    // Matchday styles: rivals play to their village identity; the player's style
+    // follows their coaching philosophy (aggressive→blitz, defensive→fortress).
+    const _philStyle = { aggressive: 'blitz', defensive: 'fortress' }[G.coachingPhilosophy] || 'balanced'
+    const styleOf = name => name === playerName ? _philStyle : identityFor(name).style
+    playMatchday(G.season, names, strOf, Math.random, styleOf)
+
+    // ── Rivalry: all-time head-to-head + the derby fixture ───────────────────
+    // Each January the most hostile rival becomes the year's derby; derby
+    // results swing morale/reputation beyond the points and feed the press.
+    if (G.month === 1 || !G.derbyRival) {
+      const dv = pickDerbyRival(G.villages, G.derbyRival)
+      if (dv && dv.n !== G.derbyRival) {
+        G.derbyRival = dv.n
+        aL(tr('toast.adv.derbyNamed', { ico: dv.ico, village: dv.n }), 'ev')
+        addNotice(`${dv.ico} ${dv.n} named this year's derby rival — those fixtures now carry the village's pride.`, 'warn')
+      } else if (dv) G.derbyRival = dv.n
+    }
+    G.h2h = G.h2h || {}
+    const _myMatch = (G.season.lastResults || []).find(m => m.a === playerName || m.b === playerName)
+    if (_myMatch) {
+      updateH2H(G.h2h, playerName, _myMatch)
+      const _mOpp = _myMatch.a === playerName ? _myMatch.b : _myMatch.a
+      if (_mOpp === G.derbyRival) {
+        const _dps = _myMatch.a === playerName ? _myMatch.scoreA : _myMatch.scoreB
+        const _dos = _myMatch.a === playerName ? _myMatch.scoreB : _myMatch.scoreA
+        if (_myMatch.winner === playerName) {
+          G.morale = clamp(G.morale + 3, 0, 100)
+          G.reputation = clamp(G.reputation + 2, 0, 999)
+          aL(tr('toast.adv.derbyWin', { village: _mOpp, ps: _dps, os: _dos }), 'good')
+        } else if (_myMatch.winner) {
+          G.morale = clamp(G.morale - 3, 0, 100)
+          aL(tr('toast.adv.derbyLoss', { village: _mOpp, ps: _dps, os: _dos }), 'bad')
+          if (!G.pendingPress && Math.random() < 0.3) queuePressConference('rivalry_heat', { rivalName: _mOpp })
+        } else {
+          aL(tr('toast.adv.derbyDraw', { village: _mOpp, ps: _dps, os: _dos }), 'neutral')
+        }
+      }
+    }
 
     // Track monthly form streak for press triggers
     const _fm = G._formThisMonth || { wins: 0, losses: 0 }
@@ -1742,6 +1791,117 @@ export function adv() {
       G._lastSeasonPressKind = _notice.kind
       ntf(tr('toast.adv.noticeNtf', { title: _notice.title }))
     }
+  }
+
+  // ── Off-season slate vs minor nations (months 1–3) ─────────────────────────
+  // The empty pre-season months get fixtures: friendlies in M1/M3 and the annual
+  // Minor Nations Invitational (4-team knockout) in M2. No league standings
+  // impact — purses + morale + a cup for the chronicle, and the results populate
+  // the SEASON tab's exhibition slate.
+  if (G.isOffSeason) {
+    const _exStyle = { aggressive: 'blitz', defensive: 'fortress' }[G.coachingPhilosophy] || 'balanced'
+    const _pStr = Math.max(10, G._playerStrength || 50)
+    G.exhibitions = G.exhibitions || []
+    const _pushEx = e => { G.exhibitions.push(e); if (G.exhibitions.length > 12) G.exhibitions.shift() }
+
+    if (G.month === 2) {
+      // Minor Nations Invitational — player + 3 minors, semifinal + final in one tick.
+      const draw = [...MINOR_NATIONS].sort(() => Math.random() - 0.5).slice(0, 3)
+      const sfOpp = draw[0]
+      const sf = simMatch(_pStr, minorStrength(sfOpp), Math.random, _exStyle, 'balanced')
+      let [ps, os] = styledScore(sf)
+      // Cup ties need a winner — sudden death on a coin.
+      const pAdv = sf.winner === 'a' || (sf.winner === 'draw' && Math.random() < 0.5)
+      if (sf.winner === 'draw') { if (pAdv) ps++; else os++ }
+      _pushEx({ year: G.year, month: G.month, opp: sfOpp.n, ico: sfOpp.ico, tier: sfOpp.tier, ps, os, result: pAdv ? 'W' : 'L', cup: 'SF' })
+      // Other semifinal between the two remaining minors.
+      const sf2 = simMatch(minorStrength(draw[1]), minorStrength(draw[2]), Math.random)
+      const finOpp = (sf2.winner === 'b' || (sf2.winner === 'draw' && Math.random() < 0.5)) ? draw[2] : draw[1]
+      if (pAdv) {
+        aL(tr('toast.adv.invAdvance', { ico: sfOpp.ico, opp: sfOpp.n, ps, os }), 'good')
+        const fin = simMatch(_pStr, minorStrength(finOpp), Math.random, _exStyle, 'balanced')
+        let [fp, fo] = styledScore(fin)
+        const champ = fin.winner === 'a' || (fin.winner === 'draw' && Math.random() < 0.5)
+        if (fin.winner === 'draw') { if (champ) fp++; else fo++ }
+        _pushEx({ year: G.year, month: G.month, opp: finOpp.n, ico: finOpp.ico, tier: finOpp.tier, ps: fp, os: fo, result: champ ? 'W' : 'L', cup: 'F' })
+        if (champ) {
+          G.ryo += 6000
+          G.morale = clamp(G.morale + 3, 0, 100)
+          addLegend(2)
+          aL(tr('toast.adv.invChampion', { ico: finOpp.ico, opp: finOpp.n, ps: fp, os: fo, ryo: fmt(6000) }), 'good')
+          addChronicle('Invitational Champions', `${G.vName} swept the Minor Nations Invitational, beating ${sfOpp.n} and ${finOpp.n} to take the cup.`, 'village')
+        } else {
+          G.ryo += 2500
+          G.morale = clamp(G.morale + 1, 0, 100)
+          aL(tr('toast.adv.invRunnerUp', { ico: finOpp.ico, opp: finOpp.n, ps: fp, os: fo, ryo: fmt(2500) }), 'neutral')
+        }
+        G.invitationalHistory = G.invitationalHistory || []
+        G.invitationalHistory.push({ year: G.year, champion: champ ? G.vName : finOpp.n, runnerUp: champ ? finOpp.n : G.vName, playerResult: champ ? 'champion' : 'runner-up' })
+        if (G.invitationalHistory.length > 10) G.invitationalHistory.shift()
+      } else {
+        G.morale = clamp(G.morale - 1, 0, 100)
+        aL(tr('toast.adv.invOut', { ico: sfOpp.ico, opp: sfOpp.n, ps, os }), 'bad')
+        // Final plays out without you — the world keeps moving.
+        const fin2 = simMatch(minorStrength(sfOpp), minorStrength(finOpp), Math.random)
+        const champN = (fin2.winner === 'b' || (fin2.winner === 'draw' && Math.random() < 0.5)) ? finOpp : sfOpp
+        const runN = champN === sfOpp ? finOpp : sfOpp
+        aL(tr('toast.adv.invNeutralFinal', { champIco: champN.ico, champ: champN.n, run: runN.n }), 'neutral')
+        G.invitationalHistory = G.invitationalHistory || []
+        G.invitationalHistory.push({ year: G.year, champion: champN.n, runnerUp: runN.n, playerResult: 'semifinal' })
+        if (G.invitationalHistory.length > 10) G.invitationalHistory.shift()
+      }
+    } else {
+      // M1 / M3 friendly.
+      const nation = pickMinorNation()
+      const res = simMatch(_pStr, minorStrength(nation), Math.random, _exStyle, 'balanced')
+      const [ps, os] = styledScore(res)   // player is side 'a'
+      const won = res.winner === 'a', drew = res.winner === 'draw'
+      _pushEx({ year: G.year, month: G.month, opp: nation.n, ico: nation.ico, tier: nation.tier, ps, os, result: won ? 'W' : drew ? 'D' : 'L' })
+      if (won) {
+        const purse = nation.tier === 'C' ? 3500 : 2000
+        G.ryo += purse
+        G.morale = clamp(G.morale + 2, 0, 100)
+        aL(tr('toast.adv.exhibitionWin', { ico: nation.ico, opp: nation.n, ps, os, ryo: fmt(purse) }), 'good')
+      } else if (drew) {
+        aL(tr('toast.adv.exhibitionDraw', { ico: nation.ico, opp: nation.n, ps, os }), 'neutral')
+      } else {
+        G.morale = clamp(G.morale - 1, 0, 100)
+        aL(tr('toast.adv.exhibitionLoss', { ico: nation.ico, opp: nation.n, ps, os }), 'bad')
+      }
+    }
+
+    // Ambient world life: a rival plays its own off-season friendly — news-ticker flavor.
+    if ((G.villages || []).length) {
+      const rv = pk(G.villages)
+      const mn = pickMinorNation()
+      const rres = simMatch(rv.strength || 60, minorStrength(mn), Math.random, identityFor(rv.n).style, 'balanced')
+      const [ra, rb] = styledScore(rres)
+      addNewsItem(rres.winner === 'draw'
+        ? tr('news.world.rivalExhibitionDraw', { aIco: rv.ico, a: rv.n, bIco: mn.ico, b: mn.n, sa: ra, sb: rb })
+        : rres.winner === 'a'
+          ? tr('news.world.rivalExhibition', { aIco: rv.ico, a: rv.n, bIco: mn.ico, b: mn.n, sa: ra, sb: rb })
+          : tr('news.world.rivalExhibitionUpset', { aIco: rv.ico, a: rv.n, bIco: mn.ico, b: mn.n, sa: rb, sb: ra }))
+    }
+  }
+
+  // ── Minor-nation prodigy — the wider world produces talent worth fighting for ──
+  // Any month, ~8%: a high-potential prospect surfaces from a minor nation with a
+  // short signing window; rivals will be circling (rival bids already target
+  // high-potential prospects in tickRivalGMMoves).
+  if (Math.random() < 0.08 && (G.prospects?.length || 0) < 16) {
+    const nat = pickMinorNation()
+    const prodigy = mS(0)
+    applyMinorOrigin(prodigy, nat)
+    prodigy.potential = rnd(78, 96)
+    prodigy.urgencyMonths = rnd(3, 5)
+    prodigy.rivalInterest = 2
+    G.prospects.push(prodigy)
+    aL(tr('toast.adv.minorProdigy', { ico: nat.ico, nation: nat.n, name: sn(prodigy) }), 'ev')
+    pushNarrative({
+      title: `${nat.ico} Prodigy out of ${nat.n}`,
+      body: `${sn(prodigy)}, a ${prodigy.age}-year-old talent from ${nat.n}, is shopping for a great village. Scouts rate the ceiling exceptional — but the window is short.`,
+      tag: 'academy', link: 'academy',
+    })
   }
 
   // ── New press triggers ────────────────────────────────────────────────────
@@ -1897,7 +2057,7 @@ export function adv() {
     }
   }
 
-  // Assistant Kage autonomous meeting handling
+  // Assistant Warden autonomous meeting handling
   const asstKage = (G.staff || []).find(st => st.asstKage)
   if (asstKage && Math.random() < 0.18) {
     const minorMtg = (G.meetingQueue || []).find(m => {
@@ -2106,15 +2266,15 @@ export function adv() {
   const commTotal = Object.entries(commByRank).reduce((a,[rk,cnt]) => a + cnt * (MISSION_COMMISSION[rk]||0), 0)
   const snap = {
     year: G.year, month: G.month,
-    income: { tradeRoutes:trI, contracts:coI, jinchuriki:jkI, daimyoBonus:daimyoB, villageRevenue:villageRev, missionCommissions:commTotal, examFees:examFeeAmt, loanFees:loanFeeAmt, sponsorship:sponsorshipIncome, nationBonus: totalIncome - (trI + coI + jkI + daimyoB + villageRev + examFeeAmt + loanFeeAmt + sponsorshipIncome) },
+    income: { tradeRoutes:trI, contracts:coI, vessel:jkI, daimyoBonus:daimyoB, villageRevenue:villageRev, missionCommissions:commTotal, examFees:examFeeAmt, loanFees:loanFeeAmt, sponsorship:sponsorshipIncome, nationBonus: totalIncome - (trI + coI + jkI + daimyoB + villageRev + examFeeAmt + loanFeeAmt + sponsorshipIncome) },
     expenditure: { shinobiWages:shinobiSal, staffWages:staffSal, maintenance, luxuryTax, scoutCost:G.finances.scoutCostThisMonth||0 },
     totalIncome, totalExpend: totalExpend + luxuryTax, net:netAfterTax,
     missionBreakdown: { ...commByRank },
     shinobiByRank: {
-      Genin: G.shinobi.filter(s=>s.ri===0).length,
-      Chunin: G.shinobi.filter(s=>s.ri===1).length,
-      Jonin: G.shinobi.filter(s=>s.ri===2).length,
-      ANBU: G.shinobi.filter(s=>s.ri===3).length,
+      Initiate: G.shinobi.filter(s=>s.ri===0).length,
+      Adept: G.shinobi.filter(s=>s.ri===1).length,
+      Veteran: G.shinobi.filter(s=>s.ri===2).length,
+      Shadow: G.shinobi.filter(s=>s.ri===3).length,
       'S-Rank': G.shinobi.filter(s=>s.ri===4).length,
     }
   }
@@ -2199,6 +2359,43 @@ export function adv() {
     const _sorted = Object.values(_table).sort((a, b) => (a.pts || 0) - (b.pts || 0))
     G.draftOrder = _sorted.map(r => r.name)
     G._draftPlayerPick = G.draftOrder.findIndex(n => n === G.vName) + 1
+
+    // ── Season Review special — the year, stitched into one story ────────────
+    // Pure assembly of data the systems already record: standings, exam champion,
+    // awards, invitational, the fallen. Lands as a long-form inbox feature.
+    {
+      const order = sortedTable(_table)
+      const pos = order.findIndex(r => r.name === G.vName) + 1
+      const me = order[pos - 1]
+      const parts = []
+      if (order.length && me) {
+        const leader = order[0]
+        const posTxt = pos === 1 ? 'top of the table' : `${pos}${pos === 2 ? 'nd' : pos === 3 ? 'rd' : 'th'} of ${order.length}`
+        const verdict = pos === 1 ? 'A campaign to be proud of.' : pos <= Math.ceil(order.length / 2) ? 'A solid year with more to take.' : pos >= order.length ? 'A season the village wants to forget.' : 'A middling year — the council expects better.'
+        parts.push(`<b>League:</b> ${G.vName} finished ${posTxt} (${me.w}W–${me.d}D–${me.l}L, ${me.pts} pts)${pos > 1 ? `, behind ${leader.name}` : ''}. ${verdict}`)
+      }
+      if (G.examChampion?.year === G.year) {
+        parts.push(`<b>Adept Exam:</b> ${G.examChampion.player ? `${G.vName} took the championship — the academy pipeline delivered.` : `${G.examChampion.ico || ''} ${G.examChampion.village} claimed the exam championship.`}`)
+      }
+      const inv = (G.invitationalHistory || []).find(h => h.year === G.year)
+      if (inv) {
+        parts.push(`<b>Invitational:</b> ${inv.playerResult === 'champion' ? `champions — the cup sits in ${G.vName}.` : inv.playerResult === 'runner-up' ? `runners-up to ${inv.champion}.` : `out in the semifinals; ${inv.champion} took the cup.`}`)
+      }
+      const aw = G.seasonAwards?.[G.year] || {}
+      const awLines = ['mvp', 'rookieOfYear', 'warHero', 'ironwall'].map(k => aw[k]).filter(a => a?.name).map(a => `${a.label}: <b>${a.name}</b>`)
+      if (awLines.length) parts.push(`<b>Honors:</b> ${awLines.join(' · ')}`)
+      const fallen = (G.memorial || []).filter(m => m.year === G.year && !m.transfer)
+      if (fallen.length) parts.push(`<b>The fallen:</b> ${fallen.slice(0, 6).map(f => f.name).join(', ')}${fallen.length > 6 ? ` and ${fallen.length - 6} more` : ''} — remembered at the memorial stone.`)
+      if (G.warSched || G.warActive) parts.push(`<b>Ahead:</b> the Grand Tournament musters — the year is not finished writing itself.`)
+      if (parts.length) {
+        pushNarrative({
+          title: `📜 Year ${G.year} in Review`,
+          body: parts.join('<br><br>'),
+          tag: 'season', link: 'exam',
+        })
+        addChronicle(`Year ${G.year} in Review`, parts.join(' ').replace(/<[^>]+>/g, ''), 'milestone')
+      }
+    }
   }
 
   // Reset monthly accumulators
@@ -2223,7 +2420,7 @@ export function adv() {
     }
   })
 
-  // ── Kage events ──────────────────────────────────────────────────────────
+  // ── Warden events ──────────────────────────────────────────────────────────
   G.keCD = (G.keCD || 0) - 1
   if (!ui.pKE && G.keCD <= 0 && Math.random() < 0.25) {
     const ev = G.keQ.shift()
@@ -2416,7 +2613,7 @@ export function adv() {
       student.milestones.push(student.monthsInClass)
       aL(sn(student) + ' reached ' + student.monthsInClass + '-month Academy milestone.', 'neutral')
     }
-    // Kage personal sparring (once per year, if G.kageTrainingUsedYear < G.year and student is flagged)
+    // Warden personal sparring (once per year, if G.kageTrainingUsedYear < G.year and student is flagged)
     if (student.kageTraining && (G.kageTrainingUsedYear || 0) < G.year) {
       G.kageTrainingUsedYear = G.year
       student.kageTraining = false
@@ -2564,11 +2761,43 @@ export function adv() {
       }
     }
 
+    // ── Promises ledger — resolve this shinobi's open promises ───────────────
+    G.promises = G.promises || []
+    for (const pr of G.promises) {
+      if (pr.status !== 'open' || pr.shinobiId !== s.id) continue
+      // Promotion promise KEPT the moment their rank rises past the promised baseline.
+      if (pr.type === 'promotion' && pr.riAt != null && s.ri > pr.riAt) {
+        resolvePromise(G.promises, pr.id, 'kept', G.year)
+        s.promotionDeadline = null
+        s.commitment = clamp(s.commitment + 10, 0, 100)
+        s.indMorale = clamp(s.indMorale + 8, 0, 100)
+        aL(tr('toast.adv.promiseKeptPromo', { name: sn(s) }), 'good')
+      }
+      // Deployment guarantee reviewed at its due date: kept unless breaches piled up.
+      if (pr.type === 'deployment' && isPastDue(pr, G.year, G.month)) {
+        const broken = (s._rgBreaches || 0) >= 5
+        resolvePromise(G.promises, pr.id, broken ? 'broken' : 'kept', G.year)
+        if (broken) {
+          s.roleGuarantee = false
+          s.commitment = clamp(s.commitment - 12, 0, 100)
+          s.indMorale = clamp(s.indMorale - 8, 0, 100)
+          aL(tr('toast.adv.promiseBrokenRole', { name: sn(s) }), 'bad')
+          addNotice(sn(s) + ' was promised regular deployment and spent the year on the bench.', 'bad')
+        } else {
+          s.commitment = clamp(s.commitment + 5, 0, 100)
+          aL(tr('toast.adv.promiseKeptRole', { name: sn(s) }), 'good')
+        }
+        s._rgBreaches = 0
+      }
+    }
+
     // Promotion deadline missed — personality evolution: feeling overlooked breeds resentment
     if (s.promotionDeadline && G.month >= s.promotionDeadline && G.year >= (s.promotionDeadlineYear || G.year)) {
       s.commitment = clamp(s.commitment - 15, 0, 100)
       s.indMorale = clamp(s.indMorale - 10, 0, 100)
       s.promotionDeadline = null
+      const _brk = (G.promises || []).find(p => p.status === 'open' && p.shinobiId === s.id && p.type === 'promotion')
+      if (_brk) resolvePromise(G.promises, _brk.id, 'broken', G.year)
       aL(sn(s) + '\'s promised promotion deadline passed — they are deeply disappointed.', 'bad')
       if (addTrait(s, 'Resentful')) {
         aL(sn(s) + ' has grown Resentful after being passed over.', 'warn')
@@ -2576,10 +2805,11 @@ export function adv() {
       }
     }
 
-    // Role guarantee breach
+    // Role guarantee breach — counted toward the ledger's due-date review
     if (s.roleGuarantee && s.status === 'available' && (s.workload || 0) < 10 && s.months > 1) {
       s.commitment = clamp(s.commitment - 3, 0, 100)
       s.indMorale = clamp(s.indMorale - 4, 0, 100)
+      s._rgBreaches = (s._rgBreaches || 0) + 1
     }
 
     // Transfer-listed fallout: awkward presence in training while unsold
@@ -2809,11 +3039,11 @@ export function adv() {
   }
   if (G.dynastyRecords) G.dynastyRecords.peakLegend = Math.max(G.dynastyRecords.peakLegend || 0, G.legend || 0)
 
-  // ── Kage reputation tick ────────────────────────────────────────────────────
+  // ── Warden reputation tick ────────────────────────────────────────────────────
   if (!G.kageRep) G.kageRep = 1
   const repScore = (G.reputation || 0)
   const legendScore = (G.legend || 0)
-  // Kage rep target: weighted blend of rep score + legend tier (so a Legendary village can't stay at ★☆☆☆☆)
+  // Warden rep target: weighted blend of rep score + legend tier (so a Legendary village can't stay at ★☆☆☆☆)
   const legendBonus = legendScore >= 500 ? 2 : legendScore >= 300 ? 1 : legendScore >= 150 ? 1 : 0
   const targetRep = clamp((repScore >= 250 ? 5 : repScore >= 150 ? 4 : repScore >= 80 ? 3 : repScore >= 30 ? 2 : 1) + legendBonus, 1, 5)
   if (G.kageRep < targetRep && Math.random() < 0.3) G.kageRep = Math.min(5, G.kageRep + 1)
@@ -2864,7 +3094,7 @@ export function adv() {
     G.intelReports = G.intelReports.filter(r => r.expiresMonth > now)
   }
 
-  // ── ANBU ops tick ───────────────────────────────────────────────────────────
+  // ── Shadow ops tick ───────────────────────────────────────────────────────────
   if (!G.anbuOps) G.anbuOps = []
   G.anbuOps = G.anbuOps.filter(op => {
     op.monthsLeft = (op.monthsLeft || 1) - 1
@@ -2882,7 +3112,7 @@ export function adv() {
       G.caughtAnbu.push({ id: op.id, targetVillageId: op.targetVillageId, month: (G.year - 1) * 12 + G.month, status })
       if (targetV) targetV.rel = clamp((targetV.rel || 50) - 12, 0, 100)
       aL(tr('toast.adv.anbuCaught', { village: targetV?.n || 'enemy', status }), 'bad')
-      addChronicle('ANBU Incident', `Our ${op.type} operative was ${status} by ${targetV?.n || 'enemy forces'}.`, 'bad')
+      addChronicle('Shadow Incident', `Our ${op.type} operative was ${status} by ${targetV?.n || 'enemy forces'}.`, 'bad')
     } else {
       // Success — generate intel report
       const now2 = (G.year - 1) * 12 + G.month
@@ -2968,7 +3198,7 @@ export function adv() {
     }
   }
 
-  // ── Five Kage Summit tick (month 6 each year) ───────────────────────────────
+  // ── Five Warden Summit tick (month 6 each year) ───────────────────────────────
   if (G.month === 6) {
     const prestige = G.prestigeTier || 'D'
     const presOrd = { D:0, C:1, B:2, A:3, S:4 }
@@ -2978,8 +3208,8 @@ export function adv() {
       { id:'trade_pact', n:'Regional Trade Pact', minVotes:3, effect:'ryo_bonus' },
       { id:'war_ban', n:'War Moratorium', minVotes:4, effect:'peace' },
       { id:'missing_bounty', n:'Missing-Nin Bounties', minVotes:2, effect:'bounty' },
-      { id:'beast_protocol', n:'Tailed Beast Protocol', minVotes:3, effect:'beast_truce' },
-      { id:'exam_expand', n:'Expand Chunin Exam', minVotes:3, effect:'exam_expand' },
+      { id:'beast_protocol', n:'Primal Protocol', minVotes:3, effect:'beast_truce' },
+      { id:'exam_expand', n:'Expand Adept Exam', minVotes:3, effect:'exam_expand' },
     ]
     const items = [...SUMMIT_AGENDA].sort(() => Math.random() - 0.5).slice(0, 3)
     const results = []
@@ -3005,15 +3235,15 @@ export function adv() {
       aL(tr('toast.adv.summitFavor', { village: G.pendingSummitFavor.villageName }), 'warn')
       G.pendingSummitFavor = null
     }
-    addChronicle('Five Kage Summit Y' + G.year, results.map(r => `${r.item}: ${r.passed ? 'PASSED' : 'FAILED'}`).join('; ') + (blocEntry ? ` [Bloc: ${blocEntry}]` : ''), 'event')
+    addChronicle('Five Warden Summit Y' + G.year, results.map(r => `${r.item}: ${r.passed ? 'PASSED' : 'FAILED'}`).join('; ') + (blocEntry ? ` [Bloc: ${blocEntry}]` : ''), 'event')
     aL(tr('toast.adv.summitComplete'), 'neutral')
   }
 
   // ── S-rank contract rotation (month 1, 4, 7, 10) ───────────────────────────
   if ([1, 4, 7, 10].includes(G.month)) {
     const SCONTRACTS = [
-      { id:'escort_kage', n:'Escort the Five Kage', baseRyo:35000, rep:50, prestige:15, risk:0.45 },
-      { id:'seal_bijuu', n:'Seal a Rampaging Beast', baseRyo:40000, rep:60, prestige:20, risk:0.50 },
+      { id:'escort_kage', n:'Escort the Five Warden', baseRyo:35000, rep:50, prestige:15, risk:0.45 },
+      { id:'seal_primal', n:'Seal a Rampaging Beast', baseRyo:40000, rep:60, prestige:20, risk:0.50 },
       { id:'fortress', n:'Destroy Enemy Fortress', baseRyo:28000, rep:40, prestige:10, risk:0.40 },
       { id:'assn_warlord', n:'Assassinate a Warlord', baseRyo:32000, rep:45, prestige:12, risk:0.48 },
       { id:'rescue_dipl', n:'Rescue Captured Diplomat', baseRyo:25000, rep:35, prestige:8, risk:0.35 },
@@ -3038,7 +3268,7 @@ export function adv() {
 
   // ── Summit pre-approach (month 5 — bloc offer before summit in month 6) ─────
   if (G.month === 5 && !G.summitBlocOffer && Math.random() < 0.5) {
-    const SUMMIT_ITEMS = ['Regional Trade Pact','War Moratorium','Missing-Nin Bounties','Expand Chunin Exam']
+    const SUMMIT_ITEMS = ['Regional Trade Pact','War Moratorium','Missing-Nin Bounties','Expand Adept Exam']
     const approachingVillage = pk(G.villages || [])
     if (approachingVillage) {
       G.summitBlocOffer = {
@@ -3051,7 +3281,7 @@ export function adv() {
   // Clear stale bloc offer after summit
   if (G.month === 7) G.summitBlocOffer = null
 
-  // ── Per-Kage relations drift ───────────────────────────────────────────────
+  // ── Per-Warden relations drift ───────────────────────────────────────────────
   if (!G.kageRelations) G.kageRelations = {};
   (G.villages || []).forEach(v => {
     if (!G.kageRelations[v.id]) G.kageRelations[v.id] = { villageName: v.n, rep: 50, lastEvent: null }
@@ -3089,12 +3319,12 @@ export function adv() {
     }
   }
 
-  // ── Rival Kage relationship tick ──────────────────────────────────────────
+  // ── Rival Warden relationship tick ──────────────────────────────────────────
   ensureKageRels(G)
   tickKageRels(G)
   G.worldReputationFlavor = getWorldReputationFlavor(G)
 
-  // ── Tailed Beast monthly tick ─────────────────────────────────────────────
+  // ── Primal monthly tick ─────────────────────────────────────────────
   applyBeastPairEffects(G)
   G.beasts.forEach(b => {
     const beastEvents = tickBeast(b, G)
@@ -3104,7 +3334,7 @@ export function adv() {
       if (ev.type === 'lore')   addChronicle(ev.title, ev.body, 'lore', ev.narrative || null)
     })
   })
-  // ── Jinchuriki control / instability (host risk-reward) ────────────────────
+  // ── Vessel control / instability (host risk-reward) ────────────────────
   G.beasts.filter(b => b.sealed && b.jk).forEach(b => {
     const host = G.shinobi.find(s => s.id === b.jk)
     if (!host) return
@@ -3166,14 +3396,14 @@ export function adv() {
         aL(tr('toast.adv.extractionRepelled', { attacker: attacker.n, beast: b.n }), 'warn')
         G.reputation = clamp(G.reputation + 3, 0, 999)
         attacker.rel = clamp((attacker.rel || 50) - 10, 0, 100)
-        addChronicle(`Extraction Repelled — ${b.n}`, `${attacker.n} dispatched an extraction team targeting ${b.n}'s Jinchuriki. Village defenses held.`, 'war')
+        addChronicle(`Extraction Repelled — ${b.n}`, `${attacker.n} dispatched an extraction team targeting ${b.n}'s Vessel. Village defenses held.`, 'war')
       } else {
         aL(tr('toast.adv.extractionPenetrated', { attacker: attacker.n, beast: b.n }), 'bad')
         G.morale = clamp(G.morale - 8, 0, 100)
         G.reputation = clamp(G.reputation - 5, 0, 999)
         const jk = G.shinobi.find(s => s.id === b.jk)
         if (jk) { jk.injDays = Math.max(jk.injDays || 0, 2); jk.status = 'injured' }
-        addChronicle(`Extraction Breach — ${b.n}`, `${attacker.n} extraction agents breached the village. ${b.n}'s Jinchuriki was injured in the struggle.`, 'war')
+        addChronicle(`Extraction Breach — ${b.n}`, `${attacker.n} extraction agents breached the village. ${b.n}'s Vessel was injured in the struggle.`, 'war')
       }
       ntf(tr('toast.adv.extractionAttempt', { beast: b.n }))
     }
@@ -3213,7 +3443,7 @@ export function adv() {
   }
 
   syncToServer(); rfM(); rfP()
-  // ── Kage development XP — base + this month's mission wins + queued events ──
+  // ── Warden development XP — base + this month's mission wins + queued events ──
   {
     const wins = (G._formThisMonth?.wins) || 0
     const xp = 4 + wins * 2 + (G._kageXpPending || 0)
@@ -3221,7 +3451,7 @@ export function adv() {
     const res = addKageXp(G, xp)
     if (res.leveled) {
       aL(tr('toast.adv.kageLevel', { level: res.newLevel, points: res.levels * 2 }), 'good')
-      addNotice(`Kage Level ${res.newLevel} — spend development points on the Kage Path screen.`, 'good')
+      addNotice(`Warden Level ${res.newLevel} — spend development points on the Warden Path screen.`, 'good')
       ntf(tr('toast.adv.kageLevelShort', { level: res.newLevel }))
     }
   }
@@ -3276,7 +3506,7 @@ export function resRaid() {
     aL(G.raid.n + ' breached! Lost ' + fmt(loss) + ' ryo.', 'bad')
     if (def) {
       if (hL < 1 && Math.random() < 0.2) {
-        G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(def), rank: ['Genin','Chunin','Jonin','ANBU','S-Rank'][def.ri], clan: def.clan, mission: 'Village Defense', year: G.year, month: G.month, wins: def.wins, lastWords: '"The village... I held the line."' })
+        G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(def), rank: ['Initiate','Adept','Veteran','Shadow','S-Rank'][def.ri], clan: def.clan, mission: 'Village Defense', year: G.year, month: G.month, wins: def.wins, lastWords: '"The village... I held the line."' })
         aL(sn(def) + ' fell defending the village.', 'bad')
         G.shinobi = G.shinobi.filter(s => s.id !== def.id)
       } else {
@@ -3364,11 +3594,11 @@ function _tickSeniorGroup(G) {
 }
 
 function _tickDevLoans(G) {
-  // Loaned-out Genin gain mock experience monthly
+  // Loaned-out Initiate gain mock experience monthly
   if (!G.transferMarket?.loanOut) return
   G.transferMarket.loanOut.forEach(loan => {
     const s = G.shinobi.find(x => x.id === loan.shinobiId)
-    if (!s || s.ri !== 0) return  // Genin only
+    if (!s || s.ri !== 0) return  // Initiate only
     loan.devMonths = (loan.devMonths || 0) + 1
     // 30% chance per month to gain a mission win credit
     if (Math.random() < 0.30) {
@@ -3412,7 +3642,7 @@ export function resolveNoConfidence(choice) {
   if (choice === 'resign') {
     const { grade, score } = computeDynastyGrade(G)
     aL(tr('toast.adv.resign', { grade, score }), 'neutral')
-    addChronicle('Kage Resigned', `${G.kN || 'The Kage'} stepped down after a no-confidence vote. Dynasty Grade: ${grade}.`, 'legend')
+    addChronicle('Warden Resigned', `${G.kN || 'The Warden'} stepped down after a no-confidence vote. Dynasty Grade: ${grade}.`, 'legend')
     G.gameOver = { reason: 'resignation', grade, score, year: G.year }
     upUI(); return
   }
@@ -3424,11 +3654,11 @@ export function resolveNoConfidence(choice) {
     G.ownerMandate.consecutiveBadYears = 0
     G.morale = clamp(G.morale - 10, 0, 100)
     aL(tr('toast.adv.defendPosition', { conf: G.ownerMandate.confidence, cost: fmt(cost) }), 'good')
-    addChronicle('Vote Survived', `${G.kN || 'The Kage'} survived a no-confidence vote by rallying council support.`, 'legend')
+    addChronicle('Vote Survived', `${G.kN || 'The Warden'} survived a no-confidence vote by rallying council support.`, 'legend')
   } else {
     aL(tr('toast.adv.forcedResign'), 'bad')
     const { grade, score } = computeDynastyGrade(G)
-    addChronicle('Kage Ousted', `${G.kN || 'The Kage'} was removed after losing a no-confidence vote. Dynasty Grade: ${grade}.`, 'legend')
+    addChronicle('Warden Ousted', `${G.kN || 'The Warden'} was removed after losing a no-confidence vote. Dynasty Grade: ${grade}.`, 'legend')
     G.gameOver = { reason: 'ousted', grade, score, year: G.year }
   }
   upUI()
@@ -3497,9 +3727,9 @@ export function resolvePressConference(toneId, calloutVillage) {
   const toneLabel = tone.label + (toneId === 'callout' && targetVillage ? ` (${targetVillage})` : '')
   const ovNote    = ov?.note || ''
   const logLine   = `Press conference — ${toneLabel}. Morale ${m.morale >= 0 ? '+' : ''}${m.morale}, Rep ${m.rep >= 0 ? '+' : ''}${m.rep}.${ovNote ? ' ' + ovNote : ''}`
-  addChronicle('Press Conference', `Kage chose "${toneLabel}" responding to: "${p.question}"`, 'event')
+  addChronicle('Press Conference', `Warden chose "${toneLabel}" responding to: "${p.question}"`, 'event')
   aL(logLine, m.morale >= 0 ? 'good' : 'warn')
-  pushNarrative({ title: `Press: ${toneLabel}`, body: `"${p.question}" — Kage responded ${toneLabel.toLowerCase()}.${ovNote ? ' ' + ovNote : ''}`, tag: 'prestige', link: null }, [])
+  pushNarrative({ title: `Press: ${toneLabel}`, body: `"${p.question}" — Warden responded ${toneLabel.toLowerCase()}.${ovNote ? ' ' + ovNote : ''}`, tag: 'prestige', link: null }, [])
   G.pendingPress = null
   upUI()
 }

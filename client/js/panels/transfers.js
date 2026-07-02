@@ -1,4 +1,5 @@
 import { G, sn, sPow, clamp, fmt, rnd, pk, pDesc, personalityJudge, genTransferPool, computeMarketValue } from '../state.js'
+import { createPromise } from '../../../shared/utils/promises.js'
 import { TRANSFER_CATS, TRANSFER_WINDOWS, BINGO_TIERS, RANKS, VILLAGES_DEF } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort } from '../uikit.js'
@@ -225,7 +226,7 @@ function renderLoans(tm) {
     }
     <h3 style="color:#aaa;font-size:.82rem;text-transform:uppercase;letter-spacing:.08em;margin:12px 0 8px">Loans In (${lIn.length})</h3>
     ${lIn.length === 0
-      ? '<div style="color:#555;font-size:.8rem;margin-bottom:16px">No loan players. Bring in loan shinobi from the market to fill gaps — they cannot enter Chunin Exams.</div>'
+      ? '<div style="color:#555;font-size:.8rem;margin-bottom:16px">No loan players. Bring in loan shinobi from the market to fill gaps — they cannot enter Adept Exams.</div>'
       : lIn.map(li => {
           const s = (G.shinobi || []).find(x => x.id === li.shinobiId)
           return s ? `<div style="background:#1a1a1a;border:1px solid #333;border-radius:5px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:.8rem">
@@ -446,10 +447,26 @@ export function confirmTransfer() {
   const catDef = TRANSFER_CATS.find(c => c.id === p.transferCategory)
   p.commitment = clamp(50 + (catDef?.loyaltyBonus || 0) * 4 + (roleGuar ? 10 : 0) + Math.floor(sigBonus / 500), 0, 100)
   p.roleGuarantee = roleGuar
+  G.promises = G.promises || []
+  if (roleGuar) {
+    // Reviewed after a year: kept if they actually saw regular deployment.
+    createPromise(G.promises, {
+      shinobiId: p.id, name: p.fn + ' ' + p.ln, type: 'deployment',
+      detail: 'Signing-day guarantee of regular mission deployment',
+      madeYear: G.year, madeMonth: G.month,
+      dueYear: G.year + 1, dueMonth: G.month,
+    })
+  }
   if (rankTL > 0) {
     p.promotionDeadline = G.month + rankTL
     p.promotionDeadlineYear = G.year + Math.floor((G.month + rankTL - 1) / 12)
     p.promotionDeadline = ((G.month + rankTL - 1) % 12) + 1
+    createPromise(G.promises, {
+      shinobiId: p.id, name: p.fn + ' ' + p.ln, type: 'promotion',
+      detail: `Promotion to ${RANKS[Math.min(p.ri + 1, RANKS.length - 1)]} within ${rankTL} months`, riAt: p.ri,
+      madeYear: G.year, madeMonth: G.month,
+      dueYear: p.promotionDeadlineYear, dueMonth: p.promotionDeadline,
+    })
   }
   p.status = 'available'
   p.months = 0

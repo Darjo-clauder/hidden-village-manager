@@ -12,9 +12,21 @@ export function tickRivalSim() {
   G.villages.forEach(v => {
     if (!v.strength) v.strength = 50 + Math.round(Math.random() * 40)
     if (!v.roster || !v.roster.length) v.roster = genVillageRoster(v)  // backfill rosters on older saves
-    // Replenish war/mission losses so rivals stay viable — recruit fresh genin toward a floor.
+    // Replenish war/mission losses so rivals stay viable — recruit fresh initiate toward a floor.
     if (v.roster.length < 40 && Math.random() < 0.5) {
       const recruit = mS(rnd(0, 1)); recruit.homeVillage = v.n; v.roster.push(recruit)
+    }
+    // Named aces — each January the village's two strongest elites become its
+    // public faces (shown in previews/diplomacy; starred in exam duels). A new
+    // #1 ace is world news: recurring characters the player learns to fear.
+    if (G.month === 1 || !v.aces?.length) {
+      const prevTop = v.aces?.[0]?.name
+      const elites = (v.roster || []).filter(s => s.ri >= 2).sort((a, b) => sPow(b) - sPow(a)).slice(0, 2)
+      v.aces = elites.map(s => ({ id: s.id, name: sn(s), pow: sPow(s), ri: s.ri }))
+      const top = v.aces[0]
+      if (top && prevTop && top.name !== prevTop) {
+        pushNarrative({ title: `⭐ New ace in ${v.n}`, body: `${top.name} has overtaken ${prevTop} as ${v.n}'s ace — scouts rate them the banner threat this year.`, tag: 'intel', link: null }, [v.n])
+      }
     }
     // Adaptive AI — rivals re-evaluate tactics each season (once per year minimum)
     ensureRivalProfile(v)
@@ -84,7 +96,7 @@ export function tickRivalGMMoves() {
     const yourTarget = G.shinobi.filter(s => s.ri >= 1 && s.status === 'available')[Math.floor(Math.random() * G.shinobi.filter(s => s.ri >= 1).length)]
     if (theirOffer && yourTarget) {
       const tradeId = Math.random().toString(36).slice(2)
-      G.narrativeInbox.push({ id: tradeId, type: 'trade_offer', tag: 'people', title: 'Trade offer: ' + rival.n, body: rival.n + ' proposes trading ' + (theirOffer.fn || '') + ' ' + (theirOffer.ln || '') + ' (' + ['Genin','Chunin','Jonin','ANBU','Sannin'][theirOffer.ri || 0] + ', Pow ' + (sPow(theirOffer) || '?') + ') for ' + sn(yourTarget) + '. Accept or decline.', rivalVillage: rival.n, offeredId: theirOffer.id, offeredName: (theirOffer.fn || '') + ' ' + (theirOffer.ln || ''), offeredRi: theirOffer.ri, offeredPow: sPow(theirOffer), targetId: yourTarget.id, targetName: sn(yourTarget), year: G.year, month: G.month })
+      G.narrativeInbox.push({ id: tradeId, type: 'trade_offer', tag: 'people', title: 'Trade offer: ' + rival.n, body: rival.n + ' proposes trading ' + (theirOffer.fn || '') + ' ' + (theirOffer.ln || '') + ' (' + ['Initiate','Adept','Veteran','Shadow','Legend'][theirOffer.ri || 0] + ', Pow ' + (sPow(theirOffer) || '?') + ') for ' + sn(yourTarget) + '. Accept or decline.', rivalVillage: rival.n, offeredId: theirOffer.id, offeredName: (theirOffer.fn || '') + ' ' + (theirOffer.ln || ''), offeredRi: theirOffer.ri, offeredPow: sPow(theirOffer), targetId: yourTarget.id, targetName: sn(yourTarget), year: G.year, month: G.month })
       if (G.narrativeInbox.length > 50) G.narrativeInbox.splice(0, G.narrativeInbox.length - 50)
       ntf(rival.n + ' proposes a trade!')
     }

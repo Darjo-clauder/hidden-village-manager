@@ -1,10 +1,12 @@
 import {
   CLANS, RANKS, FNAMES, LNAMES, SPECS, PERSONALITIES, BACKSTORIES, ARCHETYPES,
-  TAILED_BEASTS, VILLAGES_DEF, RIVAL_VILLAGE_POOL, RIVAL_KAGE_NAMES, RIVAL_PERSONALITIES, START_SCENARIOS, WORLD_CLIMATES, MISS_POOL, SEASONAL_MISSIONS, CRISIS_MISSION_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
+  PRIMALS, VILLAGES_DEF, RIVAL_VILLAGE_POOL, RIVAL_KAGE_NAMES, RIVAL_PERSONALITIES, START_SCENARIOS, WORLD_CLIMATES, MISS_POOL, SEASONAL_MISSIONS, CRISIS_MISSION_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
   REGIONS, PM_DESC, REGION_EVENTS, DEV_CURVES, AGENT_AGENDAS,
 } from './constants.js'
 import { ARCHETYPE_POOL } from '../../shared/utils/personality.js'
 import { newKageDev } from '../../shared/constants/kageDev.js'
+import { identityFor, rollIntensity, applyIdentityBias } from '../../shared/constants/villageIdentity.js'
+import { MINOR_NATIONS, pickMinorNation, applyMinorOrigin } from '../../shared/constants/minorNations.js'
 
 // ── utilities ──────────────────────────────────────────────────────────────
 export const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a
@@ -36,7 +38,11 @@ export function mS(ri = 0) {
   Object.keys(base).forEach(k => { base[k] = clamp(Math.round(base[k] * m), 1, 99) })
   const p = pk(PERSONALITIES), sal = Math.round((500 + ri * 400) * (1 + (p.effect.salary || 0)))
   const _liveRivals = (G.villages || []).map(v => v.n)
-  const origin = Math.random() < 0.05 ? pk(_liveRivals.length ? _liveRivals : RIVAL_VILLAGE_POOL.map(v => v.n)) : null
+  // Origin flavor: ~5% hail from a rival great village, ~4% from a minor nation.
+  const _oRoll = Math.random()
+  const origin = _oRoll < 0.05 ? pk(_liveRivals.length ? _liveRivals : RIVAL_VILLAGE_POOL.map(v => v.n))
+    : _oRoll < 0.09 ? pk(MINOR_NATIONS).n
+    : null
   return {
     id: Math.random().toString(36).slice(2), fn: pk(FNAMES), ln: pk(LNAMES),
     clan: clan?.n || null, trait: clan?.t || null, spec: pk(SPECS), age, ri,
@@ -60,7 +66,7 @@ export function mS(ri = 0) {
     legendStatus:      false,        // true after 10 years of service
     meetingCooldown:   0,            // months before next meeting request
     promotionDeadline: null,         // month by which they expect promotion
-    roleGuarantee:     false,        // Kage promised regular deployment
+    roleGuarantee:     false,        // Warden promised regular deployment
     bingoBookPresence: 0,            // 0=none 1=listed 2=featured 3=legendary
     bingoBookSuppressed: false,
     traits: [],                      // evolved traits: Resilient, Haunted, Confident, Resentful...
@@ -117,7 +123,7 @@ export function sqP(sq) {
 // ── kage events ────────────────────────────────────────────────────────────
 // fn signature: (G, log) — log is aL, passed by caller to avoid circular dep
 export const KAGE_EVENTS = [
-  { n: 'Five Kage Summit', desc: 'All Kage gathering diplomatically.', choices: [
+  { n: 'Five Warden Summit', desc: 'All Warden gathering diplomatically.', choices: [
     { l: 'Attend (+8 rel all, -5k ryo)', fn: (G, log) => { G.villages.forEach(v => v.rel = clamp(v.rel + 8, 0, 100)); G.ryo -= 5000; log('Attended Summit.', 'good') } },
     { l: 'Send envoy (+4 rel all, -2k ryo)', fn: (G, log) => { G.villages.forEach(v => v.rel = clamp(v.rel + 4, 0, 100)); G.ryo -= 2000; log('Envoy sent.', 'neutral') } },
     { l: 'Boycott (-5 rel, +5 rep)', fn: (G, log) => { G.villages.forEach(v => v.rel = clamp(v.rel - 5, 0, 100)); G.reputation = clamp(G.reputation + 5, 0, 999); log('Boycotted summit.', 'neutral') } },
@@ -137,7 +143,7 @@ export const KAGE_EVENTS = [
     { l: 'Negotiate (+12 rel)', fn: (G, log) => { pk(G.villages).rel = clamp(pk(G.villages).rel + 12, 0, 100); log('Partial deal reached.', 'neutral') } },
     { l: 'Decline', fn: (G, log) => { log('Declined.', 'neutral') } },
   ] },
-  { n: 'Tailed Beast Sighting', desc: 'A wild beast roams near your borders.', choices: [
+  { n: 'Primal Sighting', desc: 'A wild beast roams near your borders.', choices: [
     { l: 'Launch capture mission', fn: (G, log) => { const b = G.beasts.find(x => !x.sealed); if (b) { b.captPending = true; log('Capture mission launched.', 'warn') } else log('No beasts to capture.', 'neutral') } },
     { l: 'Warn all villages (+8 rel)', fn: (G, log) => { G.villages.forEach(v => v.rel = clamp(v.rel + 8, 0, 100)); log('Warned neighbours.', 'good') } },
     { l: 'Fortify (+20 temp def)', fn: (G, log) => { G.tempDef = 20; log('Fortifications raised.', 'neutral') } },
@@ -146,17 +152,19 @@ export const KAGE_EVENTS = [
 
 // ── Rival village rosters ──────────────────────────────────────────────────
 // Each village fields a full 23-shinobi roster (realistic rank pyramid) so the
-// world feels populated and the Chunin Exam can pit real squads against squads.
-// 50-shinobi roster: a deep prospect base (genin/chunin = Chunin Exam pool) plus
-// a real elite tier (jonin/ANBU/S = Nation War pool). [rank, count] → 50 total.
+// world feels populated and the Adept Exam can pit real squads against squads.
+// 50-shinobi roster: a deep prospect base (initiate/adept = Adept Exam pool) plus
+// a real elite tier (veteran/Shadow/S = Nation War pool). [rank, count] → 50 total.
 const ROSTER_TIERS = [[4, 2], [3, 5], [2, 11], [1, 14], [0, 18]]
 const ROSTER_PYRAMID = ROSTER_TIERS.flatMap(([r, c]) => Array(c).fill(r))
 export function genVillageRoster(v) {
   const mult = clamp(1 + (((v.str || 75) - 77) / 200), 0.95, 1.06) // stronger villages, slightly better ninja
+  const identity = identityFor(v.n)  // village identity: signature stat bias on every member
   return ROSTER_PYRAMID.map(r => {
     const s = mS(r)
     s.homeVillage = v.n
     Object.keys(s.stats).forEach(k => { s.stats[k] = clamp(Math.round(s.stats[k] * mult), 1, 99) })
+    applyIdentityBias(s.stats, identity, v.identityIntensity || 1)
     return s
   })
 }
@@ -164,7 +172,7 @@ export function genVillageRoster(v) {
 // ── Procedural rival world generation (variable playthroughs) ─────────────────
 // Draws 4–5 rivals from the pool, each with randomized kage, AI personality,
 // starting strength, relations and roster. A few strong rivals may already hold
-// a tailed beast — pass the beasts array to tag ownership (excludes from wild pool).
+// a primal — pass the beasts array to tag ownership (excludes from wild pool).
 export function genRivalVillages(beasts = []) {
   const pool = [...RIVAL_VILLAGE_POOL]
   const count = rnd(4, 5)
@@ -184,6 +192,9 @@ export function genRivalVillages(beasts = []) {
       str: rnd(58, 90),
       rel: rnd(15, 55),
       threat: 0, grudgeTicks: 0, heldBeasts: [],
+      // Village identity: fixed by name (see villageIdentity.js); intensity rolled
+      // per run so the same village plays sharper or softer world to world.
+      identityIntensity: rollIntensity(),
     }
     v.roster = genVillageRoster(v)
     return v
@@ -208,13 +219,13 @@ export function genRivalVillages(beasts = []) {
 export function initState() {
   Object.keys(G).forEach(k => delete G[k])
   // Procedural world: beasts first (so rivals can claim some), then rivals.
-  const _beasts = JSON.parse(JSON.stringify(TAILED_BEASTS))
+  const _beasts = JSON.parse(JSON.stringify(PRIMALS))
   const _villages = genRivalVillages(_beasts)
   // Per-world climate (economic + threat) — rolled fresh each game.
   const _eco = pk(WORLD_CLIMATES.economy), _thr = pk(WORLD_CLIMATES.threat)
   const _climate = { economy: _eco.id, economyMod: _eco.incomeMod, threat: _thr.id, raidMod: _thr.raidMod }
   Object.assign(G, {
-    vName: 'Hidden Village', kName: 'Kage', vIcon: '🍃',
+    vName: 'Hidden Village', kName: 'Warden', vIcon: '🍃',
     year: 1, month: 1, ryo: 60000, reputation: 10, morale: 75,
     shinobi: [], squads: [], aM: [], log: [], prospects: [],
     villages: _villages,
@@ -271,7 +282,7 @@ export function initState() {
     sellPressure: [],
     // Reputation & Legacy
     kageRep: 1,               // 1–5 stars
-    kageDev: newKageDev(),    // GM-style Kage progression (attrs + XP + path)
+    kageDev: newKageDev(),    // GM-style Warden progression (attrs + XP + path)
     prestigeTier: 'D',
     hallOfLegends: [],        // enshrined shinobi records
     dynastyRecords: {
@@ -282,11 +293,11 @@ export function initState() {
     generationalSummary: null,
     // S-rank bidding
     sRankContracts: [],       // active seasonal S-rank bids
-    // ANBU & Intel
+    // Shadow & Intel
     anbuOps: [],              // active ops { type, agentId, monthsLeft, targetVillageId }
     caughtAnbu: [],           // { id, targetVillageId, month, status:'imprisoned'|'executed' }
     intelReports: [],         // { villageId, type, data:{}, expiresMonth }
-    counterIntelRating: 2,    // passive 1–20, vs rival ANBU catch chance
+    counterIntelRating: 2,    // passive 1–20, vs rival Shadow catch chance
     // War state
     warState: null,           // null or { villageId, phase, monthsLeft, playerWins:0, playerLosses:0, warHistory:[] }
     warConsequences: null,    // { loser:bool, academyDebuffYears:0, reparationVillage } post-war debuffs
@@ -422,7 +433,7 @@ export function applyScenario(G, id = 'standard') {
   }
 
   else if (id === 'beastkeeper') {
-    // Seal a low-tail beast that no rival already holds, assign a Jonin+ host.
+    // Seal a low-tail beast that no rival already holds, assign a Veteran+ host.
     const beast = (G.beasts || []).find(b => !b.sealed && !b.owner && b.tails <= 2)
                 || (G.beasts || []).find(b => !b.sealed && !b.owner)
     const host  = [...G.shinobi].sort((a, b) => sPow(b) - sPow(a)).find(s => (s.ri || 0) >= 2)
@@ -434,7 +445,7 @@ export function applyScenario(G, id = 'standard') {
       beast.loreBonusActive = false
       beast.escapeHistory = beast.escapeHistory || []
       host.jk = beast.n
-      host.title = `Jinchuriki of ${beast.n}`
+      host.title = `Vessel of ${beast.n}`
     }
     rivals.forEach(v => { v.rel = clamp((v.rel || 30) - 8, 0, 100); v.threat = clamp((v.threat || 0) + 8, 0, 100) })
   }
@@ -462,7 +473,7 @@ export function mStaff(roleId, ratingOverride) {
     fromShinobi: null,
     ambition: rnd(3, 18),            // how aggressively they seek career advancement
     careerPathMonths: 0,             // months tracked since last career move / hire
-    asstKage: false,                 // designated Assistant Kage
+    asstKage: false,                 // designated Assistant Warden
     hiddenFlaw: Math.random() < 0.25
       ? pk(['Low Professionalism', 'Fragile Under Pressure', 'High Conflict Tendency', 'Overestimates Own Abilities'])
       : null,
@@ -500,6 +511,15 @@ export function genRegionProspect(regionId, scout) {
     if (clan) {
       p.clan = clan.n; p.trait = clan.t
       Object.keys(clan.b).forEach(k => { p.stats[k] = clamp(p.stats[k] + clan.b[k], 0, 99) })
+    }
+  }
+
+  // ~30% surface via a minor nation of this region — its specialty colors the prospect
+  if (Math.random() < 0.30) {
+    const nation = pickMinorNation(Math.random, regionId)
+    if (nation.region === regionId) {
+      applyMinorOrigin(p, nation)
+      p.origin = `${nation.n} (${region?.n || regionId})`
     }
   }
 
@@ -824,11 +844,20 @@ export function genTransferPool() {
     s.transferCategory = 'free_agent'; s.askingFee = 2000 + s.ri * 1500
     s.originVillage = null; s.monthsAvailable = rnd(2, 4); assignAgent(s); pool.push(s)
   }
-  // Village-listed: 2-4
+  // Village-listed: 2-4 — from a live rival great village, or (cheaper) a minor nation
   for (let i = 0; i < rnd(2, 4); i++) {
     const s = mS(rnd(1, 3))
     s.transferCategory = 'village_listed'; s.askingFee = 5000 + s.ri * 3000
-    s.originVillage = pk(VILLAGES_DEF).n; s.monthsAvailable = rnd(1, 2)
+    const fromMinor = Math.random() < 0.45 || !(G.villages || []).length
+    if (fromMinor) {
+      const nation = pickMinorNation()
+      applyMinorOrigin(s, nation)
+      s.originVillage = nation.n
+      s.askingFee = Math.round(s.askingFee * 0.8)   // minor-league discount
+    } else {
+      s.originVillage = pk(G.villages).n
+    }
+    s.monthsAvailable = rnd(1, 2)
     // Origin village sometimes negotiates a sell-on clause as part of the deal
     if (Math.random() < 0.4) s.sellOnClause = { percent: rnd(5, 20), village: s.originVillage }
     assignAgent(s); pool.push(s)
@@ -847,13 +876,14 @@ export function genTransferPool() {
     s.pMatrix = { loyalty: rnd(14, 20), ambition: rnd(2, 10), professionalism: rnd(14, 20), temperament: rnd(12, 18), adaptability: rnd(8, 14) }
     s.potential = rnd(35, 55); s.askingFee = 1500 + s.ri * 1000; s.originVillage = null; s.monthsAvailable = rnd(2, 3); pool.push(s)
   }
-  // Foreign specialists: 0-2
+  // Foreign specialists: 0-2 — a minor nation's signature export, spiked in its specialty
   for (let i = 0; i < rnd(0, 2); i++) {
     const s = mS(rnd(1, 3))
-    const specialStat = pk(Object.keys(s.stats))
-    s.stats[specialStat] = clamp(s.stats[specialStat] + rnd(20, 35), 0, 99)
+    const nation = pickMinorNation()
+    s.stats[nation.specialty] = clamp((s.stats[nation.specialty] || 20) + rnd(20, 35), 0, 99)
+    applyMinorOrigin(s, nation)
     s.transferCategory = 'foreign_specialist'; s.askingFee = 4000 + s.ri * 2500
-    s.originVillage = pk(VILLAGES_DEF).n; s.monthsAvailable = rnd(1, 2); assignAgent(s); pool.push(s)
+    s.originVillage = nation.n; s.monthsAvailable = rnd(1, 2); assignAgent(s); pool.push(s)
   }
   return pool
 }

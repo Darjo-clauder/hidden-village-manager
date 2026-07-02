@@ -1,11 +1,13 @@
 /**
  * Season league table — the "regular season" spine.
  *
- * Between Chunin Exams the five villages play monthly matchdays; results
+ * Between Adept Exams the five villages play monthly matchdays; results
  * accrue into a points table that (a) gives the player a standings race to
  * chase and (b) seeds the exam bracket (the playoff). Pure + deterministic
  * when an rng is injected, so it is fully unit-testable.
  */
+
+import { styleParams } from '../constants/villageIdentity.js'
 
 export const SEASON_PTS = { win: 3, draw: 1, loss: 0 }
 const BYE = '__BYE__'
@@ -39,12 +41,23 @@ export function roundPairings(names, round) {
   return pairs
 }
 
-/** Simulate one match by strength with variance; returns winner + raw scores. */
-export function simMatch(aStr, bStr, rng = Math.random) {
-  const sa = (aStr || 1) * (0.7 + rng() * 0.6)
-  const sb = (bStr || 1) * (0.7 + rng() * 0.6)
+/**
+ * Simulate one match by strength with variance; returns winner + raw scores.
+ * Optional styles (village identity) shape the sim without touching the default
+ * path: variance band (blitz/fortress), draw band (fortress grinds draws),
+ * underdog/favorite edges (opportunist/grinder). Defaults = legacy behavior.
+ */
+export function simMatch(aStr, bStr, rng = Math.random, aStyle = null, bStyle = null) {
+  const A = styleParams(aStyle), B = styleParams(bStyle)
+  // Underdog/favorite edges apply to effective strength before the swing roll.
+  let ea = aStr || 1, eb = bStr || 1
+  if (ea < eb) { ea *= A.underdogEdge; eb *= B.favoriteEdge }
+  else if (eb < ea) { eb *= B.underdogEdge; ea *= A.favoriteEdge }
+  const sa = ea * (A.varLo + rng() * (A.varHi - A.varLo))
+  const sb = eb * (B.varLo + rng() * (B.varHi - B.varLo))
   const diff = sa - sb
-  if (Math.abs(diff) < Math.max(aStr, bStr, 1) * 0.05) return { winner: 'draw', sa, sb }
+  const drawBand = Math.max(aStr, bStr, 1) * 0.05 * Math.max(A.drawMult, B.drawMult)
+  if (Math.abs(diff) < drawBand) return { winner: 'draw', sa, sb }
   return { winner: diff > 0 ? 'a' : 'b', sa, sb }
 }
 
@@ -285,14 +298,15 @@ export function matchToBeats(match, playerName) {
 /**
  * Play one matchday for all villages and fold results into the table.
  * Mutates `season` (round++, table, lastResults, resultsByRound). `strOf(name)` → strength.
+ * Optional `styleOf(name)` → matchday style id (village identity); null = balanced.
  * Each result carries a stylised scoreline { a, b, winner, scoreA, scoreB }.
  */
-export function playMatchday(season, names, strOf, rng = Math.random) {
+export function playMatchday(season, names, strOf, rng = Math.random, styleOf = () => null) {
   const playedRound = season.round
   const pairs = roundPairings(names, season.round)
   const results = []
   pairs.forEach(([a, b]) => {
-    const res = simMatch(strOf(a), strOf(b), rng)
+    const res = simMatch(strOf(a), strOf(b), rng, styleOf(a), styleOf(b))
     recordMatch(season.table, a, b, res)
     const [scoreA, scoreB] = styledScore(res)
     results.push({ a, b, winner: res.winner === 'draw' ? null : (res.winner === 'a' ? a : b), scoreA, scoreB })

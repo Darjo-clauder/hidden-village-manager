@@ -6,6 +6,8 @@ import { MANDATE_BY_ID, DISMISSAL_THRESHOLD } from '../../../shared/utils/ownerM
 import { resolveNoConfidence } from '../adv.js'
 import { COACHING_PHILOSOPHIES, PHILOSOPHY_BY_ID } from '../../../shared/constants/coachingPhilosophy.js'
 import { kageMod, kagePerk } from '../../../shared/constants/kageDev.js'
+import { identityFor, MATCH_STYLES } from '../../../shared/constants/villageIdentity.js'
+import { h2hLabel } from '../../../shared/utils/rivalry.js'
 
 export function rKa() {
   const el = document.getElementById('kgl')
@@ -16,7 +18,16 @@ export function rKa() {
     const ratio = strengthRatio(playerStr, vs)
     const strColor = ratio >= 1.3 ? '#8fbc8f' : ratio >= 0.8 ? '#fa0' : '#f66'
     const strLabel = ratio >= 1.5 ? 'Dominant' : ratio >= 1.2 ? 'Stronger' : ratio >= 0.8 ? 'Matched' : ratio >= 0.5 ? 'Weaker' : 'Outmatched'
-    return `<div class="ke-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="font-size:20px">${v.ico}</div><div><div style="font-size:11px;color:#e8e0cc;font-weight:bold">${v.n}</div><div style="font-size:8px;color:#7a7060">${v.kageRank} ${v.kage} · <span style="color:${rc}">${v.rel > 60 ? 'Allied' : v.rel > 30 ? 'Neutral' : 'Hostile'}</span>${v.allied ? ' ✓ Allied' : ''}</div></div></div><div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><div style="font-size:7px;color:#7a7060;width:60px;text-transform:uppercase;letter-spacing:1px">Relations</div><div class="bar" style="flex:1"><div class="fill" style="width:${v.rel}%;background:${rc}"></div></div><div style="font-size:9px;color:#7a7060">${v.rel}</div></div><div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><div style="font-size:7px;color:#7a7060;width:60px;text-transform:uppercase;letter-spacing:1px">Strength</div><div class="bar" style="flex:1"><div class="fill" style="width:${Math.min(100,vs/2)}%;background:${strColor}"></div></div><div style="font-size:8px;color:${strColor}">${strLabel} (${Math.round(vs)})</div></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="gb gb-b" onclick="sGift('${v.n}')" ${G.ryo < 5000 ? 'disabled' : ''}>Send gifts +10 (5k ryo)</button>${v.rel > 60 && !v.allied ? `<button class="gb gb-g" onclick="propAl('${v.n}')" ${G.ryo < 10000 ? 'disabled' : ''}>Propose alliance (10k)</button>` : ''}${v.rel < 60 && !v.allied ? `<button class="gb" onclick="demandTribute('${v.n}')" title="Strength-gated. Success extracts ryo; failure angers them.">Demand tribute</button>` : ''}${(v.threat || 0) > 0 ? `<button class="gb gb-b" onclick="appease('${v.n}')" ${G.ryo < 4000 ? 'disabled' : ''}>Appease −threat (4k)</button>` : ''}${v.rel < 30 ? `<button class="gb gb-r" onclick="rattle('${v.n}')">Rattle sabres</button>` : ''}</div></div>`
+    const idn = identityFor(v.n)
+    const st = MATCH_STYLES[idn.style] || MATCH_STYLES.balanced
+    const idLine = idn.id !== 'none' ? `<div style="font-size:8px;color:#8a7d5c;margin-bottom:6px;font-style:italic" title="${st.label}: ${st.desc}">${st.icon} <b style="color:#c9a84c;font-style:normal">${idn.label}</b> — ${idn.blurb}</div>` : ''
+    const ace = v.aces?.[0]
+    const aceLine = ace ? `<div style="font-size:8px;color:#7a7060;margin-bottom:6px">⭐ Ace: <b style="color:#e8e0cc">${ace.name}</b> <span style="color:#555">(Pwr ${ace.pow})</span>${v.aces[1] ? ` · ${v.aces[1].name}` : ''}</div>` : ''
+    const isDerby = v.n === G.derbyRival
+    const derbyChip = isDerby ? `<span style="font-size:7px;border:1px solid #cc5a4a;color:#cc5a4a;padding:0 4px;margin-left:5px">🔥 DERBY RIVAL</span>` : ''
+    const atLabel = h2hLabel(G.h2h, v.n)
+    const h2hLine = atLabel ? `<div style="font-size:8px;color:#7a7060;margin-bottom:6px">⚔ League record vs you: <span style="color:#9a9080">${atLabel}</span></div>` : ''
+    return `<div class="ke-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="font-size:20px">${v.ico}</div><div><div style="font-size:11px;color:#e8e0cc;font-weight:bold">${v.n}</div><div style="font-size:8px;color:#7a7060">${v.kageRank} ${v.kage} · <span style="color:${rc}">${v.rel > 60 ? 'Allied' : v.rel > 30 ? 'Neutral' : 'Hostile'}</span>${v.allied ? ' ✓ Allied' : ''}${derbyChip}</div></div></div>${idLine}${aceLine}${h2hLine}<div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><div style="font-size:7px;color:#7a7060;width:60px;text-transform:uppercase;letter-spacing:1px">Relations</div><div class="bar" style="flex:1"><div class="fill" style="width:${v.rel}%;background:${rc}"></div></div><div style="font-size:9px;color:#7a7060">${v.rel}</div></div><div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><div style="font-size:7px;color:#7a7060;width:60px;text-transform:uppercase;letter-spacing:1px">Strength</div><div class="bar" style="flex:1"><div class="fill" style="width:${Math.min(100,vs/2)}%;background:${strColor}"></div></div><div style="font-size:8px;color:${strColor}">${strLabel} (${Math.round(vs)})</div></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="gb gb-b" onclick="sGift('${v.n}')" ${G.ryo < 5000 ? 'disabled' : ''}>Send gifts +10 (5k ryo)</button>${v.rel > 60 && !v.allied ? `<button class="gb gb-g" onclick="propAl('${v.n}')" ${G.ryo < 10000 ? 'disabled' : ''}>Propose alliance (10k)</button>` : ''}${v.rel < 60 && !v.allied ? `<button class="gb" onclick="demandTribute('${v.n}')" title="Strength-gated. Success extracts ryo; failure angers them.">Demand tribute</button>` : ''}${(v.threat || 0) > 0 ? `<button class="gb gb-b" onclick="appease('${v.n}')" ${G.ryo < 4000 ? 'disabled' : ''}>Appease −threat (4k)</button>` : ''}${v.rel < 30 ? `<button class="gb gb-r" onclick="rattle('${v.n}')">Rattle sabres</button>` : ''}</div></div>`
   }).join('')
   const standings = rankStandings(playerStr, (G.vName || 'Your Village'), G.villages)
   const standingsHtml = `<div class="ke-card" style="margin-bottom:14px">
@@ -27,7 +38,7 @@ export function rKa() {
     </table>
   </div>`
   el.innerHTML = (ui.pKE
-    ? `<div class="ke-card" style="border-color:#c9a84c;margin-bottom:14px"><div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">⚡ Kage Event</div><div style="font-size:12px;color:#e8e0cc;font-weight:bold;margin-bottom:5px">${ui.pKE.n}</div><div style="font-size:10px;color:#7a7060;margin-bottom:12px;line-height:1.5">${ui.pKE.desc}</div><div style="display:flex;flex-direction:column;gap:6px">${ui.pKE.choices.map((c, i) => `<button class="gb" onclick="resKE(${i})">${c.l}</button>`).join('')}</div></div>`
+    ? `<div class="ke-card" style="border-color:#c9a84c;margin-bottom:14px"><div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">⚡ Warden Event</div><div style="font-size:12px;color:#e8e0cc;font-weight:bold;margin-bottom:5px">${ui.pKE.n}</div><div style="font-size:10px;color:#7a7060;margin-bottom:12px;line-height:1.5">${ui.pKE.desc}</div><div style="display:flex;flex-direction:column;gap:6px">${ui.pKE.choices.map((c, i) => `<button class="gb" onclick="resKE(${i})">${c.l}</button>`).join('')}</div></div>`
     : '') + _rivalDemandHtml() + _noConfidenceHtml() + _mandateHtml() + _philosophyHtml() + standingsHtml + vH
 }
 
@@ -111,7 +122,7 @@ export function resKE(i) {
 export function sGift(n) {
   if (G.ryo < 5000) { ntf(tr('toast.common.notEnoughRyo')); return }
   const v = G.villages.find(x => x.n === n); G.ryo -= 5000
-  const gain = Math.round(10 * (1 + kageMod(G, 'diplomacy')))   // Kage Diplomacy boosts goodwill
+  const gain = Math.round(10 * (1 + kageMod(G, 'diplomacy')))   // Warden Diplomacy boosts goodwill
   v.rel = clamp(v.rel + gain, 0, 100)
   aL(tr('toast.kage.giftsSent', { village: n, gain }), 'good'); ntf(tr('toast.kage.relationsImproved')); upUI()
 }

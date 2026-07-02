@@ -11,7 +11,7 @@ import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRiv
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, secureRoute } from './panels/economy.js'
 import { logFilter, logSearch } from './panels/log.js'
 import { honorFallen } from './panels/memorial.js'
-import { rBe, lCap, beastTab, releaseJinchuriki, resolveEscape, reinforceSeal } from './panels/beasts.js'
+import { rBe, lCap, beastTab, releaseVessel, resolveEscape, reinforceSeal } from './panels/beasts.js'
 import { rKa, resKE, sGift, propAl, rattle, resNCV, setCoachingPhilosophy, payRivalDemand, refuseRivalDemand, demandTribute, appease } from './panels/kage.js'
 import { rEx, tEC, startEx, runRound } from './panels/exam.js'
 import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP, dipAccept, dipDecline } from './world.js'
@@ -27,7 +27,7 @@ import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfi
 import { rLeg, legTab, designateSuccessor, resolveLegacyDecision, triggerDynastyHandoff, sellDraftPick } from './panels/legacy.js'
 import { rKageDev, spendKagePt, chooseKagePath } from './panels/kagedev.js'
 import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel, intelCtx } from './panels/intel.js'
-import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc, setExamPosture, exLeadersSort, watchMatchday, watchExam } from './panels/exam.js'
+import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc, setExamPosture, exLeadersSort, watchMatchday, watchExam, setMatchdayTactic } from './panels/exam.js'
 import { musterWar, startWar, runWarRound, setWarCommand, watchTournament } from './panels/war.js'
 import { showLobby, createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode } from './setup.js'
 import { rClans, clanGift, launchClanChain, resolveClanCouncil } from './panels/clans.js'
@@ -126,7 +126,7 @@ Object.assign(window, {
   // log + memorial
   logFilter, logSearch, honorFallen,
   // beasts
-  lCap, beastTab, releaseJinchuriki, resolveEscape, reinforceSeal, activateBloodline,
+  lCap, beastTab, releaseVessel, resolveEscape, reinforceSeal, activateBloodline,
   // kage
   resKE, sGift, propAl, rattle, resNCV, setCoachingPhilosophy,
   payRivalDemand, refuseRivalDemand, demandTribute, appease,
@@ -176,7 +176,7 @@ Object.assign(window, {
   // intel
   intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel, intelCtx,
   // exam tabs
-  exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc, setExamPosture, exLeadersSort, watchMatchday, watchExam,
+  exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, declineSummitBloc, setExamPosture, exLeadersSort, watchMatchday, watchExam, setMatchdayTactic,
   // nation war
   musterWar, startWar, runWarRound, setWarCommand, watchTournament,
   // clans

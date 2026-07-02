@@ -2,6 +2,9 @@ import { G, ui, sPow, rnd, sn, pk, clamp, fmt, addChronicle, addLegend, computeM
 import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS, INJURY_TYPES } from '../constants.js'
 import { aL, ntf, upUI, schEx } from '../ui.js'
 import { initSeasonTable, sortedTable, seedsFromTable, seasonSchedule, teamFixtures, teamForm, seasonState, matchPreview, matchToBeats } from '../../../shared/utils/season.js'
+import { identityFor, MATCH_STYLES, identityStageAdv } from '../../../shared/constants/villageIdentity.js'
+import { MATCHDAY_TACTICS, tacticRead, TACTIC_STRONG_MOD, TACTIC_WEAK_MOD } from '../../../shared/constants/matchdayTactics.js'
+import { h2hLabel } from '../../../shared/utils/rivalry.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { openBattleViewer } from '../liveBattle.js'
 
@@ -23,17 +26,17 @@ export function watchMatchday() {
   })
 }
 
-/** Replay the player's run through the last Chunin Exam as a live bracket. */
+/** Replay the player's run through the last Adept Exam as a live bracket. */
 export function watchExam() {
   const run = G._examRun
   if (!run || !run.stages || !run.stages.length) return
   const phases = run.stages.map(s => ({ name: s.name, won: s.advanced }))
   const lastAdvanced = [...run.stages].reverse().find(s => s.advanced)
   const reachedStage = run.champion ? 'Final' : (lastAdvanced ? lastAdvanced.name : run.stages[0].name)
-  const verdict = run.champion ? 'Champions of the Chunin Exam — promotions earned in fire.'
+  const verdict = run.champion ? 'Champions of the Adept Exam — promotions earned in fire.'
     : `Eliminated at the ${reachedStage}. The academy fights on another year.`
   openBattleViewer({
-    missionName: `Year ${run.year} Chunin Exam`, missionRk: 'Chunin Exam',
+    missionName: `Year ${run.year} Adept Exam`, missionRk: 'Adept Exam',
     kind: 'tournament', phases, champion: run.champion, reachedStage, verdict,
     succeeded: run.champion,
   })
@@ -78,7 +81,7 @@ export function rEx() {
   const el = document.getElementById('exl')
   if (!el) return
   const tabs = ['season', 'exam', 'war', 'summit', 'srank', 'records', 'leaders']
-  const labels = { season: 'SEASON', exam: 'CHUNIN EXAM', war: 'GRAND TOURNAMENT', summit: 'SUMMIT', srank: 'S-RANK BIDS', records: 'RECORDS', leaders: 'LEADERS' }
+  const labels = { season: 'SEASON', exam: 'ADEPT EXAM', war: 'GRAND TOURNAMENT', summit: 'SUMMIT', srank: 'S-RANK BIDS', records: 'RECORDS', leaders: 'LEADERS' }
   const offSeasonBanner = G.isOffSeason ? `<div style="background:#0d0a04;border:1px solid #c9a84c;padding:6px 10px;margin-bottom:10px;font-size:8px;color:#c9a84c">⛄ Off-season — Months 1–3. Focus: recruitment, contract renewals, squad prep. Season begins Month 4.</div>` : ''
   const tabHtml = `${offSeasonBanner}<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
     ${tabs.map(t => `<button class="btn${window._exTab === t ? ' act' : ''}" onclick="exTab('${t}')" style="font-size:9px;padding:3px 8px${t === 'war' ? ';color:#c9a84c' : ''}">${labels[t]}${t === 'war' && G.warSched ? ' ●' : ''}</button>`).join('')}
@@ -120,7 +123,7 @@ function _seasonTab() {
     <div style="display:flex;gap:6px;align-items:stretch;flex-wrap:wrap;font-size:8px">
       ${[
         ['🎓 Academy Intake', 'M4', 'Prospects enter the system'],
-        ['⚔ Chunin Exam', 'M4 / M10', 'Little league — develop genin → chunin'],
+        ['⚔ Adept Exam', 'M4 / M10', 'Little league — develop initiate → adept'],
         ['📅 Season Matchdays', 'All year', 'Monthly fixtures build the standings'],
         ['🏆 Grand Tournament', 'M12', 'The deadly year-end playoff, seeded by standings'],
       ].map(([t, when, d], i) => `<div style="flex:1;min-width:120px;border:1px solid #2a2520;border-left:2px solid #c9a84c;padding:7px 9px">
@@ -154,7 +157,32 @@ function _seasonTab() {
 
   const banner = _titleRaceBanner(playerName, round, schedule.length)
   const preview = _matchPreviewCard(names, schedule, round, resultsByRound, playerName)
-  return banner + overview + preview + _seasonResultsCard(round, resultsByRound, playerName) + _seasonStandingsCard() + fixtureList + _seasonFixtureGrid(names, schedule, round, resultsByRound, playerName)
+  return banner + overview + _exhibitionCard() + preview + _seasonResultsCard(round, resultsByRound, playerName) + _seasonStandingsCard() + fixtureList + _seasonFixtureGrid(names, schedule, round, resultsByRound, playerName)
+}
+
+// Off-season exhibition slate — friendlies + the Minor Nations Invitational (months 1–3).
+function _exhibitionCard() {
+  const ex = (G.exhibitions || []).filter(e => e.year === G.year)
+  const inv = (G.invitationalHistory || []).slice(-1)[0]
+  if (!ex.length && !inv) return ''
+  const resCol = r => r === 'W' ? '#8fbc8f' : r === 'L' ? '#f66' : '#c9a84c'
+  const cupTag = c => c === 'SF' ? '<span style="font-size:6px;border:1px solid #c9a84c;color:#c9a84c;padding:0 3px">🏆 SF</span>'
+    : c === 'F' ? '<span style="font-size:6px;border:1px solid #c9a84c;color:#c9a84c;padding:0 3px">🏆 FINAL</span>' : ''
+  const holder = inv ? `<div style="font-size:7px;color:${inv.champion === G.vName ? '#8fbc8f' : '#9a9080'};margin-top:5px">🏆 Invitational holder (Y${inv.year}): <b>${inv.champion}</b>${inv.champion === G.vName ? ' — that’s you' : ` (you: ${inv.playerResult})`}</div>` : ''
+  return `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:9px;margin-bottom:12px">
+    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">🏮 Off-Season Slate — minor nations</div>
+    <div style="display:grid;gap:2px">
+      ${ex.map(e => `<div style="display:flex;align-items:center;gap:8px;font-size:8px;padding:3px 6px">
+        <span style="color:#555;width:24px">M${e.month}</span>
+        <span style="width:16px">${e.ico}</span>
+        <span style="flex:1;color:#e8e0cc">${e.opp} <span style="font-size:7px;color:#555">Tier ${e.tier}</span> ${cupTag(e.cup)}</span>
+        <span style="color:#9a9080;font-family:monospace">${e.ps}–${e.os}</span>
+        <span style="color:${resCol(e.result)};font-weight:bold;width:14px;text-align:center">${e.result}</span>
+      </div>`).join('')}
+    </div>
+    <div style="font-size:7px;color:#555;margin-top:5px">Friendlies (M1/M3) + the annual Invitational knockout (M2) — purses and morale, no league standing at stake.</div>
+    ${holder}
+  </div>`
 }
 
 // Title-race banner (M3) — the persistent season-state strip at the top.
@@ -236,7 +264,10 @@ function _matchPreviewCard(names, schedule, round, resultsByRound, playerName) {
   const pip = r => { const c = { W: '#8fbc8f', D: '#c9a84c', L: '#cc5a4a' }[r]; return `<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${c};margin-left:2px"></span>` }
   const formRow = (label, form) => `<div style="display:flex;align-items:center;gap:6px;font-size:7px;color:#7a7060"><span style="width:54px">${label}</span>${form.length ? form.map(pip).join('') : '<span style="color:#3a3630">no games yet</span>'}</div>`
   const h2hTxt = (p.h2h.w + p.h2h.d + p.h2h.l) ? `${p.h2h.w}W–${p.h2h.d}D–${p.h2h.l}L this season` : 'first meeting this season'
-  return `<div style="border:1px solid #c9a84c;background:#0d0a04;padding:11px 13px;margin-bottom:12px">
+  const allTime = h2hLabel(G.h2h, p.opp)
+  const isDerby = p.opp === G.derbyRival
+  return `<div style="border:1px solid ${isDerby ? '#cc5a4a' : '#c9a84c'};background:#0d0a04;padding:11px 13px;margin-bottom:12px">
+    ${isDerby ? `<div style="text-align:center;font-size:9px;letter-spacing:3px;color:#cc5a4a;font-weight:bold;margin-bottom:6px">🔥 DERBY MATCH 🔥</div>` : ''}
     <div style="font-size:7px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:7px">▸ Next Matchday — Round ${round + 1}</div>
     <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:9px">
       <div style="flex:1;text-align:right"><div style="font-size:11px;color:#c9a84c;font-weight:bold">${playerName}</div><div style="font-size:7px;color:#7a7060">${p.playerPos}${p.playerPos===1?'st':p.playerPos===2?'nd':p.playerPos===3?'rd':'th'} place</div></div>
@@ -246,10 +277,43 @@ function _matchPreviewCard(names, schedule, round, resultsByRound, playerName) {
     <div style="display:flex;flex-direction:column;gap:3px;border-top:1px solid #2a2520;padding-top:7px">
       ${formRow('Your form', p.playerForm)}
       ${formRow(p.opp + ' form', p.oppForm)}
-      <div style="font-size:7px;color:#7a7060;margin-top:1px">⚔ Head-to-head: <span style="color:#9a9080">${h2hTxt}</span></div>
+      <div style="font-size:7px;color:#7a7060;margin-top:1px">⚔ Head-to-head: <span style="color:#9a9080">${h2hTxt}</span>${allTime ? ` · <span style="color:#8a7d5c">${allTime}</span>` : ''}</div>
+      ${(() => { const ace = (G.villages || []).find(v => v.n === p.opp)?.aces?.[0]; return ace ? `<div style="font-size:7px;color:#7a7060;margin-top:1px">⭐ Their ace: <span style="color:#e8e0cc">${ace.name}</span> <span style="color:#555">(Pwr ${ace.pow})</span></div>` : '' })()}
       ${p.stakes.length ? `<div style="font-size:7px;color:#c9a84c;margin-top:2px">At stake: ${p.stakes.join(' · ')}</div>` : ''}
     </div>
+    ${_tacticPicker(p.opp)}
   </div>`
+}
+
+// Matchday tactic picker — the monthly counter-play against the opponent's identity.
+function _tacticPicker(oppName) {
+  const idn = identityFor(oppName)
+  const st = MATCH_STYLES[idn.style] || MATCH_STYLES.balanced
+  const cur = G.matchdayTactic || 'standard'
+  const readCol = { strong: '#8fbc8f', weak: '#cc5a4a', neutral: '#7a7060' }
+  const readTxt = { strong: `+${Math.round(TACTIC_STRONG_MOD * 100)}%`, weak: `${Math.round(TACTIC_WEAK_MOD * 100)}%`, neutral: '—' }
+  return `<div style="border-top:1px solid #2a2520;margin-top:7px;padding-top:7px">
+    <div style="font-size:7px;color:#7a7060;margin-bottom:5px">They play <span title="${st.desc}" style="color:#c9a84c;cursor:help">${st.icon} ${st.label}</span> — choose your approach:</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">
+      ${MATCHDAY_TACTICS.map(t => {
+        const read = tacticRead(t.id, idn.style)
+        const sel = t.id === cur
+        return `<button onclick="setMatchdayTactic('${t.id}')" title="${t.desc}"
+          style="flex:1;min-width:76px;padding:5px 6px;cursor:pointer;font-size:8px;text-align:center;
+                 background:${sel ? 'rgba(201,168,76,.12)' : '#0a0a0a'};
+                 border:1px solid ${sel ? '#c9a84c' : '#2e2a22'};color:${sel ? '#c9a84c' : '#9a9080'}">
+          <div>${t.icon} ${t.label}</div>
+          <div style="font-size:7px;margin-top:2px;color:${readCol[read]}">${readTxt[read]}</div>
+        </button>`
+      }).join('')}
+    </div>
+  </div>`
+}
+
+/** Set the persistent matchday tactic (window-exposed). */
+export function setMatchdayTactic(id) {
+  G.matchdayTactic = id
+  rEx()
 }
 
 // League-wide fixture grid — every village's slate, round by round, with the
@@ -321,8 +385,12 @@ function _seasonStandingsCard() {
         const form = teamForm(rbr, row.name, round, 5)
         const edge = seedEdge(i + 1)
         const isLeader = i === 0
+        // Village identity chip — rivals show their fixed identity; player shows philosophy-driven style.
+        const idn = row.name === G.vName ? null : identityFor(row.name)
+        const st = idn ? MATCH_STYLES[idn.style] : null
+        const idTag = st ? ` <span title="${idn.label} — ${idn.blurb} Style: ${st.label} — ${st.desc}" style="font-size:7px;color:#7a7060;cursor:help">${st.icon}${st.label}</span>` : ''
         return `<tr style="${row.name === G.vName ? 'color:#c9a84c;font-weight:bold' : 'color:#9a9080'}">
-        <td style="padding:2px 4px">${i + 1}</td><td>${isLeader ? '👑 ' : ''}${row.name}${row.name === G.vName ? ' (you)' : ''}</td>
+        <td style="padding:2px 4px">${i + 1}</td><td>${isLeader ? '👑 ' : ''}${row.name}${row.name === G.vName ? ' (you)' : ''}${idTag}</td>
         <td style="text-align:center">${row.w}</td><td style="text-align:center">${row.d}</td><td style="text-align:center">${row.l}</td>
         <td style="text-align:center;color:${gd > 0 ? '#8fbc8f' : gd < 0 ? '#cc5a4a' : '#7a7060'}">${gd > 0 ? '+' : ''}${gd}</td>
         <td style="text-align:center;color:#e8e0cc">${row.pts}</td>
@@ -390,7 +458,7 @@ function _renderExamSetup(el, tabHtml) {
     return { sq, members }
   }).filter(o => o.members.length && o.members.every(s => s.status === 'available'))
   el.innerHTML = tabHtml + hostInfo + formatBanner + seasonCard +
-    `<div style="font-size:9px;color:#7a7060;margin-bottom:12px">Nominate squads (max ${maxCands}). All members must be available. Promotable members (Genin/Chunin) earn promotion by advancing deep.</div>` +
+    `<div style="font-size:9px;color:#7a7060;margin-bottom:12px">Nominate squads (max ${maxCands}). All members must be available. Promotable members (Initiate/Adept) earn promotion by advancing deep.</div>` +
     '<div style="margin-bottom:12px">' +
     (squads.length ? squads.map(({ sq, members }) => {
       const ent = G.examCands.includes(sq.id)
@@ -422,7 +490,12 @@ export const EXAM_POSTURES = [
   { id: 'conserve', label: 'Conserve',  icon: '🛡', adv: -0.06, woundMod: -0.20, workload: -6, desc: '−6% advance, but protects your shinobi (fewer wounds, rest).' },
 ]
 function _posture() { return EXAM_POSTURES.find(p => p.id === (ui.exSt?.posture || 'steady')) || EXAM_POSTURES[1] }
-function _postureAdv(c) { return c.isPlayer ? _posture().adv + kageMod(G, 'tactics') : 0 }
+// Player squads express tendencies via posture orders; rival squads play to their
+// village identity across the bracket (blitz starts hot/fades, opportunist peaks late...).
+function _postureAdv(c, kind = 'early') {
+  if (c.isPlayer) return _posture().adv + kageMod(G, 'tactics')
+  return identityStageAdv(identityFor(c.vid || '').style, kind)
+}
 // Apply posture fatigue/rest to a player squad's members (called when they advance).
 function _applyPostureWorkload(c) {
   if (!c.isPlayer) return
@@ -451,13 +524,13 @@ function _squadFormatBonus(c) {
   return (c.members || []).some(s => fmt_.bonusStats.some(k => (s.stats?.[k] || 0) >= 35)) ? 0.15 : 0
 }
 
-// A rival village fields up to 3 three-genin cells drawn from its roster.
+// A rival village fields up to 3 three-initiate cells drawn from its roster.
 function _rivalSquads(v) {
   const pool = (v.roster || []).filter(s => s.ri <= 1).slice().sort(() => Math.random() - 0.5)
   const squads = []
   for (let i = 0; i + 3 <= pool.length && squads.length < 8; i += 3) {
     const members = pool.slice(i, i + 3)
-    squads.push({ id: 'rs_' + v.n + '_' + squads.length, name: v.n.replace(/gakure$/, '') + ' Cell ' + (squads.length + 1), members })
+    squads.push({ id: 'rs_' + v.n + '_' + squads.length, name: v.n + ' Cell ' + (squads.length + 1), members })
   }
   return squads
 }
@@ -484,7 +557,7 @@ function _buildExamField() {
   }
   const rivalEntries = (G.villages || []).map(v => ({
     vid: v.n, name: v.n, ico: v.ico, isPlayer: false, seed: seeds[v.n] || null,
-    alive: _rivalSquads(v).map(sq => ({ id: sq.id, name: sq.name, members: sq.members, pow: _squadPow(sq.members, rnd(0, 30)), isPlayer: false, seedBonus: seedBonus(v.n) })),
+    alive: _rivalSquads(v).map(sq => ({ id: sq.id, name: sq.name, members: sq.members, pow: _squadPow(sq.members, rnd(0, 30)), isPlayer: false, seedBonus: seedBonus(v.n), vid: v.n })),
     out: [],
   }))
   return [playerEntry, ...rivalEntries]
@@ -617,7 +690,7 @@ export function runRound() {
     // Seeds earned in the season standings add a survival edge here.
     _stageSurvival(field, c => {
       const sb = c.seedBonus || 0
-      return clamp(0.46 + _avgStat(c, 'intelligence') / 200 + _squadFormatBonus(c) + sb + _postureAdv(c), 0.1, 0.95)
+      return clamp(0.46 + _avgStat(c, 'intelligence') / 200 + _squadFormatBonus(c) + sb + _postureAdv(c, 'early'), 0.1, 0.95)
     }, 'Passed the written test', 'Failed the written test', res)
     field.forEach(e => e.alive.forEach(c => _applyPostureWorkload(c)))
   } else if (r === 1) {
@@ -656,11 +729,11 @@ function _runForest(field, res) {
     entry.scrolls = 0
     entry.alive.forEach(c => {
       // Two contested phases: Navigation (speed/intel) then the Scroll Clash (taijutsu/ninjutsu).
-      const navProb = clamp(0.46 + (_avgStat(c, 'speed') + _avgStat(c, 'intelligence')) / 400 + (isHost && c.isPlayer ? 0.08 : 0) + _squadFormatBonus(c) + _postureAdv(c), 0.12, 0.95)
+      const navProb = clamp(0.46 + (_avgStat(c, 'speed') + _avgStat(c, 'intelligence')) / 400 + (isHost && c.isPlayer ? 0.08 : 0) + _squadFormatBonus(c) + _postureAdv(c, 'endurance'), 0.12, 0.95)
       const navOk = Math.random() < navProb
       let clashOk = false
       if (navOk) {
-        const clashProb = clamp(0.46 + (_avgStat(c, 'taijutsu') + _avgStat(c, 'ninjutsu')) / 400 + _squadFormatBonus(c) + _postureAdv(c), 0.12, 0.95)
+        const clashProb = clamp(0.46 + (_avgStat(c, 'taijutsu') + _avgStat(c, 'ninjutsu')) / 400 + _squadFormatBonus(c) + _postureAdv(c, 'endurance'), 0.12, 0.95)
         clashOk = Math.random() < clashProb
       }
       const survived = navOk && clashOk
@@ -693,7 +766,8 @@ function _runSemifinal(field, res, biasMod) {
   field.forEach(entry => entry.alive.forEach(c => pool.push({ c, entry })))
   pool.sort((a, b) => b.c.pow - a.c.pow)
   pool.forEach((p, i) => { p.seed = i + 1 })
-  const effPow = c => c.pow * (1 + _squadFormatBonus(c)) - (c.isPlayer ? biasMod * 100 : 0) + (c.isPlayer ? _posture().adv * 60 : 0)
+  const effPow = c => c.pow * (1 + _squadFormatBonus(c)) - (c.isPlayer ? biasMod * 100 : 0)
+    + (c.isPlayer ? _posture().adv * 60 : identityStageAdv(identityFor(c.vid || '').style, 'late') * 60)
   // Each duel contests a random discipline — a squad strong in it can upset higher raw power.
   const DISCIPLINES = [['taijutsu', 'Taijutsu'], ['ninjutsu', 'Ninjutsu'], ['genjutsu', 'Genjutsu'], ['speed', 'Speed'], ['intelligence', 'Tactics']]
   const duels = []
@@ -710,9 +784,11 @@ function _runSemifinal(field, res, biasMod) {
     const margin = Math.abs(aScore - bScore)
     const marginLabel = margin < 5 ? 'narrow' : margin < 15 ? 'clear' : 'decisive'
     const upset = lose.seed < win.seed  // a higher seed (lower number) was beaten
+    // Star squads fielding a village ace — the world's named threats show up here.
+    const _hasAce = p2 => !p2.c.isPlayer && ((G.villages || []).find(v => v.n === p2.entry.name)?.aces || []).some(a => (p2.c.members || []).some(m => m.id === a.id))
     duels.push({
-      winName: win.c.name, winVil: win.entry.name, winPlayer: !!win.c.isPlayer,
-      loseName: lose.c.name, loseVil: lose.entry.name, losePlayer: !!lose.c.isPlayer,
+      winName: (_hasAce(win) ? '⭐ ' : '') + win.c.name, winVil: win.entry.name, winPlayer: !!win.c.isPlayer,
+      loseName: (_hasAce(lose) ? '⭐ ' : '') + lose.c.name, loseVil: lose.entry.name, losePlayer: !!lose.c.isPlayer,
       marginLabel, upset, discipline: discName,
     })
     if (win.c.isPlayer) res.push({ name: win.c.name, result: `Won a ${marginLabel} ${discName} duel vs ${lose.c.name} (${lose.entry.name})`, promoted: false, good: true })
@@ -787,7 +863,7 @@ function _runFinals(field, biasMod) {
   const playerEntry = field.find(e => e.isPlayer)
   ;(playerEntry?.alive || []).forEach(c => {
     (c.members || []).forEach(s => {
-      if (!s || s.ri >= 4) return  // only Genin→ANBU range is promotable here
+      if (!s || s.ri >= 4) return  // only Initiate→Shadow range is promotable here
       const hostBonus = G.examHosting ? 0.10 : 0
       const fmtB = _formatBonus(s)
       const prom = Math.random() < clamp(0.55 + hostBonus + fmtB - biasMod + _posture().adv, 0.05, 0.97)
@@ -829,11 +905,11 @@ function _runFinals(field, biasMod) {
       G.examHistoricalRecords.championships = (G.examHistoricalRecords.championships || 0) + 1
       addLegend(15); G.reputation = clamp((G.reputation || 0) + 15, 0, 999)
       aL(t('toast.exam.won', { village: G.vName }), 'good')
-      addChronicle('Exam Champion', `${G.vName} stood above all five villages to claim the Year ${G.year} Chunin Exam championship.`, 'milestone')
+      addChronicle('Exam Champion', `${G.vName} stood above all five villages to claim the Year ${G.year} Adept Exam championship.`, 'milestone')
       if (!G.pendingPress) queuePressConference('exam_win')
     } else {
       aL(t('toast.exam.lost', { champ: champ.name, village: G.vName }), 'neutral')
-      addChronicle('Exam Champion', `${champ.name} claimed the Year ${G.year} Chunin Exam championship.`, 'milestone')
+      addChronicle('Exam Champion', `${champ.name} claimed the Year ${G.year} Adept Exam championship.`, 'milestone')
       if (!G.pendingPress) queuePressConference('exam_loss')
     }
   }
@@ -849,7 +925,7 @@ function _runFinals(field, biasMod) {
   const presOrd = { D: 0, C: 1, B: 2, A: 3, S: 4 }
   const myOrd = presOrd[G.prestigeTier || 'D'] || 0
   if (playerWon && myOrd <= 1) {
-    const upsetDesc = `${G.vName} (${G.prestigeTier || 'D'}-tier) won the Chunin Exam outright — a result far above expectations.`
+    const upsetDesc = `${G.vName} (${G.prestigeTier || 'D'}-tier) won the Adept Exam outright — a result far above expectations.`
     G.upsetHistory = G.upsetHistory || []
     G.upsetHistory.push({ year: G.year, desc: upsetDesc })
     addChronicle('Exam Upset', upsetDesc, 'milestone')
@@ -912,7 +988,7 @@ function _summitTab() {
   if (!history.length) return html + '<div style="color:#555;font-size:11px;padding:20px 0">No summits held yet. First summit occurs in month 6 of Year 1.</div>'
   html += history.slice().reverse().map(s => `
     <div class="ke-card" style="margin-bottom:8px">
-      <div style="font-size:10px;color:#c9a84c;margin-bottom:6px">Year ${s.year} Five Kage Summit${s.blocAligned ? ` <span style="font-size:8px;color:#87ceeb">[bloc: ${s.blocAligned}]</span>` : ''}</div>
+      <div style="font-size:10px;color:#c9a84c;margin-bottom:6px">Year ${s.year} Five Warden Summit${s.blocAligned ? ` <span style="font-size:8px;color:#87ceeb">[bloc: ${s.blocAligned}]</span>` : ''}</div>
       ${(s.results || []).map(r => `<div style="font-size:9px;padding:3px 0;border-bottom:1px solid #1a1a1a;color:${r.passed ? '#8fbc8f' : '#666'}">${r.passed ? '✓' : '✗'} ${r.item} ${r.myVote ? '(your vote: yes)' : '(your vote: no)'}</div>`).join('')}
     </div>`).join('')
   return html

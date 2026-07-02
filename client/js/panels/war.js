@@ -5,6 +5,7 @@ import { seedsFromTable } from '../../../shared/utils/season.js'
 import { queuePressConference } from '../adv.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { kageMod, kagePerk } from '../../../shared/constants/kageDev.js'
+import { identityFor, identityStageAdv } from '../../../shared/constants/villageIdentity.js'
 import { openBattleViewer } from '../liveBattle.js'
 
 /** Replay the player's run through the last Grand Tournament as a live bracket. */
@@ -25,13 +26,13 @@ export function watchTournament() {
 }
 
 // ── Grand Tournament ──────────────────────────────────────────────────────────────
-// The annual "big leagues": a 5-village elite bracket where Jonin+ squads clash
-// and shinobi DIE. Chunin Exam graduates feed up into this pool. Punishing — no
-// one is safe — but tailed-beast hosts and bloodline clans survive more often.
+// The annual "big leagues": a 5-village elite bracket where Veteran+ squads clash
+// and shinobi DIE. Adept Exam graduates feed up into this pool. Punishing — no
+// one is safe — but primal vessels and bloodline clans survive more often.
 
 export const WAR_STAGES = ['Mobilization', 'The Front', 'Decisive Engagement', 'Final Stand']
 const WAR_MAX_SQUADS = 8  // up to 24 elite deployed
-const ELITE_MIN_RI = 2    // Jonin and above
+const ELITE_MIN_RI = 2    // Veteran and above
 
 // Per-stage command order the player issues before each war round — risk vs lives.
 export const WAR_COMMANDS = [
@@ -40,7 +41,12 @@ export const WAR_COMMANDS = [
   { id: 'withdraw', label: 'Tactical Withdrawal', icon: '🛡', adv: -0.07, kiaMult: 0.55, desc: '−advance, but far fewer deaths — preserve your elite.' },
 ]
 function _command() { return WAR_COMMANDS.find(c => c.id === (ui.warSt?.command || 'hold')) || WAR_COMMANDS[1] }
-function _cmdAdv(c) { return c.isPlayer ? _command().adv + kageMod(G, 'tactics') : 0 }
+// Player squads follow command orders; rival banners fight to their village identity
+// (blitz mobilizes fast then fades, fortress holds the front, opportunist peaks late).
+function _cmdAdv(c, kind = 'early') {
+  if (c.isPlayer) return _command().adv + kageMod(G, 'tactics')
+  return identityStageAdv(identityFor(c.vRef?.n || '').style, kind)
+}
 function _cmdKia(c, base) {
   if (!c.isPlayer) return base
   const perkMult = kagePerk(G) === 'war_casualties' ? 0.75 : 1   // Warlord signature
@@ -48,7 +54,7 @@ function _cmdKia(c, base) {
 }
 export function setWarCommand(id) { if (ui.warSt) { ui.warSt.command = id; upUI() } }
 
-// Survival multiplier on KIA rolls: jinchuriki are hardest to kill, bloodline clans tougher.
+// Survival multiplier on KIA rolls: vessel are hardest to kill, bloodline clans tougher.
 function survivalMult(s) {
   const isJk = (G.beasts || []).some(b => b.sealed && b.jk === s.id)
   if (isJk) return 0.35
@@ -62,13 +68,13 @@ function _squadPow(members, cohesion = 0) {
   return Math.round(avg * (1 + (cohesion || 0) / 300))
 }
 
-// Elite rival cells (Jonin+) drawn from a village roster.
+// Elite rival cells (Veteran+) drawn from a village roster.
 function _rivalWarSquads(v) {
   const pool = (v.roster || []).filter(s => s.ri >= ELITE_MIN_RI).slice().sort(() => Math.random() - 0.5)
   const squads = []
   for (let i = 0; i + 3 <= pool.length && squads.length < 4; i += 3) {
     const members = pool.slice(i, i + 3)
-    squads.push({ id: 'ws_' + v.n + '_' + squads.length, name: v.n.replace(/gakure$/, '') + ' Banner ' + (squads.length + 1), members })
+    squads.push({ id: 'ws_' + v.n + '_' + squads.length, name: v.n + ' Banner ' + (squads.length + 1), members })
   }
   return squads
 }
@@ -158,7 +164,7 @@ export function runWarRound() {
     field.forEach(entry => {
       const kept = []
       entry.alive.forEach(c => {
-        const prob = clamp(0.5 + c.pow / 220 + (c.seedBonus || 0) + _cmdAdv(c), 0.15, 0.95)
+        const prob = clamp(0.5 + c.pow / 220 + (c.seedBonus || 0) + _cmdAdv(c, 'early'), 0.15, 0.95)
         const ready = Math.random() < prob
         if (ready) kept.push(c); else entry.out.push(c)
         if (c.isPlayer) res.push({ name: c.name, result: ready ? 'Mobilized for the front' : 'Failed to mobilize in time', good: ready })
@@ -170,7 +176,7 @@ export function runWarRound() {
     field.forEach(entry => {
       const kept = []
       entry.alive.forEach(c => {
-        const prob = clamp(0.45 + c.pow / 240 + _cmdAdv(c), 0.1, 0.9)
+        const prob = clamp(0.45 + c.pow / 240 + _cmdAdv(c, 'endurance'), 0.1, 0.9)
         const held = Math.random() < prob
         if (held) { kept.push(c); if (c.isPlayer) res.push({ name: c.name, result: 'Held the line', good: true }) }
         else { entry.out.push(c); _resolveCasualties(c, entry, _cmdKia(c, 0.22), stageName, res); if (c.isPlayer) res.push({ name: c.name, result: 'Routed at the front', good: false }) }
@@ -187,7 +193,7 @@ export function runWarRound() {
     let lo = 0, hi = pool.length - 1
     while (lo < hi) {
       const A = pool[lo], B = pool[hi]
-      const aWins = (A.c.pow + rnd(-10, 10) + _cmdAdv(A.c) * 60) >= (B.c.pow + rnd(-10, 10) + _cmdAdv(B.c) * 60)
+      const aWins = (A.c.pow + rnd(-10, 10) + _cmdAdv(A.c, 'late') * 60) >= (B.c.pow + rnd(-10, 10) + _cmdAdv(B.c, 'late') * 60)
       const win = aWins ? A : B, lose = aWins ? B : A
       losers.add(lose.c)
       if (win.c.isPlayer) res.push({ name: win.c.name, result: `Broke ${lose.c.name} (${lose.entry.name})`, good: true })
@@ -306,7 +312,7 @@ function _renderWarMuster(el, tabHtml) {
     return (el.innerHTML = tabHtml + recap +
       `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:12px">
         <div style="font-size:11px;color:#c9a84c;margin-bottom:6px">🏯 Grand Tournament</div>
-        <div style="font-size:9px;color:#7a7060;line-height:1.5">The Grand Tournament is the annual clash of the great powers — fought by your <b>elite (Jonin and above)</b>, in squads, to the death. It is mustered each <b>Year-end (Month 12)</b>. Win the Chunin Exams to graduate prospects into your tournament pool; the standings seed the bracket.</div>
+        <div style="font-size:9px;color:#7a7060;line-height:1.5">The Grand Tournament is the annual clash of the great powers — fought by your <b>elite (Veteran and above)</b>, in squads, to the death. It is mustered each <b>Year-end (Month 12)</b>. Win the Adept Exams to graduate prospects into your tournament pool; the standings seed the bracket.</div>
         <div style="font-size:8px;color:#5a5448;margin-top:8px">No tournament is mustering. The next Grand Tournament mobilizes at Month 12.</div>
       </div>`)
   }
@@ -315,14 +321,14 @@ function _renderWarMuster(el, tabHtml) {
   return (el.innerHTML = tabHtml + recap +
     `<div style="border:1px solid #c9a84c;background:#0d0a04;padding:10px;margin-bottom:12px">
       <div style="font-size:11px;color:#c9a84c">🏯 The Grand Tournament is mobilizing!</div>
-      <div style="font-size:8px;color:#7a7060;margin-top:4px">Muster up to ${WAR_MAX_SQUADS} elite squads (Jonin+). Casualties are expected — jinchuriki and bloodline clans survive more often.</div>
+      <div style="font-size:8px;color:#7a7060;margin-top:4px">Muster up to ${WAR_MAX_SQUADS} elite squads (Veteran+). Casualties are expected — vessel and bloodline clans survive more often.</div>
     </div>` +
     '<div style="margin-bottom:12px">' +
     (elite.length ? elite.map(({ sq, members }) => {
       const ent = G.warCands.includes(sq.id)
       const protCount = members.filter(s => (G.beasts || []).some(b => b.sealed && b.jk === s.id) || s.clan).length
       return `<div class="pi" onclick="musterWar('${sq.id}')" style="${ent ? 'border-color:#c9a84c;background:rgba(201,168,76,0.08)' : ''}"><div><div style="font-size:10px;color:#e8e0cc">${sq.n}${sq.identity ? ` <span style="color:#c9a84c;font-size:8px">«${sq.identity.title}»</span>` : ''}</div><div style="font-size:8px;color:#7a7060">${members.length} elite · Pwr ${_squadPow(members, sq.cohesion)} · cohesion ${sq.cohesion ?? 0}${protCount ? ` · <span style="color:#8fbc8f">${protCount} protected</span>` : ''}</div><div style="font-size:7px;color:#5a5448">${members.map(s => sn(s) + ' (' + RANKS[s.ri][0] + ')').join(', ')}</div></div>${ent ? '<span style="color:#c9a84c">✓</span>' : ''}</div>`
-    }).join('') : '<div style="color:#7a7060;font-size:9px">No eligible elite squads. Form a squad of all-Jonin+ shinobi (all available) in the Squads panel.</div>') +
+    }).join('') : '<div style="color:#7a7060;font-size:9px">No eligible elite squads. Form a squad of all-Veteran+ shinobi (all available) in the Squads panel.</div>') +
     '</div>' +
     (G.warCands.length ? '<button class="gb" onclick="startWar()">Commit to War ►</button>' : ''))
 }

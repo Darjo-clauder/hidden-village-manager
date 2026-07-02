@@ -2,6 +2,7 @@ import { G, sn, clamp, fmt, getLeadershipGroup, buildRelationshipWeb } from '../
 import { MEETING_TYPES, RANKS, SERVICE_AWARDS, REVIEW_RESPONSES } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
+import { PROMISE_TYPES } from '../../../shared/utils/promises.js'
 
 window._meetTab = 'overview'
 
@@ -95,6 +96,30 @@ function _overviewTab() {
             </div>
             <button onclick="consultSeniorGroup()" style="margin-top:8px;background:#1a1a2e;border:1px solid #4a4a8a;color:#9cf;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:.77rem">🗣 Consult Group</button>`
         }
+      </div>`
+    })()}
+
+    <!-- Promises Ledger -->
+    ${(() => {
+      const ledger = G.promises || []
+      if (!ledger.length) return ''
+      const open = ledger.filter(p => p.status === 'open')
+      const recent = ledger.filter(p => p.status !== 'open').slice(-4).reverse()
+      const stCol = { open: '#f0a030', kept: '#8fbc8f', broken: '#f66' }
+      const row = p => {
+        const due = p.status === 'open' ? `due Y${p.dueYear} M${p.dueMonth}` : p.status === 'kept' ? '✓ kept' : '✗ broken'
+        return `<div style="display:flex;align-items:center;gap:8px;font-size:.75rem;padding:3px 0;border-bottom:1px solid #222">
+          <span>${PROMISE_TYPES[p.type]?.icon || '🤝'}</span>
+          <span style="color:#e8d5a3;flex:1">${p.name}</span>
+          <span style="color:#888;flex:2">${p.detail}</span>
+          <span style="color:${stCol[p.status]};white-space:nowrap">${due}</span>
+        </div>`
+      }
+      return `<div style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:12px;margin-bottom:16px">
+        <div style="font-size:.8rem;color:#aaa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">🤝 Promises Ledger${open.length ? ` — ${open.length} open` : ''}</div>
+        ${open.map(row).join('') || '<div style="color:#555;font-size:.75rem">No open promises.</div>'}
+        ${recent.length ? `<div style="font-size:.68rem;color:#555;margin-top:6px;text-transform:uppercase;letter-spacing:.05em">Recently resolved</div>${recent.map(row).join('')}` : ''}
+        <div style="font-size:.7rem;color:#555;margin-top:6px">Promises made in negotiations are tracked to their deadline. Kept promises lift commitment; broken ones cut deep and breed resentment.</div>
       </div>`
     })()}
 
