@@ -1,13 +1,14 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-30 · **HEAD:** `9ef785e` (committed) · **Branch:** `master` · **Tests:** 680 passing / 54 files
+**Last updated:** 2026-07-02 · **HEAD:** `6f36eed` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 715 passing / 59 files
 
-> ⚠️ **THREE uncommitted working-tree changesets now stacked (none committed):**
-> 1. **(2026-06-27) IP-neutral conversion** (Tier 1 + Tier 2) — renames Naruto display terms. See §1a + `docs/IP_NEUTRAL_PLAN.md`.
-> 2. **(2026-06-30) Serverless / offline + optional-MP refactor + Tauri scaffold** — decouples single-player from the server so it runs with no Railway/Supabase, makes multiplayer opt-in, and scaffolds a Tauri desktop build for Steam. See **§1b**.
-> 3. **(2026-07-02) World-depth pass: village identities + minor nations** — every rival village mechanically unique (roster stat biases + matchday styles), 8 minor nations feeding the transfer market/scouting + off-season exhibition fixtures. See **§1c**.
+> ✅ **The four stacked changesets are now COMMITTED + PUSHED** (2026-07-02), as a 4-commit stack on top of `9ef785e`:
+> 1. `4140d41` **IP-neutral conversion** (Tiers 1–2) — §1a + `docs/IP_NEUTRAL_PLAN.md`.
+> 2. `a41ec2f` **Serverless SP + optional MP + Tauri scaffold** — §1b.
+> 3. `989e062` **World-depth pass** (identities, minor nations, tactics, rivalry, promises, aces, season review) — §1c.
+> 4. `6f36eed` **League balance** (player strength onto the rivals' band) — §1c end.
 >
-> These changesets are intermingled in the tree. When committing, split them (IP scrub → serverless/Tauri → world-depth) — see §1b/§1c for the file lists.
+> Files entangled across changesets were committed with their *primary* purpose (noted in the messages); intermediate commits may not build standalone — the stack tip is the verified state. Working tree is clean.
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
