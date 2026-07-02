@@ -1,6 +1,13 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-06-26 · **HEAD:** `89367c8` · **Branch:** `master` · **Tests:** 680 passing / 54 files
+**Last updated:** 2026-06-30 · **HEAD:** `9ef785e` (committed) · **Branch:** `master` · **Tests:** 680 passing / 54 files
+
+> ⚠️ **THREE uncommitted working-tree changesets now stacked (none committed):**
+> 1. **(2026-06-27) IP-neutral conversion** (Tier 1 + Tier 2) — renames Naruto display terms. See §1a + `docs/IP_NEUTRAL_PLAN.md`.
+> 2. **(2026-06-30) Serverless / offline + optional-MP refactor + Tauri scaffold** — decouples single-player from the server so it runs with no Railway/Supabase, makes multiplayer opt-in, and scaffolds a Tauri desktop build for Steam. See **§1b**.
+> 3. **(2026-07-02) World-depth pass: village identities + minor nations** — every rival village mechanically unique (roster stat biases + matchday styles), 8 minor nations feeding the transfer market/scouting + off-season exhibition fixtures. See **§1c**.
+>
+> These changesets are intermingled in the tree. When committing, split them (IP scrub → serverless/Tauri → world-depth) — see §1b/§1c for the file lists.
 
 This document lets a fresh session pick up cold. Read it top to bottom before touching code.
 
@@ -10,7 +17,90 @@ This document lets a fresh session pick up cold. Read it top to bottom before to
 
 A **Naruto-themed village management sim** being reshaped into a **Franchise Hockey Manager (FHM)-style sports simulator**. Express + Socket.IO backend, Vite + vanilla-JS ES-module frontend, Supabase persistence.
 
-This is a **private Naruto-IP build** — **keep all Naruto namesakes and IP** (clans, villages, jutsu, tailed beasts). A public IP-neutral version is a future goal, but do **not** scrub names now.
+~~This is a private Naruto-IP build — keep all Naruto namesakes and IP.~~ **SUPERSEDED 2026-06-27** — see §1a.
+
+---
+
+## 1a. IP-neutral conversion (NEW DIRECTION, 2026-06-27)
+
+The user is pursuing a **Steam release**, which requires removing Naruto IP. Decision: build a **single IP-neutral fork** (not a coexisting Naruto-skin toggle), **full scrub** (including lower-risk generic terms). The systems/engine are original and sellable; only the Naruto naming skin was the blocker. There is **no copyrighted art** (emoji only), which removed the most expensive part.
+
+**Plan + full inventory:** `docs/IP_NEUTRAL_PLAN.md` (read it — has the locked lexicon, file-by-file map, and per-tier status).
+
+**Done & verified in the working tree (uncommitted):**
+- **Tier 1** — ranks (Genin/Chunin/Jonin/ANBU/Sannin → **Initiate/Adept/Veteran/Shadow/Legend**), `-kage` title → **Warden**, all `-gakure` villages → original names, clans (`Fuma`→Kusari), regions ("Land of X" → Emberlands/etc.), and canon landmines (Akatsuki→Syndicate, Eight Inner Gates→Eightfold Limit Break, Sabaku/Tendo/Akatsuchi kage names).
+- **Tier 2** — beast subsystem: jinchūriki→**Vessel**, tailed beast/bijuu→**Primal**, the `N-Tails` structure → **Tier-N Primal** (original beast names + ◆ pips kept). Canon Ox-Octopus (Gyūki) form rewritten.
+- **Verified:** 680/680 tests green, `npx vite build` clean, 16-tick browser playtest across 12 panels with **zero stray IP terms** and no console errors.
+
+**Not done / open:**
+- **Tier 3 (optional, low-value):** "jutsu" (~65 refs) → "technique/art" display; internal stat keys (`ninjutsu` etc.) stay.
+- **Residual design item (NOT an IP blocker):** the 9 beasts' elements/forms still loosely parallel the canon tailed beasts; a deeper redesign (count/elements/forms) is the user's creative call.
+- **Internal IDs deliberately kept** (non-display, safe to leave): `anbu` dev-path/tab ids, `.jk` host field, `.tb-tails` CSS class, `G.beasts`.
+- **Non-code Steam workstream** (the real launch gate): Steam Direct ($100), original key art/capsule images, store copy, content-rights affirmation.
+
+**Mechanical-rename technique (for resuming):** case-sensitive `perl -i -pe 's/\bWord\b/New/g'` over `$(find client shared -name '*.js'; ls client/index.html)`. Capitalized/word-boundary forms are safe because lowercase identifiers (`scout_jonin`, `anbuSuccessBonus`, `sp('kage')`, panel ids) lack a word boundary at the match site. **Always** re-run `npx vitest run` after each pass (it caught `NARUTO_ARCHETYPES`, `monthlySnapshot({vessel})`, and broken `${b.tails}` template-in-replacement bugs this session) + browser-verify adv.js (no test net).
+
+---
+
+## 1b. Serverless / offline + optional-MP + Tauri scaffold (NEW, 2026-06-30)
+
+**Why:** the game was tethered to a paid **Railway** Node/Socket.IO host + **Supabase** just to *run* — the End-Turn button (`continueTurn → endTurn`) hard-returned without a live socket, and saves lived **only** in Supabase. For a Steam desktop release that's unacceptable. User's chosen direction: **single-player fully offline, multiplayer optional (opt-in, self-hostable), packaged as a desktop app.**
+
+**Architecture reality (confirmed this session):** the whole FHM sim already runs **client-side**. The server only ever powered the *online-world* layer (world map, rooms/lobby, diplomacy, raids, gifts, and Supabase save/load). So this was **decoupling + gating**, not a rewrite.
+
+**Done & verified in the working tree (uncommitted) — my files this session:**
+- **Local persistence** — new **`client/js/save.js`**: `saveLocal/loadLocal/hasLocalSave/clearLocal/applySavedState/markGameActive` → `G` persists to `localStorage` (`hvm_save_v1`), trimmed the same way `server/db.js _trimState` bounds the Supabase copy. Autosaves each turn + on `beforeunload`.
+- **Turn advance decoupled** — **`client/js/room.js`** `endTurn()` no longer `if(!socket?.connected) return`; it always `_adv()` + `saveLocal()`, and *only* syncs + `player_ready` when a socket is connected.
+- **Network mode** — new **`client/js/net.js`**: `NET.online` + `getServerUrl/setServerUrl` (persisted `hvm_server_url`). Solo path = offline (no socket opened); online = opt-in.
+- **Setup/lobby split** — **`client/js/setup.js`**: `showSetup()` forces offline + clears `RS.mode`; `beginGame`/`restoreGame` go online only when `RS.mode==='create'|'join'` (the lobby paths). Continue banner + restore now read the **local save** (worked offline). Lobby reads/writes a **Server address** field.
+- **Configurable server + bundled client** — **`client/js/socket.js`**: `initSocket(name,kage,icon,serverUrl)` → `serverUrl ? io(serverUrl) : io()`; **`import { io } from 'socket.io-client'`** (added dep) and **removed** the `<script src="/socket.io/socket.io.js">` tag from `index.html` — the server-served client wouldn't exist in a desktop app. HTML: lobby "Server" field (`#sl-server-url`), solo button relabelled "Begin".
+- **Tauri scaffold** — **`src-tauri/`** (Tauri v2): `tauri.conf.json` → `frontendDist ../dist`, `beforeBuildCommand npm run build`, `devUrl :5173` + `beforeDevCommand npm run vite:dev`, id `com.hiddenvillage.manager`, 1280×820 window. `package.json`: added `socket.io-client` dep, `@tauri-apps/cli` devDep, `vite:dev` + `tauri` scripts.
+- **Verified:** 680/680 tests green; `vite build` clean (138 modules, socket.io-client bundled, no warnings). Browser playtest: solo start → **month advanced offline** (`villageId` null throughout) → reload → **Continue restored Y1 M2** with no server; online path (lobby → create room) connected via the bundled client (room `8WKADV` created), zero console errors.
+
+**Open / next:**
+- **Desktop build is gated on the toolchain (user DEFERRED installing it 2026-06-30):** `tauri info` = Rust (rustup/cargo/rustc) **not installed** + **VS C++ Build Tools** (MSVC + Win SDK) **not installed**; WebView2 ✔. Install both, then `npm run tauri dev` / `npm run tauri build`. MSVC needs admin (can't be driven headless). Scaffold is otherwise ready.
+- **Icons are placeholder Tauri logos** (`src-tauri/icons/`) — replace before shipping (`npm run tauri icon <png>`).
+- **CSP is `null`** (permissive) — fine for now; tighten `connect-src` to the MP server before Steam.
+- **Online-in-Tauri needs an explicit server URL** (no origin in a desktop app) — the lobby field handles it; `io()` with no URL only works in the web build.
+- **The server/Supabase are now OPTIONAL infra** — only needed when someone actually plays online. Host cheaply on demand or let players self-host; single-player has zero recurring cost.
+
+**Commit hygiene:** this changeset is intermingled with the §1a IP scrub. Split: commit the IP-neutral scrub first, then this serverless/Tauri set (`client/js/{net,save}.js`, `client/js/{room,setup,socket}.js`, `client/index.html`, `package.json`, `package-lock.json`, `src-tauri/**`, this doc).
+
+---
+
+## 1c. World-depth pass — village identities + minor nations (NEW, 2026-07-02)
+
+User: "each village being unique in some form from each other while allowing flexibility" + "a series of minor nations to populate the world with talent and scheduling." Both landed, verified, uncommitted.
+
+**Village identities** — new **`shared/constants/villageIdentity.js`**: all 12 `RIVAL_VILLAGE_POOL` villages get a fixed identity (label + blurb + **2-stat signature bias** + **matchday style**). Styles (`MATCH_STYLES`): `blitz` (wide variance, few draws), `fortress` (narrow variance, draw-prone), `opportunist` (+8% as underdog), `grinder` (+8% as favorite), `balanced`. **Flexibility:** per-run `identityIntensity` 0.75–1.25 (rolled in `genRivalVillages`, scales the stat bias); the player's own style follows coaching philosophy (aggressive→blitz, defensive→fortress).
+- Wiring: `genVillageRoster` applies the bias to every roster member; `season.js simMatch/playMatchday` grew optional style params (**defaults reproduce legacy behavior exactly — locked by regression test**); adv.js season block passes `styleOf`; UI = style chips in SEASON standings (exam.js) + identity line on Diplomacy village cards (kage.js).
+
+**Minor nations** — new **`shared/constants/minorNations.js`**: 8 nations (Reedmarsh/Saltcliff/Palewood/Kilnrock/Galecrest/Bronzegate/Hollowfen/Skylark), each region-tied (REGIONS ids), tier C (38–55 str) or D (26–42), with a specialty stat + blurb. Helpers: `pickMinorNation(rng, region?)`, `minorStrength`, `applyMinorOrigin` (tags origin + specialty bump C:6–10/D:4–8).
+- **Talent:** `genTransferPool` — village-listed 45% from a minor (fee ×0.8) else from **live** `G.villages` (was stale `VILLAGES_DEF`); foreign specialists are now always minor-nation exports spiked in the nation's specialty. `mS()` origin roll: ~5% rival great village, ~4% minor nation. `genRegionProspect`: ~30% arrive "via" a region-matched minor nation.
+- **Scheduling:** off-season months 1–3 each play one **exhibition** vs a minor nation (`simMatch`, player style = philosophy). Win: purse (C 3.5k / D 2k ryo) + morale +2; loss −1 morale. Stored `G.exhibitions` (cap 12); i18n toasts `toast.adv.exhibition*`. UI: 🏮 exhibition slate card in the SEASON tab; **Minor Nations grid** at the bottom of the World panel.
+
+**Verified:** 695/695 tests (56 files; new `tests/villageIdentity.test.js` 9 + `tests/minorNations.test.js` 6), build clean. Browser: 13-month playtest across the Y1→Y2 boundary — exhibitions fired M1–M3 and resumed Y2 M1, identity chips/cards/nations grid all render, zero console errors. NB: browser state inspection now possible offline via `JSON.parse(localStorage.hvm_save_v1)` after `endTurn()` (direct `adv()` doesn't write the save).
+
+**Files:** `shared/constants/{villageIdentity,minorNations}.js`, `shared/utils/season.js`, `shared/i18n/en.js`, `client/js/{state,adv,world}.js`, `client/js/panels/{exam,kage}.js`, `tests/{villageIdentity,minorNations}.test.js`.
+
+**World-flavor deepening (same day, second pass — all landed + verified):**
+- **Identity styles now reach the brackets** — `identityStageAdv(style, kind)` in villageIdentity.js (kinds: early/endurance/late; e.g. blitz +5% early/−3% late, opportunist +5% late). Applied to RIVAL squads only via `_postureAdv(c, kind)` (exam.js — squads now carry `vid`) and `_cmdAdv(c, kind)` (war.js via `c.vRef.n`); player behavior byte-identical (posture/command as before — semifinal effPow deliberately kept legacy for the player). Magnitudes < player's ±10% swing, locked by test.
+- **Minor Nations Invitational** — annual 4-team knockout in off-season M2 (player + 3 minors; SF + Final resolved in the tick; cup ties → sudden-death coin). Champion: 6k ryo + legend +2 + morale +3 + chronicle; runner-up 2.5k. `G.invitationalHistory` (cap 10); slate rows tagged `cup:'SF'|'F'` with 🏆 chips + holder line in the SEASON tab card. M1/M3 stay friendlies.
+- **Ambient world life** — off-season rival-vs-minor exhibition results in the world news ticker (identity-styled sims, upset variant); ~8%/mo a **minor-nation prodigy** (potential 78–96, 3–5mo window) joins `G.prospects` with an inbox narrative (rival GM bids already target it naturally).
+- i18n keys: `toast.adv.inv*`, `toast.adv.minorProdigy`, `news.world.rivalExhibition*`.
+- **Verified:** 696/696 tests; browser: full Y1 played — invitational SF+F fired M2 (champion recorded), news ticker carries rival exhibitions, and a **full 4-round Adept Exam driven interactively** with identity math live (squad created + nominated via DOM, all rounds clean, champion Verdancross). Tournament path structurally identical (guarded `vRef?.n`), not separately driven (Y1 village lacks elite squads).
+
+**Feature audit:** **`docs/EXPANSION_ROUTES.md`** (NEW) — system-by-system depth audit, 24 routes T-shirt-sized, ranked shortlist. Top picks: R1 matchday tactics layer (play against identity styles), R19 season review special, R4 named rival aces, R11 promises ledger, R2 rivalry/derby system; engineering: R22 adv.js slice extraction, R23 local-save versioning before Steam, R24 Tauri toolchain.
+
+**Third pass (2026-07-02, same day): audit top-5 ALL IMPLEMENTED (R1, R19, R4, R11, R2) — verified, uncommitted:**
+- **R1 Matchday tactics** — `shared/constants/matchdayTactics.js`: Standard/Counter/Control/Overwhelm vs opponent identity style (+8% strong read / −4% bad read, `tacticMod`). Picker lives in the next-match card (`_tacticPicker` in exam.js, `setMatchdayTactic` on window); persists as `G.matchdayTactic`; applied to the player's league strength in the adv season block (opponent resolved via `roundPairings`).
+- **R19 Season review** — December block (after draft order) assembles "📜 Year N in Review" from live data (standings verdict, exam champion, invitational, awards, the fallen, tournament-ahead note) → `pushNarrative` long-form inbox item (+ chronicle). HTML `<br>` bodies render (inbox desc is innerHTML).
+- **R4 Named rival aces** — every January `tick/rivals.js` stores each rival's top-2 elites as `v.aces` `[{id,name,pow,ri}]`; new #1 fires an intel narrative. Shown on diplomacy cards (⭐ Ace), league match preview ("Their ace"), and ⭐-starred squads in exam semifinal duels.
+- **R11 Promises ledger** — `shared/utils/promises.js` (`createPromise/resolvePromise/isPastDue`, cap 30 evicting resolved first). Created at transfer signing (role guarantee → 12-mo review; promotion timeline → deadline). Monthly resolution in adv: promotion KEPT on rank-up past `riAt` (+10 commit/+8 morale), deployment reviewed at due date via `s._rgBreaches` counter (≥5 → broken, −12/−8 + notice; else kept +5). Broken-promotion path ties into the pre-existing deadline-missed block. 🤝 Promises card in People Management overview (open + recently resolved).
+- **R2 Rivalry/derby** — `shared/utils/rivalry.js` (`updateH2H/pickDerbyRival/h2hLabel`). All-time H2H per rival in `G.h2h` (updated from the player's fixture each matchday); derby rival named each January (hostility = 100−rel + grudge×5, +15 incumbent stickiness) → `G.derbyRival`, announce toast + notice. Derby fixtures: 🔥 DERBY banner in preview, win +3 morale/+2 rep, loss −3 morale + 30% press (`rivalry_heat`), draw neutral. H2H + derby chip on diplomacy cards.
+- **Verified:** 711/711 tests (55 files + 3 new: matchdayTactics 5, promises 5, rivalry 5), build clean. Browser: fresh game → aces named for all rivals + derby designated on first tick; tactic picker renders w/ opponent style line ("They play 🛡 Fortress"), pick persists and applies; H2H accumulated across a full year + into Y2 (derby held by stickiness); Year-1 Review landed in inbox with league/invitational/honors sections; zero console errors.
+- **New i18n keys:** `toast.adv.promise*`, `toast.adv.derby*` (+ inv/prodigy/news keys from the second pass).
+- **✅ League balance FIXED (2026-07-02, follow-up):** root cause — `computePlayerStrength` (`shared/utils/rivalSim.js`) returned `count × (5 + avgRi×3)` ≈ **182 for a fresh village vs rivals at 50–90** on the same scale; with the ±30% match swing the player could not lose (9–0 seasons), diplomacy read "Dominant" from day one, and tribute gating was a formality. **Rewrite:** quality (avg stats of the roster's top half) + depth (headcount w/ diminishing returns past 20 — injuries now cost strength) + modest wall/seal, calibrated to the rivals' 10–200 band: fresh ≈ **67**, deep elite dynasty ≈ 130–140, cap 200. Consumers unchanged (league strOf, exhibitions/invitational, kage strength labels + tribute gating, `tick/rivals.js` monthly recompute — old saves self-heal on next tick). **Locked by 4 calibration tests** in `tests/rivalSim.test.js` (fresh 55–80, dynasty ≤160, injuries reduce, ≤200 cap). **Verified in browser:** fresh player 67 vs rivals 38–81; full season → **finished 2nd, 8W-0D-4L**, swept 0–2 by the 81-str Blitz leader (real bogey team), swept the weak sides; diplomacy reads Matched/Stronger honestly; 715/715 tests, zero console errors.
 
 ---
 

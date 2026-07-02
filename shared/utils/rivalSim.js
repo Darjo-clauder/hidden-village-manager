@@ -90,16 +90,36 @@ export function rankStandings(playerStrength, playerName, villages = []) {
 }
 
 /**
- * Computes player village strength from G state.
+ * Computes player village strength from G state — on the SAME 10–200 band the
+ * rival villages live on (gen 50–90, personality targets up to ~120).
+ *
+ * The old formula (`count × (5 + avgRi×3)`) put a fresh 22-ninja village at
+ * ~180 vs rivals at 50–90: with the league sim's ±30% swing the player could
+ * not lose a fixture (9–0 every season), diplomacy read "Dominant" from day
+ * one, and tribute gating was a formality. This version anchors a fresh
+ * village at ~65 (mid-pack) and tops out ~130–140 for a deep, developed
+ * dynasty roster — so seeding, form, tactics and derby stakes all matter.
+ *
+ * Components:
+ *  - quality: average stat level of the roster's top half (min 6 counted) —
+ *    grows with training, ranks (mS scales stats by rank) and recruitment.
+ *  - depth: available headcount with diminishing returns past a 20-ninja core
+ *    (injuries and overextension genuinely weaken the village).
+ *  - fortifications: wall/seal upgrades, modest.
  * @param {object} G
  * @returns {number}
  */
 export function computePlayerStrength(G) {
-  const shinobiCount = (G.shinobi || []).filter(s => s.status === 'available').length
-  const avgRi = shinobiCount > 0
-    ? (G.shinobi || []).reduce((a, s) => a + (s.ri || 0), 0) / (G.shinobi || []).length
-    : 0
-  const wallBonus = (G.upgrades?.wall || 0) * 15
-  const sealBonus = (G.upgrades?.seal || 0) * 10
-  return Math.round(shinobiCount * (5 + avgRi * 3) + wallBonus + sealBonus)
+  const roster = G.shinobi || []
+  const avail = roster.filter(s => s.status === 'available').length
+  const powers = roster.map(s => {
+    const v = Object.values(s.stats || {})
+    return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0
+  }).sort((a, b) => b - a)
+  const top = powers.slice(0, Math.max(6, Math.ceil(powers.length / 2)))
+  const quality = top.length ? top.reduce((a, b) => a + b, 0) / top.length : 0
+  const depth = Math.min(avail, 20) + Math.max(0, Math.min(avail - 20, 30)) * 0.4
+  const wallBonus = (G.upgrades?.wall || 0) * 4
+  const sealBonus = (G.upgrades?.seal || 0) * 3
+  return Math.round(Math.min(200, 5 + quality * 0.95 + depth * 1.1 + wallBonus + sealBonus))
 }

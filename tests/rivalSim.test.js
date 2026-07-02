@@ -93,4 +93,41 @@ describe('computePlayerStrength', () => {
     const G = { shinobi: [], upgrades: { wall: 0, seal: 0 } }
     expect(computePlayerStrength(G)).toBeGreaterThanOrEqual(0)
   })
+
+  // Calibration guards — the player must live on the rivals' 10–200 band.
+  // (The old formula put a fresh village at ~180 vs rivals at 50–90: with the
+  // league sim's ±30% swing the player literally could not lose a fixture.)
+  const mkNinja = (avg, ri = 1) => ({
+    status: 'available', ri,
+    stats: { ninjutsu: avg, taijutsu: avg, genjutsu: avg, chakra: avg, intelligence: avg, speed: avg },
+  })
+
+  it('a fresh village lands mid-pack of the rival gen band (55–80), not above it', () => {
+    // ~22 ninja averaging ~34 stats ≈ a seedPhase1 starting roster
+    const G = { shinobi: Array.from({ length: 22 }, (_, i) => mkNinja(28 + (i % 3) * 6)), upgrades: {} }
+    const s = computePlayerStrength(G)
+    expect(s).toBeGreaterThanOrEqual(55)
+    expect(s).toBeLessThanOrEqual(80)
+  })
+
+  it('a deep elite dynasty roster is strong but stays inside the band (<= 160)', () => {
+    const G = { shinobi: Array.from({ length: 50 }, () => mkNinja(80, 3)), upgrades: { wall: 3, seal: 3 } }
+    const s = computePlayerStrength(G)
+    expect(s).toBeGreaterThan(100)
+    expect(s).toBeLessThanOrEqual(160)
+  })
+
+  it('injuries reduce strength (unavailable shinobi cost depth)', () => {
+    const healthy = { shinobi: Array.from({ length: 20 }, () => mkNinja(40)), upgrades: {} }
+    const hurt = {
+      shinobi: healthy.shinobi.map((s, i) => i < 8 ? { ...s, status: 'injured' } : s),
+      upgrades: {},
+    }
+    expect(computePlayerStrength(hurt)).toBeLessThan(computePlayerStrength(healthy))
+  })
+
+  it('never exceeds the 200 cap', () => {
+    const G = { shinobi: Array.from({ length: 60 }, () => mkNinja(99, 4)), upgrades: { wall: 9, seal: 9 } }
+    expect(computePlayerStrength(G)).toBeLessThanOrEqual(200)
+  })
 })
