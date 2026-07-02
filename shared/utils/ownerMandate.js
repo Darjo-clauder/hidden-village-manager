@@ -4,14 +4,14 @@
  * Each January the council sets 3 mandates for the year.
  * Each December the mandates are evaluated and owner confidence adjusts.
  * Confidence < 30 for two consecutive years triggers a no-confidence vote
- * (the Kage is dismissed — dynasty grade is finalised and a new run begins).
+ * (the Warden is dismissed — dynasty grade is finalised and a new run begins).
  *
  * Pure: no G mutations, no UI calls. Caller applies returned deltas.
  */
 
 export const MANDATE_POOL = [
   { id: 'finish_top3',    n: 'Top-3 Season Finish',    desc: 'End the regular season in the top 3.',            confidenceGain: 12, confidenceLoss: 20 },
-  { id: 'win_exam',       n: 'Win the Chunin Exam',     desc: 'Crown your village champion of the Chunin Exam.', confidenceGain: 18, confidenceLoss: 22 },
+  { id: 'win_exam',       n: 'Win the Adept Exam',     desc: 'Crown your village champion of the Adept Exam.', confidenceGain: 18, confidenceLoss: 22 },
   { id: 'win_war',        n: 'Win the Nation War',      desc: 'Prevail in the annual Nation War.',               confidenceGain: 20, confidenceLoss: 20 },
   { id: 'stay_solvent',   n: 'Financial Discipline',    desc: 'No more than 2 deficit months this year.',        confidenceGain:  8, confidenceLoss: 15 },
   { id: 'grow_rep',       n: 'Reputation Growth',       desc: 'Raise village reputation by 20+ this year.',     confidenceGain: 10, confidenceLoss: 12 },

@@ -1,11 +1,11 @@
-export const CLANS=[{n:'Kageha',t:'Kagan',b:{ninjutsu:14,genjutsu:12}},{n:'Shiromi',t:'Hakugan',b:{taijutsu:14,chakra:8}},{n:'Kagero',t:'Shadow Weave',b:{intelligence:16,ninjutsu:5}},{n:'Tsuchida',t:'Body Expansion',b:{taijutsu:12,chakra:8}},{n:'Tamashii',t:'Soul Touch',b:{genjutsu:14,intelligence:10}},{n:'Okamura',t:'Pack Fang',b:{taijutsu:12,speed:12}},{n:'Mushiba',t:'Hive Bond',b:{intelligence:12,genjutsu:8}},{n:'Fuma',t:'Chain Seal',b:{chakra:22,ninjutsu:10}},{n:'Mori',t:'Forest Birth',b:{chakra:18,ninjutsu:14}}]
-export const RANKS=['Genin','Chunin','Jonin','ANBU','Sannin']
+export const CLANS=[{n:'Kageha',t:'Kagan',b:{ninjutsu:14,genjutsu:12}},{n:'Shiromi',t:'Hakugan',b:{taijutsu:14,chakra:8}},{n:'Kagero',t:'Shadow Weave',b:{intelligence:16,ninjutsu:5}},{n:'Tsuchida',t:'Body Expansion',b:{taijutsu:12,chakra:8}},{n:'Tamashii',t:'Soul Touch',b:{genjutsu:14,intelligence:10}},{n:'Okamura',t:'Pack Fang',b:{taijutsu:12,speed:12}},{n:'Mushiba',t:'Hive Bond',b:{intelligence:12,genjutsu:8}},{n:'Kusari',t:'Chain Seal',b:{chakra:22,ninjutsu:10}},{n:'Mori',t:'Forest Birth',b:{chakra:18,ninjutsu:14}}]
+export const RANKS=['Initiate','Adept','Veteran','Shadow','Legend']
 export const RKC=['rk-g','rk-c','rk-j','rk-a','rk-s']
 export const FNAMES=['Ryu','Sora','Hana','Kei','Taro','Mei','Ren','Yuki','Kaz','Aoi','Jin','Aya','Nao','Riku','Hiro','Shiro','Toma','Rei','Sai','Bunta']
 export const LNAMES=['Kuroda','Nishida','Asano','Takahara','Minase','Hayashi','Mori','Fujita','Ito','Nakamura','Tanaka','Watanabe','Sato']
-export const SPECS=['Ninjutsu','Taijutsu','Genjutsu','Medical','Sensor','ANBU Ops','Sealing','Infiltration']
+export const SPECS=['Ninjutsu','Taijutsu','Genjutsu','Medical','Sensor','Shadow Ops','Sealing','Infiltration']
 export const SEASONS=['Winter','Winter','Spring','Spring','Spring','Summer','Summer','Summer','Fall','Fall','Fall','Winter']
-export const PERSONALITIES=[{n:'Loyal',cat:'pos',desc:'Devoted. Salary -10%, morale bonus.',effect:{salary:-0.10}},{n:'Ambitious',cat:'pos',desc:'Stat gains 20% faster.',effect:{statBoost:true}},{n:'Reckless',cat:'neg',desc:'Injury chance +15%.',effect:{riskMod:0.15}},{n:'Cowardly',cat:'neg',desc:'Success -8% when underpowered.',effect:{sucMod:-0.08}},{n:'Stoic',cat:'neu',desc:'No special effects.',effect:{}},{n:'Charismatic',cat:'pos',desc:'Squad power +5 when leading.',effect:{squadBonus:5}},{n:'Lone Wolf',cat:'neg',desc:'+8% success solo.',effect:{soloBonus:0.08}},{n:'Bookworm',cat:'pos',desc:'Intelligence grows 2x.',effect:{intBoost:true}},{n:'Hot-headed',cat:'neg',desc:'Refuses D/C rank.',effect:{rankFilter:true}},{n:'Calm',cat:'pos',desc:'Injury duration -1 month.',effect:{injReduct:1}},{n:'Greedy',cat:'neg',desc:'20% more salary.',effect:{salary:0.20}},{n:'Honorable',cat:'pos',desc:'Refuses black market. +2 rep on A+ missions.',effect:{noBlack:true,repBonus:2}},{n:'Mysterious',cat:'neu',desc:'Potential hidden until Jonin.',effect:{hidePot:true}},{n:'Protective',cat:'pos',desc:'Shields squadmates from KIA.',effect:{kiaShield:true}},{n:'Vengeful',cat:'neu',desc:'+10% when squadmate was hurt.',effect:{vengeful:true}}]
+export const PERSONALITIES=[{n:'Loyal',cat:'pos',desc:'Devoted. Salary -10%, morale bonus.',effect:{salary:-0.10}},{n:'Ambitious',cat:'pos',desc:'Stat gains 20% faster.',effect:{statBoost:true}},{n:'Reckless',cat:'neg',desc:'Injury chance +15%.',effect:{riskMod:0.15}},{n:'Cowardly',cat:'neg',desc:'Success -8% when underpowered.',effect:{sucMod:-0.08}},{n:'Stoic',cat:'neu',desc:'No special effects.',effect:{}},{n:'Charismatic',cat:'pos',desc:'Squad power +5 when leading.',effect:{squadBonus:5}},{n:'Lone Wolf',cat:'neg',desc:'+8% success solo.',effect:{soloBonus:0.08}},{n:'Bookworm',cat:'pos',desc:'Intelligence grows 2x.',effect:{intBoost:true}},{n:'Hot-headed',cat:'neg',desc:'Refuses D/C rank.',effect:{rankFilter:true}},{n:'Calm',cat:'pos',desc:'Injury duration -1 month.',effect:{injReduct:1}},{n:'Greedy',cat:'neg',desc:'20% more salary.',effect:{salary:0.20}},{n:'Honorable',cat:'pos',desc:'Refuses black market. +2 rep on A+ missions.',effect:{noBlack:true,repBonus:2}},{n:'Mysterious',cat:'neu',desc:'Potential hidden until Veteran.',effect:{hidePot:true}},{n:'Protective',cat:'pos',desc:'Shields squadmates from KIA.',effect:{kiaShield:true}},{n:'Vengeful',cat:'neu',desc:'+10% when squadmate was hurt.',effect:{vengeful:true}}]
 export const ARCHETYPES=[
   {id:'orphan',n:'War Orphan',flavor:'Lost everything to conflict. Driven by grief and a need to protect what little remains.'},
   {id:'heir',n:'Clan Heir',flavor:'Born into expectation. The weight of lineage is in every step, every technique.'},
@@ -14,28 +14,28 @@ export const ARCHETYPES=[
   {id:'exile',n:'Exile\'s Child',flavor:'Raised in the shadow of a parent\'s disgrace. Desperate to rewrite the name.'},
   {id:'scholar',n:'Academy Scholar',flavor:'Top of the theory class, untested in the field. Head full of jutsu, hands still unbloodied.'},
 ]
-export const BACKSTORIES=['Orphaned during a village raid. Joined to protect what remains.','Eldest of a prominent clan, carries heavy expectations.','A civilian who awakened chakra late — always proving themselves.','Former missing-nin who sought amnesty and a second chance.','Raised in a distant land, still adjusting to village life.','Childhood friend of a fallen comrade. Carries their dream.','Survivor of a tailed beast attack. Fears and respects them deeply.','Born into poverty, clawed up through sheer will.','A prodigy who burned out young, now rediscovering the path.','Descended from a legend, struggling to escape the shadow.','Peaceful by nature — became a ninja to stop wars, not fight them.','Grew up near the border. Has seen diplomatic failure firsthand.','Defected from a rival village. Loyalty quietly questioned.','Was once paralysed by a curse seal. Walks with a faint limp.','Lost their clan to illness. Channels grief into relentless training.','Ran away from the academy once. Came back. Never explains why.','Eldest of seven siblings — protective instincts run bone-deep.','Trained in secret for years before the village even noticed them.','Grew up in a brothel town. Understands people better than most ninja.','Was chosen for an elite program that was quietly cancelled. Still wonders why.','Former medic-nin who crossed a line in the field and carries it quietly.','Half-civilian, half-shinobi family. Never fully belonged to either world.','Spent three years on border patrol alone before requesting a transfer inward.','Watched their sensei die on a mission no one talks about. Filed it away.','Claims to have no clan. Genealogy suggests otherwise.']
-export const TAILED_BEASTS=[{n:'Sakeru',tails:1,pow:60,element:'Sand',sealed:false,jk:null,benefit:'Vessel +20 speed. Village defense +10.'},{n:'Niryuu',tails:2,pow:72,element:'Blue Fire',sealed:false,jk:null,benefit:'Vessel +18 ninjutsu. Generates 3,000 ryo/month.'},{n:'Tairyuu',tails:3,pow:78,element:'Water',sealed:false,jk:null,benefit:'Vessel +20 chakra. Village defense +15.'},{n:'Kaenkou',tails:4,pow:84,element:'Lava',sealed:false,jk:null,benefit:'Vessel +15 taijutsu, +15 ninjutsu.'},{n:'Hasoku',tails:5,pow:88,element:'Steam',sealed:false,jk:null,benefit:'Vessel +20 chakra, +10 speed.'},{n:'Suiro',tails:6,pow:90,element:'Acid',sealed:false,jk:null,benefit:'Vessel +25 chakra. Village defense +20.'},{n:'Hanaku',tails:7,pow:92,element:'Scale Powder',sealed:false,jk:null,benefit:'Mission failure chance -10%.'},{n:'Hachitsuno',tails:8,pow:95,element:'Ink',sealed:false,jk:null,benefit:'Vessel +25 all stats. Rivals grow wary.'},{n:'Kureni',tails:9,pow:100,element:'Pure Chakra',sealed:false,jk:null,benefit:'+30 reputation, +40 defense. Legendary status.'}]
-export const VILLAGES_DEF=[{n:'Kazegakure',ico:'🌵',rel:50,str:70,kage:'Sabaku',kageRank:'Kazekage',threat:0,personality:'Mercantile',grudgeTicks:0},{n:'Shimogakure',ico:'🌊',rel:30,str:85,kage:'Kaito',kageRank:'Hyōkage',threat:0,personality:'Aggressive',grudgeTicks:0},{n:'Gangakure',ico:'🪨',rel:20,str:80,kage:'Ganseki',kageRank:'Gankage',threat:0,personality:'Isolationist',grudgeTicks:0},{n:'Raikurokure',ico:'⚡',rel:40,str:75,kage:'Raiden',kageRank:'Raikage',threat:0,personality:'Honorable',grudgeTicks:0}]
+export const BACKSTORIES=['Orphaned during a village raid. Joined to protect what remains.','Eldest of a prominent clan, carries heavy expectations.','A civilian who awakened chakra late — always proving themselves.','Former missing-nin who sought amnesty and a second chance.','Raised in a distant land, still adjusting to village life.','Childhood friend of a fallen comrade. Carries their dream.','Survivor of a primal attack. Fears and respects them deeply.','Born into poverty, clawed up through sheer will.','A prodigy who burned out young, now rediscovering the path.','Descended from a legend, struggling to escape the shadow.','Peaceful by nature — became a ninja to stop wars, not fight them.','Grew up near the border. Has seen diplomatic failure firsthand.','Defected from a rival village. Loyalty quietly questioned.','Was once paralysed by a curse seal. Walks with a faint limp.','Lost their clan to illness. Channels grief into relentless training.','Ran away from the academy once. Came back. Never explains why.','Eldest of seven siblings — protective instincts run bone-deep.','Trained in secret for years before the village even noticed them.','Grew up in a brothel town. Understands people better than most ninja.','Was chosen for an elite program that was quietly cancelled. Still wonders why.','Former medic-nin who crossed a line in the field and carries it quietly.','Half-civilian, half-shinobi family. Never fully belonged to either world.','Spent three years on border patrol alone before requesting a transfer inward.','Watched their sensei die on a mission no one talks about. Filed it away.','Claims to have no clan. Genealogy suggests otherwise.']
+export const PRIMALS=[{n:'Sakeru',tails:1,pow:60,element:'Sand',sealed:false,jk:null,benefit:'Vessel +20 speed. Village defense +10.'},{n:'Niryuu',tails:2,pow:72,element:'Blue Fire',sealed:false,jk:null,benefit:'Vessel +18 ninjutsu. Generates 3,000 ryo/month.'},{n:'Tairyuu',tails:3,pow:78,element:'Water',sealed:false,jk:null,benefit:'Vessel +20 chakra. Village defense +15.'},{n:'Kaenkou',tails:4,pow:84,element:'Lava',sealed:false,jk:null,benefit:'Vessel +15 taijutsu, +15 ninjutsu.'},{n:'Hasoku',tails:5,pow:88,element:'Steam',sealed:false,jk:null,benefit:'Vessel +20 chakra, +10 speed.'},{n:'Suiro',tails:6,pow:90,element:'Acid',sealed:false,jk:null,benefit:'Vessel +25 chakra. Village defense +20.'},{n:'Hanaku',tails:7,pow:92,element:'Scale Powder',sealed:false,jk:null,benefit:'Mission failure chance -10%.'},{n:'Hachitsuno',tails:8,pow:95,element:'Ink',sealed:false,jk:null,benefit:'Vessel +25 all stats. Rivals grow wary.'},{n:'Kureni',tails:9,pow:100,element:'Pure Chakra',sealed:false,jk:null,benefit:'+30 reputation, +40 defense. Legendary status.'}]
+export const VILLAGES_DEF=[{n:'Dunehold',ico:'🌵',rel:50,str:70,kage:'Korin',kageRank:'Warden',threat:0,personality:'Mercantile',grudgeTicks:0},{n:'Tidefort',ico:'🌊',rel:30,str:85,kage:'Kaito',kageRank:'Warden',threat:0,personality:'Aggressive',grudgeTicks:0},{n:'Stoneveil',ico:'🪨',rel:20,str:80,kage:'Ganseki',kageRank:'Warden',threat:0,personality:'Isolationist',grudgeTicks:0},{n:'Stormreach',ico:'⚡',rel:40,str:75,kage:'Raiden',kageRank:'Warden',threat:0,personality:'Honorable',grudgeTicks:0}]
 // ── Procedural rival generation pools (variable playthroughs) ──────────────────
 // Candidate hidden villages — 4–5 are drawn per world, each with randomized kage,
 // personality, strength, and relations. Personalities map to live AI behavior
 // (Aggressive/Militant raid; Honorable forgive grudges; Mercantile/Isolationist drift).
 export const RIVAL_VILLAGE_POOL=[
-  {n:'Kazegakure',  ico:'🌵',kageRank:'Kazekage'},
-  {n:'Shimogakure', ico:'🌊',kageRank:'Hyōkage'},
-  {n:'Gangakure',   ico:'🪨',kageRank:'Gankage'},
-  {n:'Raikurokure', ico:'⚡',kageRank:'Raikage'},
-  {n:'Takigakure',  ico:'💧',kageRank:'Takikage'},
-  {n:'Kusagakure',  ico:'🌿',kageRank:'Kusakage'},
-  {n:'Yukigakure',  ico:'❄️',kageRank:'Yukikage'},
-  {n:'Hoshigakure', ico:'⭐',kageRank:'Hoshikage'},
-  {n:'Tanigakure',  ico:'🏔',kageRank:'Tanikage'},
-  {n:'Yugakure',    ico:'♨️',kageRank:'Yukage'},
-  {n:'Kemurigakure',ico:'🌫',kageRank:'Enkage'},
-  {n:'Hagakure',    ico:'🍃',kageRank:'Hakage'},
+  {n:'Dunehold',   ico:'🌵',kageRank:'Warden'},
+  {n:'Tidefort',   ico:'🌊',kageRank:'Warden'},
+  {n:'Stoneveil',  ico:'🪨',kageRank:'Warden'},
+  {n:'Stormreach', ico:'⚡',kageRank:'Warden'},
+  {n:'Wellspring', ico:'💧',kageRank:'Warden'},
+  {n:'Verdancross',ico:'🌿',kageRank:'Warden'},
+  {n:'Frostmere',  ico:'❄️',kageRank:'Warden'},
+  {n:'Starhaven',  ico:'⭐',kageRank:'Warden'},
+  {n:'Cragmoor',   ico:'🏔',kageRank:'Warden'},
+  {n:'Emberfall',  ico:'♨️',kageRank:'Warden'},
+  {n:'Mistral',    ico:'🌫',kageRank:'Warden'},
+  {n:'Thornveil',  ico:'🍃',kageRank:'Warden'},
 ]
-export const RIVAL_KAGE_NAMES=['Sabaku','Kaito','Ganseki','Raiden','Mizuhara','Kuroyama','Tendo','Hayashi','Arashi','Yukimura','Tsukino','Iwagane','Kazami','Shirogane','Reizei','Akatsuchi','Nagumo','Daichi']
+export const RIVAL_KAGE_NAMES=['Korin','Kaito','Ganseki','Raiden','Mizuhara','Kuroyama','Renji','Hayashi','Arashi','Yukimura','Tsukino','Iwagane','Kazami','Shirogane','Reizei','Tetsuya','Nagumo','Daichi']
 export const RIVAL_PERSONALITIES=['Aggressive','Honorable','Mercantile','Isolationist','Militant']
 // ── World climate — per-world economic + threat conditions (rolled at gen) ─────
 export const WORLD_CLIMATES={
@@ -64,7 +64,7 @@ export const START_SCENARIOS=[
   {id:'fledgling',  n:'Fledgling Village', icon:'🌱', desc:'Hard start: 25k ryo, a thin green roster, little renown. Build from nothing.'},
   {id:'established', n:'Established Power',  icon:'🏯', desc:'Inherit wealth at Tier C — 120k ryo, a stronger roster, but rivals resent you.'},
   {id:'wartorn',    n:'War-Torn Borders',  icon:'⚔',  desc:'Hostile neighbours and early aggression — but fortified walls and hardened shinobi.'},
-  {id:'beastkeeper',n:'Beast Keeper',      icon:'🦊', desc:'Begin with a sealed tailed beast and its host — but every rival covets it.'},
+  {id:'beastkeeper',n:'Beast Keeper',      icon:'🦊', desc:'Begin with a sealed primal and its host — but every rival covets it.'},
 ]
 export const TRADE_ROUTES=[{id:'iron',n:'Iron Country Trade Route',desc:'Export weapons-grade steel.',cost:8000,income:2500,active:false},{id:'herbs',n:'Medicinal Herb Caravan',desc:'Export rare herbs to hospitals.',cost:5000,income:1500,active:false},{id:'silk',n:'Silk Road Partnership',desc:'Facilitate luxury goods.',cost:12000,income:3500,active:false},{id:'intel_t',n:'Intelligence Brokerage',desc:'Sell non-critical intel. Requires intel network.',cost:6000,income:2000,active:false,req:'intel'},{id:'jk_tour',n:'Vessel Demonstration',desc:'Show off vessel power to daimyo. Requires a vessel.',cost:0,income:5000,active:false,req:'jk'}]
 export const CONTRACTS=[{id:'vip',n:'VIP Escort Contract',desc:'Escort the daimyo family monthly.',cost:3000,income:4000,active:false},{id:'border',n:'Border Guard Contract',desc:'Patrol the northern border.',cost:5000,income:5500,active:false},{id:'train',n:'Train Daimyo Samurai',desc:'Monthly training sessions.',cost:2000,income:3200,active:false}]
@@ -89,7 +89,7 @@ export const MISS_POOL=[
   {n:'Intercept rogue nin',            rk:'C',ryo:2800,rep:4,dur:2,risk:0.18,mp:40, sq:false,spec:'combat'},
   {n:'Recover stolen shipment',        rk:'C',ryo:2400,rep:3,dur:1,risk:0.14,mp:35, sq:false,spec:'intel'},
   {n:'Locate missing courier',         rk:'C',ryo:2000,rep:3,dur:1,risk:0.10,mp:30, sq:false,spec:'intel'},
-  {n:'Escort chunin exam delegates',   rk:'C',ryo:2600,rep:4,dur:2,risk:0.15,mp:38, sq:false,spec:'escort'},
+  {n:'Escort adept exam delegates',   rk:'C',ryo:2600,rep:4,dur:2,risk:0.15,mp:38, sq:false,spec:'escort'},
   {n:'Disrupt bandit supply line',     rk:'C',ryo:3000,rep:4,dur:2,risk:0.20,mp:42, sq:false,spec:'siege'},
   {n:'Guard a border checkpoint',      rk:'C',ryo:2300,rep:3,dur:1,risk:0.12,mp:35, sq:false,spec:'combat'},
   {n:'Extract a defecting civilian',   rk:'C',ryo:2900,rep:5,dur:2,risk:0.18,mp:40, sq:false,spec:'recovery'},
@@ -101,19 +101,19 @@ export const MISS_POOL=[
   {n:'Neutralise missing-nin cell',    rk:'B',ryo:5800,rep:8, dur:2,risk:0.27,mp:57, sq:false,spec:'combat'},
   {n:'Steal enemy formation scroll',   rk:'B',ryo:6200,rep:9, dur:3,risk:0.30,mp:60, sq:false,spec:'stealth'},
   {n:'Locate hidden weapon cache',     rk:'B',ryo:5200,rep:7, dur:2,risk:0.25,mp:55, sq:false,spec:'intel'},
-  {n:'Capture rogue jonin informant',  rk:'B',ryo:6800,rep:10,dur:3,risk:0.33,mp:65, sq:false,spec:'intel'},
+  {n:'Capture rogue veteran informant',  rk:'B',ryo:6800,rep:10,dur:3,risk:0.33,mp:65, sq:false,spec:'intel'},
   // ── A-rank: high-stakes solo ─────────────────────────────────────────────
   {n:'Retrieve stolen clan scroll',    rk:'A',ryo:10000,rep:15,dur:3,risk:0.35,mp:80, sq:false,spec:'stealth'},
   {n:'Infiltrate enemy village',       rk:'A',ryo:12000,rep:18,dur:3,risk:0.40,mp:85, sq:false,spec:'stealth'},
-  {n:'Eliminate enemy jonin handler',  rk:'A',ryo:11000,rep:16,dur:3,risk:0.38,mp:82, sq:false,spec:'combat'},
-  {n:'Recover jinchuriki intel',       rk:'A',ryo:13000,rep:20,dur:3,risk:0.42,mp:88, sq:false,spec:'intel'},
+  {n:'Eliminate enemy veteran handler',  rk:'A',ryo:11000,rep:16,dur:3,risk:0.38,mp:82, sq:false,spec:'combat'},
+  {n:'Recover vessel intel',       rk:'A',ryo:13000,rep:20,dur:3,risk:0.42,mp:88, sq:false,spec:'intel'},
   {n:'Breach enemy intel network',     rk:'A',ryo:11500,rep:17,dur:3,risk:0.38,mp:84, sq:false,spec:'intel'},
-  {n:'Rescue captured ANBU agent',     rk:'A',ryo:12500,rep:19,dur:3,risk:0.42,mp:86, sq:false,spec:'recovery'},
+  {n:'Rescue captured Shadow agent',     rk:'A',ryo:12500,rep:19,dur:3,risk:0.42,mp:86, sq:false,spec:'recovery'},
   // ── S-rank: nation-altering solo ─────────────────────────────────────────
   {n:'Protect Five-Village Summit',    rk:'S',ryo:25000,rep:40,dur:2,risk:0.45,mp:120,sq:false,spec:'escort'},
   {n:'Assassinate rival kage advisor', rk:'S',ryo:28000,rep:45,dur:3,risk:0.50,mp:130,sq:false,spec:'stealth'},
-  {n:'Retrieve tailed beast scroll',   rk:'S',ryo:30000,rep:50,dur:3,risk:0.52,mp:135,sq:false,spec:'intel'},
-  {n:'Uncover Akatsuki movements',     rk:'S',ryo:27000,rep:42,dur:3,risk:0.48,mp:125,sq:false,spec:'intel'},
+  {n:'Retrieve primal scroll',   rk:'S',ryo:30000,rep:50,dur:3,risk:0.52,mp:135,sq:false,spec:'intel'},
+  {n:'Uncover Syndicate movements',    rk:'S',ryo:27000,rep:42,dur:3,risk:0.48,mp:125,sq:false,spec:'intel'},
   // ── B-rank squad ops ─────────────────────────────────────────────────────
   {n:'Clear bandit stronghold',        rk:'B',ryo:9000, rep:10,dur:2,risk:0.20,mp:150,sq:true, spec:'siege'},
   {n:'Secure collapsed mine rescue',   rk:'B',ryo:8000, rep:9, dur:2,risk:0.18,mp:140,sq:true, spec:'recovery'},
@@ -128,8 +128,8 @@ export const MISS_POOL=[
   {n:'Ambush rival supply convoy',     rk:'A',ryo:15000,rep:18,dur:2,risk:0.28,mp:175,sq:true, spec:'stealth'},
   {n:'Extract clan elders under fire', rk:'A',ryo:17500,rep:24,dur:3,risk:0.34,mp:195,sq:true, spec:'recovery'},
   // ── S-rank squad ops ─────────────────────────────────────────────────────
-  {n:'Siege enemy ANBU safehouse',     rk:'S',ryo:30000,rep:50,dur:3,risk:0.45,mp:250,sq:true, spec:'siege'},
-  {n:'Intercept tailed beast convoy',  rk:'S',ryo:35000,rep:60,dur:3,risk:0.50,mp:280,sq:true, spec:'combat'},
+  {n:'Siege enemy Shadow safehouse',     rk:'S',ryo:30000,rep:50,dur:3,risk:0.45,mp:250,sq:true, spec:'siege'},
+  {n:'Intercept primal convoy',  rk:'S',ryo:35000,rep:60,dur:3,risk:0.50,mp:280,sq:true, spec:'combat'},
   {n:'Assault enemy kage compound',    rk:'S',ryo:32000,rep:55,dur:3,risk:0.48,mp:265,sq:true, spec:'siege'},
 ]
 
@@ -160,14 +160,14 @@ export const SEASONAL_MISSIONS=[
 // Crisis ops: high-reward, 1-month window, injected at 15%/month chance
 export const CRISIS_MISSION_POOL=[
   {n:'URGENT: Kidnapped daimyo aide',       rk:'A',ryo:16000,rep:25,dur:1,risk:0.44,mp:88, sq:false,spec:'recovery'},
-  {n:'URGENT: Rogue ANBU gone dark',        rk:'S',ryo:32000,rep:55,dur:1,risk:0.52,mp:130,sq:false,spec:'combat'},
+  {n:'URGENT: Rogue Shadow gone dark',        rk:'S',ryo:32000,rep:55,dur:1,risk:0.52,mp:130,sq:false,spec:'combat'},
   {n:'URGENT: Intel leak — plug it now',    rk:'B',ryo:9000, rep:12,dur:1,risk:0.35,mp:65, sq:false,spec:'stealth'},
   {n:'URGENT: Border post under siege',     rk:'A',ryo:14000,rep:20,dur:1,risk:0.42,mp:210,sq:true, spec:'siege'},
   {n:'URGENT: Missing scroll — village intel compromised', rk:'B',ryo:8500,rep:11,dur:1,risk:0.33,mp:62,sq:false,spec:'intel'},
   {n:'URGENT: Civilian hostage situation',  rk:'C',ryo:4500, rep:7, dur:1,risk:0.25,mp:40, sq:false,spec:'recovery'},
 ]
-export const UPGRADES_DEF=[{id:'academy',n:'Academy',levels:['Basic','Improved (better prospects)','Elite (Jonin prospects)'],cost:[0,15000,40000]},{id:'hospital',n:'Field Hospital',levels:['None','Basic (-1 injury month)','Advanced (-2 months, KIA shield)'],cost:[0,12000,30000]},{id:'wall',n:'Village Walls',levels:['Palisade','Stone Wall (+15 def)','Ramparts (+35 def)'],cost:[0,20000,50000]},{id:'intel',n:'Intel Network',levels:['None','Informants (+5% success)','ANBU Net (+10%, early raid warning)'],cost:[0,18000,45000]},{id:'training',n:'Training Grounds',levels:['Open Field','Dedicated (2x growth)','Restricted (3x growth)'],cost:[0,10000,25000]},{id:'seal',n:'Barrier Seal',levels:['None','Basic (+10 def)','Full Array (+25 def)'],cost:[0,22000,55000]}]
-export const RAID_POOL=[{n:'Bandit Army',str:40,desc:'Rogue chunin leads bandits.',ryo:5000,rep:5},{n:'Rival Incursion',str:70,desc:'Enemy shinobi probe borders.',ryo:12000,rep:15},{n:'Missing-Nin Cell',str:55,desc:'S-rank missing-nin attack.',ryo:8000,rep:10},{n:'Tailed Beast Rampage',str:90,desc:'Uncontrolled beast approaches.',ryo:20000,rep:25},{n:'Enemy ANBU Squad',str:65,desc:'Elite infiltrators detected.',ryo:10000,rep:12}]
+export const UPGRADES_DEF=[{id:'academy',n:'Academy',levels:['Basic','Improved (better prospects)','Elite (Veteran prospects)'],cost:[0,15000,40000]},{id:'hospital',n:'Field Hospital',levels:['None','Basic (-1 injury month)','Advanced (-2 months, KIA shield)'],cost:[0,12000,30000]},{id:'wall',n:'Village Walls',levels:['Palisade','Stone Wall (+15 def)','Ramparts (+35 def)'],cost:[0,20000,50000]},{id:'intel',n:'Intel Network',levels:['None','Informants (+5% success)','Shadow Net (+10%, early raid warning)'],cost:[0,18000,45000]},{id:'training',n:'Training Grounds',levels:['Open Field','Dedicated (2x growth)','Restricted (3x growth)'],cost:[0,10000,25000]},{id:'seal',n:'Barrier Seal',levels:['None','Basic (+10 def)','Full Array (+25 def)'],cost:[0,22000,55000]}]
+export const RAID_POOL=[{n:'Bandit Army',str:40,desc:'Rogue adept leads bandits.',ryo:5000,rep:5},{n:'Rival Incursion',str:70,desc:'Enemy shinobi probe borders.',ryo:12000,rep:15},{n:'Missing-Nin Cell',str:55,desc:'S-rank missing-nin attack.',ryo:8000,rep:10},{n:'Primal Rampage',str:90,desc:'Uncontrolled beast approaches.',ryo:20000,rep:25},{n:'Enemy Shadow Squad',str:65,desc:'Elite infiltrators detected.',ryo:10000,rep:12}]
 export const VILLAGE_ICONS=['🍃','🌵','🌊','🪨','⚡','🌙','🔥','💨','🌸','❄️']
 
 export const MONTHS=[
@@ -194,7 +194,7 @@ export const JUTSU_LIST=[
   {id:'mindtransfer', n:'Soul Touch Jutsu',           tier:'common',  statKey:'genjutsu',     clan:'Tamashii',  req:{winsB:10}, bonus:{successMod:0.05},              desc:'Slip into the enemy\'s mind, unseen.'},
   {id:'fang',         n:'Pack Fang Spiral',           tier:'common',  statKey:'speed',        clan:'Okamura',   req:{winsB:10}, bonus:{powerMod:0.05},                desc:'A rotating drill of teeth and fury.'},
   {id:'bugswarm',     n:'Hive Swarming Technique',    tier:'common',  statKey:'intelligence', clan:'Mushiba',   req:{winsB:10}, bonus:{successMod:0.04},              desc:'The hive listens only to you.'},
-  {id:'chakrachains', n:'Chain Seal Bind',            tier:'common',  statKey:'chakra',       clan:'Fuma',      req:{winsB:10}, bonus:{powerMod:0.06},                desc:'Forged from living chakra. Binds even tailed beasts.'},
+  {id:'chakrachains', n:'Chain Seal Bind',            tier:'common',  statKey:'chakra',       clan:'Kusari',      req:{winsB:10}, bonus:{powerMod:0.06},                desc:'Forged from living chakra. Binds even primals.'},
   {id:'woodrelease',  n:'Forest Birth: Living Surge', tier:'common',  statKey:'ninjutsu',     clan:'Mori',      req:{winsB:10}, bonus:{powerMod:0.07},                desc:'Life itself becomes armour and blade.'},
   // Uncommon — unlock at first S-rank completion
   {id:'rasengan',     n:'Spiral Orb',                 tier:'uncommon',statKey:'chakra',       clan:null,        req:{winsS:1},  bonus:{powerMod:0.10},                desc:'A spiralling orb of pure chakra. Foundational.'},
@@ -206,9 +206,9 @@ export const JUTSU_LIST=[
   // Rare — prodigy graduates or 50+ lifetime wins
   {id:'mangekyou',    n:'Crimson Kagan',              tier:'rare',    statKey:'genjutsu',     clan:'Kageha',    req:{prodigy:true}, bonus:{powerMod:0.18,successMod:0.08}, desc:'The eyes of sacrifice. Unmatched visual power.'},
   {id:'tenseigan',    n:'Ascendant Eye',              tier:'rare',    statKey:'chakra',       clan:'Shiromi',   req:{prodigy:true}, bonus:{powerMod:0.15,successMod:0.10}, desc:'The awakened bloodline eye. Dominion over all chakra.'},
-  {id:'eightgates',   n:'Eight Inner Gates',          tier:'rare',    statKey:'taijutsu',     clan:null,        req:{wins:50},  bonus:{powerMod:0.20},                desc:'Beyond mortal limits. The body is the jutsu.'},
+  {id:'eightgates',   n:'Eightfold Limit Break',      tier:'rare',    statKey:'taijutsu',     clan:null,        req:{wins:50},  bonus:{powerMod:0.20},                desc:'Beyond mortal limits. The body is the jutsu.'},
   {id:'kotoamatsukami',n:'Supreme Conviction',        tier:'rare',    statKey:'genjutsu',     clan:'Kageha',    req:{prodigy:true}, bonus:{successMod:0.15},           desc:'The highest illusion. The victim never even knows.'},
-  {id:'adamantine',   n:'Sacred Binding Chains',      tier:'rare',    statKey:'chakra',       clan:'Fuma',      req:{wins:50},  bonus:{powerMod:0.15,successMod:0.05}, desc:'Chains that bind gods. Nothing escapes them.'},
+  {id:'adamantine',   n:'Sacred Binding Chains',      tier:'rare',    statKey:'chakra',       clan:'Kusari',      req:{wins:50},  bonus:{powerMod:0.15,successMod:0.05}, desc:'Chains that bind gods. Nothing escapes them.'},
 ]
 
 export const WORLD_CHOICE_EVENTS=[
@@ -223,7 +223,7 @@ export const WORLD_CHOICE_EVENTS=[
     {l:'Ignore it (-10 rep when it spreads)',fn:'plague_none'},
   ]},
   {id:'wanderer',n:'The Wandering Sage',desc:'A legendary sage offers to train one of your shinobi.',effects:{},choices:[
-    {l:'Accept (random Jonin+ gains rare jutsu)',fn:'sage_accept'},
+    {l:'Accept (random Veteran+ gains rare jutsu)',fn:'sage_accept'},
     {l:'Honor them (+5 rep, +10 rel all)',fn:'sage_honor'},
     {l:'Turn them away',fn:'sage_refuse'},
   ]},
@@ -265,13 +265,13 @@ export const TRAUMA_TRAITS = ['Withdrawn','Haunted','Vengeful']
 export const STAFF_ROLES = [
   { id:'head_sensei', n:'Head Sensei',       max:1, stats:['pedagogy','discipline','ninjutsu','experience'], salBase:8000,  desc:'Oversees academy education. Boosts all prospect stat growth.',      effectDesc:'+1 prospect growth per 5 rating points.' },
   { id:'team_sensei', n:'Team Sensei',       max:4, stats:['pedagogy','tactics','empathy','ninjutsu'],      salBase:4000,  desc:'Mentors squads. Improves cohesion and mission success rates.',       effectDesc:'+2% squad mission success per team sensei on staff.' },
-  { id:'scout_jonin', n:'Scout Jonin',       max:5, stats:['perception','judgement','stealth','adaptability'], salBase:3500, desc:'Performs independent scouting of prospects.',                          effectDesc:'Scouting cost −15% per scout jonin (max −60%).' },
-  { id:'head_scout',  n:'Head of Scouting',  max:1, stats:['perception','judgement','intelligence','leadership'], salBase:9000, desc:'Coordinates all scouting ops. Unlocks elite candidates.',       effectDesc:'Unlocks Jonin-rank prospects. −20% scouting cost.' },
+  { id:'scout_jonin', n:'Scout Veteran',       max:5, stats:['perception','judgement','stealth','adaptability'], salBase:3500, desc:'Performs independent scouting of prospects.',                          effectDesc:'Scouting cost −15% per scout veteran (max −60%).' },
+  { id:'head_scout',  n:'Head of Scouting',  max:1, stats:['perception','judgement','intelligence','leadership'], salBase:9000, desc:'Coordinates all scouting ops. Unlocks elite candidates.',       effectDesc:'Unlocks Veteran-rank prospects. −20% scouting cost.' },
   { id:'medical',     n:'Medical Ninja',     max:3, stats:['medical','chakra','precision','empathy'],       salBase:5000,  desc:'Reduces injury risk and recovery time for all shinobi.',             effectDesc:'Injury risk −3% and −0.5mo duration per medical ninja.' },
   { id:'strategist',  n:'Strategist',        max:1, stats:['tactics','intelligence','foresight','diplomacy'], salBase:7000, desc:'Advises on mission selection and risk management.',               effectDesc:'All mission success +5%.' },
-  { id:'council',     n:'Council Advisor',   max:1, stats:['diplomacy','charisma','intelligence','experience'], salBase:6000, desc:'Manages village politics and reputation.',                     effectDesc:'Reputation gain +10%. Kage event outcomes improved.' },
+  { id:'council',     n:'Council Advisor',   max:1, stats:['diplomacy','charisma','intelligence','experience'], salBase:6000, desc:'Manages village politics and reputation.',                     effectDesc:'Reputation gain +10%. Warden event outcomes improved.' },
   { id:'treasurer',   n:'Treasurer',         max:1, stats:['accounting','intelligence','foresight','discipline'], salBase:6500, desc:'Manages village finances and trade negotiations.',           effectDesc:'Trade income +3% per 5 rating. Financial crisis recovery faster.' },
-  { id:'anbu_cmdr',   n:'ANBU Commander',    max:1, stats:['tactics','ninjutsu','stealth','leadership'],    salBase:10000, desc:'Commands ANBU and S-rank operations.',                               effectDesc:'S-rank/ANBU mission success +10%. Defection events rarer.' },
+  { id:'anbu_cmdr',   n:'Shadow Commander',    max:1, stats:['tactics','ninjutsu','stealth','leadership'],    salBase:10000, desc:'Commands Shadow and S-rank operations.',                               effectDesc:'S-rank/Shadow mission success +10%. Defection events rarer.' },
 ]
 
 // ── Finance system ─────────────────────────────────────────────────────────────
@@ -290,12 +290,12 @@ export const FINANCIAL_EVENTS = [
 ]
 // ── Scouting regions ──────────────────────────────────────────────────────────
 export const REGIONS = [
-  { id:'fire',      n:'Land of Fire',      icon:'🔥', clanAffinity:['Kageha','Mori'],            statBonus:{ ninjutsu:5, intelligence:3 }, desc:'Rich chakra potential. Ninjutsu-heavy bloodlines.' },
-  { id:'lightning', n:'Land of Lightning',  icon:'⚡', clanAffinity:['Shiromi'],                   statBonus:{ speed:5, taijutsu:3 },         desc:'Fast and aggressive. Speed and taijutsu specialists.' },
-  { id:'water',     n:'Land of Water',      icon:'🌊', clanAffinity:['Okamura','Mushiba'],         statBonus:{ chakra:4, genjutsu:4 },        desc:'Hidden talent and illusion arts. Rare genjutsu bloodlines.' },
-  { id:'wind',      n:'Land of Wind',       icon:'💨', clanAffinity:[],                            statBonus:{ speed:6, taijutsu:2 },         desc:'Desert-bred endurance. Natural speed from harsh conditions.' },
-  { id:'earth',     n:'Land of Earth',      icon:'🪨', clanAffinity:['Kagero','Tsuchida','Tamashii'], statBonus:{ taijutsu:4, chakra:4 },        desc:'Clan-rich territory. Tactical bloodlines and strong physiques.' },
-  { id:'iron',      n:'Land of Iron',       icon:'⚔️', clanAffinity:[],                            statBonus:{ taijutsu:8 },                  desc:'Samurai country. Non-chakra fighters with exceptional taijutsu.' },
+  { id:'fire',      n:'The Emberlands',     icon:'🔥', clanAffinity:['Kageha','Mori'],            statBonus:{ ninjutsu:5, intelligence:3 }, desc:'Rich chakra potential. Ninjutsu-heavy bloodlines.' },
+  { id:'lightning', n:'The Tempest Reach',  icon:'⚡', clanAffinity:['Shiromi'],                   statBonus:{ speed:5, taijutsu:3 },         desc:'Fast and aggressive. Speed and taijutsu specialists.' },
+  { id:'water',     n:'The Tidewater',      icon:'🌊', clanAffinity:['Okamura','Mushiba'],         statBonus:{ chakra:4, genjutsu:4 },        desc:'Hidden talent and illusion arts. Rare genjutsu bloodlines.' },
+  { id:'wind',      n:'The Dunelands',      icon:'💨', clanAffinity:[],                            statBonus:{ speed:6, taijutsu:2 },         desc:'Desert-bred endurance. Natural speed from harsh conditions.' },
+  { id:'earth',     n:'The Stonelands',     icon:'🪨', clanAffinity:['Kagero','Tsuchida','Tamashii'], statBonus:{ taijutsu:4, chakra:4 },        desc:'Clan-rich territory. Tactical bloodlines and strong physiques.' },
+  { id:'iron',      n:'The Iron Marches',   icon:'⚔️', clanAffinity:[],                            statBonus:{ taijutsu:8 },                  desc:'Warrior country. Non-chakra fighters with exceptional taijutsu.' },
 ]
 
 // ── Youth Academy development ─────────────────────────────────────────────────
@@ -457,7 +457,7 @@ export const AGENT_AGENDAS = [
 // ── Daimyo seasonal objectives ────────────────────────────────────────────────
 export const DAIMYO_OBJECTIVES = [
   { id:'top_prestige',    n:'Reach B-Tier Prestige or Higher',     desc:'The Daimyo expects the village to be recognized among the regional powers.' },
-  { id:'win_exam',        n:'Produce a Chunin Exam Promotion',     desc:'The Daimyo wants to see the village\'s training bear fruit this year.' },
+  { id:'win_exam',        n:'Produce a Adept Exam Promotion',     desc:'The Daimyo wants to see the village\'s training bear fruit this year.' },
   { id:'financial_stable',n:'Maintain Financial Stability',        desc:'No more than one deficit month this year — the treasury must stay sound.' },
   { id:'sign_grads',      n:'Promote 2 Academy Graduates to Roster', desc:'The Daimyo values homegrown talent over expensive transfers.' },
   { id:'no_incidents',    n:'Avoid Diplomatic Incidents',          desc:'No village relations should drop by more than 15 points this year.' },
@@ -465,10 +465,10 @@ export const DAIMYO_OBJECTIVES = [
 
 // ── Sponsorship deals (merchant clans offering passive income with strings) ──
 export const SPONSORSHIP_OFFERS = [
-  { id:'iron_merchants',  n:'Iron Merchants Guild',   monthlyRyo:2200, desc:'Steady patronage from the weapons trade.', obligation:'Must field at least 1 ANBU+ rank shinobi every month.', restrictedVillage:null, minRi:3 },
-  { id:'silk_consortium', n:'Silk Road Consortium',   monthlyRyo:1600, desc:'Luxury traders want your village\'s name attached to their caravans.', obligation:'Restricted from trading with Iwagakure while active.', restrictedVillage:'Iwagakure', minRi:0 },
+  { id:'iron_merchants',  n:'Iron Merchants Guild',   monthlyRyo:2200, desc:'Steady patronage from the weapons trade.', obligation:'Must field at least 1 Shadow+ rank shinobi every month.', restrictedVillage:null, minRi:3 },
+  { id:'silk_consortium', n:'Silk Road Consortium',   monthlyRyo:1600, desc:'Luxury traders want your village\'s name attached to their caravans.', obligation:'Restricted from trading with Stoneveil while active.', restrictedVillage:'Stoneveil', minRi:0 },
   { id:'herb_combine',    n:'Medicinal Herb Combine', monthlyRyo:1200, desc:'Healers\' guild offers a modest stipend.', obligation:'Must field at least 1 medical-track graduate.', restrictedVillage:null, minRi:0 },
-  { id:'shadow_patrons',  n:'Shadow Patrons',         monthlyRyo:3000, desc:'Unnamed backers offer generous funding.', obligation:'Restricted from trading with Kirigakure while active.', restrictedVillage:'Kirigakure', minRi:0 },
+  { id:'shadow_patrons',  n:'Shadow Patrons',         monthlyRyo:3000, desc:'Unnamed backers offer generous funding.', obligation:'Restricted from trading with Tidefort while active.', restrictedVillage:'Tidefort', minRi:0 },
 ]
 
 // ── Dressing room harmony crisis events ───────────────────────────────────────
@@ -481,10 +481,10 @@ export const HARMONY_EVENTS = [
 // ── Group dynamics events (beyond 1-on-1 meetings) ────────────────────────────
 export const GROUP_EVENTS = [
   { id:'public_clash',        n:'Rivals Clash in Training',     icon:'⚡', kind:'bad',     requires:'rivals',     harmonyMod:-8,  moraleMod:-2, indMoraleMod:-5,  desc:'Two rivals came to blows during a training session — the whole squad watched.' },
-  { id:'leadership_challenge',n:'Leader Challenges a Decision', icon:'🗣',  kind:'mixed',   requires:'leader',     harmonyMod:-3,  moraleMod:0,  indMoraleMod:0,   desc:'A senior member openly questioned a Kage decision in front of others — respect or resentment, depending how it lands.' },
+  { id:'leadership_challenge',n:'Leader Challenges a Decision', icon:'🗣',  kind:'mixed',   requires:'leader',     harmonyMod:-3,  moraleMod:0,  indMoraleMod:0,   desc:'A senior member openly questioned a Warden decision in front of others — respect or resentment, depending how it lands.' },
   { id:'milestone_party',     n:'Squad Celebrates a Milestone', icon:'🎉', kind:'good',    requires:'squadwin',   harmonyMod:10, moraleMod:3,  indMoraleMod:8,   desc:'A squad threw an impromptu celebration after a string of wins. Spirits are high.' },
   { id:'mentor_circle',       n:'Veterans Hold a Mentor Circle',icon:'📿', kind:'good',    requires:'leader',     harmonyMod:6,  moraleMod:1,  indMoraleMod:5,   desc:'Senior shinobi gathered the younger ranks to share hard-earned lessons.' },
-  { id:'factional_grumbling', n:'Factional Grumbling',          icon:'😤', kind:'bad',     requires:'lowharmony', harmonyMod:-6, moraleMod:-2, indMoraleMod:-4,  desc:'Quiet cliques are forming. Conversations stop when the Kage walks by.' },
+  { id:'factional_grumbling', n:'Factional Grumbling',          icon:'😤', kind:'bad',     requires:'lowharmony', harmonyMod:-6, moraleMod:-2, indMoraleMod:-4,  desc:'Quiet cliques are forming. Conversations stop when the Warden walks by.' },
   { id:'prodigy_resentment',  n:'Resentment Toward a Prodigy',  icon:'🌀', kind:'bad',     requires:'prodigy',    harmonyMod:-5, moraleMod:-1, indMoraleMod:-6,  desc:'Talk in the barracks turns bitter whenever the prodigy\'s name comes up.' },
   { id:'veteran_speech',      n:'Legend Gives a Speech',        icon:'🎙', kind:'good',    requires:'legend',     harmonyMod:8,  moraleMod:2,  indMoraleMod:6,   desc:'A Village Legend addressed the ranks. Morale lifts village-wide.' },
   { id:'newcomer_friction',   n:'Newcomer Friction',            icon:'🆕', kind:'bad',     requires:'newcomer',   harmonyMod:-4, moraleMod:-1, indMoraleMod:-5,  desc:'A recent arrival is struggling to fit in with the established roster.' },
@@ -559,26 +559,26 @@ export const PRESTIGE_TIERS = [
   { id:'S', min:500, n:'S — Legendary Village', color:'#f66',    staffTier:4, scoutSlots:5, examHostEligible:true  },
 ]
 
-// ── ANBU operation types ──────────────────────────────────────────────────────
+// ── Shadow operation types ──────────────────────────────────────────────────────
 export const ANBU_OPS = [
   { id:'recon',      n:'Recon',           icon:'👁',  minDur:1, maxDur:2, cost:3000,  catchRisk:0.12, desc:'Reveals roster size and economy level of target village.' },
   { id:'deep_cover', n:'Deep Cover',      icon:'🕵',  minDur:2, maxDur:3, cost:6000,  catchRisk:0.22, desc:'Reveals defenses and active squad composition.' },
-  { id:'assn_intel', n:'Assassination Intel', icon:'💀', minDur:3, maxDur:4, cost:10000, catchRisk:0.32, desc:'Reveals Kage stats, active jutsu, and strategic weaknesses.' },
+  { id:'assn_intel', n:'Assassination Intel', icon:'💀', minDur:3, maxDur:4, cost:10000, catchRisk:0.32, desc:'Reveals Warden stats, active jutsu, and strategic weaknesses.' },
 ]
 
-// ── Five Kage Summit agenda items ─────────────────────────────────────────────
+// ── Five Warden Summit agenda items ─────────────────────────────────────────────
 export const SUMMIT_AGENDA = [
   { id:'trade_pact',    n:'Regional Trade Pact',    minVotes:3, desc:'All villages gain +1,500 ryo/month for 3 months.', effect:'ryo_bonus' },
   { id:'war_ban',       n:'War Moratorium',          minVotes:4, desc:'All active conflicts paused for 2 months.',        effect:'peace' },
   { id:'missing_bounty',n:'Missing-Nin Bounties',    minVotes:2, desc:'+8,000 ryo bonus for active missing-nin capture.', effect:'bounty' },
-  { id:'beast_protocol',n:'Tailed Beast Protocol',   minVotes:3, desc:'Tailed beast weaponization banned for 3 months.',  effect:'beast_truce' },
-  { id:'exam_expand',   n:'Expand Chunin Exam',      minVotes:3, desc:'Next exam accepts 8 nominees per village.',         effect:'exam_expand' },
+  { id:'beast_protocol',n:'Primal Protocol',   minVotes:3, desc:'Primal weaponization banned for 3 months.',  effect:'beast_truce' },
+  { id:'exam_expand',   n:'Expand Adept Exam',      minVotes:3, desc:'Next exam accepts 8 nominees per village.',         effect:'exam_expand' },
 ]
 
 // ── S-rank competitive bid contracts ─────────────────────────────────────────
 export const SRANK_CONTRACTS = [
-  { id:'escort_kage',  n:'Escort the Five Kage',     baseRyo:35000, rep:50, prestige:15, risk:0.45, sq:true,  desc:'Guard all five Kage at a covert summit. Highest honor for any force.', complication:'Spy embedded in delegation. Rep −20.' },
-  { id:'seal_bijuu',   n:'Seal a Rampaging Beast',   baseRyo:40000, rep:60, prestige:20, risk:0.50, sq:true,  desc:'Hunt and seal a tailed beast threatening the region.', complication:null },
+  { id:'escort_kage',  n:'Escort the Five Warden',     baseRyo:35000, rep:50, prestige:15, risk:0.45, sq:true,  desc:'Guard all five Warden at a covert summit. Highest honor for any force.', complication:'Spy embedded in delegation. Rep −20.' },
+  { id:'seal_primal',   n:'Seal a Rampaging Beast',   baseRyo:40000, rep:60, prestige:20, risk:0.50, sq:true,  desc:'Hunt and seal a primal threatening the region.', complication:null },
   { id:'fortress',     n:'Destroy Enemy Fortress',   baseRyo:28000, rep:40, prestige:10, risk:0.40, sq:true,  desc:'Raze a fortified stronghold. No survivors, no witnesses.', complication:'Civilian casualties reported. Rep −15, morale −8.' },
   { id:'assn_warlord', n:'Assassinate a Warlord',    baseRyo:32000, rep:45, prestige:12, risk:0.48, sq:false, desc:'Eliminate a warlord threatening regional stability.', complication:'Succession war followed. Allied village rel −10.' },
   { id:'rescue_dipl',  n:'Rescue Captured Diplomat', baseRyo:25000, rep:35, prestige:8,  risk:0.35, sq:false, desc:'Extract a captured diplomat from enemy territory.', complication:null },
@@ -601,7 +601,7 @@ export const DYNASTY_GRADES = [
   { grade:'C', min:40 }, { grade:'D', min:0  },
 ]
 
-// ── Chunin Exam format variants ───────────────────────────────────────────────
+// ── Adept Exam format variants ───────────────────────────────────────────────
 export const EXAM_FORMATS = [
   { id:'intelligence', n:'Intelligence Trial',      icon:'📖', bonusStats:['intelligence'],        desc:'Cryptography, field analysis, and tactical theory dominate every round.' },
   { id:'combat',       n:'Combat Focus',            icon:'⚔',  bonusStats:['taijutsu','speed'],     desc:'Direct combat in every stage — raw power and speed win here.' },

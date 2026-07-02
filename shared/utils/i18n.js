@@ -6,7 +6,7 @@
  * Supports the subset of ICU MessageFormat the game actually needs:
  *   • interpolation        "Signed {name} for {fee} ryo"
  *   • plural               "{n, plural, one {# decision} other {# decisions}}"
- *   • select               "{role, select, kage {Hokage} other {Captain}}"
+ *   • select               "{role, select, warden {Warden} other {Captain}}"
  *   • number               "{amount, number}"  (Intl.NumberFormat, locale-aware)
  *   • the # token inside plural branches → the formatted count
  *

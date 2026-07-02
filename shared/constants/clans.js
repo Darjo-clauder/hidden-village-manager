@@ -11,7 +11,7 @@ export const CLANS = [
     passive: { successMod: 0.04, anbuSuccessBonus: 0.05 },
     councilWeight: 1.4,
     approvalNeeded: 60,
-    desc: 'Elite warriors with visual prowess. Squad success bonus, ANBU advantage.',
+    desc: 'Elite warriors with visual prowess. Squad success bonus, Shadow advantage.',
     missionChains: ['kageha_trial', 'kagan_hunt'],
   },
   {
@@ -66,7 +66,7 @@ export const CLANS = [
     passive: { anbuSuccessBonus: 0.06, missionRiskReduction: 0.02 },
     councilWeight: 0.9,
     approvalNeeded: 40,
-    desc: 'Silent operatives. ANBU missions succeed more often.',
+    desc: 'Silent operatives. Shadow missions succeed more often.',
     missionChains: ['mushiba_colony', 'insect_net'],
   },
 ]

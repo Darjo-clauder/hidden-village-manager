@@ -9,7 +9,7 @@ const _PASSIVE_LABEL = {
   growthBonus:          v => `+${Math.round(v*100)}% shinobi growth`,
   missionRiskReduction: v => `−${Math.round(v*100)}% mission risk`,
   kiaRiskMod:           v => `${v < 0 ? '−' : '+'}${Math.abs(v*100).toFixed(0)}% KIA risk`,
-  anbuSuccessBonus:     v => `+${Math.round(v*100)}% ANBU success`,
+  anbuSuccessBonus:     v => `+${Math.round(v*100)}% Shadow success`,
   scoutConfidenceBonus: v => `+${Math.round(v*100)}% scout confidence`,
 }
 function _passiveStr(passive) {
@@ -67,7 +67,7 @@ export function rClans() {
         ${clP.growthBonus    ? `<span style="color:#8fbc8f">+${(clP.growthBonus*100).toFixed(0)}% growth</span>` : ''}
         ${clP.missionRiskReduction ? `<span style="color:#8fbc8f">−${(clP.missionRiskReduction*100).toFixed(0)}% mission risk</span>` : ''}
         ${clP.kiaRiskMod     ? `<span style="color:#8fbc8f">${(clP.kiaRiskMod*100).toFixed(1)}% KIA risk</span>` : ''}
-        ${clP.anbuSuccessBonus ? `<span style="color:#8fbc8f">+${(clP.anbuSuccessBonus*100).toFixed(0)}% ANBU</span>` : ''}
+        ${clP.anbuSuccessBonus ? `<span style="color:#8fbc8f">+${(clP.anbuSuccessBonus*100).toFixed(0)}% Shadow</span>` : ''}
         ${clP.scoutConfidenceBonus ? `<span style="color:#8fbc8f">+${(clP.scoutConfidenceBonus*100).toFixed(0)}% scouting</span>` : ''}
         ${!activeClanIds.size ? `<span style="color:#3a3630">${t("clans.noMembers")}</span>` : ''}
       </div>

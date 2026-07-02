@@ -11,8 +11,8 @@ export function staffCtx(e, id) {
   const canBeAK = (st.monthsServed || 0) >= 12 && !st.asstKage && !(G.staff || []).some(x => x.asstKage)
   const canMeet = (st.monthsServed || 0) >= 6 && st.hiddenFlaw && !st.flawRevealed
   const items = []
-  if (canBeAK) items.push({ label: 'Designate Asst. Kage', fn: () => window.designateAsstKage && window.designateAsstKage(id) })
-  if (st.asstKage) items.push({ label: 'Remove Asst. Kage', fn: () => window.designateAsstKage && window.designateAsstKage(null) })
+  if (canBeAK) items.push({ label: 'Designate Asst. Warden', fn: () => window.designateAsstKage && window.designateAsstKage(id) })
+  if (st.asstKage) items.push({ label: 'Remove Asst. Warden', fn: () => window.designateAsstKage && window.designateAsstKage(null) })
   if (canMeet) items.push({ label: '1-on-1 Meeting', fn: () => window.staffPersonalMeeting && window.staffPersonalMeeting(id) })
   if (items.length) items.push({ separator: true })
   items.push({ label: 'Release', danger: true, fn: () => { if (confirm(`Release ${st.fn} ${st.ln}? This cannot be undone.`)) window.releaseStaff && window.releaseStaff(id) } })
@@ -131,7 +131,7 @@ function _rosterTab() {
           html += `<div style="border:1px solid #2e2820;padding:8px;margin-top:6px;background:#111" oncontextmenu="return staffCtx(event,'${st.id}')">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
               <div onmousemove="staffHover(event,'${st.id}')" onmouseleave="hideHoverPreview()">
-                <div style="font-size:10px;color:#e8e0cc;font-weight:bold">${st.fn} ${st.ln}${isAsstKage ? ' <span style="color:#87ceeb;font-size:8px">★ Asst. Kage</span>' : ''}</div>
+                <div style="font-size:10px;color:#e8e0cc;font-weight:bold">${st.fn} ${st.ln}${isAsstKage ? ' <span style="color:#87ceeb;font-size:8px">★ Asst. Warden</span>' : ''}</div>
                 <div style="font-size:8px;color:#7a7060">Rating: <span style="color:#c9a84c;font-weight:bold">${st.rating}</span> · ${yearsServed > 0 ? yearsServed + 'yr ' : ''}${st.monthsServed}mo · ${fmt(st.salary)}/mo</div>
                 <div style="font-size:7px;color:${ambColor};margin-top:2px">${ambLabel}${(st.ambition||0)>=14&&roleId==='team_sensei'?' — watching for head sensei opening':''}${st.hiddenFlaw&&st.flawRevealed?' · ⚠ '+st.hiddenFlaw:''}</div>
                 ${st.institutional > 0 ? `<div style="font-size:8px;color:#cc7fb8">Legacy bonus: +${st.institutional} to next hire</div>` : ''}
@@ -162,7 +162,7 @@ function _rosterTab() {
     <div style="font-size:9px;color:#7a7060;margin-bottom:8px">Shinobi with 20+ wins can transition to a staff role upon retirement.</div>`
   const eligible = G.shinobi.filter(s => s.wins >= 20 && s.ri >= 2)
   if (eligible.length === 0) {
-    html += `<div style="font-size:8px;color:#3a3630;font-style:italic">No eligible shinobi — requires Jonin+ with 20+ wins.</div>`
+    html += `<div style="font-size:8px;color:#3a3630;font-style:italic">No eligible shinobi — requires Veteran+ with 20+ wins.</div>`
   } else {
     eligible.forEach(s => {
       html += `<div style="border:1px solid #2e2820;padding:8px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center">
@@ -175,7 +175,7 @@ function _rosterTab() {
     })
   }
 
-  // ── Assistant Kage log ────────────────────────────────────────────────────
+  // ── Assistant Warden log ────────────────────────────────────────────────────
   const akLog = G.asstKageLog || []
   if (akLog.length > 0) {
     html += `<div class="pt" style="margin-top:14px">${tr("staff.akDecisions")}</div>

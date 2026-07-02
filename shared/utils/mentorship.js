@@ -1,7 +1,7 @@
 /**
  * Mentorship system.
  *
- * A Jonin+ shinobi can be assigned as mentor to one Genin/Chunin student at a time.
+ * A Veteran+ shinobi can be assigned as mentor to one Initiate/Adept student at a time.
  * The bond accelerates the student's stat development and eventually unlocks a
  * one-time stat bonus. Both parties gain a mentor_bond memory after 3 months.
  *
@@ -12,16 +12,16 @@ import { RANKS } from '../../client/js/constants.js'
 
 // ── Eligibility ───────────────────────────────────────────────────────────────
 
-/** Returns true if s can serve as a mentor (Jonin+ active, not already mentoring). */
+/** Returns true if s can serve as a mentor (Veteran+ active, not already mentoring). */
 export function isMentorEligible(s, mentorships) {
-  if (s.ri < 2) return false                             // must be Jonin+
+  if (s.ri < 2) return false                             // must be Veteran+
   if (s.status !== 'available') return false
   return !mentorships.some(m => m.mentorId === s.id)
 }
 
-/** Returns true if s can receive mentorship (Genin/Chunin, active, no current mentor). */
+/** Returns true if s can receive mentorship (Initiate/Adept, active, no current mentor). */
 export function isStudentEligible(s, mentorships) {
-  if (s.ri > 1) return false                             // Genin or Chunin only
+  if (s.ri > 1) return false                             // Initiate or Adept only
   if (s.status !== 'available') return false
   return !mentorships.some(m => m.studentId === s.id)
 }
@@ -147,7 +147,7 @@ export function getMentorshipRecord(shinobiId, mentorships) {
 }
 
 /**
- * Returns a short summary string for use in the dossier (e.g. "Mentoring Naruto Uzumaki (3 months)").
+ * Returns a short summary string for use in the dossier (e.g. "Mentoring Ryu Kuroda (3 months)").
  */
 export function mentorshipSummary(s, mentorships, shinobi) {
   const asM = mentorships.find(r => r.mentorId === s.id)

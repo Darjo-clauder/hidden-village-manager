@@ -109,7 +109,7 @@ export function rVi() {
       `, 2)
     })() +
 
-    // Jinchuriki
+    // Vessel
     card(tr('village.card.beasts'), `
       <div style="font-size:15px;color:#cc7fb8;font-family:'Courier New',monospace">${G.beasts.filter(b => b.sealed && b.jk).length}<span style="font-size:9px;color:#555"> / ${G.beasts.filter(b => b.sealed).length} sealed</span></div>
       <div style="font-size:8px;color:#7a7060;margin-top:2px">${G.beasts.filter(b => b.sealed).length ? G.beasts.filter(b => b.sealed).map(b => b.n).join(', ') : 'None sealed'}</div>

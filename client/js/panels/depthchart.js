@@ -93,7 +93,7 @@ export function rDep() {
 
     <!-- Academy pipeline -->
     <div style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-top:10px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">Academy Pipeline → Genin</div>
+      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">Academy Pipeline → Initiate</div>
       <div style="font-size:9px;color:var(--text-dim);margin-bottom:6px">
         ${(G.intakeClass||[]).length} students enrolled
         ${graduating.length > 0 ? ` · <span style="color:var(--green)">↑ ${graduating.length} graduating soon</span>` : ''}

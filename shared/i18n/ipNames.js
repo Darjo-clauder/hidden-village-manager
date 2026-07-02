@@ -2,7 +2,7 @@
  * IP namespace (L10N P1) — the single swap point for IP-named entities.
  *
  * The game's flavor terms (shinobi ranks, squad roles, clan & nation names, jutsu,
- * beasts) are Naruto-derived IP. This module is the ONLY place those display labels
+ * beasts) are original-IP flavor. This module is the ONLY place those display labels
  * resolve, so a future IP-neutral build can replace/override them here without
  * touching a single UI string in the `ui.*` locale tables.
  *
@@ -16,7 +16,7 @@ import { CLAN_BY_ID } from '../constants/clans.js'
 import { NATIONS } from '../constants/nations.js'
 
 // Canonical IP labels owned by this module (the swap targets).
-export const IP_RANKS = ['Genin', 'Chunin', 'Jonin', 'ANBU', 'Sannin']
+export const IP_RANKS = ['Initiate', 'Adept', 'Veteran', 'Shadow', 'Legend']
 export const IP_ROLES = { vanguard: 'Vanguard', support: 'Support', intel: 'Intel', medical: 'Medical', flex: 'Flex' }
 
 let _overrides = {}

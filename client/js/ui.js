@@ -78,7 +78,7 @@ export function upUI() {
 
   // ── Top bar village identity ───────────────────────────────────────────
   _set('tb-vname',   G.vName || 'Your Village')
-  _set('tb-kname',   G.kName || 'Kage')
+  _set('tb-kname',   G.kName || 'Warden')
   _set('tb-icon',    G.vIcon || '🍃')
   _set('tb-prestige', G.prestigeTier || 'D')
 

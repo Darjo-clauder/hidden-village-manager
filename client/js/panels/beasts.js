@@ -19,7 +19,7 @@ export function rBe() {
   const escapeNotices = (G.notices || []).filter(n => n.type === 'beast_escape')
 
   el.innerHTML = `
-    <div class="pt">Tailed Beasts</div>
+    <div class="pt">Primals</div>
 
     ${escapeNotices.length > 0 ? `
       <div style="background:#3a0a0a;border:1px solid var(--red);padding:12px 14px;margin-bottom:14px">
@@ -56,7 +56,7 @@ function _renderOverview(sealedBeasts, wildBeasts, passives, rivalHeld = []) {
   return `
     ${dualWarning ? `
       <div style="background:#3a1010;border:1px solid var(--red);padding:10px 14px;margin-bottom:12px;font-size:9px;color:var(--red)">
-        ⚠ Dual jinchuriki active — extraction attempts doubled, server-wide threat level increased.
+        ⚠ Dual vessel active — extraction attempts doubled, server-wide threat level increased.
       </div>
     ` : ''}
 
@@ -80,7 +80,7 @@ function _renderOverview(sealedBeasts, wildBeasts, passives, rivalHeld = []) {
             <div style="display:flex;align-items:flex-start;justify-content:space-between">
               <div>
                 <div style="font-size:12px;color:var(--text-hi)">${b.n}</div>
-                <div style="font-size:8px;color:var(--text-dim);margin-top:2px">${'◆'.repeat(b.tails)} ${b.tails}-Tails · ${b.element || data.element || ''} · Power ${b.pow || data.pow}</div>
+                <div style="font-size:8px;color:var(--text-dim);margin-top:2px">${'◆'.repeat(b.tails)} Tier-${b.tails} Primal · ${b.element || data.element || ''} · Power ${b.pow || data.pow}</div>
               </div>
               <div style="font-size:8px;color:var(--orange);padding:2px 8px;border:1px solid var(--orange)">Held by ${b.owner}</div>
             </div>
@@ -112,7 +112,7 @@ function _renderSealedCard(b) {
         <div>
           <div style="font-size:14px;color:var(--text-hi);font-weight:bold">${b.n}</div>
           <div style="font-size:9px;color:var(--text-dim);margin-top:2px">
-            ${'◆'.repeat(b.tails)} ${b.tails}-Tails · ${b.element || data.element || ''}
+            ${'◆'.repeat(b.tails)} Tier-${b.tails} Primal · ${b.element || data.element || ''}
           </div>
           <div style="font-size:8px;color:var(--text-dim);margin-top:2px;font-style:italic">${data.personality || ''}</div>
         </div>
@@ -158,10 +158,10 @@ function _renderSealedCard(b) {
         ${_stageFlavor(b, stage)}
       </div>
 
-      <!-- Jinchuriki -->
+      <!-- Vessel -->
       ${jkS ? `
         <div style="margin-bottom:12px;padding:10px;background:var(--surface-2);border:1px solid var(--border)">
-          <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">Jinchuriki</div>
+          <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">Vessel</div>
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div>
               <div style="font-size:11px;color:var(--text-hi)">${jkS.fn} ${jkS.ln}</div>
@@ -194,7 +194,7 @@ function _renderSealedCard(b) {
         </div>
       ` : `
         <div style="margin-bottom:12px;padding:10px;background:var(--surface-2);border:1px solid var(--border)">
-          <div style="font-size:9px;color:var(--orange)">No Jinchuriki assigned. Assign from the Roster (click any shinobi → Jinchuriki section).</div>
+          <div style="font-size:9px;color:var(--orange)">No Vessel assigned. Assign from the Roster (click any shinobi → Vessel section).</div>
         </div>
       `}
 
@@ -227,7 +227,7 @@ function _renderSealedCard(b) {
       <!-- Actions -->
       <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
         <button class="gb" onclick="beastTab('lore')">View Lore ▸</button>
-        ${jkS ? `<button class="gb" onclick="releaseJinchuriki('${b.n}')" style="background:transparent;border-color:var(--red);color:var(--red)">Release Seal</button>` : ''}
+        ${jkS ? `<button class="gb" onclick="releaseVessel('${b.n}')" style="background:transparent;border-color:var(--red);color:var(--red)">Release Seal</button>` : ''}
       </div>
     </div>
   `
@@ -244,7 +244,7 @@ function _renderWildCard(b) {
         <div>
           <div style="font-size:12px;color:var(--text-hi)">${b.n}</div>
           <div style="font-size:8px;color:var(--text-dim);margin-top:2px">
-            ${'◆'.repeat(b.tails)} ${b.tails}-Tails · ${b.element || data.element || ''}
+            ${'◆'.repeat(b.tails)} Tier-${b.tails} Primal · ${b.element || data.element || ''}
           </div>
           <div style="font-size:8px;color:var(--text-dim);margin-top:1px;font-style:italic">${data.personality || ''}</div>
         </div>
@@ -257,7 +257,7 @@ function _renderWildCard(b) {
       </div>
       ${capM
         ? `<div style="font-size:9px;color:var(--gold)">⟳ Capture mission in progress — ${capM.daysLeft}m remaining</div>`
-        : `<button class="gb" onclick="lCap('${b.n}')" ${!canCapture ? 'disabled title="Need ANBU+ available"' : ''}>Launch Capture (ANBU+) ▸</button>`
+        : `<button class="gb" onclick="lCap('${b.n}')" ${!canCapture ? 'disabled title="Need Shadow+ available"' : ''}>Launch Capture (Shadow+) ▸</button>`
       }
     </div>
   `
@@ -332,7 +332,7 @@ function _renderPassives(passives) {
   return `
     <div style="background:var(--surface);border:1px solid var(--border);padding:14px;margin-bottom:14px">
       <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px">Active Village Passives</div>
-      ${sealedWithJk.length === 0 ? `<div style="color:var(--text-dim);font-size:9px">No jinchuriki — no passive bonuses active.</div>` : `
+      ${sealedWithJk.length === 0 ? `<div style="color:var(--text-dim);font-size:9px">No vessel — no passive bonuses active.</div>` : `
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">
           ${[
             { label: 'Mission Luck',       val: passives.missionLuck > 0 ? `+${Math.round(passives.missionLuck*100)}%` : '—', color: passives.missionLuck > 0 ? 'var(--green)' : 'var(--text-dim)' },
@@ -434,14 +434,14 @@ export function reinforceSeal(bN) {
   rBe(); upUI()
 }
 
-export function releaseJinchuriki(bN) {
+export function releaseVessel(bN) {
   const b = G.beasts.find(x => x.n === bN)
   if (!b || !b.jk) return
   const jk = G.shinobi.find(s => s.id === b.jk)
   if (jk) {
     // Remove stat bonuses (rough reversal)
     jk.jk = null
-    jk.title = jk.title === `Jinchuriki of ${bN}` ? null : jk.title
+    jk.title = jk.title === `Vessel of ${bN}` ? null : jk.title
   }
   b.jk = null
   b.syncMonths = 0

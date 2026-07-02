@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   updateConfidence, confidenceMod, formGrudge, grudgePenalty, pairChemistryBonus,
-  personalityBlurb, NARUTO_ARCHETYPES, ARCHETYPE_BY_ID,
+  personalityBlurb, NARRATIVE_ARCHETYPES, ARCHETYPE_BY_ID,
 } from '../shared/utils/personality.js'
 
 function makeShinobi(overrides = {}) {
@@ -175,13 +175,13 @@ describe('personalityBlurb', () => {
   })
 })
 
-describe('NARUTO_ARCHETYPES', () => {
+describe('NARRATIVE_ARCHETYPES', () => {
   it('has 9 archetypes', () => {
-    expect(NARUTO_ARCHETYPES).toHaveLength(9)
+    expect(NARRATIVE_ARCHETYPES).toHaveLength(9)
   })
 
   it('each archetype has id, label, desc', () => {
-    NARUTO_ARCHETYPES.forEach(a => {
+    NARRATIVE_ARCHETYPES.forEach(a => {
       expect(typeof a.id).toBe('string')
       expect(typeof a.label).toBe('string')
       expect(typeof a.desc).toBe('string')

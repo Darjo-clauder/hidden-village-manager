@@ -2,7 +2,7 @@
  * Prestige tiers — the single source of truth for how a village's prestige is derived.
  *
  * Prestige is driven by LEGEND (not reputation): legend accrues from missions (per rank),
- * Grand Tournament / Chunin Exam wins, sealed beasts, monuments, and milestone events.
+ * Grand Tournament / Adept Exam wins, sealed beasts, monuments, and milestone events.
  * The tier gates salary-cap headroom (salaryCap.js) and baseline income (economy.js
  * PRESTIGE_REVENUE), so anything that models the economy — including the dynasty-sweep
  * harness — MUST derive prestige the same way the live tick does, or its verdict drifts

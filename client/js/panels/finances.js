@@ -71,11 +71,11 @@ export function rFi() {
 
   // Shinobi breakdown by rank
   const rankSal = [
-    { n:'Genin',   ri:0, sal:500 },
-    { n:'Chunin',  ri:1, sal:900 },
-    { n:'Jonin',   ri:2, sal:1300 },
-    { n:'ANBU',    ri:3, sal:1700 },
-    { n:'Sannin',  ri:4, sal:2100 },
+    { n:'Initiate',   ri:0, sal:500 },
+    { n:'Adept',  ri:1, sal:900 },
+    { n:'Veteran',   ri:2, sal:1300 },
+    { n:'Shadow',    ri:3, sal:1700 },
+    { n:'Legend',  ri:4, sal:2100 },
   ].filter(r => G.shinobi.filter(s => s.ri === r.ri).length > 0)
     .map(r => {
       const grp = G.shinobi.filter(s => s.ri === r.ri)
@@ -114,7 +114,7 @@ export function rFi() {
       ${row('Village Revenue (tax base · rep ' + (G.reputation||0) + ')', '+' + fmt(villageRev), '#8fbc8f')}
       ${row('Trade Routes (' + G.tradeRoutes.filter(r=>r.active).length + ' active)', '+' + fmt(trI), '#8fbc8f')}
       ${row('Contracts (' + G.contracts.filter(c=>c.active).length + ' active)', '+' + fmt(coI), '#8fbc8f')}
-      ${jkI > 0 ? row('Jinchuriki (Niryuu)', '+' + fmt(jkI), '#c9a84c') : ''}
+      ${jkI > 0 ? row('Vessel (Niryuu)', '+' + fmt(jkI), '#c9a84c') : ''}
       ${daimyoB > 0 ? row('Daimyo Bonus (' + daimyoLbl + ')', '+' + fmt(daimyoB), '#c9a84c') : ''}
       ${fin.examFees > 0 ? row('Exam Hosting Fees', '+' + fmt(fin.examFees), '#8fbc8f') : ''}
       ${fin.loanFees > 0 ? row('Loan Fees Received', '+' + fmt(fin.loanFees), '#8fbc8f') : ''}
@@ -197,7 +197,7 @@ export function rFi() {
         { label: 'Village rev', value: villageRev, color: '#8fbc8f' },
         { label: 'Trade routes', value: trI, color: '#8fbc8f' },
         { label: 'Contracts', value: coI, color: '#8fbc8f' },
-        ...(jkI > 0 ? [{ label: 'Jinchuriki', value: jkI, color: '#c9a84c' }] : []),
+        ...(jkI > 0 ? [{ label: 'Vessel', value: jkI, color: '#c9a84c' }] : []),
         ...(daimyoB > 0 ? [{ label: 'Daimyo bonus', value: daimyoB, color: '#c9a84c' }] : []),
       ].filter(b => b.value > 0), { format: v => '+' + fmt(v) })}
     </div>` : ''}

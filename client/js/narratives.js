@@ -98,7 +98,7 @@ const NARRATIVES = {
       'The target had backup. {name} fought clear but couldn\'t finish the job.',
       '{name}\'s cover broke at the worst moment. Mission scrubbed.',
       'Too many variables, not enough time. {name} calls it a near-miss.',
-      'Unexpected ANBU presence. {name} pulled back before it became worse.',
+      'Unexpected Shadow presence. {name} pulled back before it became worse.',
       'The extraction point was already burned. {name} found another way out.',
       'Three things went wrong at once. {name} survived one and failed the others.',
       'The asset was gone before {name} arrived. They came back with nothing.',
@@ -114,13 +114,13 @@ const NARRATIVES = {
       '{name} walked into the enemy village and walked back out. Alone.',
       'The stolen scroll has been recovered. {name} won\'t discuss the details.',
       'Elite opposition, no backup, and {name} still delivered. Legendary.',
-      '{name} turned the Kage\'s flanks without triggering a single alarm.',
+      '{name} turned the Warden\'s flanks without triggering a single alarm.',
       'Every contingency failed except {name}. That was enough.',
       'The dossier said impossible. {name} handed it in before sunrise.',
       '{name} dismantled the cell from the inside. No survivors to report back.',
       'The target is eliminated. The village is safe. {name} said it would happen.',
       'Whatever {name} did in those three days — the results speak without a debrief.',
-      'Four elite jonin, one contested objective. {name} secured it.',
+      'Four elite veteran, one contested objective. {name} secured it.',
       'Speed, intelligence, and ruthlessness. {name} used all three.',
       'The mission lasted seventy-two hours. {name} slept four of them. Still won.',
       'The enemy didn\'t know {name} was there until it was already over.',
@@ -148,7 +148,7 @@ const NARRATIVES = {
   S: {
     success: [
       '{name} faced the unthinkable and didn\'t flinch. The world shifted quietly.',
-      'An S-rank mission fulfilled. Even the Kage paused upon reading the report.',
+      'An S-rank mission fulfilled. Even the Warden paused upon reading the report.',
       '{name} stood between destruction and survival — and chose correctly.',
       'History will not record what {name} did tonight. But it mattered.',
       'The threat has been neutralised. {name} says nothing and asks for rest.',
@@ -337,28 +337,28 @@ const SQUAD_NARRATIVES = {
 
 // Rank-up narratives — used when a mission directly causes a promotion
 const RANK_UP_NARRATIVES = {
-  Genin: [
-    'Academy lessons end here. {name} steps into the real world as a Genin.',
-    'The village has formally recognized {name}. Genin rank — the first threshold crossed.',
-    '{name} graduates from theory to practice. A Genin now, and something more by the end of it.',
+  Initiate: [
+    'Academy lessons end here. {name} steps into the real world as a Initiate.',
+    'The village has formally recognized {name}. Initiate rank — the first threshold crossed.',
+    '{name} graduates from theory to practice. A Initiate now, and something more by the end of it.',
   ],
-  Chunin: [
-    '{name} carries more than skill now — they carry responsibility. Chunin rank earned.',
-    'Leadership capacity confirmed. {name} is now Chunin, and the village expects more of them.',
-    'A hard-earned promotion. {name} becomes Chunin and doesn\'t smile about it. They know what it costs.',
+  Adept: [
+    '{name} carries more than skill now — they carry responsibility. Adept rank earned.',
+    'Leadership capacity confirmed. {name} is now Adept, and the village expects more of them.',
+    'A hard-earned promotion. {name} becomes Adept and doesn\'t smile about it. They know what it costs.',
   ],
-  Jonin: [
-    'Jonin rank. {name} has crossed a threshold most shinobi never reach.',
-    'The village\'s elite acknowledge {name} as one of their own. Jonin status confirmed.',
-    '{name} doesn\'t feel different — but the mission roster they\'re cleared for says otherwise. Jonin.',
+  Veteran: [
+    'Veteran rank. {name} has crossed a threshold most shinobi never reach.',
+    'The village\'s elite acknowledge {name} as one of their own. Veteran status confirmed.',
+    '{name} doesn\'t feel different — but the mission roster they\'re cleared for says otherwise. Veteran.',
   ],
-  ANBU: [
-    '{name} enters the shadows. ANBU rank — their name leaves the public record.',
-    'Classified. {name} has crossed into ANBU. Most shinobi pretend they don\'t exist.',
-    'The mask is earned. {name} becomes ANBU, and the world will not know why they\'re missing.',
+  Shadow: [
+    '{name} enters the shadows. Shadow rank — their name leaves the public record.',
+    'Classified. {name} has crossed into Shadow. Most shinobi pretend they don\'t exist.',
+    'The mask is earned. {name} becomes Shadow, and the world will not know why they\'re missing.',
   ],
   'S-Rank': [
-    'S-Rank. {name}\'s name is spoken in hushed tones now. Even Kage take note.',
+    'S-Rank. {name}\'s name is spoken in hushed tones now. Even Warden take note.',
     'There is no higher designation. {name} has reached the apex of the shinobi world.',
     'Few shinobi reach S-Rank. Fewer survive it. {name} has done both.',
   ],

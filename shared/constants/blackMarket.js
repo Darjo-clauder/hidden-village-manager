@@ -53,7 +53,7 @@ export const BLACK_MARKET_MISSIONS = [
     kiaBonus: 0.03,
     reqRi: 3,
     reqAnbu: true,
-    desc: 'Infiltrate a rival village. ANBU required. Reveals village strength and current missions.',
+    desc: 'Infiltrate a rival village. Shadow required. Reveals village strength and current missions.',
     discoveryChance: 0.09,
     rewardIntel: true,
   },

@@ -1,5 +1,5 @@
 /**
- * Kage development — a GM/coach-style progression for the player's Kage.
+ * Warden development — a GM/coach-style progression for the player's Warden.
  * Six attributes, each hooked into a live system; XP + spendable points earned
  * from playing; a one-time Path (background) that biases the build.
  *
@@ -11,11 +11,11 @@ export const KAGE_ATTR_CAP = 12
 // per = bonus contributed PER point of the attribute (applied where noted).
 export const KAGE_ATTRS = [
   { id: 'command',        n: 'Command',        icon: '⚔',  per: 0.012, desc: 'Mission & squad success. +1.2% success per point.' },
-  { id: 'tactics',        n: 'Tactics',        icon: '🎯', per: 0.012, desc: 'Edge in Chunin Exams & Nation War. +1.2% advance per point.' },
+  { id: 'tactics',        n: 'Tactics',        icon: '🎯', per: 0.012, desc: 'Edge in Adept Exams & Nation War. +1.2% advance per point.' },
   { id: 'mentorship',     n: 'Mentorship',     icon: '📖', per: 0.03,  desc: 'Shinobi development speed. +3% growth per point.' },
   { id: 'diplomacy',      n: 'Diplomacy',      icon: '🤝', per: 0.05,  desc: 'Relations gains & cheaper alliances. +5% per point.' },
   { id: 'administration', n: 'Administration', icon: '🏛', per: 0.012, desc: 'Village income. +1.2% income per point.' },
-  { id: 'espionage',      n: 'Espionage',      icon: '🕵', per: 0.03,  desc: 'ANBU & deep-cover success. +3% per point.' },
+  { id: 'espionage',      n: 'Espionage',      icon: '🕵', per: 0.03,  desc: 'Shadow & deep-cover success. +3% per point.' },
 ]
 export const ATTR_BY_ID = Object.fromEntries(KAGE_ATTRS.map(a => [a.id, a]))
 
@@ -28,7 +28,7 @@ export const KAGE_PATHS = [
 ]
 export const PATH_BY_ID = Object.fromEntries(KAGE_PATHS.map(p => [p.id, p]))
 
-/** Default Kage dev block for a new game. */
+/** Default Warden dev block for a new game. */
 export function newKageDev() {
   return { level: 1, xp: 0, points: 0, path: null, perk: null,
     attrs: { command: 1, tactics: 1, mentorship: 1, diplomacy: 1, administration: 1, espionage: 1 } }

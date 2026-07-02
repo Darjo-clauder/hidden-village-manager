@@ -7,7 +7,7 @@
  *   link — panel id for clickable context (or null)
  */
 
-const RANK_LABELS = ['Genin', 'Chunin', 'Jonin', 'ANBU', 'Sannin']
+const RANK_LABELS = ['Initiate', 'Adept', 'Veteran', 'Shadow', 'Legend']
 const rk = ri => RANK_LABELS[ri] ?? 'Shinobi'
 const pk = arr => arr[Math.floor(Math.random() * arr.length)]
 
@@ -109,10 +109,10 @@ export function genGrudgeBlurb(nameA, nameB, reasonLabel, intensity) {
 // ── Rank-up blurbs ─────────────────────────────────────────────────────────
 
 const RANKUP_COPY = {
-  1: n => `${n} earned Chunin. No more D-rank cat retrieval — the village gains a field leader.`,
-  2: n => `${n} is Jonin now. The Daimyo's court received the scroll this morning.`,
-  3: n => `${n} was recruited into ANBU. The mask is black. The missions don't go in the report.`,
-  4: n => `${n} has reached the level of Sannin. A legend walks these streets.`,
+  1: n => `${n} earned Adept. No more D-rank cat retrieval — the village gains a field leader.`,
+  2: n => `${n} is Veteran now. The Daimyo's court received the scroll this morning.`,
+  3: n => `${n} was recruited into Shadow. The mask is black. The missions don't go in the report.`,
+  4: n => `${n} has reached the level of Legend. A legend walks these streets.`,
 }
 
 export function genRankUpBlurb(name, newRi) {
@@ -142,13 +142,13 @@ export function genWarResultBlurb(won, villageName, kiaCount) {
 export function genExamResultBlurb(won, villageName, promotions) {
   if (won) {
     return {
-      title: 'Chunin Exam: Champion',
-      body: `${villageName} dominated the Chunin Exam. ${promotions ? `${promotions} shinobi earned promotion.` : 'The next generation has arrived.'}`,
+      title: 'Adept Exam: Champion',
+      body: `${villageName} dominated the Adept Exam. ${promotions ? `${promotions} shinobi earned promotion.` : 'The next generation has arrived.'}`,
       tag: 'exam', link: 'exam',
     }
   }
   return {
-    title: 'Chunin Exam: Eliminated',
+    title: 'Adept Exam: Eliminated',
     body: `The Exam is over for ${villageName}. Scouts are already noting which prospects need another cycle.`,
     tag: 'exam', link: 'exam',
   }
@@ -159,7 +159,7 @@ export function genExamResultBlurb(won, villageName, promotions) {
 export function genPrestigeBlurb(villageName, tier) {
   return {
     title: `Prestige: Tier ${tier}`,
-    body: `${villageName} reached Prestige ${tier}. Word travels fast — rival Kage are adjusting their threat assessments.`,
+    body: `${villageName} reached Prestige ${tier}. Word travels fast — rival Warden are adjusting their threat assessments.`,
     tag: 'prestige', link: 'legacy',
   }
 }
@@ -169,7 +169,7 @@ export function genPrestigeBlurb(villageName, tier) {
 export function genCounterStrategyBlurb(villageName, strategyLabel, strategyDesc) {
   return {
     title: `Intel: ${villageName} — ${strategyLabel}`,
-    body: `ANBU reports that ${villageName} has shifted tactics. ${strategyDesc}`,
+    body: `Shadow reports that ${villageName} has shifted tactics. ${strategyDesc}`,
     tag: 'intel', link: null,
   }
 }

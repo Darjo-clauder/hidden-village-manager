@@ -109,7 +109,7 @@ function maybePoach(scout, G) {
   if (rating < 16) return
   if (Math.random() > 0.06) return  // 6% monthly chance
 
-  const RIVALS = ['Raikurokure', 'Kazegakure', 'Shimogakure', 'Gangakure']
+  const RIVALS = ['Stormreach', 'Dunehold', 'Tidefort', 'Stoneveil']
   const village = RIVALS[Math.floor(Math.random() * RIVALS.length)]
   const retentionCost = rating * 800
 

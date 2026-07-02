@@ -1,6 +1,6 @@
 /**
- * Rival Kage Personal Relationship System
- * Tracks personal grudges/respect between your Kage and rival village Kage,
+ * Rival Warden Personal Relationship System
+ * Tracks personal grudges/respect between your Warden and rival village Warden,
  * independent of village-level diplomatic standing.
  */
 
@@ -19,7 +19,7 @@ export function getKageTier(personalRel) {
   return REL_TIERS.find(t => personalRel >= t.min) || REL_TIERS[REL_TIERS.length - 1]
 }
 
-/** Called when initializing a village — seeds personal Kage relationship. */
+/** Called when initializing a village — seeds personal Warden relationship. */
 export function initKageRel(village) {
   if (village.kagePersonalRel === undefined) {
     village.kagePersonalRel = 50 // Start professional
@@ -27,13 +27,13 @@ export function initKageRel(village) {
   }
 }
 
-/** Ensure all villages have Kage relationship data. */
+/** Ensure all villages have Warden relationship data. */
 export function ensureKageRels(G) {
   ;(G.villages || []).forEach(v => initKageRel(v))
 }
 
 /**
- * Modify personal Kage relationship. Reason is logged to kageHistory.
+ * Modify personal Warden relationship. Reason is logged to kageHistory.
  * Returns the event text for aL().
  */
 export function shiftKageRel(village, delta, reason, G) {
@@ -67,7 +67,7 @@ export function kageRelNegotiationMod(village) {
  */
 export function kageToneDialogue(village, context = 'offer') {
   const tier = getKageTier(village.kagePersonalRel ?? 50)
-  const kage = village.kage || `The ${village.kageRank || 'Kage'}`
+  const kage = village.kage || `The ${village.kageRank || 'Warden'}`
   const dialogue = {
     warm: {
       offer: `${kage} receives your envoy with a rare warmth. "I have always found your village honorable. Let us discuss."`,
@@ -86,12 +86,12 @@ export function kageToneDialogue(village, context = 'offer') {
     },
     terse: {
       offer: `${kage} crosses their arms. "Say what you came to say and be quick about it."`,
-      reject: `${kage} cuts you off. "No. Tell your Kage I said no."`,
+      reject: `${kage} cuts you off. "No. Tell your Warden I said no."`,
       accept: `${kage} accepts grudgingly. "Only because the numbers work. Don't read more into it."`,
     },
     hostile: {
       offer: `${kage} doesn't look up. "An envoy from your village. How persistent." A long pause. "Fine. Talk."`,
-      reject: `${kage} laughs — not kindly. "Your Kage actually sent this offer? Send it back."`,
+      reject: `${kage} laughs — not kindly. "Your Warden actually sent this offer? Send it back."`,
       accept: `${kage} accepts with barely concealed contempt. "This changes nothing between us personally. You understand."`,
     },
   }[tier.tone] || {}
@@ -112,16 +112,16 @@ export function getWorldReputationFlavor(G) {
 
   // Beast-specific override
   if (beasts.some(b => b.n === 'Kureni') && getSyncStage(beasts.find(b => b.n === 'Kureni')) >= 4) {
-    return `The world watches ${vName} with something between fear and awe. The Nine-Tails has been tamed — or so it appears.`
+    return `The world watches ${vName} with something between fear and awe. The Ninth Primal has been tamed — or so it appears.`
   }
   if (beasts.length >= 2) {
-    return `Multiple bijuu sealed within ${vName}. The other great villages count their ANBU assignments twice before looking away.`
+    return `Multiple primal sealed within ${vName}. The other great villages count their Shadow assignments twice before looking away.`
   }
 
   if (atWar) return `${vName} is at war. Every other village watches the conflict carefully — and quietly prepares.`
 
   if (rep >= 300 && leg >= 200) return `The name of ${vName} is spoken with reverence. Shinobi across the land compete to train under its banner.`
-  if (rep >= 200 && pres === 'S') return `${vName} stands at the summit of the shinobi world. Its Kage's word carries the weight of mountains.`
+  if (rep >= 200 && pres === 'S') return `${vName} stands at the summit of the shinobi world. Its Warden's word carries the weight of mountains.`
   if (rep >= 150) return `${vName} has risen to become a genuine great power. Rivals study its movements. Allies count themselves lucky.`
   if (rep >= 100) return `${vName} is recognized as a serious force in the region. Its name no longer requires explanation.`
   if (rep >= 60)  return `${vName} has earned a reputation for competence. Merchants and clients seek it out with increasing frequency.`
@@ -135,7 +135,7 @@ export function getWorldReputationFlavor(G) {
 }
 
 /**
- * Monthly tick for Kage personal relationships — slight drift toward neutrality
+ * Monthly tick for Warden personal relationships — slight drift toward neutrality
  * and event-driven shifts from diplomacy actions.
  */
 export function tickKageRels(G) {

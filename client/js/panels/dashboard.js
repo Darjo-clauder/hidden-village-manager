@@ -7,19 +7,19 @@ import { getInboxDigest, getInboxCount } from './inbox.js'
 import { xpForLevel, PATH_BY_ID } from '../../../shared/constants/kageDev.js'
 import { t } from '../../../shared/utils/i18n.js'
 
-// Compact Kage progression strip (clickable → Kage Path screen).
+// Compact Warden progression strip (clickable → Warden Path screen).
 function _kageStrip() {
   const k = G.kageDev
   if (!k) return ''
   const xpNext = xpForLevel(k.level)
   const xpPct = Math.min(100, Math.round((k.xp / xpNext) * 100))
   const path = k.path ? PATH_BY_ID[k.path] : null
-  return `<div onclick="sp('kagedev')" title="Open Kage Path" style="display:flex;align-items:center;gap:10px;background:var(--surface,#1a1814);border:1px solid var(--border);padding:7px 12px;margin-bottom:12px;cursor:pointer">
-    <span style="font-size:11px;color:var(--accent);font-weight:bold">${G.kName || 'Kage'}</span>
+  return `<div onclick="sp('kagedev')" title="Open Warden Path" style="display:flex;align-items:center;gap:10px;background:var(--surface,#1a1814);border:1px solid var(--border);padding:7px 12px;margin-bottom:12px;cursor:pointer">
+    <span style="font-size:11px;color:var(--accent);font-weight:bold">${G.kName || 'Warden'}</span>
     <span style="font-size:8px;color:#7a7060">Lvl ${k.level}${path ? ` · ${path.icon} ${path.n}` : ' · no path chosen'}</span>
     <div style="flex:1;max-width:160px;background:#0d0d0d;height:5px;border-radius:3px;overflow:hidden"><div style="height:5px;width:${xpPct}%;background:var(--accent)"></div></div>
     <span style="font-size:7px;color:#555;font-family:var(--font-num,'Courier New',monospace)">${k.xp}/${xpNext} XP</span>
-    ${k.points > 0 ? `<span style="font-size:8px;color:#8fbc8f;margin-left:auto">● ${k.points} point${k.points !== 1 ? 's' : ''} to spend ▸</span>` : '<span style="font-size:8px;color:#3a3630;margin-left:auto">Kage Path ▸</span>'}
+    ${k.points > 0 ? `<span style="font-size:8px;color:#8fbc8f;margin-left:auto">● ${k.points} point${k.points !== 1 ? 's' : ''} to spend ▸</span>` : '<span style="font-size:8px;color:#3a3630;margin-left:auto">Warden Path ▸</span>'}
   </div>`
 }
 
@@ -103,10 +103,10 @@ export function rDash() {
 
   // ── Upcoming calendar ─────────────────────────────────────────────────
   const calendar = []
-  // Chunin exam
-  const nextExam = G.month <= 4 ? { m: 4, label: 'Chunin Exam', tag: 'EXAM' }
-                 : G.month <= 10 ? { m: 10, label: 'Chunin Exam', tag: 'EXAM' }
-                 : { m: 4, label: 'Chunin Exam (next year)', tag: 'EXAM', nextYear: true }
+  // Adept exam
+  const nextExam = G.month <= 4 ? { m: 4, label: 'Adept Exam', tag: 'EXAM' }
+                 : G.month <= 10 ? { m: 10, label: 'Adept Exam', tag: 'EXAM' }
+                 : { m: 4, label: 'Adept Exam (next year)', tag: 'EXAM', nextYear: true }
   calendar.push(nextExam)
   // Summit
   const nextSummit = G.month <= 6 ? { m: 6, label: 'Five-Village Summit', tag: 'SUMMIT' }

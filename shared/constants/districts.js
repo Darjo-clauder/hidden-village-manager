@@ -31,7 +31,7 @@ export const DISTRICTS = [
     color: '#87ceeb',
     cost: 22000,
     buildMonths: 3,
-    desc: 'Centralised intelligence operations. Boosts ANBU and scouting performance.',
+    desc: 'Centralised intelligence operations. Boosts Shadow and scouting performance.',
     effect: { anbuSuccessBonus: 0.08, scoutConfidenceBonus: 0.05 },
   },
   {

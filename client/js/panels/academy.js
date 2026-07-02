@@ -289,7 +289,7 @@ const MINOR_CLANS = [
   { n: 'Arashi',    t: 'Space-Time',   statKey: 'speed' },
   { n: 'Maboroshi', t: 'Illusion Web', statKey: 'genjutsu' },
   { n: 'Kushiro',   t: 'Sigil Arts',   statKey: 'chakra' },
-  { n: 'Tsukikage', t: 'Moon Shadow',  statKey: 'taijutsu' },
+  { n: 'Tsukimei',  t: 'Moon Shadow',  statKey: 'taijutsu' },
   { n: 'Hariha',    t: 'Needle Art',   statKey: 'speed' },
   { n: 'Touma',     t: 'Pressure Arts', statKey: 'intelligence' },
 ]

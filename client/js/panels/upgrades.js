@@ -94,7 +94,7 @@ export function rUp() {
           const canBuild = !state && !building && G.ryo >= d.cost
           const borderColor = isBuilt ? 'var(--green)' : isBuilding ? 'var(--gold)' : 'var(--border)'
           const effectStr = Object.entries(d.effect).map(([k,v]) => {
-            const labels = { statGrowthBonus:`+${Math.round(v*100)}% growth`, injDayReduction:`-${v}mo injury`, kiaRiskMod:`${Math.round(v*100)}% KIA`, anbuSuccessBonus:`+${Math.round(v*100)}% ANBU`, scoutConfidenceBonus:`+${Math.round(v*100)}% scout`, missionRiskReduction:`+${Math.round(v*100)}% missions`, powerFlat:`+${v} power`, monthlyRyo:`+${v.toLocaleString()} ryo/mo` }
+            const labels = { statGrowthBonus:`+${Math.round(v*100)}% growth`, injDayReduction:`-${v}mo injury`, kiaRiskMod:`${Math.round(v*100)}% KIA`, anbuSuccessBonus:`+${Math.round(v*100)}% Shadow`, scoutConfidenceBonus:`+${Math.round(v*100)}% scout`, missionRiskReduction:`+${Math.round(v*100)}% missions`, powerFlat:`+${v} power`, monthlyRyo:`+${v.toLocaleString()} ryo/mo` }
             return labels[k] || k
           }).join(', ')
           return `

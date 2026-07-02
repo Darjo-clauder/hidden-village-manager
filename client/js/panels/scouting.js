@@ -69,7 +69,7 @@ export function rSco() {
       <div>
         <h3 style="color:#aaa;font-size:.85rem;margin:0 0 10px;text-transform:uppercase;letter-spacing:.08em">Scout Roster</h3>
         ${scouts.length === 0
-          ? '<div style="color:#666;font-size:.85rem">No scouts assigned. Hire Scout Jonin or Head of Scouting from Staff panel.</div>'
+          ? '<div style="color:#666;font-size:.85rem">No scouts assigned. Hire Scout Veteran or Head of Scouting from Staff panel.</div>'
           : scouts.map(scout => {
               const regionObj = REGIONS.find(r => r.id === scout.regionAssigned)
               const fatigueColor = (scout.fatigue || 0) >= 75 ? '#f66' : (scout.fatigue || 0) >= 50 ? '#f0a030' : '#8fbc8f'
@@ -77,7 +77,7 @@ export function rSco() {
               return `<div style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:10px;margin-bottom:8px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
                   <strong style="color:#e8d5a3">${scout.fn} ${scout.ln}</strong>
-                  <span style="font-size:.75rem;color:#999">${scout.role === 'head_scout' ? '★ Head of Scouting' : 'Scout Jonin'} · R${scout.rating}</span>
+                  <span style="font-size:.75rem;color:#999">${scout.role === 'head_scout' ? '★ Head of Scouting' : 'Scout Veteran'} · R${scout.rating}</span>
                 </div>
                 <div style="font-size:.78rem;color:#aaa;margin-bottom:6px">
                   <span style="margin-right:10px" title="Stat accuracy">👁 Perc:${scout.stats.perception||'?'}</span>
@@ -425,7 +425,7 @@ export function signProspect(prospectId) {
   const newShinobi = {
     id: Math.random().toString(36).slice(2),
     fn: p.fn, ln: p.ln,
-    ri: 0,  // Join as Genin
+    ri: 0,  // Join as Initiate
     age: p.age || 14,
     stats,
     potential: truePot,

@@ -9,7 +9,7 @@ export function snapshotSeasonStats(G) {
     id: s.id,
     name: (s.fn && s.ln) ? `${s.fn} ${s.ln}` : (s.fn || s.n || s.firstName || s.id),
     ri: s.ri ?? 0,
-    rank: ['Genin', 'Chunin', 'Jonin', 'ANBU', 'S-Rank'][s.ri ?? 0] || 'Genin',
+    rank: ['Initiate', 'Adept', 'Veteran', 'Shadow', 'S-Rank'][s.ri ?? 0] || 'Initiate',
     clan: s.clan || '',
     wins: s.wins || 0,
     winsThisSeason: s._seasonWins || 0,

@@ -4,11 +4,11 @@
  * deterministically and reused. Does NOT mutate G.ryo (that stays in adv.js).
  */
 export function monthlySnapshot({
-  trade = 0, contracts = 0, jinchuriki = 0, daimyo = 0,
+  trade = 0, contracts = 0, vessel = 0, daimyo = 0,
   examFees = 0, loanFees = 0, sponsorship = 0,
   shinobiWages = 0, staffWages = 0, maintenance = 0,
 } = {}) {
-  const totalIncome = trade + contracts + jinchuriki + daimyo + examFees + loanFees + sponsorship
+  const totalIncome = trade + contracts + vessel + daimyo + examFees + loanFees + sponsorship
   const totalExpend = shinobiWages + staffWages + maintenance
   return { totalIncome, totalExpend, net: totalIncome - totalExpend }
 }

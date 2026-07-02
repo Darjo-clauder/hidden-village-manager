@@ -59,7 +59,7 @@ function mentorBonus(prospect) {
   if (!prospect.mentor) return 0
   const mentor = (G.shinobi || []).find(s => s.id === prospect.mentor)
   if (!mentor) return 0
-  // Mentor rank index → bonus: Genin 0.05, Chunin 0.10, Jonin 0.18, Kage 0.25
+  // Mentor rank index → bonus: Initiate 0.05, Adept 0.10, Veteran 0.18, Warden 0.25
   const bonusByRank = [0.03, 0.05, 0.10, 0.15, 0.18, 0.22, 0.25]
   return bonusByRank[Math.min(mentor.ri, bonusByRank.length - 1)]
 }
@@ -135,7 +135,7 @@ export function applyGraduationBias(prospect) {
 }
 
 // ── Rival village names for offer generation ─────────────────────────────────
-const RIVAL_VILLAGES = ['Raikurokure', 'Kazegakure', 'Shimogakure', 'Gangakure', 'Onkyogakure']
+const RIVAL_VILLAGES = ['Stormreach', 'Dunehold', 'Tidefort', 'Stoneveil', 'Hollowmere']
 
 // ── Rival offer generation ────────────────────────────────────────────────────
 function maybeGenerateRivalOffer(p) {

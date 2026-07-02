@@ -12,7 +12,7 @@
  * activates when payroll exceeds 130% of cap.
  *
  * Cap amounts are calibrated against the wage scale in state.js:
- *   Genin 500 · Chunin 900 · Jonin 1300 · ANBU 1700 · S-Rank 2100  (ryo/month)
+ *   Initiate 500 · Adept 900 · Veteran 1300 · Shadow 1700 · S-Rank 2100  (ryo/month)
  */
 
 /** Monthly shinobi-payroll ceiling per prestige tier. */

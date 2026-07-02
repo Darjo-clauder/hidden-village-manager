@@ -50,7 +50,7 @@ const LINES = {
     won:  ['The last squads stand unbroken — champions.', 'Through fire and blood, they endure to the end.'],
     lost: ['They fall at the final stand, honour intact.', 'So close — undone at the last.'],
   },
-  // Chunin Exam stages
+  // Adept Exam stages
   Qualifier: {
     won:  ['They breeze through the written test.', 'Sharp minds — the qualifier is no obstacle.'],
     lost: ['The written test trips them up — out early.', 'Caught out by the qualifier.'],
@@ -64,7 +64,7 @@ const LINES = {
     lost: ['Edged out in the semifinal duels.', 'Beaten in the prelims, a step from the final.'],
   },
   Final: {
-    won:  ['Champions of the Chunin Exam!', 'They stand above all five villages.'],
+    won:  ['Champions of the Adept Exam!', 'They stand above all five villages.'],
     lost: ['Runners-up — the title stays out of reach.', 'They reach the final but fall at the last.'],
   },
 }

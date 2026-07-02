@@ -31,7 +31,7 @@ function _legBody() {
   return ''
 }
 
-// ── Prestige & Kage Reputation ───────────────────────────────────────────────
+// ── Prestige & Warden Reputation ───────────────────────────────────────────────
 function _prestige() {
   const tier = PRESTIGE_TIERS.find(t => t.id === (G.prestigeTier || 'D')) || PRESTIGE_TIERS[0]
   const nextTier = PRESTIGE_TIERS[PRESTIGE_TIERS.findIndex(t => t.id === G.prestigeTier) + 1]
@@ -67,10 +67,10 @@ function _prestige() {
 }
 
 function _repDesc(rep) {
-  return ['', 'Unknown newcomer — rivals pay no mind.', 'Emerging leader — some regional respect.', 'Established Kage — rivals negotiate carefully.', 'Renowned commander — feared and respected.', 'Legendary Kage — your name carries weight across all nations.'][rep] || ''
+  return ['', 'Unknown newcomer — rivals pay no mind.', 'Emerging leader — some regional respect.', 'Established Warden — rivals negotiate carefully.', 'Renowned commander — feared and respected.', 'Legendary Warden — your name carries weight across all nations.'][rep] || ''
 }
 
-// ── Rival Kage Personal Relations ─────────────────────────────────────────────
+// ── Rival Warden Personal Relations ─────────────────────────────────────────────
 function _kageRelations() {
   const kr = G.kageRelations || {}
   const entries = Object.values(kr)
@@ -78,7 +78,7 @@ function _kageRelations() {
   const bar = v => `<div class="bar" style="height:4px"><div class="fill" style="width:${v}%;background:${v >= 60 ? '#8fbc8f' : v >= 40 ? '#c9a84c' : '#f66'}"></div></div>`
   const desc = v => v >= 70 ? 'Warm relationship — negotiations go smoothly.' : v >= 50 ? 'Neutral standing — no strong ties either way.' : v >= 30 ? 'Tense — past grievances color every exchange.' : 'Hostile — dialogue is strained and suspect.'
   return `<div>
-    <div style="font-size:9px;color:#7a7060;margin-bottom:10px">Personal relationships with rival Kage — distinct from village-level diplomacy. Shaped by summit interactions, war outcomes, and prestige.</div>
+    <div style="font-size:9px;color:#7a7060;margin-bottom:10px">Personal relationships with rival Warden — distinct from village-level diplomacy. Shaped by summit interactions, war outcomes, and prestige.</div>
     <div style="display:grid;gap:8px">
       ${entries.map(k => `<div class="ke-card">
         <div style="display:flex;justify-content:space-between;margin-bottom:5px">
@@ -105,7 +105,7 @@ function _hall() {
       `<div style="display:grid;gap:8px">${hall.map(l => `
         <div class="ke-card">
           <div style="font-size:11px;color:#c9a84c;margin-bottom:4px">🏛 ${l.name}</div>
-          <div style="font-size:9px;color:#7a7060">${['Genin','Chunin','Jonin','Special Jonin','Sannin'][l.ri] || 'Unknown'} · ${l.months} months served · ${l.wins} wins · ${l.winsS} S-rank</div>
+          <div style="font-size:9px;color:#7a7060">${['Initiate','Adept','Veteran','Special Veteran','Legend'][l.ri] || 'Unknown'} · ${l.months} months served · ${l.wins} wins · ${l.winsS} S-rank</div>
         </div>`).join('')}
       </div>`}
   </div>`
@@ -122,7 +122,7 @@ function _dynasty() {
   const canHandoff = year >= DYNASTY_YEARS && !!G.successorId
   const rows = [
     { label: 'Exam Promotions', value: dr.examWins || 0 },
-    { label: 'Tailed Beasts Sealed', value: G.beasts?.filter(b => b.sealed).length || 0 },
+    { label: 'Primals Sealed', value: G.beasts?.filter(b => b.sealed).length || 0 },
     { label: 'Legends Enshrined', value: G.hallOfLegends?.length || 0 },
     { label: 'Peak Legend Score', value: dr.peakLegend || 0 },
     { label: 'Active Allied Villages', value: G.villages?.filter(v => v.allied).length || 0 },

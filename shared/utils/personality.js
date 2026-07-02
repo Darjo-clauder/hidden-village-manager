@@ -4,8 +4,8 @@
  * Pure — no G references. Caller passes shinobi objects.
  */
 
-// Naruto-verse narrative archetype layer — assigned at generation, revealed through play
-export const NARUTO_ARCHETYPES = [
+// Narrative archetype layer — assigned at generation, revealed through play
+export const NARRATIVE_ARCHETYPES = [
   {
     id: 'will_of_fire',
     label: 'Will of Fire',
@@ -69,7 +69,7 @@ export const NARUTO_ARCHETYPES = [
   },
 ]
 
-export const ARCHETYPE_BY_ID = Object.fromEntries(NARUTO_ARCHETYPES.map(a => [a.id, a]))
+export const ARCHETYPE_BY_ID = Object.fromEntries(NARRATIVE_ARCHETYPES.map(a => [a.id, a]))
 
 // Pool for random assignment — weighted toward common archetypes
 export const ARCHETYPE_POOL = [

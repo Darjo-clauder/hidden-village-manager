@@ -10,7 +10,7 @@ describe('monthlySnapshot — economy formula lock (I-ECON)', () => {
     expect(s.net).toBe(-4300)
   })
   it('net == totalIncome - totalExpend across mixed sources', () => {
-    const s = monthlySnapshot({ trade: 4000, contracts: 2000, jinchuriki: 3000, daimyo: 1000, sponsorship: 500, shinobiWages: 6000, staffWages: 1200, maintenance: 2500 })
+    const s = monthlySnapshot({ trade: 4000, contracts: 2000, vessel: 3000, daimyo: 1000, sponsorship: 500, shinobiWages: 6000, staffWages: 1200, maintenance: 2500 })
     expect(s.net).toBe(s.totalIncome - s.totalExpend)
     expect(s.totalIncome).toBe(10500)
     expect(s.totalExpend).toBe(9700)

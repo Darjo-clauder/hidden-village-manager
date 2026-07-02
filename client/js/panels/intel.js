@@ -11,7 +11,7 @@ export function intelCtx(e, villageId) {
   openContextMenu(e.clientX, e.clientY, [
     { label: 'View Dossier', fn: () => { window._intelTab = 'dossiers'; rIn() } },
     { label: 'Shadow Scout', fn: () => window.shadowScout && window.shadowScout(v.id) },
-    { label: 'Dispatch ANBU Op', fn: () => window.dispatchAnbu && window.dispatchAnbu(v.id) },
+    { label: 'Dispatch Shadow Op', fn: () => window.dispatchAnbu && window.dispatchAnbu(v.id) },
     { separator: true },
     { label: 'Send Gifts (5k)', fn: () => window.sGift && window.sGift(v.n) },
     { label: 'Demand Tribute', fn: () => window.demandTribute && window.demandTribute(v.n) },
@@ -27,7 +27,7 @@ export function rIn() {
   if (!el) return
   const tabs = ['threats', 'dossiers', 'anbu', 'caught', 'counter']
   const tabHtml = `<div style="display:flex;gap:6px;margin-bottom:12px">
-    ${tabs.map(t => `<button class="btn${window._intelTab === t ? ' act' : ''}" onclick="intelTab('${t}')" style="font-size:9px;padding:3px 8px">${t.toUpperCase()}</button>`).join('')}
+    ${tabs.map(t => `<button class="btn${window._intelTab === t ? ' act' : ''}" onclick="intelTab('${t}')" style="font-size:9px;padding:3px 8px">${({ anbu: 'SHADOW OPS' }[t] || t.toUpperCase())}</button>`).join('')}
   </div>`
   el.innerHTML = tabHtml + _intelBody()
 }
@@ -95,7 +95,7 @@ function _threats() {
           </div>
           ${recon ? `<div style="font-size:8px;color:var(--accent);margin-top:5px">👁 Intel: ~${recon.data.rosterSize} shinobi, economy ${recon.data.economyLevel}/5</div>` : ''}
           ${deep  ? `<div style="font-size:8px;color:var(--accent);margin-top:2px">🕵 Defense ${deep.data.defenseRating}/20 · ${deep.data.activeSquads} active squads</div>` : ''}
-          ${!recon && !deep ? `<div style="font-size:8px;color:#333;margin-top:5px;font-style:italic">No field data — dispatch ANBU to reveal</div>` : ''}
+          ${!recon && !deep ? `<div style="font-size:8px;color:#333;margin-top:5px;font-style:italic">No field data — dispatch Shadow to reveal</div>` : ''}
         </div>`
       }).join('')}
     </div>
@@ -129,7 +129,7 @@ function _dossiers() {
         ${v.threat ? `<div style="font-size:8px;color:#f66;margin-bottom:3px">⚠ Threat: ${v.threat}</div>` : ''}
         ${recon ? `<div style="font-size:8px;color:#c9a84c;margin-bottom:2px">👁 Recon: Roster ~${recon.data.rosterSize}, Econ ${recon.data.economyLevel}/5 <span style="color:#555">(exp M${recon.expiresMonth % 12 || 12})</span></div>` : '<div style="font-size:8px;color:#444;margin-bottom:2px">👁 No recon data</div>'}
         ${deep ? `<div style="font-size:8px;color:#c9a84c;margin-bottom:2px">🕵 Defense ${deep.data.defenseRating}/20, ${deep.data.activeSquads} squads active</div>` : ''}
-        ${assn ? `<div style="font-size:8px;color:#f88;margin-bottom:2px">💀 Kage rating ${assn.data.kageRating}/20 — weakness: ${assn.data.weaknesses}</div>` : ''}
+        ${assn ? `<div style="font-size:8px;color:#f88;margin-bottom:2px">💀 Warden rating ${assn.data.kageRating}/20 — weakness: ${assn.data.weaknesses}</div>` : ''}
         <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
           <button class="btn" onclick="shadowScout('${v.id}')" style="font-size:8px;padding:2px 6px">${tr("intel.shadowScout")}</button>
           <button class="btn" onclick="dispatchAnbu('${v.id}')" style="font-size:8px;padding:2px 6px">${tr("intel.anbuOp")}</button>
@@ -139,14 +139,14 @@ function _dossiers() {
   </div>`
 }
 
-// ── ANBU Dispatch ────────────────────────────────────────────────────────────
+// ── Shadow Dispatch ────────────────────────────────────────────────────────────
 function _anbu() {
   const anbuCmd = (G.staff || []).find(st => st.role === 'anbu_commander')
-  if (!anbuCmd) return `<div style="color:#f66;font-size:11px;padding:20px 0">ANBU Commander required. Hire one from the Staff panel.</div>`
+  if (!anbuCmd) return `<div style="color:#f66;font-size:11px;padding:20px 0">Shadow Commander required. Hire one from the Staff panel.</div>`
   const activeOps = G.anbuOps || []
   const cmdRating = anbuCmd.stats?.stealth || anbuCmd.rating || 8
   return `<div>
-    <div style="font-size:10px;color:#c9a84c;margin-bottom:10px">ANBU Commander: ${sn(anbuCmd)} — Stealth ${cmdRating}/20</div>
+    <div style="font-size:10px;color:#c9a84c;margin-bottom:10px">Shadow Commander: ${sn(anbuCmd)} — Stealth ${cmdRating}/20</div>
     ${activeOps.length > 0 ? `
       <div style="font-size:10px;color:#e8e0cc;margin-bottom:8px">Active Operations (${activeOps.length})</div>
       <div style="display:grid;gap:6px;margin-bottom:12px">
@@ -173,7 +173,7 @@ function _anbu() {
   </div>`
 }
 
-// ── Caught ANBU ──────────────────────────────────────────────────────────────
+// ── Caught Shadow ──────────────────────────────────────────────────────────────
 function _caught() {
   const caught = G.caughtAnbu || []
   if (caught.length === 0) return `<div style="color:#555;font-size:11px;padding:20px 0">${tr("intel.noCaptured")}</div>`
@@ -207,17 +207,17 @@ function _counter() {
     <div class="ke-card" style="margin-bottom:10px">
       <div style="font-size:10px;color:#c9a84c;margin-bottom:8px">Effective Rating: ${effective}/20</div>
       <div style="font-size:9px;color:#7a7060;margin-bottom:4px">Intel Building: +${intelBld * 2} (Lvl ${intelBld})</div>
-      <div style="font-size:9px;color:#7a7060;margin-bottom:4px">ANBU Commander: +${cmdBonus} (${anbuCmd ? sn(anbuCmd) : 'none hired'})</div>
+      <div style="font-size:9px;color:#7a7060;margin-bottom:4px">Shadow Commander: +${cmdBonus} (${anbuCmd ? sn(anbuCmd) : 'none hired'})</div>
       <div style="font-size:9px;color:#7a7060;margin-bottom:10px">Base rating: ${rating}/10</div>
       ${rating < 10 ? `
         <button class="gb gb-g" onclick="upgradeCounterIntel()" ${canUpg ? '' : 'disabled'}>
           Train Counter-Intel Network — ${fmt(upgCost)} ryo ►
         </button>
-        <div style="font-size:8px;color:#7a7060;margin-top:4px">Each rank reduces enemy ANBU success chance by ~5%.</div>
+        <div style="font-size:8px;color:#7a7060;margin-top:4px">Each rank reduces enemy Shadow success chance by ~5%.</div>
       ` : `<div style="font-size:9px;color:#8fbc8f">${tr("intel.counterMax")}</div>`}
     </div>
     <div style="font-size:9px;color:#7a7060;line-height:1.5">
-      Higher counter-intel rating reduces enemy ANBU success against your village. Upgrade the Intel building and hire an ANBU Commander for additional bonuses.
+      Higher counter-intel rating reduces enemy Shadow success against your village. Upgrade the Intel building and hire an Shadow Commander for additional bonuses.
     </div>
   </div>`
 }

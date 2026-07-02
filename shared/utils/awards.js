@@ -15,7 +15,7 @@ export function computeAwards(G, snapshot) {
     ? { label: 'Season MVP', name: sorted[0].name, reason: `${sorted[0].winsThisSeason} wins this season (${sorted[0].sRankWins} S-rank)` }
     : null
 
-  // Rookie of the Year — best season from a Genin (ri=0) or brand-new Chunin (ri=1, wins < 10)
+  // Rookie of the Year — best season from a Initiate (ri=0) or brand-new Adept (ri=1, wins < 10)
   const rookies = players.filter(p => p.ri <= 1 && (p.wins - p.winsThisSeason) < 5 && p.winsThisSeason > 0)
   const topRookie = [...rookies].sort((a, b) => b.winsThisSeason - a.winsThisSeason)[0]
   const rookieOfYear = topRookie

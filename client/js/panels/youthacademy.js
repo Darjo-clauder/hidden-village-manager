@@ -126,11 +126,11 @@ function studentCard(student, senseis) {
       </select>
     </div>
 
-    <!-- Kage training button -->
+    <!-- Warden training button -->
     ${(!student.kageTraining && (G.kageTrainingUsedYear||0) < G.year)
-      ? `<button onclick="yaKageTraining('${student.id}')" style="width:100%;background:#2a1f00;border:1px solid #c9a84c;color:#c9a84c;border-radius:4px;padding:4px;cursor:pointer;font-size:.75rem">⚔ Kage Personal Sparring</button>`
-      : student.kageTraining ? `<div style="font-size:.73rem;color:#c9a84c;text-align:center">★ Kage Training Queued</div>`
-      : `<div style="font-size:.73rem;color:#555;text-align:center">Kage training used this year</div>`
+      ? `<button onclick="yaKageTraining('${student.id}')" style="width:100%;background:#2a1f00;border:1px solid #c9a84c;color:#c9a84c;border-radius:4px;padding:4px;cursor:pointer;font-size:.75rem">⚔ Warden Personal Sparring</button>`
+      : student.kageTraining ? `<div style="font-size:.73rem;color:#c9a84c;text-align:center">★ Warden Training Queued</div>`
+      : `<div style="font-size:.73rem;color:#555;text-align:center">Warden training used this year</div>`
     }
   </div>`
 }
@@ -166,7 +166,7 @@ function _gradsTab() {
       let status = 'Unknown', statusColor = '#666', rank = '—', missions = '—'
       if (active) {
         status = 'Active'; statusColor = '#8fbc8f'
-        rank = ['Genin','Chunin','Jonin','ANBU','S-Rank'][active.ri] || '—'
+        rank = ['Initiate','Adept','Veteran','Shadow','S-Rank'][active.ri] || '—'
         missions = active.wins || 0
       } else if (memorial) {
         status = memorial.transfer ? 'Transferred' : 'KIA'; statusColor = memorial.transfer ? '#f0a030' : '#f66'
@@ -215,6 +215,6 @@ export function yaKageTraining(studentId) {
   const s = (G.intakeClass || []).find(st => st.id === studentId)
   if (!s) return
   s.kageTraining = true
-  ntf(s.fn + ' ' + s.ln + ' will receive Kage training next advance.')
+  ntf(s.fn + ' ' + s.ln + ' will receive Warden training next advance.')
   rYA()
 }
