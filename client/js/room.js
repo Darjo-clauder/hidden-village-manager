@@ -23,16 +23,22 @@ export const RS = {
 import { socket } from './socket.js'
 import { G } from './state.js'
 import { syncToServer } from './socket.js'
+import { saveLocal } from './save.js'
 
 let _adv = null   // injected after adv is available to avoid circular imports
 
 export function setAdvFn(fn) { _adv = fn }
 
+// Advance the month. The sim is client-side, so this always runs — offline or
+// online. Locally we persist every turn; online we additionally sync the summary
+// to the server and signal readiness for the shared world.
 export function endTurn() {
-  if (!socket?.connected) return
   if (_adv) _adv()
-  syncToServer()
-  socket.emit('player_ready')
+  saveLocal()
+  if (socket?.connected) {
+    syncToServer()
+    socket.emit('player_ready')
+  }
 }
 
 // ── Invite link helpers ───────────────────────────────────────────────────────

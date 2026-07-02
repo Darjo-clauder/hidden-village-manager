@@ -23,6 +23,12 @@
     <div class="ts" style="margin-bottom:20px">Create or join a room to play</div>
 
     <div style="border:1px solid var(--border);padding:14px;margin-bottom:10px">
+      <div style="font-size:8px;color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Server</div>
+      <input id="sl-server-url" class="sp-input" placeholder="Leave blank for the default server" style="width:100%;font-size:9px" spellcheck="false" autocomplete="off">
+      <div style="font-size:8px;color:var(--text-dim);margin-top:5px">Blank uses the built-in host. Enter an address (e.g. http://192.168.1.5:3000) to join a friend's or self-hosted server.</div>
+    </div>
+
+    <div style="border:1px solid var(--border);padding:14px;margin-bottom:10px">
       <div style="font-size:8px;color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Create Room</div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px">
         <label style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--text)">
@@ -74,10 +80,10 @@
     <div class="ts" style="margin-bottom:28px">Configure before joining the world</div>
     <div class="sp-field">
       <label class="sp-label">Village Name</label>
-      <input id="sp-vname" class="sp-input" placeholder="Konohagakure" maxlength="32">
+      <input id="sp-vname" class="sp-input" placeholder="e.g. Emberfall" maxlength="32">
     </div>
     <div class="sp-field">
-      <label class="sp-label">Your Name (Kage)</label>
+      <label class="sp-label">Your Name (Warden)</label>
       <input id="sp-kname" class="sp-input" placeholder="Enter your name" maxlength="24">
     </div>
     <div class="sp-field">
@@ -88,8 +94,8 @@
       <label class="sp-label">Founding Scenario</label>
       <div id="sp-scenarios"></div>
     </div>
-    <button class="bstart" onclick="beginGame()">Connect &amp; Begin ↗</button>
-    <div class="sp-hint">Other Kage on this server will see your village on the world map</div>
+    <button class="bstart" onclick="beginGame()">Begin ↗</button>
+    <div class="sp-hint">Play solo offline. To share a world with others, use Play Online from the title screen.</div>
   </div>
 </div>
 
@@ -102,7 +108,7 @@
       <div class="tb-icon" id="tb-icon">🍃</div>
       <div class="tb-identity">
         <div class="tb-vname" id="tb-vname">Your Village</div>
-        <div class="tb-kname" id="tb-kname">Kage</div>
+        <div class="tb-kname" id="tb-kname">Warden</div>
       </div>
       <div class="prestige-badge" id="tb-prestige">D</div>
     </div>
@@ -176,7 +182,7 @@
             <button class="nb" onclick="sp('village')" id="nv-village" data-i18n="nav.overview">Overview</button>
             <button class="nb" onclick="sp('finances')" id="nv-finances" data-i18n="nav.finances">Finances</button>
             <button class="nb" onclick="sp('upgrades')" id="nv-upgrades" data-i18n="nav.upgrades">Upgrades</button>
-            <button class="nb" onclick="sp('kagedev')" id="nv-kagedev" data-i18n="nav.kagePath">Kage Path</button>
+            <button class="nb" onclick="sp('kagedev')" id="nv-kagedev" data-i18n="nav.kagePath">Warden Path</button>
             <button class="nb" onclick="sp('legacy')" id="nv-legacy" data-i18n="nav.legacy">Legacy &amp; Prestige</button>
             <button class="nb" onclick="sp('chronicles')" id="nv-chronicles" data-i18n="nav.chronicles">Chronicles</button>
             <button class="nb" onclick="sp('memorial')" id="nv-memorial" data-i18n="nav.memorial">Memorial Wall</button>
@@ -234,8 +240,8 @@
             <span class="nsg-chevron" id="nsc-comp">▾</span>
           </button>
           <div class="nsg-items" id="nsi-comp">
-            <button class="nb" onclick="sp('exam')" id="nv-exam" data-i18n="nav.chuninExam">Chunin Exam</button>
-            <button class="nb" onclick="sp('kage')" id="nv-kage" data-i18n="nav.summit">Five Kage Summit</button>
+            <button class="nb" onclick="sp('exam')" id="nv-exam" data-i18n="nav.chuninExam">Adept Exam</button>
+            <button class="nb" onclick="sp('kage')" id="nv-kage" data-i18n="nav.summit">Five Warden Summit</button>
             <button class="nb" onclick="sp('log')" id="nv-log" data-i18n="nav.eventLog">Event Log</button>
           </div>
         </div>
@@ -257,10 +263,10 @@
           </div>
         </div>
 
-        <!-- TAILED BEASTS -->
+        <!-- PRIMALS -->
         <div class="nsg" id="nsg-beasts">
           <button class="nsg-toggle" onclick="toggleNav('beasts')">
-            <span class="nsg-label" data-i18n="nav.group.beasts">Tailed Beasts</span>
+            <span class="nsg-label" data-i18n="nav.group.beasts">Primals</span>
             <span class="nsg-chevron" id="nsc-beasts">▾</span>
           </button>
           <div class="nsg-items" id="nsi-beasts">
@@ -405,14 +411,14 @@
         <!-- village overview -->
         <div id="p-village" style="display:none"><div class="pt" data-i18n="panel.village">Village Overview</div><div class="vg" id="vst"></div></div>
 
-        <!-- tailed beasts -->
+        <!-- primals -->
         <div id="p-beasts" style="display:none"></div>
 
         <!-- kage council -->
-        <div id="p-kage" style="display:none"><div class="pt" data-i18n="panel.summit">Five Kage Summit</div><div id="kgl"></div></div>
+        <div id="p-kage" style="display:none"><div class="pt" data-i18n="panel.summit">Five Warden Summit</div><div id="kgl"></div></div>
 
-        <!-- chunin exam -->
-        <div id="p-exam" style="display:none"><div class="pt" data-i18n="panel.exam">Chunin Exam</div><div id="exl"></div></div>
+        <!-- adept exam -->
+        <div id="p-exam" style="display:none"><div class="pt" data-i18n="panel.exam">Adept Exam</div><div id="exl"></div></div>
 
         <!-- intel -->
         <div id="p-intel" style="display:none"><div class="pt" data-i18n="panel.intel">Intel Operations</div><div id="itl"></div></div>
@@ -452,7 +458,7 @@
         <!-- scouting network -->
         <div id="p-scouting" style="display:none">
           <div class="pt" data-i18n="panel.scouting">Scouting Network</div>
-          <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Deploy Scout Jonin to regions to surface prospects and gather intel.</div>
+          <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Deploy Scout Veteran to regions to surface prospects and gather intel.</div>
           <div id="scol"></div>
         </div>
 
@@ -484,7 +490,7 @@
         </div>
 
         <div id="p-kagedev" style="display:none">
-          <div class="pt" data-i18n="panel.kagePath">Kage Path</div>
+          <div class="pt" data-i18n="panel.kagePath">Warden Path</div>
           <div id="kdl"></div>
         </div>
 
@@ -544,7 +550,7 @@
 <div class="ov" id="ov-csquad">
   <div class="mo">
     <div class="mot">Form Squad</div>
-    <div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px">Leader (Jonin+)</div>
+    <div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px">Leader (Veteran+)</div>
     <div id="cs-l"></div>
     <div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin:9px 0 6px">Members (pick 2)</div>
     <div id="cs-m"></div>
@@ -571,7 +577,7 @@
   <div class="mo">
     <div class="mot">Assign Sensei</div>
     <div style="font-size:9px;color:var(--text-dim);margin-bottom:8px">Prospect: <span id="sensei-prospect-name" style="color:var(--purple)"></span></div>
-    <div style="font-size:8px;color:var(--text-dim);margin-bottom:12px">A Jonin+ sensei accelerates this prospect's stat growth each month. The sensei remains available for missions.</div>
+    <div style="font-size:8px;color:var(--text-dim);margin-bottom:12px">A Veteran+ sensei accelerates this prospect's stat growth each month. The sensei remains available for missions.</div>
     <div id="sensei-list"></div>
     <div class="mbc"><button class="bc" onclick="cm('sensei')">Cancel</button></div>
   </div>
@@ -590,7 +596,7 @@
   <div class="mo">
     <div class="mot">Select Scout</div>
     <div style="font-size:9px;color:var(--text-dim);margin-bottom:8px">Prospect: <span id="scout-prospect-name" style="color:var(--purple)"></span></div>
-    <div style="font-size:8px;color:var(--text-dim);margin-bottom:12px">Assign a Jonin+ shinobi to spend 1 month verifying this prospect's potential — 3,000 ryo.</div>
+    <div style="font-size:8px;color:var(--text-dim);margin-bottom:12px">Assign a Veteran+ shinobi to spend 1 month verifying this prospect's potential — 3,000 ryo.</div>
     <div id="scout-list"></div>
     <div class="mbc"><button class="bc" onclick="cm('scout')">Cancel</button></div>
   </div>
@@ -688,7 +694,7 @@
         <option value="3">Loan — 3 months</option>
         <option value="6">Loan — 6 months</option>
       </select>
-      <div style="font-size:8px;color:var(--text-dim);margin-top:3px">Loan players cannot enter the Chunin Exam.</div>
+      <div style="font-size:8px;color:var(--text-dim);margin-top:3px">Loan players cannot enter the Adept Exam.</div>
     </div>
     <div class="mbc">
       <button class="bc" onclick="confirmTransfer()">Confirm &amp; Sign ▸</button>
@@ -707,6 +713,5 @@
 </div>
 
 <div class="nf" id="nf"></div>
-<script src="/socket.io/socket.io.js"></script>
 <script type="module" src="./js/main.js"></script>
 </body></html>

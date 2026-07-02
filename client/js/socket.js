@@ -1,3 +1,4 @@
+import { io } from 'socket.io-client'
 import { G, WS, clamp, fmt } from './state.js'
 import { aL, ntf, upUI, setOnline } from './ui.js'
 import { rWo, setWorldSocket, setRelLocal, showDip, respondAlliance } from './world.js'
@@ -47,14 +48,16 @@ function _sPow(s) {
   return p
 }
 
-export function initSocket(name, kageName, icon) {
+export function initSocket(name, kageName, icon, serverUrl = '') {
   const playerId = localStorage.getItem('villageId') || crypto.randomUUID()
   localStorage.setItem('villageId',  playerId)
   localStorage.setItem('vName',      name)
   localStorage.setItem('kName',      kageName)
   localStorage.setItem('vIcon',      icon)
 
-  socket = io()
+  // Empty URL → same-origin (web build served by the Node host). An explicit URL
+  // is used by desktop builds, which have no origin server to connect back to.
+  socket = serverUrl ? io(serverUrl) : io()
   setWorldSocket(socket)
 
   socket.on('connect', () => {
@@ -84,7 +87,7 @@ export function initSocket(name, kageName, icon) {
     // Merge into G — existing keys from initState() provide defaults for any
     // fields that didn't exist in older saves.
     Object.keys(savedState).forEach(k => { G[k] = savedState[k] })
-    // MIG-1: heal any jinchuriki stats inflated by the pre-fix beast-stat bug (runs once)
+    // MIG-1: heal any vessel stats inflated by the pre-fix beast-stat bug (runs once)
     migrateBeastStats(G)
     // Restore UI-visible name fields in sidebar
     if (G.vName) {

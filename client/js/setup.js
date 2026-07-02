@@ -5,6 +5,11 @@ import { initSocket, socket } from './socket.js'
 import { t } from '../../shared/utils/i18n.js'
 import { RS, parseInviteCode } from './room.js'
 import { seedPhase1 } from '../../seeds/phase1.js'
+import { isOnline, setOnlineMode, getServerUrl, setServerUrl } from './net.js'
+import { saveLocal, loadLocal, hasLocalSave, markGameActive, applySavedState } from './save.js'
+
+// Which lobby modes imply an online (server-backed) game.
+function _isOnlineMode() { return RS.mode === 'create' || RS.mode === 'join' }
 
 export function showLobby() {
   document.getElementById('st').classList.remove('active')
@@ -13,11 +18,19 @@ export function showLobby() {
   const code = parseInviteCode()
   const joinInput = document.getElementById('sl-join-code')
   if (joinInput && code) joinInput.value = code
+  // Pre-fill the saved server address (blank = same-origin web build)
+  const srvInput = document.getElementById('sl-server-url')
+  if (srvInput) srvInput.value = getServerUrl()
   // Refresh browser list
   if (socket?.connected) socket.emit('list_rooms')
 }
 
 export function showSetup() {
+  // Reaching the setup form is always the solo path — the online create/join
+  // flows route to setup directly (not via showSetup) and keep RS.mode set.
+  setOnlineMode(false)
+  RS.mode = null
+
   document.getElementById('st').classList.remove('active')
   document.getElementById('sp').classList.add('active')
 
@@ -27,12 +40,13 @@ export function showSetup() {
 
   _renderScenarioPicker()
 
-  // Show a "Continue" banner if a previous session exists in localStorage
+  // Show a "Continue" banner if a local save exists (works offline — no server).
   const prev = document.getElementById('sp-continue-banner')
   if (prev) prev.remove()
-  const savedName = localStorage.getItem('vName')
-  const savedIcon = localStorage.getItem('vIcon') || '🍃'
-  if (savedName && localStorage.getItem('villageId')) {
+  const saved = hasLocalSave() ? (loadLocal() || {}) : null
+  const savedName = saved?.vName || localStorage.getItem('vName')
+  const savedIcon = saved?.vIcon || localStorage.getItem('vIcon') || '🍃'
+  if (saved && savedName) {
     const banner = document.createElement('div')
     banner.id = 'sp-continue-banner'
     banner.style.cssText = 'padding:10px 12px;border:1px solid #c9a84c;background:#0d0a04;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px'
@@ -75,36 +89,48 @@ export function selScenario(id, el) {
 }
 
 export function beginGame() {
+  setOnlineMode(_isOnlineMode())
   const vname = document.getElementById('sp-vname').value.trim() || 'Hidden Village'
-  const kname = document.getElementById('sp-kname').value.trim() || 'Kage'
+  const kname = document.getElementById('sp-kname').value.trim() || 'Warden'
   _startGame(vname, kname, spIcon, _selScenario)
 }
 
 /**
- * Re-enter a saved session without going through the setup form.
- * G state arrives via socket 'load_state' event after the server responds.
+ * Re-enter a saved session. Offline: the save is loaded from localStorage here.
+ * Online: the local save loads instantly, then the server's authoritative
+ * 'load_state' overlays it once connected.
  */
 export function restoreGame() {
-  const vname = localStorage.getItem('vName') || 'Hidden Village'
-  const kname = localStorage.getItem('kName') || 'Kage'
-  const icon  = localStorage.getItem('vIcon') || '🍃'
-  _startGame(vname, kname, icon)
+  setOnlineMode(_isOnlineMode())
+  const saved = loadLocal()
+  const vname = saved?.vName || localStorage.getItem('vName') || 'Hidden Village'
+  const kname = saved?.kName || localStorage.getItem('kName') || 'Warden'
+  const icon  = saved?.vIcon || localStorage.getItem('vIcon') || '🍃'
+  _startGame(vname, kname, icon, 'standard', saved)
 }
 
-function _startGame(vname, kname, icon, scenario = 'standard') {
+function _startGame(vname, kname, icon, scenario = 'standard', savedState = null) {
   document.getElementById('sb-icon').textContent  = icon
   document.getElementById('sb-vname').textContent = vname
   initState()
-  G.vName = vname
-  G.kName = kname
-  G.vIcon = icon
-  seedPhase1(G)
-  applyScenario(G, scenario)
-  schEx()
+  if (savedState) {
+    // Restore: overlay the save on top of fresh initState() defaults so any
+    // fields missing from an older save keep sensible values.
+    applySavedState(savedState)
+  } else {
+    G.vName = vname
+    G.kName = kname
+    G.vIcon = icon
+    seedPhase1(G)
+    applyScenario(G, scenario)
+    schEx()
+  }
+  markGameActive()
+  saveLocal()                              // ensure a local save exists immediately
   aL(t('toast.setup.tenureBegins'), 'neutral')
   sp('dashboard')
   upUI()
-  initSocket(vname, kname, icon)
+  if (isOnline()) initSocket(vname, kname, icon, getServerUrl())
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'))
   document.getElementById('sg').classList.add('active')
 }
@@ -113,7 +139,7 @@ function _startGame(vname, kname, icon, scenario = 'standard') {
 
 /** From the lobby screen: create a new room. Opens setup form if no saved village. */
 export function createRoomFlow() {
-  const vname = localStorage.getItem('vName')
+  setServerUrl(document.getElementById('sl-server-url')?.value || '')
   const isPrivate  = document.getElementById('sl-create-private')?.checked ?? true
   const maxPlayers = Number(document.getElementById('sl-create-max')?.value) || 4
   const timeout    = Number(document.getElementById('sl-create-timeout')?.value) || 15
@@ -123,7 +149,7 @@ export function createRoomFlow() {
   RS.pendingMaxPlayers       = maxPlayers
   RS.pendingAutoReadyTimeout = timeout
 
-  if (vname && localStorage.getItem('villageId')) {
+  if (hasLocalSave()) {
     restoreGame()
   } else {
     document.getElementById('sl').classList.remove('active')
@@ -140,11 +166,11 @@ export function joinRoomFlow() {
     return
   }
 
+  setServerUrl(document.getElementById('sl-server-url')?.value || '')
   RS.mode        = 'join'
   RS.pendingCode = code
 
-  const vname = localStorage.getItem('vName')
-  if (vname && localStorage.getItem('villageId')) {
+  if (hasLocalSave()) {
     restoreGame()
   } else {
     document.getElementById('sl').classList.remove('active')
