@@ -20,6 +20,8 @@ import { tacticMod } from '../../shared/constants/matchdayTactics.js'
 import { resolvePromise, isPastDue } from '../../shared/utils/promises.js'
 import { updateH2H, pickDerbyRival } from '../../shared/utils/rivalry.js'
 import { MINOR_NATIONS, pickMinorNation, minorStrength, applyMinorOrigin } from '../../shared/constants/minorNations.js'
+import { runYouthCup, entrantRun, studentPower, rivalYouthPower, minorYouthPower } from '../../shared/utils/youthCup.js'
+import { isHofWorthy, buildHofEntry } from '../../shared/utils/hallOfFame.js'
 import { addNewsItem } from './news.js'
 import { villageRevenue } from '../../shared/utils/economy.js'
 import { resolveMission, qualityEffects, missionApproachMod } from '../../shared/utils/missionEngine.js'
@@ -419,7 +421,7 @@ export function resolveBlackMarket(assignmentId) {
     const kR = clamp(bm.kiaBonus, 0.01, 0.15)
     if (Math.random() < kR && !jkKIAImmune(s)) {
       aL(tr('toast.adv.bmKia', { name: sn(s), mission: bm.n }), 'bad')
-      G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: bm.n, year: G.year, month: G.month, wins: s.wins, lastWords: '"No witnesses."' })
+      maybeInduct(s, 'fallen'); G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: bm.n, year: G.year, month: G.month, wins: s.wins, lastWords: '"No witnesses."' })
       G.shinobi = G.shinobi.filter(x => x.id !== s.id)
     } else {
       s.status = 'available'; s.missId = null
@@ -622,6 +624,20 @@ function _formationRisk(sq) {
 function _nationSuccessMod() {
   if (!G._ff_nationHud) return 0
   return nationMods(G.nationId).successMod
+}
+
+// Hall of Fame — induct a departing shinobi (retirement/death) if their career
+// clears the threshold. Idempotent per shinobi. Returns the entry or null.
+export function maybeInduct(s, how) {
+  if (!s || !isHofWorthy(s)) return null
+  G.hallOfFame = G.hallOfFame || []
+  if (G.hallOfFame.some(e => e.id === s.id)) return null
+  const entry = buildHofEntry(s, how, G.year)
+  G.hallOfFame.push(entry)
+  addChronicle('Hall of Fame — ' + entry.name, `${entry.name} is inducted into the Hall of Fame (${entry.reason}).`, 'milestone')
+  aL(tr('toast.adv.hofInducted', { name: entry.name, reason: entry.reason }), 'good')
+  addLegend(3)
+  return entry
 }
 
 function _philosophySuccessMod() { return getPhilosophyMods(G).missionSuccess }
@@ -918,6 +934,7 @@ export function adv() {
         const retLine = sn(s) + ' has reached the age limit and retired at ' + s.age + '.'
         aL(retLine, 'neutral')
         addChronicle('Mandatory Retirement — ' + sn(s), retLine, 'shinobi')
+        maybeInduct(s, 'retired')
         s.status = 'retired'
         return
       }
@@ -940,6 +957,7 @@ export function adv() {
             ].filter(Boolean).join(' ')
             addChronicle('Retirement — ' + sn(s), retLine, 'legend', retNarrative)
           }
+          maybeInduct(s, 'retired')
           s.status = 'retired'
           return
         }
@@ -1493,7 +1511,7 @@ export function adv() {
             aL(sn(s) + ' KIA on "' + m.n + '". ' + lastWords, 'bad')
             sq.fallen.push({ name: sn(s), rank: RANKS[s.ri], mission: m.n, year: G.year, month: G.month })
             if (s.wins >= 50) { addChronicle('Fallen Veteran', sn(s) + ' died on "' + m.n + '" after ' + s.wins + ' missions.', 'shinobi'); addLegend(10) }
-            G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
+            maybeInduct(s, 'fallen'); G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
             pushNarrative(genKIABlurb(sn(s), s.ri, m.n))
             G.shinobi = G.shinobi.filter(x => x.id !== s.id)
             hadKIA = true; sq.kills++
@@ -1609,7 +1627,7 @@ export function adv() {
         if (Math.random() < kR && !jkKIAImmune(s)) {
           const lastWords = pk(LAST_WORDS_POOL)
           aL(sn(s) + ' KIA on "' + m.n + '". ' + lastWords, 'bad')
-          G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
+          maybeInduct(s, 'fallen'); G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
           pushNarrative(genKIABlurb(sn(s), s.ri, m.n))
           if (s.wins >= 50) addChronicle('Fallen Veteran', sn(s) + ' died on "' + m.n + '" after ' + s.wins + ' missions. ' + lastWords, 'shinobi')
           G._mandateKIAThisYear = (G._mandateKIAThisYear || 0) + 1
@@ -2670,6 +2688,49 @@ export function adv() {
     addLegend(graduates.length * 2)
   }
 
+  // ── Youth Cup — the annual academy-age tournament (Month 6) ────────────────
+  // The player's brightest students face rival + minor-nation juniors. A deep
+  // run is a career milestone (and a growth spark) the kid carries for life.
+  if (G.month === 6 && (G.intakeClass || []).length) {
+    const mine = [...G.intakeClass].sort((a, b) => studentPower(b) - studentPower(a)).slice(0, 3)
+    const entrants = mine.map(s => ({ id: s.id, name: sn(s), village: G.vName, ico: G.vIcon, power: studentPower(s), isPlayer: true }))
+    ;(G.villages || []).slice(0, 4).forEach(v => entrants.push({ name: `${v.n} Junior`, village: v.n, ico: v.ico, power: rivalYouthPower(v.strength), isPlayer: false }))
+    let _mnGuard = 0
+    while (entrants.length < 8 && _mnGuard++ < 12) {
+      const mn = pickMinorNation()
+      entrants.push({ name: `${mn.n} Junior`, village: mn.n, ico: mn.ico, power: minorYouthPower(minorStrength(mn)), isPlayer: false })
+    }
+    const cup = runYouthCup(entrants)
+    G.youthCupHistory = G.youthCupHistory || []
+    G.youthCupHistory.push({ year: G.year, champion: cup.champion?.name, championVillage: cup.champion?.village, playerChampion: cup.champion?.village === G.vName })
+    if (G.youthCupHistory.length > 10) G.youthCupHistory.shift()
+
+    const _summ = []
+    mine.forEach(s => {
+      const run = entrantRun(cup, sn(s))
+      let bump = 0, potBump = 0
+      if (run.exit === 'Champion') { bump = 3; potBump = 4; addLegend(3) }
+      else if (run.exit === 'Final') { bump = 2; potBump = 2 }
+      else if (run.exit === 'Semifinal') { bump = 1; potBump = 1 }
+      if (bump) Object.keys(s.stats).forEach(k => { s.stats[k] = clamp(s.stats[k] + bump, 0, 99) })
+      if (potBump) s.potential = clamp((s.potential || 50) + potBump, 0, 99)
+      if (run.exit === 'Champion') {
+        s.milestones = s.milestones || []
+        s.milestones.push({ label: `Youth Cup champion (Y${G.year})`, year: G.year, month: G.month })
+        s.youthCupWins = (s.youthCupWins || 0) + 1
+      }
+      _summ.push(`${sn(s)}: ${run.exit === 'Champion' ? '🏆 Champion' : run.exit === 'Did not play' ? 'did not feature' : `out at the ${run.exit}`}`)
+    })
+    const champ = cup.champion
+    pushNarrative({
+      title: `🎓 Youth Cup — Year ${G.year}`,
+      body: `${champ?.village === G.vName ? `<b>${G.vName} win the Youth Cup!</b>` : `${champ?.ico || ''} ${champ?.village} won the Youth Cup.`}<br><br>Your entrants — ${_summ.join('; ') || 'none fielded'}.`,
+      tag: 'academy', link: 'youthacademy',
+    })
+    addNewsItem(`🎓 ${champ?.ico || ''} ${champ?.village || 'A hidden village'} lifted the Youth Cup.`)
+    addChronicle(`Youth Cup Y${G.year}`, `${champ?.village} won the academy-age Youth Cup. ${_summ.join('; ')}.`, champ?.village === G.vName ? 'milestone' : 'event')
+  }
+
   // ── Individual morale, commitment & people management tick ────────────────
   if (!G.meetingQueue) G.meetingQueue = []
   if (!G.sellPressure) G.sellPressure = []
@@ -3506,7 +3567,7 @@ export function resRaid() {
     aL(G.raid.n + ' breached! Lost ' + fmt(loss) + ' ryo.', 'bad')
     if (def) {
       if (hL < 1 && Math.random() < 0.2) {
-        G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(def), rank: ['Initiate','Adept','Veteran','Shadow','S-Rank'][def.ri], clan: def.clan, mission: 'Village Defense', year: G.year, month: G.month, wins: def.wins, lastWords: '"The village... I held the line."' })
+        maybeInduct(def, 'fallen'); G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(def), rank: ['Initiate','Adept','Veteran','Shadow','S-Rank'][def.ri], clan: def.clan, mission: 'Village Defense', year: G.year, month: G.month, wins: def.wins, lastWords: '"The village... I held the line."' })
         aL(sn(def) + ' fell defending the village.', 'bad')
         G.shinobi = G.shinobi.filter(s => s.id !== def.id)
       } else {

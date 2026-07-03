@@ -26,6 +26,24 @@ export function rYA() {
       ${isApril ? '<div style="color:#c9a84c;font-size:.85rem;align-self:center">🌸 Intake month! New class arrives this advance.</div>' : ''}
     </div>
 
+    ${(() => {
+      const hist = (G.youthCupHistory || []).slice(-5).reverse()
+      const held = hist[0]
+      if (!hist.length) return `<div style="background:#111;border:1px solid #2a2a2a;border-radius:6px;padding:10px 12px;margin-bottom:16px;font-size:.78rem;color:#666">🎓 <b style="color:#8a7d5c">Youth Cup</b> — the academy-age tournament runs every June. Enrol a class and field your brightest for a shot at the cup.</div>`
+      return `<div style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:12px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="color:#c9a84c;font-size:.82rem;text-transform:uppercase;letter-spacing:.08em">🎓 Youth Cup</span>
+          <span style="font-size:.78rem;color:${held.playerChampion ? '#8fbc8f' : '#888'}">Holder: <b>${held.championVillage || held.champion}</b> (Y${held.year})${held.playerChampion ? ' — you' : ''}</span>
+        </div>
+        <div style="display:grid;gap:2px">
+          ${hist.map(h => `<div style="display:flex;gap:8px;font-size:.75rem;color:${h.playerChampion ? '#8fbc8f' : '#9a9080'}">
+            <span style="color:#555;width:36px">Y${h.year}</span>
+            <span>${h.playerChampion ? '🏆 ' : ''}${h.championVillage || h.champion}</span>
+          </div>`).join('')}
+        </div>
+      </div>`
+    })()}
+
     <div style="display:flex;gap:6px;margin-bottom:14px">
       ${tabs.map(t => `<button onclick="yaTab('${t}')" style="background:${window._yaTab===t?'#2a2210':'#1a1a1a'};border:1px solid ${window._yaTab===t?'#c9a84c':'#333'};color:${window._yaTab===t?'#c9a84c':'#999'};border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.78rem">${t === 'class' ? 'Current Class' : t === 'records' ? 'Academy Records' : 'Graduate Tracking'}</button>`).join('')}
     </div>
