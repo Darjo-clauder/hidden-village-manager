@@ -18,7 +18,7 @@ import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchR
 import { resolveChoiceEvent, resolveCouncilProposal, assignBlackMarket, resolveClanChain, establishSafehouse, assignDeepCoverOp, resolveWorldEventChoice, activateBloodline, resolvePressConference, resolveComplication, resolveRivalOffer, resolveQuickDecision, runTrainingCamp, gradeShinobi } from './adv.js'
 import { rFi, setBudgetPriority } from './panels/finances.js'
 import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff, staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting, staffCtx, staffHover } from './panels/staff.js'
-import { rSco, assignScout, setScoutBudget, toggleWatchlist, trialDay, signProspect, draftSort, scoutCtx, scoutHover } from './panels/scouting.js'
+import { rSco, assignScout, setScoutBudget, toggleWatchlist, trialDay, signProspect, draftSort, scoutCtx, scoutHover, toggleScoutDossier } from './panels/scouting.js'
 import { retainScout, dismissScout } from './scoutEngine.js'
 import { setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule, depCtx, depHover } from './panels/depthchart.js'
 import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab } from './panels/youthacademy.js'
@@ -157,7 +157,7 @@ Object.assign(window, {
   // missions
   setMissionPrep, simTemplate,
   // scouting
-  assignScout, setScoutBudget, setBudgetPriority, toggleWatchlist, trialDay, signProspect, draftSort, scoutCtx, scoutHover,
+  assignScout, setScoutBudget, setBudgetPriority, toggleWatchlist, trialDay, signProspect, draftSort, scoutCtx, scoutHover, toggleScoutDossier,
   retainScout, dismissScout,
   // depth chart
   setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule, depCtx, depHover,

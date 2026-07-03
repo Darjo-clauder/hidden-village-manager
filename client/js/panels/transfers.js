@@ -5,6 +5,7 @@ import { TRANSFER_CATS, TRANSFER_WINDOWS, BINGO_TIERS, RANKS, VILLAGES_DEF } fro
 import { aL, ntf, upUI } from '../ui.js'
 import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort } from '../uikit.js'
 import { t } from '../../../shared/utils/i18n.js'
+import { standingTier, adjustStanding } from '../../../shared/utils/agentRelations.js'
 
 // Market sort (P1 kit reuse — card grid, so a sort bar instead of table headers).
 const _TR_SORTS = [
@@ -148,7 +149,18 @@ function marketCard(p, judgeLevel) {
       · Avail: <span style="color:${(p.monthsAvailable||1)<=1?'#f66':'#aaa'}">${p.monthsAvailable||1}mo</span>
     </div>
     <div style="font-size:.72rem;color:#777;margin-bottom:6px">Market value: <span style="color:${valueDelta>=0?'#8fbc8f':'#f0a030'}">${fmt(marketVal)} ryo</span> ${valueDelta>=0?'(bargain at asking price)':'(asking above value)'}</div>
-    ${p.agent ? `<div style="font-size:.71rem;color:#cc7fb8;margin-bottom:6px">🤝 Agent: ${p.agent.name} (${p.agent.feePercent}% of signing bonus) — ${p.agent.agendaDesc}</div>` : ''}
+    ${p.agent ? (() => {
+      const ag = (G.agents || []).find(a => a.id === p.agentId)
+      const tier = standingTier(ag?.standing)
+      const standingTag = ag ? ` · <span style="color:${tier.color}" title="${tier.desc}">${tier.label}${ag.deals ? ` (${ag.deals} deal${ag.deals > 1 ? 's' : ''})` : ''}</span>` : ''
+      // First-refusal tip: a Trusted agent flags their other listed client.
+      let tip = ''
+      if (ag && tier.tip) {
+        const other = (G.transferMarket?.pool || []).find(x => x.agentId === ag.id && x.id !== p.id)
+        if (other) tip = `<div style="font-size:.68rem;color:#8fbc8f;margin:2px 0 6px">🤝 First refusal: ${ag.name} also reps <b>${other.fn} ${other.ln}</b> — a quiet tip for a trusted partner.</div>`
+      }
+      return `<div style="font-size:.71rem;color:#cc7fb8;margin-bottom:6px">🤝 Agent: ${p.agent.name} (${p.agent.feePercent}% of signing bonus) — ${p.agent.agendaDesc}${standingTag}</div>${tip}`
+    })() : ''}
     ${p.sellOnClause ? `<div style="font-size:.7rem;color:#f0a030;margin-bottom:6px">📜 Sell-on clause: ${p.sellOnClause.percent}% of any future sale owed to ${p.sellOnClause.village}</div>` : ''}
     ${(p.pursuedByVillages||[]).length ? `<div style="font-size:.7rem;color:#777;margin-bottom:6px">Previously pursued by: ${p.pursuedByVillages.join(', ')}</div>` : ''}
     ${showMatrix ? `<div style="margin-bottom:8px;line-height:1.8">${matTraits}</div>` : judgeLevel < 6 ? `<div style="font-size:.7rem;color:#444;margin-bottom:8px">Staff personality judgment too low to read character.</div>` : ''}
@@ -492,6 +504,14 @@ export function confirmTransfer() {
   p.noTrade = false
   p.twoWay  = false
   p.buyoutCost = Math.round((p.salary || 500) * 4)
+  // R12: doing business lifts standing with the player's agent (carries forward).
+  if (p.agentId) {
+    const ag = (G.agents || []).find(a => a.id === p.agentId)
+    if (ag) {
+      ag.standing = adjustStanding(ag.standing, sigBonus >= p.askingFee * 0.15 ? 'exceeded_offer' : 'signed_client')
+      ag.deals = (ag.deals || 0) + 1
+    }
+  }
   G.shinobi.push(p)
   G.transferMarket.pool = (G.transferMarket.pool || []).filter(x => x.id !== p.id)
   G.transferMarket.completedDeals = G.transferMarket.completedDeals || []

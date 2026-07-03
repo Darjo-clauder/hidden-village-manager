@@ -7,6 +7,7 @@ import { ARCHETYPE_POOL } from '../../shared/utils/personality.js'
 import { newKageDev } from '../../shared/constants/kageDev.js'
 import { identityFor, rollIntensity, applyIdentityBias } from '../../shared/constants/villageIdentity.js'
 import { MINOR_NATIONS, pickMinorNation, applyMinorOrigin, getMinorRel, minorFeeMult } from '../../shared/constants/minorNations.js'
+import { effectiveFeePercent } from '../../shared/utils/agentRelations.js'
 
 // ── utilities ──────────────────────────────────────────────────────────────
 export const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a
@@ -800,16 +801,39 @@ export function addNotice(text, type = 'neutral') {
   if (G.noticeboard.length > 60) G.noticeboard.shift()
 }
 
-// Assign an agent intermediary to high-rank pool entries (A-rank+/S-rank).
-// Agents take a cut of any signing bonus and push their own agenda in negotiation.
+// A persistent roster of named agents (R12). Standing with each carries across
+// transfer windows, so signing their clients — or reneging — has a lasting effect.
+export function ensureAgents(G) {
+  if (G.agents && G.agents.length) return G.agents
+  G.agents = []
+  for (let i = 0; i < 8; i++) {
+    const agenda = pk(AGENT_AGENDAS)
+    G.agents.push({
+      id: 'agent_' + i + '_' + Math.random().toString(36).slice(2, 7),
+      name: pk(FNAMES) + ' ' + pk(LNAMES),
+      agenda: agenda.id,
+      agendaDesc: agenda.desc,
+      baseFeePercent: rnd(5, 15),
+      standing: 50,
+      deals: 0,
+    })
+  }
+  return G.agents
+}
+
+// Assign an agent intermediary to high-rank pool entries (A-rank+/S-rank). The
+// agent is drawn from the persistent roster; their cut reflects current standing.
 function assignAgent(s) {
   if (s.ri < 3) return
-  const agenda = pk(AGENT_AGENDAS)
+  const roster = ensureAgents(G)
+  const agent = pk(roster)
+  s.agentId = agent.id
   s.agent = {
-    name: pk(FNAMES) + ' ' + pk(LNAMES),
-    agenda: agenda.id,
-    agendaDesc: agenda.desc,
-    feePercent: rnd(5, 15),
+    id: agent.id,
+    name: agent.name,
+    agenda: agent.agenda,
+    agendaDesc: agent.agendaDesc,
+    feePercent: effectiveFeePercent(agent.baseFeePercent, agent.standing),
   }
 }
 
