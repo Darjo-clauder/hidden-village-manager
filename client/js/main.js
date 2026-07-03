@@ -2,7 +2,7 @@ import { G } from './state.js'
 import { sp, cm, upUI, schEx, setNation, toggleColorblind, ntf, continueTurn } from './ui.js'
 import { showSetup, selIcon, beginGame, restoreGame, selScenario } from './setup.js'
 import { adv } from './adv.js'
-import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath, rosterSortBy, rosterToggleCol, rosterColMgr, rosterCtx, rosterHover } from './panels/roster.js'
+import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, setRehabPlan, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath, rosterSortBy, rosterToggleCol, rosterColMgr, rosterCtx, rosterHover } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation, setSqApproach } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM, setMissionApproach, selectMission, setInspectorApproach, deployFromInspector, watchLastBattle, toggleAutoWatch } from './panels/missions.js'
 import { skipBattleViewer, closeBattleViewer, chooseBattleCall } from './liveBattle.js'
@@ -149,7 +149,7 @@ Object.assign(window, {
   openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff,
   staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting, staffCtx, staffHover,
   // roster injury actions
-  secondOpinion, specialistTreatment,
+  secondOpinion, specialistTreatment, setRehabPlan,
   retireShinobi, retireToCoach, extendCareer,
   setTrainingFocus, toggleRestMonth, openContractRenewal,
   toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath,

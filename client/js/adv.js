@@ -29,6 +29,7 @@ import { nextDeclineYears, findRelegation, pickPromotion } from '../../shared/ut
 import { resolveBattleCall, callBeatIndex } from '../../shared/utils/battleCalls.js'
 import { sponsorMoodDelta, moodPayoutMult, applyMoodDelta, SPONSOR_QUIT_MOOD } from '../../shared/utils/sponsors.js'
 import { supportDelta, revenueMult, applySupport, FESTIVAL_THRESH, UNREST_THRESH } from '../../shared/utils/populace.js'
+import { effectivePlan, medQuality, recoveryStep, reinjuryChance, returningForm } from '../../shared/utils/medical.js'
 import { genVillageRoster } from './state.js'
 import { RIVAL_KAGE_NAMES, RIVAL_PERSONALITIES } from './constants.js'
 import { addNewsItem } from './news.js'
@@ -112,7 +113,9 @@ function applyInjury(s, injType, hL, extraReduction = 0) {
   const medNinjaCount = (G.staff || []).filter(st => st.role === 'medical').length
   const medReduction = medNinjaCount * 0.5  // each medical ninja -0.5 months
   let dur = rnd(injType.minMo, injType.maxMo)
-  dur = Math.max(1, Math.round(dur - (s.pers?.effect?.injReduct || 0) - hL - medReduction - extraReduction))
+  const resist = s.injuryResist ? 1 : 0  // R25: careful rehab leaves lingering resistance (one-shot)
+  dur = Math.max(1, Math.round(dur - (s.pers?.effect?.injReduct || 0) - hL - medReduction - extraReduction - resist))
+  s.injuryResist = 0
   s.injDays = dur
   s.injuryType = injType.id
   s.status = 'injured'
@@ -1004,10 +1007,22 @@ export function adv() {
     if (s.injuryType === undefined) s.injuryType = null
 
     if (s.status === 'injured') {
-      s.injDays = Math.max(0, s.injDays - 1)
+      // R25: rehab plan governs speed / re-injury risk / returning form.
+      const _hasMedic = (G.staff || []).some(st => st.role === 'medical')
+      const _plan = effectivePlan(s.rehabPlan, _hasMedic)
+      const _q = medQuality((G.staff || []).filter(st => st.role === 'medical').length, G.upgrades.hospital || 0)
+      if (_plan === 'rush' && Math.random() < reinjuryChance(_plan, _q)) {
+        s.injDays += rnd(1, 2); s.morale = clamp((s.morale || 50) - 4, 0, 100)
+        aL(sn(s) + ' aggravated the injury rushing back — recovery extended.', 'warn')
+      } else {
+        s.injDays = Math.max(0, s.injDays - recoveryStep(_plan))
+      }
       if (s.injDays === 0) {
         s.status = 'available'
         s.injuryType = null
+        s.returningForm = Math.min(s.returningForm ?? 100, returningForm(_plan))
+        if (_plan === 'careful') s.injuryResist = 1  // shrugs off the next injury a bit
+        s.rehabPlan = null
         aL(sn(s) + ' recovered from injury.', 'good')
       }
     }

@@ -10,6 +10,7 @@ import { aL, ntf, upUI, cm } from '../ui.js'
 import { PHASE_META, ensureCareerFields } from '../careerEngine.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { computeStrain, strainBand } from '../../../shared/utils/strain.js'
+import { REHAB_PLANS } from '../../../shared/utils/medical.js'
 import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort, tblHidden, tblToggleCol, tblSortRows, tblHeaderHtml, tblColumnManagerHtml, tblToggleColumnManager, activityGridHtml } from '../uikit.js'
 
 const _ROSTER_DEFAULT_SORT = { key: 'power', dir: 'desc' }
@@ -425,6 +426,16 @@ export function oDos(id) {
              ${canSecondOpinion ? `<button class="gb" style="font-size:7px;border-color:#87ceeb;color:#87ceeb" onclick="secondOpinion('${s.id}')">Second Opinion (3,000 ryo) ▸</button>` : ''}
              ${canSpecialist ? `<button class="gb gb-g" style="font-size:7px" onclick="specialistTreatment('${s.id}','${bestAlly.n}')">Specialist Treatment via ${bestAlly.n} (12,000 ryo) ▸</button>` : ''}
            </div>
+           <div style="margin-top:8px">
+             <div style="font-size:7px;color:#7a7060;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Rehab Plan</div>
+             <div style="display:flex;gap:4px;flex-wrap:wrap">
+               ${REHAB_PLANS.map(pl => {
+                 const cur = (s.rehabPlan || 'standard') === pl.id
+                 const locked = pl.id === 'careful' && !hasMedical
+                 return `<button class="gb" onclick="setRehabPlan('${s.id}','${pl.id}')" ${locked ? 'disabled title="Needs a medical ninja on staff"' : `title="${pl.desc}"`} style="font-size:7px;${cur ? 'border-color:#c9a84c;color:#c9a84c' : ''}${locked ? 'opacity:.4' : ''}">${pl.icon} ${pl.label}</button>`
+               }).join('')}
+             </div>
+           </div>
          </div>`
       : s.status === 'injured'
       ? `<div style="font-size:8px;color:#f44">Injured — ${s.injDays} month${s.injDays!==1?'s':''} remaining</div>`
@@ -687,6 +698,15 @@ export function treatTrauma(sId) {
   s.traumaStatus = null
   s.traumaMonths = 0
   aL(tr('toast.roster.traumaTreated', { name: sn(s) }), 'good')
+  cm('dossier'); upUI()
+}
+
+// R25: set an injured shinobi's rehab plan (rush / standard / careful).
+export function setRehabPlan(sId, plan) {
+  const s = G.shinobi.find(x => x.id === sId)
+  if (!s || s.status !== 'injured') return
+  if (plan === 'careful' && !(G.staff || []).some(st => st.role === 'medical')) { ntf('Careful rehab needs a medical ninja on staff.'); return }
+  s.rehabPlan = plan
   cm('dossier'); upUI()
 }
 
