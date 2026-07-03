@@ -30,6 +30,7 @@ import { resolveBattleCall, callBeatIndex } from '../../shared/utils/battleCalls
 import { sponsorMoodDelta, moodPayoutMult, applyMoodDelta, SPONSOR_QUIT_MOOD } from '../../shared/utils/sponsors.js'
 import { supportDelta, revenueMult, applySupport, FESTIVAL_THRESH, UNREST_THRESH } from '../../shared/utils/populace.js'
 import { effectivePlan, medQuality, recoveryStep, reinjuryChance, returningForm } from '../../shared/utils/medical.js'
+import { addStaffXp, staffTitle, staffLevelBonus } from '../../shared/utils/staffDev.js'
 import { genVillageRoster } from './state.js'
 import { RIVAL_KAGE_NAMES, RIVAL_PERSONALITIES } from './constants.js'
 import { addNewsItem } from './news.js'
@@ -110,8 +111,9 @@ function pickInjuryType(mRk) {
 }
 
 function applyInjury(s, injType, hL, extraReduction = 0) {
-  const medNinjaCount = (G.staff || []).filter(st => st.role === 'medical').length
-  const medReduction = medNinjaCount * 0.5  // each medical ninja -0.5 months
+  const medics = (G.staff || []).filter(st => st.role === 'medical')
+  // R26: seasoned medics recover shinobi faster (level bonus on the base reduction).
+  const medReduction = medics.reduce((a, st) => a + 0.5 * staffLevelBonus(st.staffLevel), 0)
   let dur = rnd(injType.minMo, injType.maxMo)
   const resist = s.injuryResist ? 1 : 0  // R25: careful rehab leaves lingering resistance (one-shot)
   dur = Math.max(1, Math.round(dur - (s.pers?.effect?.injReduct || 0) - hL - medReduction - extraReduction - resist))
@@ -1910,6 +1912,13 @@ export function adv() {
   if (!G.staff) G.staff = [];
   (G.staff || []).forEach(st => {
     st.monthsServed = (st.monthsServed || 0) + 1
+    // R26: on-the-job experience — level up toward mastery, sharpening their craft.
+    const _xpRes = addStaffXp(st, 4 + (st.asstKage ? 2 : 0))
+    if (_xpRes.leveledUp) {
+      const _r = STAFF_ROLES.find(r => r.id === st.role)
+      if (_r && _r.stats[0]) st.stats[_r.stats[0]] = clamp((st.stats[_r.stats[0]] || 10) + 1, 1, 20)
+      aL(`${st.fn} ${st.ln} reached ${staffTitle(st.staffLevel)} (staff level ${st.staffLevel}).`, 'good')
+    }
     // Development — +1 rating over time
     if (st.monthsServed > 0 && st.monthsServed % 6 === 0 && Math.random() < 0.30 && st.rating < 20) {
       st.rating++

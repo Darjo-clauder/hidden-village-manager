@@ -3,6 +3,7 @@ import { STAFF_ROLES, RANKS, FNAMES, LNAMES, STAFF_CONFLICT_RESPONSES } from '..
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { openContextMenu, showHoverPreview, hideHoverPreview } from '../uikit.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
+import { staffTitle, xpForStaffLevel, STAFF_MAX_LEVEL } from '../../../shared/utils/staffDev.js'
 
 // Right-click a staff card → verb menu (P1 entity grammar).
 export function staffCtx(e, id) {
@@ -133,6 +134,7 @@ function _rosterTab() {
               <div onmousemove="staffHover(event,'${st.id}')" onmouseleave="hideHoverPreview()">
                 <div style="font-size:10px;color:#e8e0cc;font-weight:bold">${st.fn} ${st.ln}${isAsstKage ? ' <span style="color:#87ceeb;font-size:8px">★ Asst. Warden</span>' : ''}</div>
                 <div style="font-size:8px;color:#7a7060">Rating: <span style="color:#c9a84c;font-weight:bold">${st.rating}</span> · ${yearsServed > 0 ? yearsServed + 'yr ' : ''}${st.monthsServed}mo · ${fmt(st.salary)}/mo</div>
+                ${(() => { const lvl = st.staffLevel || 1; const need = xpForStaffLevel(lvl); const pct = lvl >= STAFF_MAX_LEVEL ? 100 : Math.min(100, Math.round((st.staffXp || 0) / need * 100)); return `<div style="display:flex;align-items:center;gap:5px;margin-top:2px"><span style="font-size:7px;color:#8fbc8f" title="Staff mastery — improves their craft as they gain experience">◆ ${staffTitle(lvl)}${lvl >= STAFF_MAX_LEVEL ? ' (max)' : ' L' + lvl}</span><div style="flex:1;max-width:70px;height:3px;background:#222;border-radius:2px;overflow:hidden"><div style="height:100%;width:${pct}%;background:#8fbc8f"></div></div></div>` })()}
                 <div style="font-size:7px;color:${ambColor};margin-top:2px">${ambLabel}${(st.ambition||0)>=14&&roleId==='team_sensei'?' — watching for head sensei opening':''}${st.hiddenFlaw&&st.flawRevealed?' · ⚠ '+st.hiddenFlaw:''}</div>
                 ${st.institutional > 0 ? `<div style="font-size:8px;color:#cc7fb8">Legacy bonus: +${st.institutional} to next hire</div>` : ''}
                 ${st.fromShinobi ? `<div style="font-size:8px;color:#c9a84c">↳ Transitioned from active duty</div>` : ''}
