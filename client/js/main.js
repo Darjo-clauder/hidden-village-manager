@@ -6,7 +6,7 @@ import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTa
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation, setSqApproach } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM, setMissionApproach, selectMission, setInspectorApproach, deployFromInspector, watchLastBattle, toggleAutoWatch } from './panels/missions.js'
 import { skipBattleViewer, closeBattleViewer } from './liveBattle.js'
-import { rUp, buyUp, buildDistrict, chooseDoctrine } from './panels/upgrades.js'
+import { rUp, buyUp, buildDistrict, chooseDoctrine, startPrestigeProject } from './panels/upgrades.js'
 import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab, acCtx, acHover } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, secureRoute } from './panels/economy.js'
 import { logFilter, logSearch } from './panels/log.js'
@@ -117,7 +117,7 @@ Object.assign(window, {
   selectMission, setInspectorApproach, deployFromInspector,
   watchLastBattle, toggleAutoWatch, skipBattleViewer, closeBattleViewer,
   // upgrades
-  buyUp, buildDistrict, chooseDoctrine,
+  buyUp, buildDistrict, chooseDoctrine, startPrestigeProject,
   // academy
   rec, oScout, doScout, oSensei, doSensei, setTrainingPlan,
   matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab, acCtx, acHover,
