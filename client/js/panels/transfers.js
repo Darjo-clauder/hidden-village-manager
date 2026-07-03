@@ -5,7 +5,7 @@ import { TRANSFER_CATS, TRANSFER_WINDOWS, BINGO_TIERS, RANKS, VILLAGES_DEF } fro
 import { aL, ntf, upUI } from '../ui.js'
 import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort } from '../uikit.js'
 import { t } from '../../../shared/utils/i18n.js'
-import { standingTier, adjustStanding } from '../../../shared/utils/agentRelations.js'
+import { standingTier, adjustStanding, effectiveFeePercent } from '../../../shared/utils/agentRelations.js'
 
 // Market sort (P1 kit reuse — card grid, so a sort bar instead of table headers).
 const _TR_SORTS = [
@@ -78,7 +78,7 @@ export function rTr() {
 
     <!-- Tabs -->
     <div style="display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap">
-      ${[['market','🏪 Market',' ('+((tm.pool||[]).length)+')'],['sellpressure','📨 Approaches',' ('+(G.sellPressure||[]).length+')'],['loans','🔄 Loans',' ('+((tm.loanOut||[]).length + (tm.loanIn||[]).length)+')'],['bingo','📖 Bingo Book'],['offers','📋 Offer History',' ('+(tm.offers||[]).length+')'],['history','📜 History',' ('+((tm.completedDeals||[]).length)+')']].map(([tid,tlabel,tbadge]) =>
+      ${[['market','🏪 Market',' ('+((tm.pool||[]).length)+')'],['sellpressure','📨 Approaches',' ('+(G.sellPressure||[]).length+')'],['loans','🔄 Loans',' ('+((tm.loanOut||[]).length + (tm.loanIn||[]).length)+')'],['bingo','📖 Bingo Book'],['agents','🤝 Agents',' ('+((G.agents||[]).length)+')'],['offers','📋 Offer History',' ('+(tm.offers||[]).length+')'],['history','📜 History',' ('+((tm.completedDeals||[]).length)+')']].map(([tid,tlabel,tbadge]) =>
         `<button onclick="trTab('${tid}')" style="background:${tabId===tid?'#2a2a1a':'#111'};border:1px solid ${tabId===tid?'#c9a84c':'#333'};color:${tabId===tid?'#c9a84c':'#888'};border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.78rem">${tlabel}${tbadge||''}</button>`
       ).join('')}
     </div>
@@ -87,9 +87,37 @@ export function rTr() {
     ${tabId === 'sellpressure' ? renderSellPressure() : ''}
     ${tabId === 'loans' ? renderLoans(tm) : ''}
     ${tabId === 'bingo' ? renderBingo(judgeLevel) : ''}
+    ${tabId === 'agents' ? renderAgents() : ''}
     ${tabId === 'offers' ? renderOffers(tm) : ''}
     ${tabId === 'history' ? renderHistory(tm) : ''}
   `
+}
+
+// R12: persistent agent roster — standing, deal count, agenda, current clients.
+function renderAgents() {
+  const agents = (G.agents || []).slice().sort((a, b) => (b.standing ?? 50) - (a.standing ?? 50))
+  if (!agents.length) {
+    return `<div style="color:#555;text-align:center;padding:40px;font-size:.85rem">No agents known yet.<br><span style="color:#444;font-size:.8rem">Agents surface once high-rank talent (A-rank+) appears on the market.</span></div>`
+  }
+  const pool = G.transferMarket?.pool || []
+  return `<div style="font-size:.78rem;color:#888;margin-bottom:10px">Standing rises when you sign their clients, falls when you poach, lowball, or renege. Trusted agents tip you off first on their other clients.</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px">
+    ${agents.map(ag => {
+      const tier = standingTier(ag.standing)
+      const clients = pool.filter(p => p.agentId === ag.id)
+      const fee = effectiveFeePercent(ag.baseFeePercent, ag.standing)
+      return `<div style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="color:#cc7fb8;font-weight:bold;font-size:.82rem">🤝 ${ag.name}</span>
+          <span style="font-size:.72rem;color:${tier.color};border:1px solid ${tier.color};padding:1px 6px;border-radius:3px" title="${tier.desc}">${tier.label}</span>
+        </div>
+        <div style="height:5px;background:#222;border-radius:3px;overflow:hidden;margin-bottom:6px"><div style="height:100%;width:${ag.standing ?? 50}%;background:${tier.color}"></div></div>
+        <div style="font-size:.72rem;color:#999;margin-bottom:3px">${ag.agendaDesc || ''}</div>
+        <div style="font-size:.72rem;color:#777">Cut: <b style="color:#e8d5a3">${fee}%</b> · ${ag.deals || 0} deal${(ag.deals || 0) === 1 ? '' : 's'} done</div>
+        ${clients.length ? `<div style="font-size:.7rem;color:#8fbc8f;margin-top:4px;border-top:1px solid #262626;padding-top:4px">Now repping: ${clients.map(c => c.fn + ' ' + c.ln).join(', ')}</div>` : ''}
+      </div>`
+    }).join('')}
+    </div>`
 }
 
 function renderMarket(tm, judgeLevel) {
@@ -394,6 +422,11 @@ export function submitOffer() {
     _negFee = counter
   } else {
     status = 'rejected'
+    // R12: a rejected lowball (well under asking) offends the agent.
+    if (p.agentId && amount < p.askingFee * counterThresh) {
+      const ag = (G.agents || []).find(a => a.id === p.agentId)
+      if (ag) ag.standing = adjustStanding(ag.standing, 'lowballed')
+    }
   }
 
   G.transferMarket.offers = G.transferMarket.offers || []
@@ -536,6 +569,11 @@ export function poachAttempt(poolId) {
   if (success) {
     G.ryo -= poachFee
     p.status = 'available'; p.commitment = 45; p.months = 0
+    // R12: going around the agent to poach their client sours standing.
+    if (p.agentId) {
+      const ag = (G.agents || []).find(a => a.id === p.agentId)
+      if (ag) ag.standing = adjustStanding(ag.standing, 'poached')
+    }
     G.shinobi.push(p)
     G.transferMarket.pool = (G.transferMarket.pool || []).filter(x => x.id !== p.id)
     G.transferMarket.completedDeals = G.transferMarket.completedDeals || []
