@@ -3,6 +3,7 @@ import { sp } from '../ui.js'
 import { WE_BY_ID } from '../../../shared/constants/worldCalendar.js'
 import { sortedThreads } from '../../../shared/utils/narrativeThreads.js'
 import { TONE_BY_ID } from '../../../shared/utils/pressConference.js'
+import { JOURNALIST_BY_ID, getJournalistRel, journalistTier } from '../../../shared/constants/journalists.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 
 // Priority: urgent > standard > info
@@ -369,8 +370,14 @@ function buildItems() {
       cat:      'Media',
       icon:     '📰',
       title:    'Press Conference Request',
-      desc:     (p.intro ? `<span style="color:#7a7060">${p.intro}</span><br><br>` : '') +
-                `<em>"${p.question}"</em>${followUpHtml}${calloutNote}<br>Choose your response:`,
+      desc:     (() => {
+                  const jr = JOURNALIST_BY_ID[p.journalistId]
+                  const rel = getJournalistRel(G.journalistRel, p.journalistId)
+                  const tier = journalistTier(rel)
+                  const byline = jr ? `<div style="font-size:7px;color:#7a7060;margin-bottom:4px">📰 <b style="color:#e8e0cc">${jr.name}</b> · ${jr.outlet} <span style="color:${tier.color}">(${tier.label})</span> — ${jr.frame}:</div>` : ''
+                  return byline + (p.intro ? `<span style="color:#7a7060">${p.intro}</span><br><br>` : '') +
+                    `<em>"${p.question}"</em>${followUpHtml}${calloutNote}<br>Choose your response:`
+                })(),
       actions:  pressActions,
       archived: false,
     })

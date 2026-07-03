@@ -1,6 +1,7 @@
 import { G, fmt } from '../state.js'
 import { UPGRADES_DEF, BUILDING_MAINTENANCE, VILLAGE_DOCTRINES, DOCTRINE_BY_ID } from '../constants.js'
 import { DISTRICTS, getDistrictPassives } from '../../../shared/constants/districts.js'
+import { PRESTIGE_PROJECTS, PROJECT_BY_ID, completedEffect, buildProgress, canStartProject } from '../../../shared/constants/prestigeProjects.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { aL, ntf, upUI } from '../ui.js'
 
@@ -41,7 +42,49 @@ function _defenseRating() {
   const wD = G.upgrades.wall === 2 ? 35 : G.upgrades.wall === 1 ? 15 : 0
   const sD = G.upgrades.seal === 2 ? 25 : G.upgrades.seal === 1 ? 10 : 0
   const doc = (DOCTRINE_BY_ID[G.villageDoctrine]?.defBonus) || 0
-  return { wall: wD, seal: sD, temp: G.tempDef || 0, doc, total: wD + sD + (G.tempDef || 0) + doc }
+  const proj = completedEffect(G.prestigeCompleted, 'defBonus')
+  return { wall: wD, seal: sD, temp: G.tempDef || 0, doc, proj, total: wD + sD + (G.tempDef || 0) + doc + proj }
+}
+
+// Prestige projects — multi-year monuments that convert treasury into permanence.
+function _prestigeProjectsHtml() {
+  const completed = G.prestigeCompleted || []
+  const builds = G.prestigeBuilds || []
+  const rows = PRESTIGE_PROJECTS.map(p => {
+    const done = completed.includes(p.id)
+    const build = builds.find(b => b.id === p.id)
+    const prog = build ? buildProgress(build) : 0
+    const startable = canStartProject(p.id, G.ryo, completed, builds.map(b => b.id))
+    const status = done
+      ? `<span style="color:#8fbc8f;font-size:8px">✓ Complete</span>`
+      : build
+        ? `<span style="font-size:8px;color:#c9a84c">Building ${Math.round(prog * 100)}%</span>`
+        : `<button class="gb" onclick="startPrestigeProject('${p.id}')" ${startable ? '' : 'disabled'} style="font-size:8px">Commission · ${fmt(p.cost)}</button>`
+    return `<div style="border:1px solid ${done ? '#3a5a3a' : '#2e2a22'};background:#0a0a0a;padding:8px 10px;margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:16px">${p.icon}</span>
+        <div style="flex:1"><div style="font-size:10px;color:#e8e0cc">${p.name}</div><div style="font-size:7px;color:#7a7060">${p.desc} · ${Math.round(p.buildMonths / 12 * 10) / 10}yr build</div></div>
+        ${status}
+      </div>
+      ${build ? `<div style="height:3px;background:#111;margin-top:6px;border-radius:2px;overflow:hidden"><div style="width:${prog * 100}%;height:100%;background:#c9a84c"></div></div>` : ''}
+    </div>`
+  }).join('')
+  return `<div style="margin-top:16px">
+    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">🗿 Prestige Projects</div>
+    <div style="font-size:7px;color:#7a7060;margin-bottom:8px">Multi-year monuments. A heavy ryo cost buys lasting prestige — legend, morale, defense — not more money. The dynasty's mark on the world.</div>
+    ${rows}
+  </div>`
+}
+
+export function startPrestigeProject(id) {
+  const def = PROJECT_BY_ID[id]; if (!def) return
+  G.prestigeBuilds = G.prestigeBuilds || []
+  G.prestigeCompleted = G.prestigeCompleted || []
+  if (!canStartProject(id, G.ryo, G.prestigeCompleted, G.prestigeBuilds.map(b => b.id))) { ntf(t('toast.upgrades.projectCannot')); return }
+  G.ryo -= def.cost
+  G.prestigeBuilds.push({ id, monthsDone: 0, startedYear: G.year })
+  aL(t('toast.upgrades.projectStarted', { icon: def.icon, name: def.name }), 'good')
+  upUI()
 }
 
 function _monthlyMaintenance() {
@@ -62,7 +105,7 @@ export function rUp() {
       <div>
         <div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px">${t("upgrades.defenseRating")}</div>
         <div style="font-size:16px;color:${defColor};font-family:'Courier New',monospace">${def.total}</div>
-        <div style="font-size:7px;color:#7a7060;margin-top:2px">Walls +${def.wall} · Seals +${def.seal}${def.temp ? ` · Temp +${def.temp}` : ''}${def.doc ? ` · Doctrine ${def.doc > 0 ? '+' : ''}${def.doc}` : ''}</div>
+        <div style="font-size:7px;color:#7a7060;margin-top:2px">Walls +${def.wall} · Seals +${def.seal}${def.temp ? ` · Temp +${def.temp}` : ''}${def.doc ? ` · Doctrine ${def.doc > 0 ? '+' : ''}${def.doc}` : ''}${def.proj ? ` · Monuments +${def.proj}` : ''}</div>
       </div>
       <div>
         <div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px">${t("upgrades.upkeep")}</div>
@@ -121,7 +164,7 @@ export function rUp() {
       const upkeep = (BUILDING_MAINTENANCE[u.id] || 400) * lv
       const upkeepTag = lv > 0 ? `<span style="font-size:7px;color:#f66;float:right">-${fmt(upkeep)}/mo</span>` : ''
       return `<div class="card"><div style="font-size:11px;color:#e8e0cc;font-weight:bold;margin-bottom:2px">${u.n}${upkeepTag}</div><div class="upg-lv">Level ${lv}/${u.levels.length - 1}: ${u.levels[lv]}</div>${maxed ? '<div style="font-size:8px;color:#8fbc8f">✓ Fully Upgraded</div>' : `<div style="font-size:8px;color:#7a7060;margin-bottom:5px">Next: ${u.levels[lv + 1]} — ${fmt(u.cost[lv + 1])} ryo · +${fmt(BUILDING_MAINTENANCE[u.id] || 400)}/mo upkeep</div><button class="gb gb-g" onclick="buyUp('${u.id}')" ${G.ryo < u.cost[lv + 1] ? 'disabled' : ''}>Upgrade ► ${fmt(u.cost[lv + 1])} ryo</button>`}</div>`
-    }).join('') + districtHtml
+    }).join('') + districtHtml + _prestigeProjectsHtml()
 }
 
 export function buildDistrict(id) {

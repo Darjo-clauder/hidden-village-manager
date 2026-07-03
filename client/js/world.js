@@ -65,6 +65,15 @@ export function rWorldList() {
   const el = document.getElementById('wvl')
   let html = ''
 
+  // ── Current world era ───────────────────────────────────────────────────
+  if (G.worldEra) {
+    html += `<div style="background:linear-gradient(90deg,#141018,#0a0a0a);border:1px solid #3a2e4a;border-left:3px solid #9a7dc9;padding:9px 12px;margin-bottom:14px">
+      <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:#9a7dc9">🌍 Current Era · since Y${G.worldEra.startYear}</div>
+      <div style="font-size:11px;color:#e8e0cc;margin-top:2px">${G.worldEra.name}</div>
+      <div style="font-size:8px;color:#7a7060;margin-top:2px;font-style:italic">${G.worldEra.blurb}</div>
+    </div>`
+  }
+
   // ── World reputation flavor ─────────────────────────────────────────────
   if (G.worldReputationFlavor) {
     html += `<div style="background:var(--surface-2,#1a1e2c);border-left:3px solid var(--gold,#c9a84c);padding:9px 12px;margin-bottom:14px;font-size:9px;color:var(--text-mid,#909bb8);line-height:1.6;font-style:italic">${G.worldReputationFlavor}</div>`

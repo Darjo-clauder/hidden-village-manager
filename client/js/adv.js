@@ -1,5 +1,5 @@
 import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice, computeMarketValue, mS, getMissionSpecBonus } from './state.js'
-import { RANKS, RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS, EXAM_FORMATS, LEGACY_DECISIONS, PRESTIGE_TIERS, DOCTRINE_BY_ID } from './constants.js'
+import { RANKS, RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS, EXAM_FORMATS, LEGACY_DECISIONS, PRESTIGE_TIERS, DOCTRINE_BY_ID, WORLD_CLIMATES } from './constants.js'
 import { aL, ntf, upUI, schEx } from './ui.js'
 import { tickBeast, applyBeastPairEffects, getBeastPassives, BEAST_DATA, getSyncStage, captureChance } from './beastEngine.js'
 import { tickKageRels, getWorldReputationFlavor, shiftKageRel, ensureKageRels } from './rivalKage.js'
@@ -22,6 +22,12 @@ import { updateH2H, pickDerbyRival } from '../../shared/utils/rivalry.js'
 import { MINOR_NATIONS, pickMinorNation, minorStrength, applyMinorOrigin, adjustMinorRel } from '../../shared/constants/minorNations.js'
 import { runYouthCup, entrantRun, studentPower, rivalYouthPower, minorYouthPower } from '../../shared/utils/youthCup.js'
 import { isHofWorthy, buildHofEntry } from '../../shared/utils/hallOfFame.js'
+import { PROJECT_BY_ID, completedEffect } from '../../shared/constants/prestigeProjects.js'
+import { eraFor, nextShiftIn, transitionLine } from '../../shared/constants/worldEras.js'
+import { JOURNALIST_BY_ID, pickJournalist, adjustJournalistRel, toneRelDelta } from '../../shared/constants/journalists.js'
+import { nextDeclineYears, findRelegation, pickPromotion } from '../../shared/utils/leagueMembership.js'
+import { genVillageRoster } from './state.js'
+import { RIVAL_KAGE_NAMES, RIVAL_PERSONALITIES } from './constants.js'
 import { addNewsItem } from './news.js'
 import { villageRevenue } from '../../shared/utils/economy.js'
 import { resolveMission, qualityEffects, missionApproachMod } from '../../shared/utils/missionEngine.js'
@@ -729,11 +735,31 @@ export function adv() {
   const TIER_MORALE_FLOOR = { D: 20, C: 30, B: 40, A: 50, S: 60 }
   const tierKey = G.prestigeTier || 'D'
   const repFloor = TIER_REP_FLOOR[tierKey] || 5
-  const moraleFloor = TIER_MORALE_FLOOR[tierKey] || 20
+  const moraleFloor = (TIER_MORALE_FLOOR[tierKey] || 20) + completedEffect(G.prestigeCompleted, 'moraleFloor')
   if ((G.reputation || 0) < repFloor) G.reputation = Math.min(repFloor, (G.reputation || 0) + 2)
-  // Hard morale floor — tier prestige buys resilience; morale cannot stay below floor
+  // Hard morale floor — tier prestige + completed monuments buy resilience.
   G._moraleFloor = moraleFloor
   if ((G.morale || 50) < moraleFloor) G.morale = clamp(moraleFloor, 0, 100)
+
+  // ── Prestige projects — advance multi-year monument builds ────────────────
+  G.prestigeBuilds = G.prestigeBuilds || []
+  G.prestigeCompleted = G.prestigeCompleted || []
+  if (G.prestigeBuilds.length) {
+    const stillBuilding = []
+    for (const b of G.prestigeBuilds) {
+      b.monthsDone = (b.monthsDone || 0) + 1
+      const def = PROJECT_BY_ID[b.id]
+      if (def && b.monthsDone >= def.buildMonths) {
+        G.prestigeCompleted.push(b.id)
+        if (def.effect?.legend) addLegend(def.effect.legend)
+        G.morale = clamp((G.morale || 50) + 5, 0, 100)
+        aL(tr('toast.adv.projectComplete', { icon: def.icon, name: def.name }), 'good')
+        addChronicle(def.name + ' Completed', `The ${def.name} stands complete — ${def.desc}`, 'milestone')
+        addNewsItem(`${def.icon} ${G.vName} completed the ${def.name}.`)
+      } else stillBuilding.push(b)
+    }
+    G.prestigeBuilds = stillBuilding
+  }
 
   // ── Citizen morale — village population sentiment ─────────────────────────
   if (!G.citizenMorale) G.citizenMorale = 60
@@ -2485,7 +2511,7 @@ export function adv() {
   if (G.month === 4 && (G.lastIntakeYear || 0) < G.year) {
     G.lastIntakeYear = G.year
     if (!G.intakeClass) G.intakeClass = []
-    const acLv = G.upgrades.academy || 0
+    const acLv = (G.upgrades.academy || 0) + completedEffect(G.prestigeCompleted, 'academyBoost')
     const headSensei = (G.staff || []).find(st => st.role === 'head_sensei')
     const hsRating = headSensei?.rating || 0
     // Draft pick bonus: pick #1 gets full class, last pick gets slightly smaller class and lower base quality
@@ -3530,7 +3556,51 @@ export function adv() {
     }
   }
 
-  G.month++; if (G.month > 12) { G.month = 1; G.year++; addChronicle('New Year', 'Year ' + G.year + ' begins. Legend: ' + G.legend + '. Shinobi: ' + G.shinobi.length + '.', 'event') }
+  G.month++; if (G.month > 12) {
+    G.month = 1; G.year++
+    addChronicle('New Year', 'Year ' + G.year + ' begins. Legend: ' + G.legend + '. Shinobi: ' + G.shinobi.length + '.', 'event')
+    // ── World era shift — the climate re-rolls every few years ──────────────
+    if (G._nextEraShift == null) G._nextEraShift = G.year + nextShiftIn()   // seed on first rollover
+    else if (G.year >= G._nextEraShift) {
+      const _eco = pk(WORLD_CLIMATES.economy), _thr = pk(WORLD_CLIMATES.threat)
+      const prevName = G.worldEra?.name || null
+      const era = eraFor(_eco.id, _thr.id)
+      G.worldClimate = { economy: _eco.id, economyMod: _eco.incomeMod, threat: _thr.id, raidMod: _thr.raidMod }
+      G.worldEra = { name: era.name, blurb: era.blurb, economy: _eco.id, threat: _thr.id, startYear: G.year }
+      G.eraHistory = G.eraHistory || []
+      G.eraHistory.push({ year: G.year, name: era.name })
+      if (G.eraHistory.length > 12) G.eraHistory.shift()
+      G._nextEraShift = G.year + nextShiftIn()
+      const line = transitionLine(prevName, era)
+      addChronicle('A New Era — ' + era.name, line, 'milestone')
+      addNewsItem(`🌍 ${line}`)
+      pushNarrative({ title: `🌍 ${era.name}`, body: `${line}<br><br>Economy: <b>${_eco.n}</b> · Region: <b>${_thr.n}</b>.`, tag: 'intel', link: null })
+    }
+
+    // ── Dynamic league membership — a collapsed power falls, a minor nation rises ──
+    G.villages.forEach(v => { v.declineYears = nextDeclineYears(v.declineYears, v.strength) })
+    const _releg = findRelegation(G.villages)
+    if (_releg) {
+      const _names = [G.vName, ...G.villages.map(v => v.n)]
+      const _promo = pickPromotion(MINOR_NATIONS, _names, m => minorStrength(m, () => 0.5))
+      if (_promo) {
+        G.villages = G.villages.filter(v => v.n !== _releg.n)
+        const nv = {
+          n: _promo.n, ico: _promo.ico, kageRank: 'Warden', kage: pk(RIVAL_KAGE_NAMES),
+          personality: pk(RIVAL_PERSONALITIES), str: rnd(55, 72), strength: rnd(55, 72),
+          rel: rnd(25, 50), threat: 0, grudgeTicks: 0, heldBeasts: [], declineYears: 0,
+          identityIntensity: 1, promoted: true,
+        }
+        nv.roster = genVillageRoster(nv)
+        G.villages.push(nv)
+        G.season = null   // rebuild the league table for the new membership
+        const relLine = `${_releg.ico || ''} ${_releg.n} has collapsed and dropped out of the great villages. ${_promo.ico} ${_promo.n} rises from the minor nations to take their place among the powers.`
+        addChronicle('The World Turns', relLine, 'milestone')
+        addNewsItem(`🌍 ${relLine}`)
+        pushNarrative({ title: '🌍 A Power Falls, A Power Rises', body: relLine, tag: 'intel', link: null })
+      }
+    }
+  }
   upUI(); ntf(tr('toast.adv.monthAdvanced', { year: G.year, month: G.month }))
 }
 
@@ -3741,12 +3811,14 @@ export function queuePressConference(triggerId, ctx = {}) {
     if ((antagV.grudgeTicks || 0) > 0) ctx.rivalName = antagV.n
   }
 
+  const _journo = pickJournalist()
   G.pendingPress = {
     id: q.id, trigger: triggerId,
     question: q.question, intro: q.intro,
     followUp: q.followUp || null,
     availableTones: q.availableTones || ['confident', 'humble', 'dismissive'],
     rivalName: ctx.rivalName || null,
+    journalistId: _journo.id,
   }
   G.inbox = G.inbox || []
   G.inbox.unshift({
@@ -3762,6 +3834,17 @@ export function resolvePressConference(toneId, calloutVillage) {
   const p = G.pendingPress; if (!p) return
   const tone = TONE_BY_ID[toneId]; if (!tone) return
   const m = { ...tone.mods }
+
+  // The reporter who asked remembers how you treated them.
+  if (p.journalistId) {
+    const jr = JOURNALIST_BY_ID[p.journalistId]
+    G.journalistRel = G.journalistRel || {}
+    const delta = toneRelDelta(jr?.persona, toneId)
+    if (delta) {
+      const now = adjustJournalistRel(G.journalistRel, p.journalistId, delta)
+      if (delta <= -6 && now < 40) addNotice(`${jr.name} of ${jr.outlet} left the press room unimpressed. Their coverage will bite.`, 'warn')
+    }
+  }
 
   // Apply trigger-specific overrides
   const overrideKey = `${toneId}:${p.id}`
