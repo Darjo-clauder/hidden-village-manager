@@ -28,6 +28,7 @@ import { JOURNALIST_BY_ID, pickJournalist, adjustJournalistRel, toneRelDelta } f
 import { nextDeclineYears, findRelegation, pickPromotion } from '../../shared/utils/leagueMembership.js'
 import { resolveBattleCall, callBeatIndex } from '../../shared/utils/battleCalls.js'
 import { sponsorMoodDelta, moodPayoutMult, applyMoodDelta, SPONSOR_QUIT_MOOD } from '../../shared/utils/sponsors.js'
+import { supportDelta, revenueMult, applySupport, FESTIVAL_THRESH, UNREST_THRESH } from '../../shared/utils/populace.js'
 import { genVillageRoster } from './state.js'
 import { RIVAL_KAGE_NAMES, RIVAL_PERSONALITIES } from './constants.js'
 import { addNewsItem } from './news.js'
@@ -2174,13 +2175,36 @@ export function adv() {
     }
   }
 
+  // ── Populace support (R27) — civilian mood feeds the gate; extremes fire events ─
+  if (G.populace == null) G.populace = { support: 60 }
+  {
+    const won = (G._formThisMonth?.wins || 0) > 0
+    const _revert = G.populace.support > 58 ? -1 : G.populace.support < 52 ? 1 : 0
+    G.populace.support = applySupport(G.populace.support, supportDelta({
+      wonThisMonth: won,
+      title: G.examChampion === G.vName,
+      treasuryDeficit: (G.ryo || 0) < 0,
+      treasurySurplus: (G.ryo || 0) > 60000,
+    }) + _revert)
+    if (G.populace.support >= FESTIVAL_THRESH && Math.random() < 0.30) {
+      const boon = 3000 + (G.reputation || 0) * 10
+      G.ryo += boon; G.morale = clamp((G.morale || 50) + 3, 0, 100)
+      G.populace.support = applySupport(G.populace.support, -8)  // festival spends goodwill
+      aL(`🎏 The village throws a festival — the people celebrate. +${fmt(boon)} ryo, morale lifts.`, 'good')
+    } else if (G.populace.support <= UNREST_THRESH && Math.random() < 0.30) {
+      G.morale = clamp((G.morale || 50) - 5, 0, 100); G.reputation = clamp((G.reputation || 0) - 4, 0, 999)
+      G.populace.support = applySupport(G.populace.support, 6)  // unrest vents, then eases
+      aL(`⚠ Civil unrest — the populace has lost patience. Morale and reputation dip.`, 'bad')
+    }
+  }
+
   // ── Economy & Finance snapshot ────────────────────────────────────────────
   const trI = Math.round(G.tradeRoutes.filter(r => r.active).reduce((a, r) => a + r.income, 0) * sb.tradeIncomeMultiplier)
   const coI = Math.round(G.contracts.filter(c => c.active).reduce((a, c) => a + c.income, 0) * sb.tradeIncomeMultiplier)
   const jkI = G.beasts.filter(b => b.sealed && b.n === 'Niryuu' && b.jk).length * 3000
     + (G._kurenigykiBonus ? 5000 : 0) // Kureni+Hachitsuno trade bonus
   const daimyoB = Math.round(computeDaimyoBonus() * (G.daimyoBudgetMult || 1))
-  const villageRev = Math.round(computeVillageRevenue() * (G.daimyoBudgetMult || 1))
+  const villageRev = Math.round(computeVillageRevenue() * (G.daimyoBudgetMult || 1) * revenueMult(G.populace?.support))
   if (!G.budgetPriority) G.budgetPriority = { training: 33, warPrep: 33, infra: 34 }
   const _infraPct = (G.budgetPriority.infra || 34) / 100
   const maintenance = Math.round(computeMaintenance() * (1 - _infraPct * 0.3))

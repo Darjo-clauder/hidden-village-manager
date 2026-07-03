@@ -6,6 +6,21 @@ import { capStatus } from '../../../shared/constants/salaryCap.js'
 import { getInboxDigest, getInboxCount } from './inbox.js'
 import { xpForLevel, PATH_BY_ID } from '../../../shared/constants/kageDev.js'
 import { t } from '../../../shared/utils/i18n.js'
+import { supportTier, revenueMult } from '../../../shared/utils/populace.js'
+
+// Compact populace-support strip (R27) — civilian mood + its gate-revenue effect.
+function _populaceStrip() {
+  const sup = G.populace?.support
+  if (sup == null) return ''
+  const tier = supportTier(sup)
+  const mult = revenueMult(sup)
+  return `<div title="Civilian support shifts gate revenue and can spark festivals or unrest" style="display:flex;align-items:center;gap:10px;background:var(--surface,#1a1814);border:1px solid var(--border);padding:7px 12px;margin-bottom:12px">
+    <span style="font-size:11px">🎏</span>
+    <span style="font-size:9px;color:${tier.color};font-weight:bold">Populace: ${tier.label}</span>
+    <div style="flex:1;max-width:160px;background:#0d0d0d;height:5px;border-radius:3px;overflow:hidden"><div style="height:5px;width:${Math.round(sup)}%;background:${tier.color}"></div></div>
+    <span style="font-size:8px;color:#7a7060;margin-left:auto">Gate revenue ${mult > 1 ? '+' : ''}${Math.round((mult - 1) * 100)}%</span>
+  </div>`
+}
 
 // Compact Warden progression strip (clickable → Warden Path screen).
 function _kageStrip() {
@@ -133,6 +148,7 @@ export function rDash() {
     <div class="pt">${t('dash.title', { year: G.year, month: G.month })}</div>
 
     ${_kageStrip()}
+    ${_populaceStrip()}
     ${_decisionDigest()}
 
     ${G._ff_nationHud ? `
