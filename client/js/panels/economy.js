@@ -2,6 +2,13 @@ import { G, ui, fmt } from '../state.js'
 import { BLACK_MARKET } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
+import { negotiate } from '../../../shared/utils/sponsors.js'
+
+// Negotiating leverage 0..1 from prestige tier + reputation.
+function _sponsorLeverage() {
+  const tierIdx = { D: 0, C: 1, B: 2, A: 3, S: 4 }[G.prestigeTier] ?? 0
+  return Math.max(0, Math.min(1, tierIdx / 4 * 0.6 + (G.reputation || 0) / 999 * 0.4))
+}
 
 export function eTab(t) {
   ui.ET = t
@@ -120,10 +127,29 @@ export function doBl(id) {
 
 export function acceptSponsorship() {
   if (!G.sponsorshipOffer) return
-  G.sponsorship = G.sponsorshipOffer
+  G.sponsorship = { ...G.sponsorshipOffer, mood: 60, signedYear: G.year, signedMonth: G.month }
   G.sponsorshipOffer = null
   aL(tr('toast.economy.sponsorAccepted', { name: G.sponsorship.n }), 'good')
   ntf(tr('toast.economy.sponsorAcceptedShort', { name: G.sponsorship.n }))
+  upUI()
+}
+
+// R14: negotiate the pending offer before accepting (push for pay / ease the clause).
+export function negotiateSponsor(tactic) {
+  const offer = G.sponsorshipOffer
+  if (!offer) return
+  const res = negotiate(offer, tactic, _sponsorLeverage())
+  if (res.outcome === 'walk') {
+    aL(`${offer.n} took the demand as an insult and withdrew the offer.`, 'warn')
+    G.sponsorshipOffer = null
+  } else if (res.outcome === 'counter') {
+    G.sponsorshipOffer = res.deal
+    aL(`${offer.n} countered — revised offer: +${fmt(res.deal.monthlyRyo)} ryo/month.`, 'neutral')
+  } else {
+    G.sponsorship = { ...res.deal, mood: 60, signedYear: G.year, signedMonth: G.month }
+    G.sponsorshipOffer = null
+    aL(`${offer.n} agreed — +${fmt(res.deal.monthlyRyo)} ryo/month.`, 'good')
+  }
   upUI()
 }
 

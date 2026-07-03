@@ -27,6 +27,7 @@ import { eraFor, nextShiftIn, transitionLine } from '../../shared/constants/worl
 import { JOURNALIST_BY_ID, pickJournalist, adjustJournalistRel, toneRelDelta } from '../../shared/constants/journalists.js'
 import { nextDeclineYears, findRelegation, pickPromotion } from '../../shared/utils/leagueMembership.js'
 import { resolveBattleCall, callBeatIndex } from '../../shared/utils/battleCalls.js'
+import { sponsorMoodDelta, moodPayoutMult, applyMoodDelta, SPONSOR_QUIT_MOOD } from '../../shared/utils/sponsors.js'
 import { genVillageRoster } from './state.js'
 import { RIVAL_KAGE_NAMES, RIVAL_PERSONALITIES } from './constants.js'
 import { addNewsItem } from './news.js'
@@ -2144,7 +2145,15 @@ export function adv() {
       aL(G.sponsorship.n + ' pulled out — obligation unmet.', 'bad')
       G.sponsorship = null
     } else {
-      sponsorshipIncome = G.sponsorship.monthlyRyo
+      // R14: mood drifts with how the village is doing and shifts the payout.
+      if (G.sponsorship.mood == null) G.sponsorship.mood = 60
+      G.sponsorship.mood = applyMoodDelta(G.sponsorship.mood, sponsorMoodDelta({ obligationMet: true, lowMorale: (G.morale || 50) < 40, title: G.examChampion === G.vName, seasonWin: (G._formThisMonth?.wins || 0) > 0 }))
+      if (G.sponsorship.mood <= SPONSOR_QUIT_MOOD) {
+        aL(G.sponsorship.n + ' ended the sponsorship — they lost faith in the village.', 'bad')
+        G.sponsorship = null
+      } else {
+        sponsorshipIncome = Math.round(G.sponsorship.monthlyRyo * moodPayoutMult(G.sponsorship.mood))
+      }
     }
   }
 

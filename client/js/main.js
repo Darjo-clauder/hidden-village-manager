@@ -8,7 +8,7 @@ import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTempla
 import { skipBattleViewer, closeBattleViewer, chooseBattleCall } from './liveBattle.js'
 import { rUp, buyUp, buildDistrict, chooseDoctrine, startPrestigeProject } from './panels/upgrades.js'
 import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab, acCtx, acHover } from './panels/academy.js'
-import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, secureRoute } from './panels/economy.js'
+import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, negotiateSponsor, secureRoute } from './panels/economy.js'
 import { logFilter, logSearch } from './panels/log.js'
 import { honorFallen } from './panels/memorial.js'
 import { rBe, lCap, beastTab, releaseVessel, resolveEscape, reinforceSeal } from './panels/beasts.js'
@@ -122,7 +122,7 @@ Object.assign(window, {
   rec, oScout, doScout, oSensei, doSensei, setTrainingPlan,
   matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab, acCtx, acHover,
   // economy
-  eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, secureRoute,
+  eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, negotiateSponsor, secureRoute,
   // log + memorial
   logFilter, logSearch, honorFallen,
   // beasts

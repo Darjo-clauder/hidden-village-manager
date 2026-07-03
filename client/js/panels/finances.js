@@ -5,6 +5,7 @@ import { villageRevenue } from '../../../shared/utils/economy.js'
 import { capStatus, SALARY_CAP } from '../../../shared/constants/salaryCap.js'
 import { lineChartSvg, barRowsSvg } from '../uikit.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
+import { moodTier, moodPayoutMult } from '../../../shared/utils/sponsors.js'
 
 function tierColor(name) {
   const t = FINANCE_TIERS.find(x => x.n === name)
@@ -358,13 +359,18 @@ function _sponsorshipHtml() {
   if (!offer && !active) return ''
   return `<div style="background:#1a1814;border:1px solid #cc7fb844;padding:12px;margin-bottom:14px">
     <div style="font-size:8px;letter-spacing:2px;color:#cc7fb8;text-transform:uppercase;margin-bottom:8px">${tr('fin.sponsorship')}</div>
-    ${active ? `<div style="font-size:9px;color:#e8e0cc;margin-bottom:4px">${active.n} — active</div>
-      <div style="font-size:8px;color:#8fbc8f;margin-bottom:4px">+${fmt(active.monthlyRyo)} ryo/month</div>
-      <div style="font-size:8px;color:#7a7060">Obligation: ${active.obligation}</div>` : ''}
-    ${offer ? `<div style="font-size:9px;color:#e8e0cc;margin-bottom:4px">${offer.n} — offer pending</div>
+    ${active ? (() => {
+      const mt = moodTier(active.mood)
+      const mult = moodPayoutMult(active.mood)
+      const eff = Math.round(active.monthlyRyo * mult)
+      return `<div style="font-size:9px;color:#e8e0cc;margin-bottom:4px">${active.n} — active</div>
+      <div style="font-size:8px;color:#8fbc8f;margin-bottom:4px">+${fmt(eff)} ryo/month ${mult !== 1 ? `<span style="color:${mt.color}">(${mult > 1 ? '+' : ''}${Math.round((mult - 1) * 100)}% mood)</span>` : ''}</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:8px;color:#7a7060">Mood:</span><span style="font-size:8px;color:${mt.color}">${mt.label}</span><div style="flex:1;max-width:90px;height:4px;background:#222;border-radius:2px;overflow:hidden"><div style="height:100%;width:${active.mood ?? 60}%;background:${mt.color}"></div></div></div>
+      <div style="font-size:8px;color:#7a7060">Obligation: ${active.obligation}</div>` })() : ''}
+    ${offer ? `<div style="font-size:9px;color:#e8e0cc;margin-bottom:4px">${offer.n} — offer pending${offer.negotiated ? ' (revised)' : ''}</div>
       <div style="font-size:8px;color:#8fbc8f;margin-bottom:4px">+${fmt(offer.monthlyRyo)} ryo/month</div>
       <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${offer.desc} Obligation: ${offer.obligation}</div>
-      <div style="display:flex;gap:6px"><button class="gb" onclick="acceptSponsorship()">Accept</button><button class="gb gb-r" onclick="declineSponsorship()">Decline</button></div>` : ''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="gb" onclick="acceptSponsorship()">Accept</button>${offer.negotiated ? '' : `<button class="gb" onclick="negotiateSponsor('push_pay')" title="Ask for a higher stipend — a weak hand risks them walking">💰 Push</button><button class="gb" onclick="negotiateSponsor('ease_terms')" title="Trade pay to drop their restriction">📝 Ease clause</button>`}<button class="gb gb-r" onclick="declineSponsorship()">Decline</button></div>` : ''}
   </div>`
 }
 
