@@ -4,6 +4,52 @@ import { aL, ntf } from '../ui.js'
 import { conductTrialDay } from '../scoutEngine.js'
 import { openContextMenu, showHoverPreview, hideHoverPreview } from '../uikit.js'
 import { t } from '../../../shared/utils/i18n.js'
+import { buildDossier } from '../../../shared/utils/scoutDossier.js'
+import { MONTHS } from '../constants.js'
+
+// Transient UI: which prospect dossiers are expanded (not persisted).
+const _dossierOpen = new Set()
+export function toggleScoutDossier(id) {
+  if (_dossierOpen.has(id)) _dossierOpen.delete(id); else _dossierOpen.add(id)
+  rSco()
+}
+
+const TREND_META = {
+  rising:   { icon: '▲', color: '#8fbc8f', label: 'Reads trending up' },
+  falling:  { icon: '▼', color: '#f66',    label: 'Reads trending down' },
+  volatile: { icon: '↕', color: '#f0a030', label: 'Reads disagree wildly' },
+  steady:   { icon: '▬', color: '#9a9080', label: 'Reads holding steady' },
+  single:   { icon: '·', color: '#666',    label: 'Single report' },
+}
+const FRESH_META = {
+  fresh: { color: '#8fbc8f', label: 'fresh' },
+  aging: { color: '#f0a030', label: 'aging' },
+  cold:  { color: '#f66',    label: 'going cold — re-scout' },
+}
+
+// Full scouting dossier: chronological reports with confidence deltas + aging.
+function _dossierHtml(p) {
+  const d = buildDossier(p, G.year, G.month)
+  if (!d) return ''
+  const tm = TREND_META[d.trend] || TREND_META.single
+  const fm = FRESH_META[d.freshness] || FRESH_META.fresh
+  const rows = d.entries.slice().reverse().map(e => {
+    const when = `${MONTHS?.[e.month - 1]?.n || 'M' + e.month} Y${e.year}`
+    const deltaStr = e.delta == null ? ''
+      : `<span style="color:${e.delta > 0 ? '#8fbc8f' : e.delta < 0 ? '#f66' : '#888'};font-size:.66rem"> ${e.delta > 0 ? '▲+' + e.delta : e.delta < 0 ? '▼' + e.delta : '±0'}</span>`
+    return `<div style="display:flex;justify-content:space-between;gap:6px;padding:2px 0;border-top:1px solid #222;${e.stale ? 'opacity:.5' : ''}">
+      <span style="color:#9a9080;font-size:.68rem">${when} · ${e.scoutName || '?'}${e.stale ? ' 🕸' : ''}</span>
+      <span style="font-size:.68rem;color:#ccc">${e.quality} <b style="color:#e8d5a3">${e.confidence}%</b>${deltaStr}</span>
+    </div>`
+  }).join('')
+  return `<div style="margin-top:5px;border-top:1px solid #332;padding-top:5px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+      <span style="font-size:.7rem;color:${tm.color}" title="${tm.label}">${tm.icon} ${tm.label}</span>
+      <span style="font-size:.68rem;color:#888">consensus <b style="color:#e8d5a3">${d.consensus}%</b> · <span style="color:${fm.color}">${fm.label}</span></span>
+    </div>
+    ${rows}
+  </div>`
+}
 
 // Right-click / hover grammar for prospect cards (P1 kit).
 export function scoutCtx(e, id) {
@@ -349,7 +395,11 @@ function prospectCard(p, inWatchlist) {
     ${conflicts.length ? `<div style="font-size:.7rem;color:#daa;border-top:1px solid #332;padding-top:4px;margin-top:4px">
       ⚠ Conflicting reports: ${conflicts.map(c => c.scoutName + ' (' + c.confidence + '%)').join(', ')} disagree with the primary read.
     </div>` : ''}
-    ${history.length > 1 ? `<div style="font-size:.68rem;color:#666;margin-top:4px">📋 ${history.length} reports · avg ${p.aggConfidence ?? Math.round(history.reduce((s,r)=>s+r.confidence,0)/history.length)}% confidence.</div>` : ''}
+    ${history.length ? (() => {
+      const open = _dossierOpen.has(p.id)
+      return `<div style="font-size:.68rem;color:#8ab;margin-top:4px;cursor:pointer" onclick="toggleScoutDossier('${p.id}')">📋 ${history.length} report${history.length > 1 ? 's' : ''} · Dossier ${open ? '▾' : '▸'}</div>
+        ${open ? _dossierHtml(p) : ''}`
+    })() : ''}
   </div>`
 }
 
