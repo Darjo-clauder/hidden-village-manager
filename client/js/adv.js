@@ -1648,6 +1648,8 @@ export function adv() {
           s._milestoneNotice = null
         }
         rollInjuryOnSuccess(s, m, hL, dp.injDayReduction)
+        // R8+: solo missions get the live viewer + micro-call too (single-member squad shim).
+        G.lastMissionReport = _buildMissionReport({ id: 'solo_' + s.id, n: sn(s), members: [s.id] }, m, true, _mev, _bonusRyo)
       } else {
         s.streak = 0
         s._seasonMissions = (s._seasonMissions || 0) + 1
@@ -1680,6 +1682,8 @@ export function adv() {
           if ((s.returningForm || 100) < 80 && Math.random() < 0.20) {
             aL(sn(s) + ' re-injured themselves — too soon to return to active duty.', 'warn')
           }
+          // R8+: a surviving solo shinobi's failed mission is watchable too.
+          G.lastMissionReport = _buildMissionReport({ id: 'solo_' + s.id, n: sn(s), members: [s.id] }, m, false, _mev, 0)
         }
         updateConfidence(s, _mev.quality)
         addMemory(s, 'mission_disaster', m.id || m.n, { year: G.year, month: G.month })
