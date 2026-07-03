@@ -5,18 +5,28 @@
  * over a mission report — no engine state touched. Auto-plays; Skip jumps to end.
  */
 import { battleSequence, battleVerdict } from '../../shared/utils/battleViewer.js'
+import { BATTLE_CALLS } from '../../shared/utils/battleCalls.js'
 
 let _bvTimers = []
 function _clearTimers() { _bvTimers.forEach(clearTimeout); _bvTimers = [] }
 
 const GRADE_COLOR = { A: '#c9a84c', B: '#8fbc8f', C: '#f0a030', D: '#f66' }
 const BEAT_MS = 1100
+const CALL_MS = 6000   // window to make the micro-call before it auto-disengages
+
+// A micro-call is offered when the report carries an unresolved applyCall (player
+// squad missions, live only — the closure is dropped on save/reload).
+function _callBeat(rep) {
+  return (rep.microCall && typeof rep.applyCall === 'function' && !rep._callDone)
+    ? rep.microCall.beatIndex : -1
+}
 
 /** Open the live viewer for a mission report ({ missionName, missionRk, succeeded, phases, quality, scores }). */
 export function openBattleViewer(rep) {
   if (!rep || !rep.phases || !rep.phases.length) return
   closeBattleViewer()
   const seq = battleSequence(rep.phases, (rep.missionName || '').length)
+  const cb = _callBeat(rep)
   const ov = document.createElement('div')
   ov.id = 'bv-overlay'
   ov.className = 'bv-overlay'
@@ -37,12 +47,52 @@ export function openBattleViewer(rep) {
           <div class="bv-beat-line" id="bv-line-${i}"></div>
         </div>`).join('')}
       </div>
+      <div class="bv-call" id="bv-call"></div>
       <div class="bv-outcome" id="bv-outcome"></div>
     </div>`
   document.body.appendChild(ov)
 
-  seq.forEach((b, i) => { _bvTimers.push(setTimeout(() => _revealBeat(seq, i), BEAT_MS * (i + 1))) })
-  _bvTimers.push(setTimeout(() => _revealOutcome(rep), BEAT_MS * (seq.length + 1)))
+  // Reveal every beat up to (but not including) the bet-on beat; then either pause
+  // for the micro-call, or play straight through to the outcome.
+  const stopBefore = cb >= 0 ? cb : seq.length
+  for (let i = 0; i < stopBefore; i++) { _bvTimers.push(setTimeout(() => _revealBeat(seq, i), BEAT_MS * (i + 1))) }
+  if (cb >= 0) {
+    _bvTimers.push(setTimeout(() => _promptCall(rep, seq, cb), BEAT_MS * (stopBefore + 1)))
+  } else {
+    for (let i = stopBefore; i < seq.length; i++) { _bvTimers.push(setTimeout(() => _revealBeat(seq, i), BEAT_MS * (i + 1))) }
+    _bvTimers.push(setTimeout(() => _revealOutcome(rep), BEAT_MS * (seq.length + 1)))
+  }
+}
+
+// Pause the reveal and offer Commit / Disengage before the final beat.
+function _promptCall(rep, seq, cb) {
+  const el = document.getElementById('bv-call'); if (!el) return
+  el.innerHTML = `
+    <div class="bv-call-q">The battle hangs in the balance — your call for the final push:</div>
+    <div class="bv-call-opts">${BATTLE_CALLS.map(c => `
+      <button class="bv-call-btn bv-call-${c.id}" onclick="chooseBattleCall('${c.id}')">
+        <span class="bv-call-ico">${c.icon}</span> ${c.label}
+        <span class="bv-call-desc">${c.desc}</span>
+      </button>`).join('')}
+    </div>
+    <div class="bv-call-timer"><div class="bv-call-timer-fill" id="bv-call-timer"></div></div>`
+  el.classList.add('bv-on')
+  // Animate the countdown, then auto-disengage if untouched.
+  requestAnimationFrame(() => { const f = document.getElementById('bv-call-timer'); if (f) { f.style.transition = `width ${CALL_MS}ms linear`; f.style.width = '0%' } })
+  _bvTimers.push(setTimeout(() => _applyCall('none'), CALL_MS))
+}
+
+// Apply the chosen call, dismiss the prompt, then finish the reveal from the bet beat.
+function _applyCall(call) {
+  _clearTimers()
+  const ov = document.getElementById('bv-overlay'); if (!ov) return
+  const rep = ov.__rep, seq = ov.__seq
+  const cb = rep?.microCall?.beatIndex ?? -1
+  if (rep && typeof rep.applyCall === 'function' && !rep._callDone) rep.applyCall(call)
+  const el = document.getElementById('bv-call'); if (el) { el.classList.remove('bv-on'); el.innerHTML = '' }
+  if (!seq) return
+  for (let i = Math.max(0, cb); i < seq.length; i++) { _bvTimers.push(setTimeout(() => _revealBeat(seq, i), BEAT_MS * (i - cb + 1))) }
+  _bvTimers.push(setTimeout(() => _revealOutcome(rep), BEAT_MS * (seq.length - cb + 1)))
 }
 
 function _revealBeat(seq, i) {
@@ -65,6 +115,10 @@ function _revealOutcome(rep) {
     : league ? (rep.result === 'win' ? 'bv-win' : rep.result === 'draw' ? 'bv-draw' : 'bv-loss')
     : (rep.succeeded ? 'bv-win' : 'bv-loss')
   const verdict = rep.verdict || battleVerdict(rep.quality, rep.succeeded)
+  const cr = rep._callResult
+  const callNote = cr
+    ? `<div class="bv-call-note bv-call-${cr.kind}">${cr.label} — ${cr.note}${cr.bonusRyo ? ` <b>(${cr.bonusRyo > 0 ? '+' : ''}${cr.bonusRyo} ryo)</b>` : ''}</div>`
+    : ''
   const detail = (tourney)
     ? `<div class="bv-scoreline">Reached <b>${rep.reachedStage || 'the field'}</b>${rep.kiaTotal ? ` · ${rep.kiaTotal} fallen ☠` : ''}</div>`
     : (league && rep.scoreline)
@@ -75,17 +129,24 @@ function _revealOutcome(rep) {
   el.innerHTML = `
     <div class="bv-result ${cls}">${label}</div>
     <div class="bv-verdict">${verdict}</div>
+    ${callNote}
     ${detail}
     <button class="bv-close" onclick="closeBattleViewer()">Close</button>`
   el.classList.add('bv-on')
 }
 
-/** Jump straight to the final state. */
+/** Player's micro-call choice from the prompt (Commit / Disengage). */
+export function chooseBattleCall(call) { _applyCall(call) }
+
+/** Jump straight to the final state. A pending micro-call auto-disengages. */
 export function skipBattleViewer() {
   _clearTimers()
   const ov = document.getElementById('bv-overlay'); if (!ov) return
+  const rep = ov.__rep
+  if (rep && typeof rep.applyCall === 'function' && !rep._callDone) rep.applyCall('none')
+  const el = document.getElementById('bv-call'); if (el) { el.classList.remove('bv-on'); el.innerHTML = '' }
   if (ov.__seq) ov.__seq.forEach((b, i) => _revealBeat(ov.__seq, i))
-  if (ov.__rep) _revealOutcome(ov.__rep)
+  if (rep) _revealOutcome(rep)
 }
 
 export function closeBattleViewer() {

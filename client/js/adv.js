@@ -26,6 +26,7 @@ import { PROJECT_BY_ID, completedEffect } from '../../shared/constants/prestigeP
 import { eraFor, nextShiftIn, transitionLine } from '../../shared/constants/worldEras.js'
 import { JOURNALIST_BY_ID, pickJournalist, adjustJournalistRel, toneRelDelta } from '../../shared/constants/journalists.js'
 import { nextDeclineYears, findRelegation, pickPromotion } from '../../shared/utils/leagueMembership.js'
+import { resolveBattleCall, callBeatIndex } from '../../shared/utils/battleCalls.js'
 import { genVillageRoster } from './state.js'
 import { RIVAL_KAGE_NAMES, RIVAL_PERSONALITIES } from './constants.js'
 import { addNewsItem } from './news.js'
@@ -1488,7 +1489,7 @@ export function adv() {
         })
         if (_mev.quality === 'decisive') pushNarrative(genMissionBlurb(sq.n, sq.members.length > 0 ? (G.shinobi.find(x => x.id === sq.members[0])?.ri ?? 2) : 2, m.n, 'decisive'), _sqActorIds)
         // Post-mission contribution scores (Phase 4)
-        G.lastMissionReport = _buildMissionReport(sq, m, true, _mev)
+        G.lastMissionReport = _buildMissionReport(sq, m, true, _mev, _bonusRyo)
         G._battleReportFresh = true   // arms the auto-watch viewer for this turn
         // Squad identity unlock at cohesion 75
         if (sq.cohesion >= 75 && !sq.identity) {
@@ -3563,7 +3564,7 @@ export function resRaid() {
 }
 
 // ── Post-mission contribution scorer (Phase 4) ────────────────────────────────
-function _buildMissionReport(sq, m, succeeded, mev) {
+function _buildMissionReport(sq, m, succeeded, mev, payout = 0) {
   const ROLE_PRIMARY = { vanguard:'taijutsu', support:'ninjutsu', intel:'stealth', medical:'chakra', flex:null }
   const ROLE_SECONDARY = { vanguard:'speed', support:'chakra', intel:'intelligence', medical:'intelligence', flex:null }
   const scores = sq.members.map(id => {
@@ -3579,8 +3580,32 @@ function _buildMissionReport(sq, m, succeeded, mev) {
     const detail = grade === 'A' ? 'Exceptional' : grade === 'B' ? 'Solid' : grade === 'C' ? 'Below par' : 'Poor showing'
     return { id: s.id, name: sn(s), role: roleId, grade, detail, statVal: Math.round(statVal) }
   }).filter(Boolean)
-  return { missionId: m.id, missionName: m.n, missionRk: m.rk, squadId: sq.id, squadName: sq.n, succeeded, year: G.year, month: G.month, scores,
+  const rep = { missionId: m.id, missionName: m.n, missionRk: m.rk, squadId: sq.id, squadName: sq.n, succeeded, year: G.year, month: G.month, scores,
     phases: mev?.phases || null, quality: mev?.quality || null, margin: mev?.margin ?? null }
+  // R8 live-battle micro-call: let the player bet on the final beat during the viewer.
+  // The outcome is fixed; only the quality band + a small reward delta move. The
+  // closure (dropped on save, live-only by design) applies the deltas exactly once.
+  const bi = callBeatIndex(rep.phases)
+  if (bi >= 0) {
+    rep.baseQuality = rep.quality
+    rep.microCall = { beatIndex: bi, payout }
+    rep.applyCall = call => {
+      if (rep._callDone) return rep._callResult
+      const r = resolveBattleCall({ call, pivotalWon: !!rep.phases[bi].won, succeeded: rep.succeeded, baseQuality: rep.baseQuality })
+      const bonusRyo = Math.round(payout * r.ryoMult)
+      if (bonusRyo) G.ryo = Math.max(0, G.ryo + bonusRyo)
+      if (r.moraleDelta) G.morale = clamp(G.morale + r.moraleDelta, 0, 100)
+      if (r.legendDelta) addLegend(r.legendDelta)
+      rep.quality = r.quality
+      rep._callDone = call
+      rep._callResult = { ...r, bonusRyo }
+      const tone = r.kind === 'clutch' ? 'good' : r.kind === 'overcommit' ? 'warn' : 'info'
+      aL(`${sq.n}: ${r.label} — ${r.note}${bonusRyo ? ` (${bonusRyo > 0 ? '+' : ''}${fmt(bonusRyo)} ryo)` : ''}`, tone)
+      upUI()
+      return rep._callResult
+    }
+  }
+  return rep
 }
 
 // ── Phase 4 tick functions ─────────────────────────────────────────────────────

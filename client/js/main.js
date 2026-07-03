@@ -5,7 +5,7 @@ import { adv } from './adv.js'
 import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath, rosterSortBy, rosterToggleCol, rosterColMgr, rosterCtx, rosterHover } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation, setSqApproach } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM, setMissionApproach, selectMission, setInspectorApproach, deployFromInspector, watchLastBattle, toggleAutoWatch } from './panels/missions.js'
-import { skipBattleViewer, closeBattleViewer } from './liveBattle.js'
+import { skipBattleViewer, closeBattleViewer, chooseBattleCall } from './liveBattle.js'
 import { rUp, buyUp, buildDistrict, chooseDoctrine, startPrestigeProject } from './panels/upgrades.js'
 import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab, acCtx, acHover } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, secureRoute } from './panels/economy.js'
@@ -115,7 +115,7 @@ Object.assign(window, {
   // missions
   mTab, oA, doA, pickSq, G_defShSet, G_defShClear, missionLogFilter, assignBM, setMissionApproach,
   selectMission, setInspectorApproach, deployFromInspector,
-  watchLastBattle, toggleAutoWatch, skipBattleViewer, closeBattleViewer,
+  watchLastBattle, toggleAutoWatch, skipBattleViewer, closeBattleViewer, chooseBattleCall,
   // upgrades
   buyUp, buildDistrict, chooseDoctrine, startPrestigeProject,
   // academy

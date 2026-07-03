@@ -648,3 +648,21 @@ body{
 .bv-result.bv-draw{color:#c9a84c}
 .bv-scoreline{font-size:13px;color:#e8e0cc;margin-bottom:12px;font-family:'Courier New',monospace}
 .bv-scoreline b{color:#c9a84c;font-size:16px;margin:0 4px}
+/* R8 live-battle micro-call */
+.bv-call{margin-top:12px;opacity:0;max-height:0;overflow:hidden;transition:opacity .3s}
+.bv-call.bv-on{opacity:1;max-height:260px}
+.bv-call-q{font-size:9px;color:#e3c874;text-align:center;letter-spacing:1px;margin-bottom:9px}
+.bv-call-opts{display:flex;gap:9px}
+.bv-call-btn{flex:1;background:#0d0a04;border:1px solid #2a2520;color:#e8e0cc;padding:9px 8px;cursor:pointer;text-align:left;font-size:10px;font-weight:bold;line-height:1.3;transition:border-color .15s,background .15s}
+.bv-call-btn:hover{border-color:#c9a84c;background:#151007}
+.bv-call-ico{font-size:13px;margin-right:3px}
+.bv-call-desc{display:block;font-size:8px;font-weight:normal;color:#9a9080;margin-top:4px}
+.bv-call-commit:hover{border-color:#cc5a4a}
+.bv-call-disengage:hover{border-color:#8fbc8f}
+.bv-call-timer{margin-top:9px;height:3px;background:#221c14;border-radius:2px;overflow:hidden}
+.bv-call-timer-fill{height:100%;width:100%;background:linear-gradient(90deg,#a88030,#c9a84c)}
+.bv-call-note{font-size:8px;margin:2px 0 10px;padding:5px 8px;border-left:2px solid #555;color:#c8c0b0;background:#0d0b06;text-align:left}
+.bv-call-note.bv-call-clutch{border-left-color:#8fbc8f;color:#bfe0bf}
+.bv-call-note.bv-call-overcommit{border-left-color:#cc5a4a;color:#e0b0a8}
+.bv-call-note.bv-call-safe{border-left-color:#c9a84c}
+.bv-call-note b{color:#e3c874}
