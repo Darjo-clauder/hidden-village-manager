@@ -7,6 +7,7 @@ import { MATCHDAY_TACTICS, tacticRead, TACTIC_STRONG_MOD, TACTIC_WEAK_MOD } from
 import { h2hLabel } from '../../../shared/utils/rivalry.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { openBattleViewer } from '../liveBattle.js'
+import { squadPower, avgStat, seedEdge, examWrittenProb, examForestNavProb, examForestClashProb, examInjuryChance, examPromotionChance } from '../../../shared/utils/stageMath.js'
 
 /** Replay the player's most-recent league fixture as a live matchday. */
 export function watchMatchday() {
@@ -508,14 +509,11 @@ export function setExamPosture(id) { if (ui.exSt) { ui.exSt.posture = id; rEx() 
 
 // Squad power = average member power, lifted by cohesion (rewards squad-building).
 function _squadPow(members, cohesion = 0) {
-  if (!members.length) return 0
-  const avg = members.reduce((a, s) => a + sPow(s), 0) / members.length
-  return Math.round(avg * (1 + (cohesion || 0) / 300))
+  return squadPower(members.map(s => sPow(s)), cohesion)
 }
 // Average of a stat across a squad's members.
 function _avgStat(c, k) {
-  const ms = c.members || []
-  return ms.length ? ms.reduce((a, s) => a + (s.stats?.[k] || 0), 0) / ms.length : 30
+  return avgStat((c.members || []).map(s => s.stats?.[k] || 0))
 }
 // Format bonus if any member is strong in the format's stats.
 function _squadFormatBonus(c) {
@@ -541,9 +539,7 @@ function _buildExamField() {
   const seeds = G.season?.table ? seedsFromTable(G.season.table) : {}
   const nVillages = (G.villages?.length || 0) + 1
   const seedBonus = name => {
-    const seed = seeds[name]
-    if (!seed || nVillages < 2) return 0
-    return Math.round((1 - (seed - 1) / (nVillages - 1)) * 10) / 100  // top seed +0.10 → bottom +0
+    return seedEdge(seeds[name], nVillages)  // top seed +0.10 → bottom +0
   }
   const playerEntry = {
     vid: 'player', name: G.vName, ico: G.vIcon, isPlayer: true, seed: seeds[G.vName] || null,
@@ -689,8 +685,7 @@ export function runRound() {
     // Qualifier — written test (intelligence for player, power proxy for rivals).
     // Seeds earned in the season standings add a survival edge here.
     _stageSurvival(field, c => {
-      const sb = c.seedBonus || 0
-      return clamp(0.46 + _avgStat(c, 'intelligence') / 200 + _squadFormatBonus(c) + sb + _postureAdv(c, 'early'), 0.1, 0.95)
+      return examWrittenProb({ avgIntelligence: _avgStat(c, 'intelligence'), formatBonus: _squadFormatBonus(c), seedBonus: c.seedBonus || 0, postureAdv: _postureAdv(c, 'early') })
     }, 'Passed the written test', 'Failed the written test', res)
     field.forEach(e => e.alive.forEach(c => _applyPostureWorkload(c)))
   } else if (r === 1) {
@@ -729,11 +724,11 @@ function _runForest(field, res) {
     entry.scrolls = 0
     entry.alive.forEach(c => {
       // Two contested phases: Navigation (speed/intel) then the Scroll Clash (taijutsu/ninjutsu).
-      const navProb = clamp(0.46 + (_avgStat(c, 'speed') + _avgStat(c, 'intelligence')) / 400 + (isHost && c.isPlayer ? 0.08 : 0) + _squadFormatBonus(c) + _postureAdv(c, 'endurance'), 0.12, 0.95)
+      const navProb = examForestNavProb({ avgSpeed: _avgStat(c, 'speed'), avgIntelligence: _avgStat(c, 'intelligence'), hostBonus: (isHost && c.isPlayer ? 0.08 : 0), formatBonus: _squadFormatBonus(c), postureAdv: _postureAdv(c, 'endurance') })
       const navOk = Math.random() < navProb
       let clashOk = false
       if (navOk) {
-        const clashProb = clamp(0.46 + (_avgStat(c, 'taijutsu') + _avgStat(c, 'ninjutsu')) / 400 + _squadFormatBonus(c) + _postureAdv(c, 'endurance'), 0.12, 0.95)
+        const clashProb = examForestClashProb({ avgTaijutsu: _avgStat(c, 'taijutsu'), avgNinjutsu: _avgStat(c, 'ninjutsu'), formatBonus: _squadFormatBonus(c), postureAdv: _postureAdv(c, 'endurance') })
         clashOk = Math.random() < clashProb
       }
       const survived = navOk && clashOk
@@ -742,7 +737,7 @@ function _runForest(field, res) {
       let injNote = ''
       if (c.isPlayer) {
         const baseInj = survived ? 0.10 : (navOk ? 0.38 : 0.22)  // beaten in the clash is the bloodiest outcome
-        const injChance = clamp(baseInj + _posture().woundMod, 0, 0.9)
+        const injChance = examInjuryChance(baseInj, _posture().woundMod)
         if (Math.random() < injChance && (c.members || []).length) {
           const victim = pk(c.members)
           if (victim) { const inj = _examInjure(victim); injNote = ` — ${sn(victim)} wounded: ${inj.n} (${inj.dur}mo)`; c._wounded = true }
@@ -866,7 +861,7 @@ function _runFinals(field, biasMod) {
       if (!s || s.ri >= 4) return  // only Initiate→Shadow range is promotable here
       const hostBonus = G.examHosting ? 0.10 : 0
       const fmtB = _formatBonus(s)
-      const prom = Math.random() < clamp(0.55 + hostBonus + fmtB - biasMod + _posture().adv, 0.05, 0.97)
+      const prom = Math.random() < examPromotionChance({ hostBonus, formatBonus: fmtB, biasMod, postureAdv: _posture().adv })
       if (prom) {
         s.ri++; s.salary = 500 + s.ri * 400; examPromotions++
         G._kageXpPending = (G._kageXpPending || 0) + 8

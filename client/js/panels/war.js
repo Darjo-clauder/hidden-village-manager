@@ -7,6 +7,7 @@ import { t } from '../../../shared/utils/i18n.js'
 import { kageMod, kagePerk } from '../../../shared/constants/kageDev.js'
 import { identityFor, identityStageAdv } from '../../../shared/constants/villageIdentity.js'
 import { openBattleViewer } from '../liveBattle.js'
+import { squadPower, seedEdge, survivalMult as _survivalMult, warMobilizeProb, warFrontProb, warCasualtyChance, duelScore } from '../../../shared/utils/stageMath.js'
 
 /** Replay the player's run through the last Grand Tournament as a live bracket. */
 export function watchTournament() {
@@ -57,15 +58,11 @@ export function setWarCommand(id) { if (ui.warSt) { ui.warSt.command = id; upUI(
 // Survival multiplier on KIA rolls: vessel are hardest to kill, bloodline clans tougher.
 function survivalMult(s) {
   const isJk = (G.beasts || []).some(b => b.sealed && b.jk === s.id)
-  if (isJk) return 0.35
-  if (s.clan) return 0.6
-  return 1
+  return _survivalMult({ isVessel: isJk, hasClan: !!s.clan })
 }
 
 function _squadPow(members, cohesion = 0) {
-  if (!members.length) return 0
-  const avg = members.reduce((a, s) => a + sPow(s), 0) / members.length
-  return Math.round(avg * (1 + (cohesion || 0) / 300))
+  return squadPower(members.map(s => sPow(s)), cohesion)
 }
 
 // Elite rival cells (Veteran+) drawn from a village roster.
@@ -82,11 +79,7 @@ function _rivalWarSquads(v) {
 function _buildWarField() {
   const seeds = G.season?.table ? seedsFromTable(G.season.table) : {}
   const nV = (G.villages?.length || 0) + 1
-  const seedBonus = name => {
-    const seed = seeds[name]
-    if (!seed || nV < 2) return 0
-    return Math.round((1 - (seed - 1) / (nV - 1)) * 10) / 100
-  }
+  const seedBonus = name => seedEdge(seeds[name], nV)
   const playerEntry = {
     vid: 'player', name: G.vName, ico: G.vIcon, isPlayer: true, seed: seeds[G.vName] || null, fallen: [],
     alive: G.warCands.map(sqId => {
@@ -144,7 +137,7 @@ function _killMember(s, entry, c, stageName) {
 // Roll casualties for a squad's members at a given KIA chance.
 function _resolveCasualties(c, entry, kiaChance, stageName, res) {
   ;(c.members || []).slice().forEach(s => {
-    const chance = clamp(kiaChance * survivalMult(s), 0.01, 0.9)
+    const chance = warCasualtyChance(kiaChance, survivalMult(s))
     if (Math.random() < chance) {
       if (entry.isPlayer) maybeInduct(s, 'fallen')   // a legend who falls in the tournament is remembered
       _killMember(s, entry, c, stageName)
@@ -165,7 +158,7 @@ export function runWarRound() {
     field.forEach(entry => {
       const kept = []
       entry.alive.forEach(c => {
-        const prob = clamp(0.5 + c.pow / 220 + (c.seedBonus || 0) + _cmdAdv(c, 'early'), 0.15, 0.95)
+        const prob = warMobilizeProb({ pow: c.pow, seedBonus: c.seedBonus || 0, cmdAdv: _cmdAdv(c, 'early') })
         const ready = Math.random() < prob
         if (ready) kept.push(c); else entry.out.push(c)
         if (c.isPlayer) res.push({ name: c.name, result: ready ? 'Mobilized for the front' : 'Failed to mobilize in time', good: ready })
@@ -177,7 +170,7 @@ export function runWarRound() {
     field.forEach(entry => {
       const kept = []
       entry.alive.forEach(c => {
-        const prob = clamp(0.45 + c.pow / 240 + _cmdAdv(c, 'endurance'), 0.1, 0.9)
+        const prob = warFrontProb({ pow: c.pow, cmdAdv: _cmdAdv(c, 'endurance') })
         const held = Math.random() < prob
         if (held) { kept.push(c); if (c.isPlayer) res.push({ name: c.name, result: 'Held the line', good: true }) }
         else { entry.out.push(c); _resolveCasualties(c, entry, _cmdKia(c, 0.22), stageName, res); if (c.isPlayer) res.push({ name: c.name, result: 'Routed at the front', good: false }) }
@@ -194,7 +187,7 @@ export function runWarRound() {
     let lo = 0, hi = pool.length - 1
     while (lo < hi) {
       const A = pool[lo], B = pool[hi]
-      const aWins = (A.c.pow + rnd(-10, 10) + _cmdAdv(A.c, 'late') * 60) >= (B.c.pow + rnd(-10, 10) + _cmdAdv(B.c, 'late') * 60)
+      const aWins = duelScore({ pow: A.c.pow, jitter: rnd(-10, 10), cmdAdv: _cmdAdv(A.c, 'late') }) >= duelScore({ pow: B.c.pow, jitter: rnd(-10, 10), cmdAdv: _cmdAdv(B.c, 'late') })
       const win = aWins ? A : B, lose = aWins ? B : A
       losers.add(lose.c)
       if (win.c.isPlayer) res.push({ name: win.c.name, result: `Broke ${lose.c.name} (${lose.entry.name})`, good: true })
