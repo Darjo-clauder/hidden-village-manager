@@ -1,6 +1,8 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-07-02 · **HEAD:** `6f36eed` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 715 passing / 59 files
+**Last updated:** 2026-07-02 · **HEAD:** `40b5afa` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 850 passing / 68 files
+
+> **Gameplay + engineering batch landed 2026-07-02 (see §1d)** — 8 gameplay routes (R9 Youth Cup, R20 Hall of Fame, R16 minor-nation relations, R7 rival disruption ops, R13 prestige projects, R17 world eras, R18 journalist personas, R3 dynamic league membership) + engineering (R23 save versioning, R22 adv.js off-season slice extraction). All committed, pushed, mirror ff'd; tree clean. Test-suite writing was delegated to Sonnet/Haiku subagents (9 new suites, ~130 tests).
 
 > ✅ **The four stacked changesets are now COMMITTED + PUSHED** (2026-07-02), as a 4-commit stack on top of `9ef785e`:
 > 1. `4140d41` **IP-neutral conversion** (Tiers 1–2) — §1a + `docs/IP_NEUTRAL_PLAN.md`.
@@ -102,6 +104,23 @@ User: "each village being unique in some form from each other while allowing fle
 - **Verified:** 711/711 tests (55 files + 3 new: matchdayTactics 5, promises 5, rivalry 5), build clean. Browser: fresh game → aces named for all rivals + derby designated on first tick; tactic picker renders w/ opponent style line ("They play 🛡 Fortress"), pick persists and applies; H2H accumulated across a full year + into Y2 (derby held by stickiness); Year-1 Review landed in inbox with league/invitational/honors sections; zero console errors.
 - **New i18n keys:** `toast.adv.promise*`, `toast.adv.derby*` (+ inv/prodigy/news keys from the second pass).
 - **✅ League balance FIXED (2026-07-02, follow-up):** root cause — `computePlayerStrength` (`shared/utils/rivalSim.js`) returned `count × (5 + avgRi×3)` ≈ **182 for a fresh village vs rivals at 50–90** on the same scale; with the ±30% match swing the player could not lose (9–0 seasons), diplomacy read "Dominant" from day one, and tribute gating was a formality. **Rewrite:** quality (avg stats of the roster's top half) + depth (headcount w/ diminishing returns past 20 — injuries now cost strength) + modest wall/seal, calibrated to the rivals' 10–200 band: fresh ≈ **67**, deep elite dynasty ≈ 130–140, cap 200. Consumers unchanged (league strOf, exhibitions/invitational, kage strength labels + tribute gating, `tick/rivals.js` monthly recompute — old saves self-heal on next tick). **Locked by 4 calibration tests** in `tests/rivalSim.test.js` (fresh 55–80, dynasty ≤160, injuries reduce, ≤200 cap). **Verified in browser:** fresh player 67 vs rivals 38–81; full season → **finished 2nd, 8W-0D-4L**, swept 0–2 by the 81-str Blitz leader (real bogey team), swept the weak sides; diplomacy reads Matched/Stronger honestly; 715/715 tests, zero console errors.
+
+---
+
+## 1d. Depth batch — 8 gameplay routes + engineering (NEW, 2026-07-02)
+
+Landed the whole EXPANSION_ROUTES shortlist + follow-ons, committed as 7 commits (`419ecb6`→`40b5afa`). **New shared modules** (all pure + unit-tested; test suites written by delegated Sonnet/Haiku subagents): `shared/utils/{youthCup,hallOfFame,rivalOps,rivalry(existing),leagueMembership,saveMigrations}.js`, `shared/constants/{matchdayTactics(existing),minorNations rel-helpers,prestigeProjects,worldEras,journalists}.js`.
+- **R9 Youth Cup** — M6 academy-age bracket (`G.youthCupHistory`), wins are career milestones + growth. Card in Youth Academy panel.
+- **R20 Hall of Fame** — `maybeInduct(s,how)` (exported from adv.js) on retirement + all death sites (mission/defense/war). `G.hallOfFame`; section in Legacy›Legends.
+- **R16 Minor-nation relations** — `G.minorRelations` moved by friendlies (+2)/poaching (−8); drives transfer fees + a standing bar in the World panel.
+- **R7 Rival disruption ops** — Diplomacy "🗡 Disrupt" (3k ryo): dents a rival's strength (→ league slippage); success scales with strength/espionage/target identity.
+- **R13 Prestige projects** — multi-year monuments (`G.prestigeBuilds`/`prestigeCompleted`) draining treasury for legend/morale-floor/defense/academy. Money sink; Upgrades panel.
+- **R17 World eras** — climate re-rolls every 4–6yr with a named transition; `G.worldEra`/`eraHistory`; World-panel banner. Hooked at year rollover.
+- **R18 Journalist personas** — 3-reporter corps ask press questions; `G.journalistRel` moves by tone; byline in the press inbox item.
+- **R3 Dynamic league membership** — a great village collapsing 3+ yrs (`v.declineYears`) is relegated, strongest tier-C minor promoted with a full roster; **`G.season=null`** forces table rebuild. Foundational: promoted village plays `balanced` (no identity entry) — follow-up = dynamic identities.
+- **R23 Save versioning** — `_saveVersion` stamp + `migrateSave` forward-migration (Steam gate). **R22** — off-season slate extracted to `client/js/tick/offSeason.js` (adv.js −90 lines).
+- **Verified:** 850/850 tests (68 files); browser: 6-year run fired era shift + yearly Youth Cup + built/completed a prestige project, saves stamped v2, off-season extraction byte-identical, zero console errors.
+- **Watch-outs:** adv.js is now ~3.95k lines and still has NO test net (verify tick changes in browser); several new `G.*` collections rely on the v2 migration for pre-batch saves; R3 relegation is rare (needs sustained collapse) so it wasn't hit in the 6-yr playtest — logic is unit-tested, not yet seen live.
 
 ---
 
