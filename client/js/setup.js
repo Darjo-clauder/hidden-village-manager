@@ -6,7 +6,7 @@ import { t } from '../../shared/utils/i18n.js'
 import { RS, parseInviteCode } from './room.js'
 import { seedPhase1 } from '../../seeds/phase1.js'
 import { isOnline, setOnlineMode, getServerUrl, setServerUrl } from './net.js'
-import { saveLocal, loadLocal, hasLocalSave, markGameActive, applySavedState } from './save.js'
+import { saveLocal, loadLocal, hasLocalSave, markGameActive, applySavedState, loadSlot } from './save.js'
 
 // Which lobby modes imply an online (server-backed) game.
 function _isOnlineMode() { return RS.mode === 'create' || RS.mode === 'join' }
@@ -107,6 +107,14 @@ export function restoreGame() {
   const kname = saved?.kName || localStorage.getItem('kName') || 'Warden'
   const icon  = saved?.vIcon || localStorage.getItem('vIcon') || '🍃'
   _startGame(vname, kname, icon, 'standard', saved)
+}
+
+// Load a game from a manual save slot (R: save slots). Mirrors restoreGame.
+export function restoreSlot(n) {
+  const saved = loadSlot(n)
+  if (!saved) return
+  setOnlineMode(_isOnlineMode())
+  _startGame(saved.vName || 'Hidden Village', saved.kName || 'Warden', saved.vIcon || '🍃', 'standard', saved)
 }
 
 function _startGame(vname, kname, icon, scenario = 'standard', savedState = null) {

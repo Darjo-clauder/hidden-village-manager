@@ -44,6 +44,49 @@ export function hasLocalSave() {
   return !!localStorage.getItem(SAVE_KEY)
 }
 
+// ── Manual save slots ─────────────────────────────────────────────────────────
+// Separate from the rolling autosave: named slots the player writes/loads on demand,
+// each carrying lightweight metadata (village, date) for the load menu.
+const SLOT_PREFIX = 'hvm_slot_'
+export const SAVE_SLOT_COUNT = 3
+
+export function saveToSlot(n) {
+  if (!_active) return false
+  try {
+    const payload = _trim(G)
+    payload._slotMeta = { vName: G.vName, kName: G.kName, vIcon: G.vIcon, year: G.year, month: G.month, prestige: G.prestigeTier, savedAt: Date.now() }
+    localStorage.setItem(SLOT_PREFIX + n, JSON.stringify(payload))
+    return true
+  } catch (e) {
+    dlog('[Save] slot save failed:', e?.message)
+    return false
+  }
+}
+
+export function loadSlot(n) {
+  try {
+    const raw = localStorage.getItem(SLOT_PREFIX + n)
+    return raw ? JSON.parse(raw) : null
+  } catch (e) {
+    dlog('[Save] slot load failed:', e?.message)
+    return null
+  }
+}
+
+export function slotMeta(n) {
+  return loadSlot(n)?._slotMeta || null
+}
+
+export function deleteSlot(n) {
+  localStorage.removeItem(SLOT_PREFIX + n)
+}
+
+export function listSlots() {
+  const out = []
+  for (let i = 1; i <= SAVE_SLOT_COUNT; i++) out.push({ n: i, meta: slotMeta(i) })
+  return out
+}
+
 export function clearLocal() {
   localStorage.removeItem(SAVE_KEY)
   _active = false

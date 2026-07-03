@@ -1,6 +1,6 @@
 import { G } from './state.js'
 import { sp, cm, upUI, schEx, setNation, toggleColorblind, ntf, continueTurn } from './ui.js'
-import { showSetup, selIcon, beginGame, restoreGame, selScenario } from './setup.js'
+import { showSetup, selIcon, beginGame, restoreGame, restoreSlot, selScenario } from './setup.js'
 import { adv } from './adv.js'
 import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, setRehabPlan, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath, rosterSortBy, rosterToggleCol, rosterColMgr, rosterCtx, rosterHover } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation, setSqApproach } from './panels/squads.js'
@@ -31,7 +31,7 @@ import { exTab, sabotageSquad, bidSrank, protestJudge, acceptSummitBloc, decline
 import { musterWar, startWar, runWarRound, setWarCommand, watchTournament } from './panels/war.js'
 import { showLobby, createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode } from './setup.js'
 import { rClans, clanGift, launchClanChain, resolveClanCouncil } from './panels/clans.js'
-import { dismissOnboarding } from './panels/dashboard.js'
+import { dismissOnboarding, saveGameSlot } from './panels/dashboard.js'
 import { launchDeepCover, abortDeepCover } from './panels/safehouses.js'
 import { endTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose, setTimeout_, setMaxPlayers, voteAdvance, setAdvFn } from './room.js'
 import { copyInvite } from './panels/lobby.js'
@@ -97,7 +97,7 @@ function G_defShClear() { G.defSh = null; rDef() }
 // Expose all functions that are called from inline onclick handlers in the HTML
 Object.assign(window, {
   // screens
-  showSetup, showLobby, selIcon, beginGame, restoreGame, selScenario,
+  showSetup, showLobby, selIcon, beginGame, restoreGame, restoreSlot, selScenario, saveGameSlot,
   // room / lobby
   createRoomFlow, joinRoomFlow, browseRooms, joinRoomByCode,
   endTurn, continueTurn, kickPlayer, transferHost, pauseRoom, resumeRoom, toggleClose,

@@ -7,6 +7,31 @@ import { getInboxDigest, getInboxCount } from './inbox.js'
 import { xpForLevel, PATH_BY_ID } from '../../../shared/constants/kageDev.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { supportTier, revenueMult } from '../../../shared/utils/populace.js'
+import { saveToSlot, listSlots } from '../save.js'
+import { aL, ntf } from '../ui.js'
+
+// Manual save slots — write the current game to a slot or load another (R: save slots).
+export function saveGameSlot(n) {
+  if (saveToSlot(n)) { aL(`Game saved to slot ${n}.`, 'good'); if (window.upUI) window.upUI() }
+  else ntf('Save failed.')
+}
+
+function _saveSlotsCard() {
+  const slots = listSlots()
+  return `<div style="background:var(--surface,#1a1814);border:1px solid var(--border);padding:10px 12px;margin-bottom:12px">
+    <div style="font-size:8px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">💾 Save Slots</div>
+    ${slots.map(s => {
+      const m = s.meta
+      const when = m ? new Date(m.savedAt).toLocaleDateString() : null
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+        <span style="font-size:9px;color:var(--text-dim);width:14px">${s.n}</span>
+        <span style="flex:1;font-size:8px;color:${m ? '#e8e0cc' : '#555'}">${m ? `${m.vIcon || ''} ${m.vName} — Y${m.year} · ${m.prestige || 'D'}-tier · ${when}` : 'Empty slot'}</span>
+        <button class="gb" style="font-size:7px;padding:2px 7px" onclick="saveGameSlot(${s.n})">Save</button>
+        ${m ? `<button class="gb" style="font-size:7px;padding:2px 7px;border-color:#8fbc8f;color:#8fbc8f" onclick="if(confirm('Load slot ${s.n}? Unsaved progress is lost.'))restoreSlot(${s.n})">Load</button>` : ''}
+      </div>`
+    }).join('')}
+  </div>`
+}
 
 // Compact populace-support strip (R27) — civilian mood + its gate-revenue effect.
 function _populaceStrip() {
@@ -307,5 +332,7 @@ export function rDash() {
           </div>`).join('')}
       </div>
     </div>` : ''}
+
+    ${_saveSlotsCard()}
   `
 }
