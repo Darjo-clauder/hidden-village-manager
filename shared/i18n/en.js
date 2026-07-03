@@ -863,6 +863,7 @@ export const en = {
   'toast.adv.derbyWin': '🔥 DERBY WON — {village} beaten {ps}–{os}! The whole village is buzzing.',
   'toast.adv.derbyLoss': '🔥 Derby lost to {village} {ps}–{os}. A bitter month in the barracks.',
   'toast.adv.derbyDraw': '🔥 Derby draw with {village} ({ps}–{os}). Honors even — nobody satisfied.',
+  'toast.adv.hofInducted': '🏛 {name} is inducted into the Hall of Fame — {reason}.',
   'news.world.rivalExhibition': '{aIco} {a} handled {bIco} {b} {sa}–{sb} in a border exhibition.',
   'news.world.rivalExhibitionUpset': '{bIco} {b} stunned {aIco} {a} {sa}–{sb} in an exhibition upset!',
   'news.world.rivalExhibitionDraw': '{aIco} {a} and {bIco} {b} played out a {sa}–{sb} exhibition draw.',

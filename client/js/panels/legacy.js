@@ -108,6 +108,29 @@ function _hall() {
           <div style="font-size:9px;color:#7a7060">${['Initiate','Adept','Veteran','Special Veteran','Legend'][l.ri] || 'Unknown'} · ${l.months} months served · ${l.wins} wins · ${l.winsS} S-rank</div>
         </div>`).join('')}
       </div>`}
+    ${_hallOfFame()}
+  </div>`
+}
+
+// Hall of Fame — the broader career-legacy record. Inducts exceptional careers on
+// retirement AND death (unlike the enshrined-legends passive bonus above), so the
+// fallen and the youth-cup-winners-turned-greats are all remembered here.
+function _hallOfFame() {
+  const hof = (G.hallOfFame || []).slice().sort((a, b) => (b.year - a.year) || (b.score - a.score))
+  if (!hof.length) return ''
+  return `<div style="margin-top:20px;border-top:1px solid #2a2520;padding-top:12px">
+    <div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">🏆 Hall of Fame — ${hof.length} inducted</div>
+    <div style="font-size:8px;color:#7a7060;margin-bottom:10px">Exceptional careers, inducted on retirement or in death. Missions are the spine; S-ranks, tournament titles, and Youth Cup pedigree add to the legend.</div>
+    <div style="display:grid;gap:6px">${hof.map(e => `
+      <div style="border:1px solid #2e2a22;background:#0a0a0a;padding:7px 9px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:11px">${e.how === 'fallen' ? '🕊' : '🏛'}</span>
+          <span style="font-size:10px;color:#e8e0cc;font-weight:bold;flex:1">${e.name}</span>
+          <span style="font-size:7px;color:#555">${RANKS[e.rankIndex] || ''} · Y${e.year}${e.how === 'fallen' ? ' · fell in service' : ''}</span>
+        </div>
+        <div style="font-size:8px;color:#8a7d5c;margin-top:2px">${e.reason}</div>
+      </div>`).join('')}
+    </div>
   </div>`
 }
 

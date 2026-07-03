@@ -2,7 +2,7 @@ import { G, ui, sPow, sn, rnd, pk, clamp, fmt, addChronicle, addLegend } from '.
 import { RANKS } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { seedsFromTable } from '../../../shared/utils/season.js'
-import { queuePressConference } from '../adv.js'
+import { queuePressConference, maybeInduct } from '../adv.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { kageMod, kagePerk } from '../../../shared/constants/kageDev.js'
 import { identityFor, identityStageAdv } from '../../../shared/constants/villageIdentity.js'
@@ -146,6 +146,7 @@ function _resolveCasualties(c, entry, kiaChance, stageName, res) {
   ;(c.members || []).slice().forEach(s => {
     const chance = clamp(kiaChance * survivalMult(s), 0.01, 0.9)
     if (Math.random() < chance) {
+      if (entry.isPlayer) maybeInduct(s, 'fallen')   // a legend who falls in the tournament is remembered
       _killMember(s, entry, c, stageName)
       if (entry.isPlayer) res.push({ name: sn(s), result: `KIA at ${stageName}`, good: false, kia: true })
     }
