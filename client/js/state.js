@@ -6,7 +6,7 @@ import {
 import { ARCHETYPE_POOL } from '../../shared/utils/personality.js'
 import { newKageDev } from '../../shared/constants/kageDev.js'
 import { identityFor, rollIntensity, applyIdentityBias } from '../../shared/constants/villageIdentity.js'
-import { MINOR_NATIONS, pickMinorNation, applyMinorOrigin } from '../../shared/constants/minorNations.js'
+import { MINOR_NATIONS, pickMinorNation, applyMinorOrigin, getMinorRel, minorFeeMult } from '../../shared/constants/minorNations.js'
 
 // ── utilities ──────────────────────────────────────────────────────────────
 export const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a
@@ -853,7 +853,8 @@ export function genTransferPool() {
       const nation = pickMinorNation()
       applyMinorOrigin(s, nation)
       s.originVillage = nation.n
-      s.askingFee = Math.round(s.askingFee * 0.8)   // minor-league discount
+      // Base minor-league discount, then scaled by your standing with the nation.
+      s.askingFee = Math.round(s.askingFee * 0.8 * minorFeeMult(getMinorRel(G.minorRelations, nation.n)))
     } else {
       s.originVillage = pk(G.villages).n
     }
@@ -882,7 +883,8 @@ export function genTransferPool() {
     const nation = pickMinorNation()
     s.stats[nation.specialty] = clamp((s.stats[nation.specialty] || 20) + rnd(20, 35), 0, 99)
     applyMinorOrigin(s, nation)
-    s.transferCategory = 'foreign_specialist'; s.askingFee = 4000 + s.ri * 2500
+    s.transferCategory = 'foreign_specialist'
+    s.askingFee = Math.round((4000 + s.ri * 2500) * minorFeeMult(getMinorRel(G.minorRelations, nation.n)))
     s.originVillage = nation.n; s.monthsAvailable = rnd(1, 2); assignAgent(s); pool.push(s)
   }
   return pool

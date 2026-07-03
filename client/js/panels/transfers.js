@@ -1,5 +1,6 @@
 import { G, sn, sPow, clamp, fmt, rnd, pk, pDesc, personalityJudge, genTransferPool, computeMarketValue } from '../state.js'
 import { createPromise } from '../../../shared/utils/promises.js'
+import { adjustMinorRel } from '../../../shared/constants/minorNations.js'
 import { TRANSFER_CATS, TRANSFER_WINDOWS, BINGO_TIERS, RANKS, VILLAGES_DEF } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort } from '../uikit.js'
@@ -470,6 +471,11 @@ export function confirmTransfer() {
   }
   p.status = 'available'
   p.months = 0
+  // Poaching a minor nation's talent cools relations with them.
+  if (p.minorNation) {
+    G.minorRelations = G.minorRelations || {}
+    adjustMinorRel(G.minorRelations, p.minorNation, -8)
+  }
   // Missing-nin diplomatic risk
   if (p.transferCategory === 'missing_nin') {
     const v = pk(G.villages || [])

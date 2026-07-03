@@ -2,7 +2,7 @@ import { G, WS, clamp, fmt, setDipCb, _dipCb } from './state.js'
 import { aL, ntf, upUI, cm, setOnline } from './ui.js'
 import { t } from '../../shared/utils/i18n.js'
 import { shiftKageRel, kageToneDialogue, getKageTier, ensureKageRels } from './rivalKage.js'
-import { MINOR_NATIONS } from '../../shared/constants/minorNations.js'
+import { MINOR_NATIONS, getMinorRel, minorRelTier } from '../../shared/constants/minorNations.js'
 import { REGIONS } from './constants.js'
 
 export function rWo() { rWorldCanvas(); rWorldList() }
@@ -137,6 +137,15 @@ export function rWorldList() {
             </div>
           </div>
           <div style="font-size:7px;color:var(--text-dim,#58607a);margin-top:5px;line-height:1.5;font-style:italic">${m.blurb}</div>
+          ${(() => {
+            const rel = getMinorRel(G.minorRelations, m.n)
+            const tier = minorRelTier(rel)
+            return `<div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+              <span style="font-size:7px;color:var(--text-dim);width:36px">Standing</span>
+              <div style="flex:1;height:4px;background:#111;border-radius:2px;overflow:hidden"><div style="width:${rel}%;height:100%;background:${tier.color}"></div></div>
+              <span style="font-size:7px;color:${tier.color}">${tier.label}</span>
+            </div>`
+          })()}
         </div>`
     }).join('')}
     </div>

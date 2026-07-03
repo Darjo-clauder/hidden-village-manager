@@ -42,6 +42,37 @@ export function pickMinorNation(rng = Math.random, region = null) {
  * their stats toward its specialty (tier C exports better talent than D).
  * Mutates and returns `s`.
  */
+// ── Minor-nation relations ─────────────────────────────────────────────────────
+// A standing per minor nation (0–100, neutral 50), moved by exhibitions, signings
+// (poaching their talent stings), and gifts. High standing = cheaper fees + better
+// scouting access; low standing = they favor your rivals. Stored on G.minorRelations.
+
+export function getMinorRel(rels, name) {
+  const v = rels?.[name]
+  return typeof v === 'number' ? v : 50
+}
+
+/** Adjust and clamp a nation's standing; returns the new value. Mutates `rels`. */
+export function adjustMinorRel(rels, name, delta) {
+  const next = Math.max(0, Math.min(100, getMinorRel(rels, name) + delta))
+  rels[name] = next
+  return next
+}
+
+/** Standing tier for UI + effects. */
+export function minorRelTier(rel) {
+  if (rel >= 75) return { id: 'friendly', label: 'Friendly', color: '#8fbc8f' }
+  if (rel >= 45) return { id: 'neutral', label: 'Neutral', color: '#c9a84c' }
+  if (rel >= 20) return { id: 'cool', label: 'Cool', color: '#cc9a4a' }
+  return { id: 'hostile', label: 'Hostile', color: '#cc5a4a' }
+}
+
+/** Transfer-fee multiplier from standing: friendly nations discount, hostile ones surcharge. */
+export function minorFeeMult(rel) {
+  // 0 → 1.15x, 50 → 1.0x, 100 → 0.8x  (linear)
+  return Math.round((1.15 - (rel / 100) * 0.35) * 100) / 100
+}
+
 export function applyMinorOrigin(s, nation, rng = Math.random) {
   s.origin = nation.n
   s.minorNation = nation.n

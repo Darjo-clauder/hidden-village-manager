@@ -19,7 +19,7 @@ import { identityFor } from '../../shared/constants/villageIdentity.js'
 import { tacticMod } from '../../shared/constants/matchdayTactics.js'
 import { resolvePromise, isPastDue } from '../../shared/utils/promises.js'
 import { updateH2H, pickDerbyRival } from '../../shared/utils/rivalry.js'
-import { MINOR_NATIONS, pickMinorNation, minorStrength, applyMinorOrigin } from '../../shared/constants/minorNations.js'
+import { MINOR_NATIONS, pickMinorNation, minorStrength, applyMinorOrigin, adjustMinorRel } from '../../shared/constants/minorNations.js'
 import { runYouthCup, entrantRun, studentPower, rivalYouthPower, minorYouthPower } from '../../shared/utils/youthCup.js'
 import { isHofWorthy, buildHofEntry } from '../../shared/utils/hallOfFame.js'
 import { addNewsItem } from './news.js'
@@ -1886,6 +1886,9 @@ export function adv() {
         G.morale = clamp(G.morale - 1, 0, 100)
         aL(tr('toast.adv.exhibitionLoss', { ico: nation.ico, opp: nation.n, ps, os }), 'bad')
       }
+      // Playing a friendly builds rapport regardless of result — the fixture is the goodwill.
+      G.minorRelations = G.minorRelations || {}
+      adjustMinorRel(G.minorRelations, nation.n, 2)
     }
 
     // Ambient world life: a rival plays its own off-season friendly — news-ticker flavor.
