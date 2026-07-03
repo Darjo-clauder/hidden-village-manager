@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-07-02 · **HEAD:** `40b5afa` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 850 passing / 68 files
+**Last updated:** 2026-07-02 · **HEAD:** `03bdcea` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 850 passing / 68 files
 
 > **Gameplay + engineering batch landed 2026-07-02 (see §1d)** — 8 gameplay routes (R9 Youth Cup, R20 Hall of Fame, R16 minor-nation relations, R7 rival disruption ops, R13 prestige projects, R17 world eras, R18 journalist personas, R3 dynamic league membership) + engineering (R23 save versioning, R22 adv.js off-season slice extraction). All committed, pushed, mirror ff'd; tree clean. Test-suite writing was delegated to Sonnet/Haiku subagents (9 new suites, ~130 tests).
 
