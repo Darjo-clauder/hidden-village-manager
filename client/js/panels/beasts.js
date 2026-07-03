@@ -1,7 +1,19 @@
-import { G, sn, fmt } from '../state.js'
+import { G, sn, fmt, sPow, clamp } from '../state.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { BEAST_DATA, SYNC_STAGES, getSyncStage, getBeastPassives } from '../beastEngine.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
+import { EXTRACTION_STAGES, stageSuccessChance, warRiskOnFail, extractionCost, EXTRACTION_REL_HIT } from '../../../shared/utils/beastExtraction.js'
+
+// Player strength for an extraction: the punch of your best shinobi + prestige weight.
+function _playerBeastStrength() {
+  const top = (G.shinobi || []).map(sPow).sort((a, b) => b - a).slice(0, 5)
+  const avg = top.length ? top.reduce((a, b) => a + b, 0) / top.length : 30
+  const presWeight = { D: 0, C: 10, B: 25, A: 40, S: 60 }[G.prestigeTier] || 0
+  return Math.round(avg + presWeight)
+}
+function _holderStrength(name) {
+  return (G.villages || []).find(v => v.n === name)?.str || 60
+}
 
 let _activeTab = 'overview'
 let _activeLoreId = null
@@ -84,12 +96,96 @@ function _renderOverview(sealedBeasts, wildBeasts, passives, rivalHeld = []) {
               </div>
               <div style="font-size:8px;color:var(--orange);padding:2px 8px;border:1px solid var(--orange)">Held by ${b.owner}</div>
             </div>
-            <div style="font-size:8px;color:var(--text-dim);margin-top:6px;font-style:italic">This beast is sealed in a rival village. Taking it would require war or extraction — not a simple wild capture.</div>
+            ${_extractionBlock(b)}
           </div>`
         }).join('')}
       </div>
     ` : ''}
   `
+}
+
+// R15: extraction operation UI for a rival-held beast.
+function _extractionBlock(b) {
+  const op = G.beastOp
+  const pStr = _playerBeastStrength()
+  const hStr = _holderStrength(b.owner)
+  if (op && op.beastId === b.id) {
+    const stageName = EXTRACTION_STAGES[op.stage] || 'Complete'
+    const chance = Math.round(stageSuccessChance(op.stage, pStr, hStr) * 100)
+    return `<div style="margin-top:8px;padding:8px;border:1px solid var(--orange);background:rgba(0,0,0,.35)">
+      <div style="font-size:8px;color:var(--orange);font-weight:bold;margin-bottom:4px">⚔ Extraction underway — Stage ${op.stage + 1}/3: ${stageName}</div>
+      <div style="display:flex;gap:4px;margin-bottom:5px">${EXTRACTION_STAGES.map((s, i) => `<div style="flex:1;height:4px;border-radius:2px;background:${i < op.stage ? '#8fbc8f' : i === op.stage ? 'var(--orange)' : '#333'}"></div>`).join('')}</div>
+      ${(op.log || []).slice(-3).map(l => `<div style="font-size:7px;color:var(--text-dim)">${l}</div>`).join('')}
+      <div style="font-size:8px;color:var(--text-dim);margin:5px 0">Next stage success chance: <b style="color:${chance >= 60 ? '#8fbc8f' : chance >= 40 ? '#f0a030' : '#f66'}">${chance}%</b> · a failed stage risks war (${Math.round(warRiskOnFail(op.stage) * 100)}%).</div>
+      <div style="display:flex;gap:6px">
+        <button class="gb gb-g" style="font-size:8px" onclick="advanceBeastExtraction()">Advance operation ▸</button>
+        <button class="gb gb-r" style="font-size:8px" onclick="abortBeastExtraction()">Abort</button>
+      </div>
+    </div>`
+  }
+  const cost = extractionCost(hStr)
+  const canAfford = (G.ryo || 0) >= cost
+  const oddsHint = Math.round(stageSuccessChance(0, pStr, hStr) * 100)
+  return `<div style="margin-top:8px">
+    <div style="font-size:8px;color:var(--text-dim);margin-bottom:5px;font-style:italic">Mount a covert operation to seize this primal (Intel → Infiltration → Extraction). Your strength ${pStr} vs ${b.owner}'s ${hStr} — opening odds ~${oddsHint}%. Failure risks open war.</div>
+    <button class="gb" style="font-size:8px${canAfford ? '' : ';opacity:.5'}" ${canAfford && !op ? '' : 'disabled'} onclick="startBeastExtraction('${b.id}')" title="${op ? 'An operation is already active' : ''}">🎯 Launch Extraction — ${fmt(cost)} ryo</button>
+  </div>`
+}
+
+export function startBeastExtraction(beastId) {
+  if (G.beastOp) { ntf('An extraction operation is already underway.'); return }
+  const b = (G.beasts || []).find(x => x.id === beastId && x.owner)
+  if (!b) return
+  const cost = extractionCost(_holderStrength(b.owner))
+  if ((G.ryo || 0) < cost) { ntf('Not enough ryo to mount the operation.'); return }
+  G.ryo -= cost
+  G.beastOp = { beastId, targetVillage: b.owner, stage: 0, log: [`Operation launched against ${b.owner}.`] }
+  aL(`Extraction operation launched against ${b.owner} for ${b.n}.`, 'ev')
+  rBe(); upUI()
+}
+
+export function advanceBeastExtraction() {
+  const op = G.beastOp
+  if (!op) return
+  const b = (G.beasts || []).find(x => x.id === op.beastId)
+  if (!b) { G.beastOp = null; rBe(); return }
+  const pStr = _playerBeastStrength(), hStr = _holderStrength(op.targetVillage)
+  const ok = Math.random() < stageSuccessChance(op.stage, pStr, hStr)
+  const stageName = EXTRACTION_STAGES[op.stage]
+  if (ok) {
+    op.log.push(`✓ ${stageName} succeeded.`)
+    op.stage++
+    if (op.stage >= EXTRACTION_STAGES.length) {
+      // Success — the primal breaks free into the wild for you to capture.
+      b.owner = null
+      const v = (G.villages || []).find(x => x.n === op.targetVillage)
+      if (v) { v.rel = clamp((v.rel || 50) - EXTRACTION_REL_HIT, 0, 100); v.grudgeTicks = (v.grudgeTicks || 0) + 4 }
+      aL(`Extraction complete — ${b.n} is loose in the wild, yours to capture! ${op.targetVillage} is furious.`, 'good')
+      G.beastOp = null
+    } else {
+      aL(`${stageName} succeeded — the operation presses on.`, 'good')
+    }
+  } else {
+    op.log.push(`✕ ${stageName} failed.`)
+    const war = Math.random() < warRiskOnFail(op.stage)
+    const v = (G.villages || []).find(x => x.n === op.targetVillage)
+    if (v) { v.rel = clamp((v.rel || 50) - EXTRACTION_REL_HIT, 0, 100); v.grudgeTicks = (v.grudgeTicks || 0) + (war ? 8 : 3) }
+    if (war) {
+      if (v) v.hostile = true
+      aL(`The operation was exposed — ${op.targetVillage} declares open hostility! Extraction aborted.`, 'bad')
+    } else {
+      aL(`${stageName} failed — the operation is blown. ${op.targetVillage} suspects your hand.`, 'warn')
+    }
+    G.beastOp = null
+  }
+  rBe(); upUI()
+}
+
+export function abortBeastExtraction() {
+  if (!G.beastOp) return
+  aL('Extraction operation called off.', 'neutral')
+  G.beastOp = null
+  rBe(); upUI()
 }
 
 function _renderSealedCard(b) {
