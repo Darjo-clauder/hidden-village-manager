@@ -1,6 +1,8 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-07-03 · **HEAD:** `fd65716` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 891 passing / 72 files
+**Last updated:** 2026-07-03 · **HEAD:** `a14fe60` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 932 passing / 79 files
+
+> **Second gameplay batch landed 2026-07-03 (see §1f)** — 6 routes + 3 polish in one session: **R6** exam host bidding, **R14** sponsor negotiation + mood, **R15** beast extraction arc, plus three brand-new routes **R25** medical/rehab depth, **R26** staff development, **R27** populace support; polish **R12+** agent downsides + Agents tab, **R8+** solo-mission micro-calls, and **save slots + balance pass**. Each is a pure tested module + panel wiring; live 24-month playthrough clean.
 
 > **Desktop build + gameplay batch landed 2026-07-03 (see §1e)** — the **Tauri desktop `.exe` now builds and runs** (toolchain installed: Rustup + VS 2022 C++ Build Tools; `app.exe` + msi + nsis produced), with an **original leaf-emblem icon** and a **hardened CSP** (was `null`). Plus four gameplay routes: **R5** stage-math extraction (tested `shared/utils/stageMath.js`), **R8** live-battle micro-call (commit reserves / disengage — swings quality band + rewards, never the outcome), **R10** scouting dossiers (report timeline + trend + aging), **R12** agent relationships (persistent standing → fee cut + first-refusal tips). All committed, pushed, mirror ff'd; tree clean.
 
@@ -142,6 +144,27 @@ Six commits on top of `fdc84b5`: `cd289e7` icons/CSP/toolchain → `a61e3e5` R5 
 - **R10 scouting dossiers (`7ae59db`):** `shared/utils/scoutDossier.js` (10 tests) — chronological report timeline with confidence deltas, trend (rising/falling/volatile/steady), aging (>12mo = 'cold'), age-weighted consensus. Expandable "Dossier" toggle on the scouting card. Browser-verified live (month labels, trend, consensus, freshness).
 - **R12 agent relationships (`fd65716`):** `shared/utils/agentRelations.js` (9 tests). Agents are now a **persistent roster** `G.agents` (was throwaway per-listing names); standing (0–100) → tier (Hostile..Trusted) that shifts the fee cut and, at Trusted, gives first-refusal tips on their other listed clients. Signing lifts standing. `state.js ensureAgents()`/`assignAgent` draw from the roster. Panels render error-free; the populated agent badge needs a live transfer window (not reached via endTurn in the quick playtest — logic is unit-tested).
 - **Watch-outs:** R8's micro-call is intentionally **live-only** (the `applyCall` closure doesn't survive save/reload — re-watching a reloaded mission offers no call). R12's badge/first-refusal tip only shows once a transfer window populates the pool with an A-rank+ (agent-repped) entry. main.js `toggleScoutDossier` window-wiring for R10 landed in the R12 commit (harmless cross-attribution).
+
+---
+
+## 1f. Second gameplay batch — 6 routes + 3 polish (NEW, 2026-07-03)
+
+Ten commits on top of §1e (`b8b1bd0`): `0f2960e` R12+ → `fc3959f` R8+ → `98a9040` R14 → `da54aec` R6 → `f8bc203` R27 → `e982faa` R25 → `b847f3a` R26 → `504b682` R15 → `a14fe60` save slots. **932 tests / 79 files**, build clean, tree clean, pushed + mirror ff'd. Every route follows the house pattern: a pure `shared/utils/*` module with its own test file, wired into the panels; adv.js tick systems verified in a live 24-month browser run (zero console errors).
+
+**New routes:**
+- **R6 host bidding** (`shared/utils/hostBidding.js`, 7 tests) — `G.examHosting` was read but never set; now eligible villages (prestige C+) bid ryo for hosting rights vs rival bids (prestige home-weight), with prestige-scaled gate revenue. Card on the exam setup screen; `G.examHostResolved` resets each cycle.
+- **R14 sponsor depth** (`shared/utils/sponsors.js`, 9 tests) — negotiate a pending offer (push pay / ease clause; leverage from prestige+rep) and an active sponsor's `mood` (0-100) drifts with results/obligation, scaling payout 0.85–1.15× and walking away if it collapses. Finances panel shows negotiate buttons + mood.
+- **R15 beast extraction** (`shared/utils/beastExtraction.js`, 9 tests) — 3-stage op (Intel→Infiltration→Extraction) on a rival-held primal, odds from your strength vs holder, failure risks war; success frees the beast to the wild. `G.beastOp` drives it; UI on the beasts panel.
+- **R25 medical/rehab** (`shared/utils/medical.js`, 11 tests) — injured shinobi get a rehab plan (rush = 2× speed + re-injury risk + rusty form / standard / careful = needs a medic, best form + one-shot `s.injuryResist`). Recovery tick + `applyInjury` honor it; picker in the roster dossier. `s.rehabPlan`.
+- **R26 staff development** (`shared/utils/staffDev.js`, 10 tests) — staff gain XP monthly and level Novice→Master; level-up bumps their primary stat (so scout/sensei/medic effects improve) and the level bonus scales medic recovery. `s.staffLevel`/`s.staffXp`; shown on staff cards.
+- **R27 populace support** (`shared/utils/populace.js`, 8 tests) — a civilian support meter (`G.populace.support`) distinct from morale; reacts to results/treasury, scales gate revenue 0.90–1.15×, fires festival/unrest at the extremes. Dashboard strip.
+
+**Polish:**
+- **R12+** — poaching/lowballing now apply the `poached`/`lowballed` agent-standing penalties; new 🤝 Agents tab in transfers lists every agent with standing/fee/deals/clients.
+- **R8+** — solo missions now build a viewer report (single-member squad shim) so they get the live viewer + micro-call (success + surviving-failure; skipped on KIA).
+- **Save slots** — `save.js` gains `saveToSlot/loadSlot/slotMeta/deleteSlot/listSlots` (3 slots + metadata) alongside the autosave; `setup.js restoreSlot`; dashboard Save Slots card. `hvm_slot_N` keys.
+
+**Watch-outs:** the R14 sponsor mood / R15 extraction / populace event visuals depend on reaching those states (sponsor offer ~6%/mo, rival-held beast requires a strong rival that pre-holds one); logic is unit-tested and panels render clean. adv.js is larger again (all six tick hooks land in it) — keep verifying tick changes in-browser. `v.hostile` (set on a failed extraction) is a new flag not yet consumed by the war system — a future hook.
 
 ---
 
