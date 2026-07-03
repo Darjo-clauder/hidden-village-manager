@@ -8,6 +8,7 @@ import { h2hLabel } from '../../../shared/utils/rivalry.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { openBattleViewer } from '../liveBattle.js'
 import { squadPower, avgStat, seedEdge, examWrittenProb, examForestNavProb, examForestClashProb, examInjuryChance, examPromotionChance } from '../../../shared/utils/stageMath.js'
+import { isHostEligible, minHostBid, hostRevenue, genRivalHostBids, hostBidResolve } from '../../../shared/utils/hostBidding.js'
 
 /** Replay the player's most-recent league fixture as a live matchday. */
 export function watchMatchday() {
@@ -437,9 +438,7 @@ function _seasonResultsCard(round, resultsByRound, playerName) {
 function _renderExamSetup(el, tabHtml) {
   const isHost = G.examHosting === true
   const fmt_ = G.examFormat
-  const hostInfo = isHost
-    ? `<div style="font-size:9px;color:#8fbc8f;margin-bottom:8px">🏠 Hosting this exam — income bonus active</div>`
-    : `<div style="font-size:9px;color:#7a7060;margin-bottom:8px">Away exam</div>`
+  const hostInfo = _hostBidCard(isHost)
   const formatBanner = fmt_
     ? `<div style="padding:8px 10px;border:1px solid #c9a84c;background:#0d0a04;margin-bottom:10px">
         <div style="font-size:9px;color:#c9a84c;font-weight:bold">${fmt_.icon} Exam Format: ${fmt_.n}</div>
@@ -506,6 +505,49 @@ function _applyPostureWorkload(c) {
 }
 
 export function setExamPosture(id) { if (ui.exSt) { ui.exSt.posture = id; rEx() } }
+
+// R6: host-bidding card shown above the exam setup. Eligible villages (prestige C+)
+// bid ryo for hosting rights — home-crowd edge (already wired) + gate revenue.
+function _hostBidCard(isHost) {
+  if (isHost) return `<div style="font-size:9px;color:#8fbc8f;margin-bottom:8px">🏠 Hosting this exam — home-crowd edge + gate revenue active</div>`
+  // Bidding only offered while an exam is scheduled and not yet resolved.
+  if (!G.examSched || G.examHostResolved) return `<div style="font-size:9px;color:#7a7060;margin-bottom:8px">Away exam</div>`
+  const tier = G.prestigeTier
+  if (!isHostEligible(tier)) return `<div style="font-size:9px;color:#7a7060;margin-bottom:8px">Away exam — hosting needs prestige C or higher.</div>`
+  const min = minHostBid(tier)
+  const suggested = Math.max(min, ui._hostBid || min)
+  return `<div style="padding:9px 11px;border:1px solid #c9a84c;background:#0d0a04;margin-bottom:10px">
+    <div style="font-size:9px;color:#c9a84c;font-weight:bold;margin-bottom:4px">🏛 Bid to Host the Adept Exam</div>
+    <div style="font-size:8px;color:#7a7060;margin-bottom:6px">Win hosting rights for a home-crowd edge across the bracket and <b style="color:#8fbc8f">${(hostRevenue(tier)).toLocaleString()} ryo</b> gate revenue. Rival villages bid too — outbid them. Min bid ${min.toLocaleString()}.</div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <input id="host-bid-input" type="number" value="${suggested}" min="${min}" step="1000" style="width:110px;background:#111;border:1px solid #333;color:#e8d5a3;font-size:9px;padding:3px 5px">
+      <button class="gb" onclick="bidToHostExam()" ${(G.ryo || 0) >= min ? '' : 'disabled'}>Bid ▸</button>
+      <button class="gb" onclick="declineHostBid()" style="color:#7a7060">Decline</button>
+    </div>
+  </div>`
+}
+
+export function declineHostBid() { G.examHostResolved = true; rEx() }
+
+export function bidToHostExam() {
+  const inp = document.getElementById('host-bid-input')
+  const tier = G.prestigeTier
+  const min = minHostBid(tier)
+  const amount = Math.max(min, parseInt(inp?.value || min, 10) || min)
+  if ((G.ryo || 0) < amount) { ntf('Not enough ryo for that bid.'); return }
+  const rivalBids = genRivalHostBids(G.villages || [])
+  const res = hostBidResolve(amount, rivalBids, tier)
+  G.examHostResolved = true
+  if (res.won) {
+    G.ryo -= amount
+    G.examHosting = true
+    aL(`Won hosting rights for the Adept Exam with a ${amount.toLocaleString()} ryo bid (top rival: ${res.topRival.toLocaleString()}).`, 'good')
+    ntf('You will host the Adept Exam — home advantage secured.')
+  } else {
+    aL(`Outbid for hosting rights — a rival's ${res.topRival.toLocaleString()} ryo bid beat your ${res.playerEffective.toLocaleString()} effective bid. No ryo spent.`, 'warn')
+  }
+  rEx(); upUI()
+}
 
 // Squad power = average member power, lifted by cohesion (rewards squad-building).
 function _squadPow(members, cohesion = 0) {
@@ -947,7 +989,8 @@ function _runFinals(field, biasMod) {
     const names = [G.vName, ...(G.villages || []).map(v => v.n)]
     G.season = { year: G.year, round: 0, table: initSeasonTable(names), lastResults: [] }
   }
-  if (G.examHosting) { G.ryo += 8000; aL(t('toast.exam.hostingIncome'), 'good'); G.examHosting = false }
+  if (G.examHosting) { const rev = hostRevenue(G.prestigeTier); G.ryo += rev; aL(t('toast.exam.hostingIncome'), 'good'); G.examHosting = false }
+  G.examHostResolved = false  // reopen bidding for the next exam cycle
   G.examFormat = null; G.examJudgeBias = null
   G.examResults.push(...res.map(x => ({ id: '', name: x.name, result: x.result, promoted: x.promoted })))
   G.examActive = false; G.examSched = false; G.examCands = []; ui.exSt = null
