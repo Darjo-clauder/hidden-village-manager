@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-07-03 · **HEAD:** `a14fe60` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 932 passing / 79 files
+**Last updated:** 2026-07-03 · **HEAD:** `6756118` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 932 passing / 78 files
 
 > **Second gameplay batch landed 2026-07-03 (see §1f)** — 6 routes + 3 polish in one session: **R6** exam host bidding, **R14** sponsor negotiation + mood, **R15** beast extraction arc, plus three brand-new routes **R25** medical/rehab depth, **R26** staff development, **R27** populace support; polish **R12+** agent downsides + Agents tab, **R8+** solo-mission micro-calls, and **save slots + balance pass**. Each is a pure tested module + panel wiring; live 24-month playthrough clean.
 
