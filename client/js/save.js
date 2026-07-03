@@ -8,6 +8,7 @@
 
 import { G } from './state.js'
 import { migrateBeastStats } from './beastEngine.js'
+import { SAVE_VERSION, migrateSave } from '../../shared/utils/saveMigrations.js'
 import { dlog } from '../../shared/utils/debug.js'
 
 const SAVE_KEY = 'hvm_save_v1'
@@ -55,14 +56,17 @@ export function clearLocal() {
  */
 export function applySavedState(saved) {
   if (!saved || typeof saved !== 'object') return
+  migrateSave(saved)     // walk schema migrations up to the current version
   Object.keys(saved).forEach(k => { G[k] = saved[k] })
   migrateBeastStats(G)   // heal any vessel stats inflated by the pre-fix beast bug
 }
 
 // Bound the payload the same way the server does (see server/db.js _trimState),
-// keeping localStorage well under quota over a long dynasty.
+// keeping localStorage well under quota over a long dynasty. Stamped with the
+// current save version so future updates can migrate it forward.
 function _trim(G) {
   return {
+    _saveVersion: SAVE_VERSION,
     ...G,
     log:         (G.log         || []).slice(-100),
     examResults: (G.examResults || []).slice(-40),
