@@ -8,6 +8,7 @@ import { COACHING_PHILOSOPHIES, PHILOSOPHY_BY_ID } from '../../../shared/constan
 import { kageMod, kagePerk } from '../../../shared/constants/kageDev.js'
 import { identityFor, MATCH_STYLES } from '../../../shared/constants/villageIdentity.js'
 import { h2hLabel } from '../../../shared/utils/rivalry.js'
+import { opSuccessChance, opEffect, RIVAL_OP_COST } from '../../../shared/utils/rivalOps.js'
 
 export function rKa() {
   const el = document.getElementById('kgl')
@@ -27,7 +28,7 @@ export function rKa() {
     const derbyChip = isDerby ? `<span style="font-size:7px;border:1px solid #cc5a4a;color:#cc5a4a;padding:0 4px;margin-left:5px">🔥 DERBY RIVAL</span>` : ''
     const atLabel = h2hLabel(G.h2h, v.n)
     const h2hLine = atLabel ? `<div style="font-size:8px;color:#7a7060;margin-bottom:6px">⚔ League record vs you: <span style="color:#9a9080">${atLabel}</span></div>` : ''
-    return `<div class="ke-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="font-size:20px">${v.ico}</div><div><div style="font-size:11px;color:#e8e0cc;font-weight:bold">${v.n}</div><div style="font-size:8px;color:#7a7060">${v.kageRank} ${v.kage} · <span style="color:${rc}">${v.rel > 60 ? 'Allied' : v.rel > 30 ? 'Neutral' : 'Hostile'}</span>${v.allied ? ' ✓ Allied' : ''}${derbyChip}</div></div></div>${idLine}${aceLine}${h2hLine}<div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><div style="font-size:7px;color:#7a7060;width:60px;text-transform:uppercase;letter-spacing:1px">Relations</div><div class="bar" style="flex:1"><div class="fill" style="width:${v.rel}%;background:${rc}"></div></div><div style="font-size:9px;color:#7a7060">${v.rel}</div></div><div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><div style="font-size:7px;color:#7a7060;width:60px;text-transform:uppercase;letter-spacing:1px">Strength</div><div class="bar" style="flex:1"><div class="fill" style="width:${Math.min(100,vs/2)}%;background:${strColor}"></div></div><div style="font-size:8px;color:${strColor}">${strLabel} (${Math.round(vs)})</div></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="gb gb-b" onclick="sGift('${v.n}')" ${G.ryo < 5000 ? 'disabled' : ''}>Send gifts +10 (5k ryo)</button>${v.rel > 60 && !v.allied ? `<button class="gb gb-g" onclick="propAl('${v.n}')" ${G.ryo < 10000 ? 'disabled' : ''}>Propose alliance (10k)</button>` : ''}${v.rel < 60 && !v.allied ? `<button class="gb" onclick="demandTribute('${v.n}')" title="Strength-gated. Success extracts ryo; failure angers them.">Demand tribute</button>` : ''}${(v.threat || 0) > 0 ? `<button class="gb gb-b" onclick="appease('${v.n}')" ${G.ryo < 4000 ? 'disabled' : ''}>Appease −threat (4k)</button>` : ''}${v.rel < 30 ? `<button class="gb gb-r" onclick="rattle('${v.n}')">Rattle sabres</button>` : ''}</div></div>`
+    return `<div class="ke-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="font-size:20px">${v.ico}</div><div><div style="font-size:11px;color:#e8e0cc;font-weight:bold">${v.n}</div><div style="font-size:8px;color:#7a7060">${v.kageRank} ${v.kage} · <span style="color:${rc}">${v.rel > 60 ? 'Allied' : v.rel > 30 ? 'Neutral' : 'Hostile'}</span>${v.allied ? ' ✓ Allied' : ''}${derbyChip}</div></div></div>${idLine}${aceLine}${h2hLine}<div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><div style="font-size:7px;color:#7a7060;width:60px;text-transform:uppercase;letter-spacing:1px">Relations</div><div class="bar" style="flex:1"><div class="fill" style="width:${v.rel}%;background:${rc}"></div></div><div style="font-size:9px;color:#7a7060">${v.rel}</div></div><div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><div style="font-size:7px;color:#7a7060;width:60px;text-transform:uppercase;letter-spacing:1px">Strength</div><div class="bar" style="flex:1"><div class="fill" style="width:${Math.min(100,vs/2)}%;background:${strColor}"></div></div><div style="font-size:8px;color:${strColor}">${strLabel} (${Math.round(vs)})</div></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="gb gb-b" onclick="sGift('${v.n}')" ${G.ryo < 5000 ? 'disabled' : ''}>Send gifts +10 (5k ryo)</button>${v.rel > 60 && !v.allied ? `<button class="gb gb-g" onclick="propAl('${v.n}')" ${G.ryo < 10000 ? 'disabled' : ''}>Propose alliance (10k)</button>` : ''}${v.rel < 60 && !v.allied ? `<button class="gb" onclick="demandTribute('${v.n}')" title="Strength-gated. Success extracts ryo; failure angers them.">Demand tribute</button>` : ''}${(v.threat || 0) > 0 ? `<button class="gb gb-b" onclick="appease('${v.n}')" ${G.ryo < 4000 ? 'disabled' : ''}>Appease −threat (4k)</button>` : ''}${v.rel < 30 ? `<button class="gb gb-r" onclick="rattle('${v.n}')">Rattle sabres</button>` : ''}<button class="gb" onclick="sabotageRival('${v.n}')" ${G.ryo < RIVAL_OP_COST ? 'disabled' : ''} title="Covert op (${fmt(RIVAL_OP_COST)} ryo): dent their strength so they slip in the league. Failure exposes you.">🗡 Disrupt (${fmt(RIVAL_OP_COST)})</button></div></div>`
   }).join('')
   const standings = rankStandings(playerStr, (G.vName || 'Your Village'), G.villages)
   const standingsHtml = `<div class="ke-card" style="margin-bottom:14px">
@@ -138,6 +139,24 @@ export function propAl(n) {
 export function rattle(n) {
   const v = G.villages.find(x => x.n === n); v.rel = clamp(v.rel - 15, 0, 100); v.threat = clamp((v.threat || 0) + 20, 0, 100)
   aL(tr('toast.kage.rattled', { village: n }), 'warn'); upUI()
+}
+
+// Covert disruption op — dent a rival's strength so they slip in the league.
+// Costs ryo; success shaves their strength + relations, failure exposes you.
+export function sabotageRival(n) {
+  const v = G.villages.find(x => x.n === n); if (!v) return
+  if (G.ryo < RIVAL_OP_COST) { ntf(tr('toast.kage.opNoRyo')); return }
+  G.ryo -= RIVAL_OP_COST
+  const espBonus = kageMod(G, 'espionage') || 0
+  const chance = opSuccessChance(G._playerStrength || 50, v.strength || 50, identityFor(n).style, espBonus)
+  const success = Math.random() < chance
+  const eff = opEffect(success)
+  v.strength = Math.max(10, (v.strength || 50) + eff.strengthDelta)
+  v.rel = clamp((v.rel || 50) + eff.relDelta, 0, 100)
+  v.threat = clamp((v.threat || 0) + eff.threatDelta, 0, 100)
+  if (success) aL(tr('toast.kage.opSuccess', { village: n, drop: -eff.strengthDelta }), 'good')
+  else aL(tr('toast.kage.opFailed', { village: n }), 'bad')
+  upUI()
 }
 
 function _mandateHtml() {

@@ -533,6 +533,9 @@ export const en = {
   'toast.kage.alliance': 'Alliance with {village}! ({cost} ryo)',
   'toast.kage.alliedWith': 'Allied with {village}!',
   'toast.kage.rattled': 'Rattled sabres at {village}.',
+  'toast.kage.opNoRyo': 'Not enough ryo to fund the operation.',
+  'toast.kage.opSuccess': '🗡 Disruption op succeeded — {village} weakened (−{drop} strength). Relations sour.',
+  'toast.kage.opFailed': '🗡 Disruption op against {village} was exposed! Relations badly damaged.',
   'toast.kage.philosophy': 'Coaching philosophy: {name}',
   // Intel operations
   'toast.intel.maxRating': 'Already at maximum base rating.',
