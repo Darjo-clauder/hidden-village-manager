@@ -1,6 +1,8 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-07-02 · **HEAD:** `03bdcea` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 850 passing / 68 files
+**Last updated:** 2026-07-03 · **HEAD:** `fd65716` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 891 passing / 72 files
+
+> **Desktop build + gameplay batch landed 2026-07-03 (see §1e)** — the **Tauri desktop `.exe` now builds and runs** (toolchain installed: Rustup + VS 2022 C++ Build Tools; `app.exe` + msi + nsis produced), with an **original leaf-emblem icon** and a **hardened CSP** (was `null`). Plus four gameplay routes: **R5** stage-math extraction (tested `shared/utils/stageMath.js`), **R8** live-battle micro-call (commit reserves / disengage — swings quality band + rewards, never the outcome), **R10** scouting dossiers (report timeline + trend + aging), **R12** agent relationships (persistent standing → fee cut + first-refusal tips). All committed, pushed, mirror ff'd; tree clean.
 
 > **Gameplay + engineering batch landed 2026-07-02 (see §1d)** — 8 gameplay routes (R9 Youth Cup, R20 Hall of Fame, R16 minor-nation relations, R7 rival disruption ops, R13 prestige projects, R17 world eras, R18 journalist personas, R3 dynamic league membership) + engineering (R23 save versioning, R22 adv.js off-season slice extraction). All committed, pushed, mirror ff'd; tree clean. Test-suite writing was delegated to Sonnet/Haiku subagents (9 new suites, ~130 tests).
 
@@ -121,6 +123,25 @@ Landed the whole EXPANSION_ROUTES shortlist + follow-ons, committed as 7 commits
 - **R23 Save versioning** — `_saveVersion` stamp + `migrateSave` forward-migration (Steam gate). **R22** — off-season slate extracted to `client/js/tick/offSeason.js` (adv.js −90 lines).
 - **Verified:** 850/850 tests (68 files); browser: 6-year run fired era shift + yearly Youth Cup + built/completed a prestige project, saves stamped v2, off-season extraction byte-identical, zero console errors.
 - **Watch-outs:** adv.js is now ~3.95k lines and still has NO test net (verify tick changes in browser); several new `G.*` collections rely on the v2 migration for pre-batch saves; R3 relegation is rare (needs sustained collapse) so it wasn't hit in the 6-yr playtest — logic is unit-tested, not yet seen live.
+
+---
+
+## 1e. Desktop build + gameplay batch (NEW, 2026-07-03)
+
+Six commits on top of `fdc84b5`: `cd289e7` icons/CSP/toolchain → `a61e3e5` R5 → `c0d8d11` R8 → `7ae59db` R10 → `fd65716` R12. **891 tests / 72 files**, build clean, tree clean, pushed + mirror ff'd.
+
+**Tauri desktop build — R24 UNBLOCKED (`cd289e7`):** the `.exe` now builds and runs.
+- **Toolchain (winget):** `Rustlang.Rustup` (stable-x86_64-pc-windows-msvc, rustc/cargo 1.96.1) + `Microsoft.VisualStudio.2022.BuildTools` (`--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended`); WebView2 already present. **Gotcha:** cargo bin (`~/.cargo/bin`) is NOT on PATH — prepend `$env:USERPROFILE\.cargo\bin` in the build shell.
+- `npm run tauri build` → `src-tauri/target/release/app.exe` (8.5 MB) + `bundle/msi/*.msi` + `bundle/nsis/*-setup.exe` (build auto-fetches WiX 3.14 + NSIS 3.11). Smoke-tested: launches a titled window, closes clean.
+- **Original icon:** `src-tauri/icon-source.svg` → `icon-1024.png` → `npm run tauri icon` regenerates the whole set (leaf emblem, game palette, no IP). `sharp` added as a devDep for SVG→PNG.
+- **CSP hardened** (`tauri.conf.json`): `null` → `script-src 'self' 'unsafe-inline'` (the game uses inline `onclick=` handlers — verified a strict `script-src 'self'` breaks every button), `style-src 'unsafe-inline'`, `connect-src` open for the user-entered MP server, `object-src 'none'`, `base-uri`/`frame-ancestors` locked. Verified in-browser via the same CSP as a meta tag: renders + handlers fire, console clean. **Still open before ship:** code signing, Steam Direct, store page (all non-code).
+
+**Gameplay routes (all pure-logic unit-tested + panel-wired):**
+- **R5 stage math (`a61e3e5`):** `shared/utils/stageMath.js` (14 tests) — squad power, stat avg, seed edge, survival mult, exam/war advance probabilities, duel scoring. exam.js/war.js now delegate; behaviour legacy-exact.
+- **R8 live-battle micro-call (`c0d8d11`):** `shared/utils/battleCalls.js` (8 tests). Before the final beat of a squad mission the viewer pauses and offers **Commit Reserves** (bet on the last beat — clutch upgrade if it lands, overcommit downgrade if not) or **Disengage** (safe). Only the quality band (one step, same success side) + a small ryo/legend/morale delta move — **never** the win/loss. `adv.js _buildMissionReport` attaches a live-only `applyCall` closure (dropped on save by design). Browser-verified both paths incl. the clutch outcome (+ryo, decisive verdict).
+- **R10 scouting dossiers (`7ae59db`):** `shared/utils/scoutDossier.js` (10 tests) — chronological report timeline with confidence deltas, trend (rising/falling/volatile/steady), aging (>12mo = 'cold'), age-weighted consensus. Expandable "Dossier" toggle on the scouting card. Browser-verified live (month labels, trend, consensus, freshness).
+- **R12 agent relationships (`fd65716`):** `shared/utils/agentRelations.js` (9 tests). Agents are now a **persistent roster** `G.agents` (was throwaway per-listing names); standing (0–100) → tier (Hostile..Trusted) that shifts the fee cut and, at Trusted, gives first-refusal tips on their other listed clients. Signing lifts standing. `state.js ensureAgents()`/`assignAgent` draw from the roster. Panels render error-free; the populated agent badge needs a live transfer window (not reached via endTurn in the quick playtest — logic is unit-tested).
+- **Watch-outs:** R8's micro-call is intentionally **live-only** (the `applyCall` closure doesn't survive save/reload — re-watching a reloaded mission offers no call). R12's badge/first-refusal tip only shows once a transfer window populates the pool with an A-rank+ (agent-repped) entry. main.js `toggleScoutDossier` window-wiring for R10 landed in the R12 commit (harmless cross-attribution).
 
 ---
 
