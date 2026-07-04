@@ -1308,7 +1308,11 @@ export function adv() {
     if (activeRoster < 14 && G.prospects.length > 0) {
       const best = G.prospects.reduce((a, b) => (b.potential || 0) > (a.potential || 0) ? b : a)
       best.status = 'available'
-      if (best.academyOrigin) { best.homegrown = true; best.salary = Math.round(best.salary * 0.85) }
+      // Academy graduates enter with salary deleted (genStudent) — default it so the
+      // 0.85× homegrown discount doesn't compute Math.round(undefined*0.85) === NaN,
+      // which would poison the whole treasury (a summed s.salary).
+      if (best.academyOrigin) { best.homegrown = true; best.salary = Math.round((best.salary || 500) * 0.85) }
+      if (!Number.isFinite(best.salary)) best.salary = 500
       G.shinobi.push(best)
       G.prospects = G.prospects.filter(x => x.id !== best.id)
       aL(sn(best) + ' signed on — the village needed them.', 'good')
@@ -2233,9 +2237,9 @@ export function adv() {
   const _infraPct = (G.budgetPriority.infra || 34) / 100
   const maintenance = Math.round(computeMaintenance() * (1 - _infraPct * 0.3))
   // twoWay players (farm-assigned) don't count against the salary cap payroll
-  const shinobiSal = G.shinobi.reduce((a, s) => a + s.salary, 0)
-  const capPayroll = G.shinobi.filter(s => !s.twoWay).reduce((a, s) => a + s.salary, 0)
-  const staffSal = (G.staff || []).reduce((a, st) => a + st.salary, 0)
+  const shinobiSal = G.shinobi.reduce((a, s) => a + (s.salary || 0), 0)
+  const capPayroll = G.shinobi.filter(s => !s.twoWay).reduce((a, s) => a + (s.salary || 0), 0)
+  const staffSal = (G.staff || []).reduce((a, st) => a + (st.salary || 0), 0)
   const commI = Object.entries(G.finances?.missionCommissions || {}).reduce((a,[,v]) => a + v * 0, 0) // commissions already applied to G.ryo
   const examFeeAmt = G.finances?.examFees || 0
   const loanFeeAmt = G.finances?.loanFees || 0
