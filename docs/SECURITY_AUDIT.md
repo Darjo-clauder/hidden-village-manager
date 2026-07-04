@@ -1,5 +1,13 @@
 # Security & Bug Audit — 2026-07-04
 
+> **STATUS (2026-07-04): findings 1–5 REMEDIATED** in the follow-up commit
+> (`shared/utils/escapeHtml.js`, `server/sanitize.js`, `server/rateLimit.js`,
+> `publicVillage()`, combat/raid clamps, devtools revert; 7 new tests in
+> `tests/security.test.js`). The descriptions below are kept as the record of
+> what was wrong and why. Not yet done: full server-authoritative combat (needs
+> a bigger change to the client-authoritative sim), and a real 2-client
+> injection test (verified via unit tests + escaped sinks + server stripping).
+
 Scope: the multiplayer trust boundary (Socket.IO server + client render paths),
 local persistence, and the Tauri shell. Single-player offline is low-risk (the
 player only attacks themselves); **every finding below matters only once two
