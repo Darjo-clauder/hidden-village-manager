@@ -10,12 +10,21 @@ export function rndPos() {
   }
 }
 
+// Client-safe view of a village. Strips `playerId` — it's a bearer secret the
+// server uses to load a player's save; broadcasting it let anyone load anyone
+// else's game (IDOR). Clients only ever need the public fields.
+export function publicVillage(v) {
+  if (!v) return v
+  const { playerId, ...pub } = v
+  return pub
+}
+
 export function worldSnapshot() {
-  return Array.from(villages.values())
+  return Array.from(villages.values()).map(publicVillage)
 }
 
 export function worldSnapshotForRoom(roomCode) {
-  return Array.from(villages.values()).filter(v => v.roomCode === roomCode)
+  return Array.from(villages.values()).filter(v => v.roomCode === roomCode).map(publicVillage)
 }
 
 export function getRelStatus(v, otherId) {

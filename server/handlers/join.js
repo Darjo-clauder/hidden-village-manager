@@ -1,5 +1,6 @@
-import { villages, rndPos, worldSnapshot } from '../state.js'
+import { villages, rndPos, worldSnapshot, publicVillage } from '../state.js'
 import db, { loadGameState, upsertVillageSummary } from '../db.js'
+import { cleanText, cleanIcon } from '../sanitize.js'
 
 export function registerJoin(io, socket) {
   socket.on('join', async ({ name, kageName, icon, playerId }) => {
@@ -19,9 +20,9 @@ export function registerJoin(io, socket) {
     const village = {
       id:          socket.id,
       playerId:    playerId || null,
-      name:        (name     || 'Hidden Village').slice(0, 32),
-      kageName:    (kageName || 'Unknown').slice(0, 24),
-      icon:        icon || '🍃',
+      name:        cleanText(name, 32) || 'Hidden Village',
+      kageName:    cleanText(kageName, 24) || 'Unknown',
+      icon:        cleanIcon(icon),
       power:       0,
       reputation:  10,
       shinobiCount: 0,
@@ -55,7 +56,7 @@ export function registerJoin(io, socket) {
 
     // ── Broadcast world state to new player ───────────────────────────────
     socket.emit('world_state', worldSnapshot())
-    socket.broadcast.emit('village_joined', village)
+    socket.broadcast.emit('village_joined', publicVillage(village))
     console.log(`  "${village.name}" (${village.icon}) joined`)
 
     // ── Load and restore full game state ──────────────────────────────────

@@ -1,4 +1,4 @@
-import { villages, rndPos, setRel, getRelStatus } from '../state.js'
+import { villages, rndPos, setRel, getRelStatus, publicVillage } from '../state.js'
 import {
   rooms, socketToRoom,
   createRoom, addPlayer, removePlayer,
@@ -7,6 +7,7 @@ import {
 } from '../rooms.js'
 import { rollWorldEvent } from '../worldEvents.js'
 import db, { loadGameState, saveRoom, deleteRoom, upsertVillageSummary } from '../db.js'
+import { cleanText, cleanIcon } from '../sanitize.js'
 
 const HOST_TRANSFER_DELAY_MS  = 2 * 60 * 1000   // 2 minutes
 const AUTO_READY_DEFAULT_MIN  = 15
@@ -26,9 +27,9 @@ async function registerVillage(socket, { name, kageName, icon, playerId, roomCod
   const village = {
     id:           socket.id,
     playerId:     playerId || null,
-    name:         (name     || 'Hidden Village').slice(0, 32),
-    kageName:     (kageName || 'Unknown').slice(0, 24),
-    icon:         icon || '🍃',
+    name:         cleanText(name, 32) || 'Hidden Village',
+    kageName:     cleanText(kageName, 24) || 'Unknown',
+    icon:         cleanIcon(icon),
     power:        0,
     reputation:   10,
     shinobiCount: 0,
@@ -57,7 +58,7 @@ async function registerVillage(socket, { name, kageName, icon, playerId, roomCod
 // ── World snapshot scoped to a room ──────────────────────────────────────────
 
 function roomWorldSnapshot(roomCode) {
-  return [...villages.values()].filter(v => v.roomCode === roomCode)
+  return [...villages.values()].filter(v => v.roomCode === roomCode).map(publicVillage)
 }
 
 // ── Check-and-fire turn resolution ───────────────────────────────────────────
@@ -83,6 +84,7 @@ export function registerRooms(io, socket) {
 
   // ── CREATE ROOM ───────────────────────────────────────────────────────────
   socket.on('create_room', async ({ name, kageName, icon, playerId, isPrivate, maxPlayers, autoReadyTimeout } = {}) => {
+    name = cleanText(name, 32) || 'Hidden Village'; kageName = cleanText(kageName, 24) || 'Unknown'; icon = cleanIcon(icon)
     // If already in a room, clean up first
     const existingCode = socketToRoom.get(socket.id)
     if (existingCode) {
@@ -117,6 +119,7 @@ export function registerRooms(io, socket) {
 
   // ── JOIN ROOM ─────────────────────────────────────────────────────────────
   socket.on('join_room', async ({ code, name, kageName, icon, playerId } = {}) => {
+    name = cleanText(name, 32) || 'Hidden Village'; kageName = cleanText(kageName, 24) || 'Unknown'; icon = cleanIcon(icon)
     const roomCode = (code || '').toUpperCase().trim()
     const room = rooms.get(roomCode)
 
@@ -138,7 +141,7 @@ export function registerRooms(io, socket) {
 
     socket.emit('room_joined', { roomCode, snapshot: roomSnapshot(room) })
     socket.emit('world_state', roomWorldSnapshot(roomCode))
-    io.to(roomCode).except(socket.id).emit('village_joined', village)
+    io.to(roomCode).except(socket.id).emit('village_joined', publicVillage(village))
     io.to(roomCode).emit('room_state_update', roomSnapshot(room))
     console.log(`+ "${village.name}" joined room ${roomCode}`)
 

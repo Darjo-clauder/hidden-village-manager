@@ -13,12 +13,16 @@ import { registerGift } from './server/handlers/gift.js'
 import { registerDisconnect } from './server/handlers/disconnect.js'
 import { registerRooms } from './server/handlers/rooms.js'
 import { runStartupChecks } from './server/startup.js'
+import { makeRateLimiter } from './server/rateLimit.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const app    = express()
 const server = createServer(app)
-const io     = new Server(server)
+// maxHttpBufferSize bounds a single message (a crafted huge fullState would
+// otherwise bloat memory/DB); 2 MB is well above a trimmed save.
+const io     = new Server(server, { maxHttpBufferSize: 2e6 })
+const rateLimit = makeRateLimiter()
 
 // Serve built client in production
 if (process.env.NODE_ENV !== 'development') {
@@ -29,6 +33,7 @@ if (process.env.NODE_ENV !== 'development') {
 
 io.on('connection', (socket) => {
   console.log('+ connected:', socket.id)
+  rateLimit(socket)   // throttle inbound events per socket
   registerRooms(io, socket)
   registerJoin(io, socket)    // legacy join event (kept for backward compat)
   registerSync(io, socket)

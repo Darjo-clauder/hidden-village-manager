@@ -7,6 +7,10 @@ export function registerRaid(io, socket) {
     const attacker = villages.get(socket.id)
     const defender = villages.get(targetId)
     if (!attacker || !defender) return
+    if (targetId === socket.id) return   // can't raid yourself
+
+    // Room isolation: you can only raid a village in your own room/world.
+    if (socketToRoom.get(socket.id) !== socketToRoom.get(targetId)) return
 
     if (getRelStatus(attacker, targetId) === 'allied') {
       socket.emit('sv_notification', 'Cannot raid an ally.')

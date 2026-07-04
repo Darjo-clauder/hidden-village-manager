@@ -80,7 +80,7 @@ export function roomSnapshot(room) {
   return {
     code:              room.code,
     hostSocketId:      room.hostSocketId,
-    hostPlayerId:      room.hostPlayerId,
+    // hostPlayerId intentionally omitted — it's a bearer secret (save-load key).
     isPrivate:         room.isPrivate,
     maxPlayers:        room.maxPlayers,
     autoReadyTimeout:  room.autoReadyTimeout,
@@ -98,7 +98,7 @@ export function roomSnapshot(room) {
 export function playerSnap(p) {
   return {
     socketId:       p.socketId,
-    playerId:       p.playerId,
+    // playerId intentionally omitted — bearer secret, never sent to clients.
     name:           p.name,
     kageName:       p.kageName,
     icon:           p.icon,

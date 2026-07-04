@@ -3,6 +3,7 @@ import { aL, ntf, upUI, cm, setOnline } from './ui.js'
 import { t } from '../../shared/utils/i18n.js'
 import { shiftKageRel, kageToneDialogue, getKageTier, ensureKageRels } from './rivalKage.js'
 import { MINOR_NATIONS, getMinorRel, minorRelTier } from '../../shared/constants/minorNations.js'
+import { escapeHtml as esc } from '../../shared/utils/escapeHtml.js'
 import { REGIONS } from './constants.js'
 
 export function rWo() { rWorldCanvas(); rWorldList() }
@@ -85,7 +86,7 @@ export function rWorldList() {
   if (WS.pendingAlliances.length) {
     html += '<div class="ally-pending"><div class="ally-pending-title">Pending Alliance Proposals</div>'
     WS.pendingAlliances.forEach(p => {
-      html += `<div class="ally-pending-row"><span style="font-size:10px;color:#e8e0cc">${p.fromIcon} ${p.fromName}</span><div style="display:flex;gap:6px"><button class="gb gb-g" style="margin-top:0" onclick="respondAlliance('${p.fromId}',true)">Accept ►</button><button class="gb gb-r" style="margin-top:0" onclick="respondAlliance('${p.fromId}',false)">Decline</button></div></div>`
+      html += `<div class="ally-pending-row"><span style="font-size:10px;color:#e8e0cc">${esc(p.fromIcon)} ${esc(p.fromName)}</span><div style="display:flex;gap:6px"><button class="gb gb-g" style="margin-top:0" onclick="respondAlliance('${p.fromId}',true)">Accept ►</button><button class="gb gb-r" style="margin-top:0" onclick="respondAlliance('${p.fromId}',false)">Decline</button></div></div>`
     })
     html += '</div>'
   }
@@ -98,7 +99,7 @@ export function rWorldList() {
       const sc = isA ? '#8fbc8f' : isW ? '#f66' : '#fa0'
       const sl = isA ? 'Allied' : isW ? 'At War' : 'Neutral'
       const noG = G.ryo < 5000
-      return `<div class="${cls}"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="font-size:22px">${v.icon}</div><div style="flex:1"><div style="font-size:11px;color:#e8e0cc;font-weight:bold">${v.name}</div><div style="font-size:8px;color:#7a7060">Warden: ${v.kageName}</div></div><span style="font-size:8px;padding:2px 7px;border:1px solid ${sc};color:${sc}">${sl}</span></div><div style="display:flex;flex-wrap:wrap;margin-bottom:10px"><span class="wv-stat">Power <b>${v.power}</b></span><span class="wv-stat">Rep <b>${v.reputation}</b></span><span class="wv-stat">Shinobi <b>${v.shinobiCount}</b></span>${v.sealedBeasts?.length ? `<span class="wv-stat">Beasts <b style="color:#c9a84c">${v.sealedBeasts.join(', ')}</b></span>` : ''}</div><div class="wv-actions"><button class="gb" onclick="sendGiftMP('${v.id}')" ${noG ? 'disabled' : ''}>Send Gifts (5k)</button>${!isA && !isW ? `<button class="gb gb-g" onclick="propAllianceMP('${v.id}')">Propose Alliance</button>` : ''}${!isA && !isW ? `<button class="gb gb-r" onclick="declareWarMP('${v.id}')">Declare War</button>` : ''}${isA ? `<button class="gb gb-r" onclick="breakAllianceMP('${v.id}')">Break Alliance</button>` : ''}${isW ? `<button class="gb gb-r" onclick="launchRaidMP('${v.id}')">⚔ Launch Raid</button>` : ''}</div></div>`
+      return `<div class="${cls}"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="font-size:22px">${esc(v.icon)}</div><div style="flex:1"><div style="font-size:11px;color:#e8e0cc;font-weight:bold">${esc(v.name)}</div><div style="font-size:8px;color:#7a7060">Warden: ${esc(v.kageName)}</div></div><span style="font-size:8px;padding:2px 7px;border:1px solid ${sc};color:${sc}">${sl}</span></div><div style="display:flex;flex-wrap:wrap;margin-bottom:10px"><span class="wv-stat">Power <b>${esc(v.power)}</b></span><span class="wv-stat">Rep <b>${esc(v.reputation)}</b></span><span class="wv-stat">Shinobi <b>${esc(v.shinobiCount)}</b></span>${v.sealedBeasts?.length ? `<span class="wv-stat">Beasts <b style="color:#c9a84c">${v.sealedBeasts.map(esc).join(', ')}</b></span>` : ''}</div><div class="wv-actions"><button class="gb" onclick="sendGiftMP('${v.id}')" ${noG ? 'disabled' : ''}>Send Gifts (5k)</button>${!isA && !isW ? `<button class="gb gb-g" onclick="propAllianceMP('${v.id}')">Propose Alliance</button>` : ''}${!isA && !isW ? `<button class="gb gb-r" onclick="declareWarMP('${v.id}')">Declare War</button>` : ''}${isA ? `<button class="gb gb-r" onclick="breakAllianceMP('${v.id}')">Break Alliance</button>` : ''}${isW ? `<button class="gb gb-r" onclick="launchRaidMP('${v.id}')">⚔ Launch Raid</button>` : ''}</div></div>`
     }).join('')
   } else {
     html += '<div style="color:#7a7060;font-size:9px;padding:10px 0">No other villages online. Share this server\'s URL with friends to play together.</div>'
