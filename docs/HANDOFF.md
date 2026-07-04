@@ -1,6 +1,8 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-07-03 · **HEAD:** `6756118` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 932 passing / 78 files
+**Last updated:** 2026-07-04 · **HEAD:** `9d60950` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 939 passing / 79 files
+
+> **DIRECTION (2026-07-04): Steam launch DEFERRED** until the user is satisfied with feature polish — focus on gameplay, not store/signing gates. **Security audit + fixes shipped** (`docs/SECURITY_AUDIT.md`; MP XSS, combat clamps, rate limiting, playerId IDOR — all remediated). **Tauri `.exe` rebuilt** on the hardened code. Two prior `.exe` failures fixed: stale build, and the CSP auto-hash landmine (never add an inline `<script>` to index.html — it kills every onclick; see `dangerousDisableAssetCspModification`).
 
 > **Second gameplay batch landed 2026-07-03 (see §1f)** — 6 routes + 3 polish in one session: **R6** exam host bidding, **R14** sponsor negotiation + mood, **R15** beast extraction arc, plus three brand-new routes **R25** medical/rehab depth, **R26** staff development, **R27** populace support; polish **R12+** agent downsides + Agents tab, **R8+** solo-mission micro-calls, and **save slots + balance pass**. Each is a pure tested module + panel wiring; live 24-month playthrough clean.
 
