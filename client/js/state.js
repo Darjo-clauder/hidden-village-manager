@@ -1,5 +1,5 @@
 import {
-  CLANS, RANKS, FNAMES, LNAMES, SPECS, PERSONALITIES, BACKSTORIES, ARCHETYPES,
+  CLANS, RANKS, FNAMES, LNAMES, SPECS, PERSONALITIES, BACKSTORIES, ARCHETYPES, ELEMENTS, QUIRKS, DREAMS,
   PRIMALS, VILLAGES_DEF, RIVAL_VILLAGE_POOL, RIVAL_KAGE_NAMES, RIVAL_PERSONALITIES, START_SCENARIOS, WORLD_CLIMATES, MISS_POOL, SEASONAL_MISSIONS, CRISIS_MISSION_POOL, TRADE_ROUTES, CONTRACTS, STAFF_ROLES,
   REGIONS, PM_DESC, REGION_EVENTS, DEV_CURVES, AGENT_AGENDAS,
 } from './constants.js'
@@ -51,6 +51,7 @@ export function mS(ri = 0) {
     status: 'available', injDays: 0, injuryType: null, missId: null, squadId: null,
     salary: sal, months: 0, wins: 0, winsB: 0, winsS: 0, streak: 0,
     pers: p, backstory: pk(BACKSTORIES), archetype: pk(ARCHETYPES),
+    element: pk(ELEMENTS), quirk: pk(QUIRKS), dream: pk(DREAMS),
     scouted: false, monthsWaiting: 0, rivalId: null, origin, jk: null,
     darkMoment: null, jutsu: [], bonds: [], prodigy: false, familyId: null, mentor: null,
     workload: 0, consecutiveMissions: 0, traumaStatus: null, traumaCount: 0, returningForm: 100,

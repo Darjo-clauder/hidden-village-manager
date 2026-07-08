@@ -73,7 +73,12 @@ export function rClans() {
       </div>
     </div>
     <div style="display:grid;gap:10px">
-    ${CLANS.map(clan => {
+    ${(() => {
+      // Only surface clans the village actually has members of — with 17 defined
+      // clans (9 great + 8 minor-nation), rendering every empty one is clutter.
+      const present = CLANS.filter(c => (G.shinobi || []).some(s => s.clan?.toLowerCase() === c.id))
+      if (!present.length) return `<div style="color:#7a7060;font-size:9px;padding:12px 0">No bloodline clans in the village yet. Recruit clan-born shinobi (great-village or minor-nation) to unlock their bloodline passives here.</div>`
+      return present.map(clan => {
       const members = (G.shinobi || []).filter(s => s.clan?.toLowerCase() === clan.id)
       const active = members.filter(s => s.status === 'available')
       const approval = (G.clanApproval || {})[clan.id] ?? 80
@@ -131,7 +136,8 @@ export function rClans() {
               </button>
             </div>` : ''}
         </div>`
-    }).join('')}
+    }).join('')
+    })()}
     </div>`
 }
 

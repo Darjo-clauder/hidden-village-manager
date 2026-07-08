@@ -85,3 +85,33 @@ describe('minor nations — transfer pool integration', () => {
     })
   })
 })
+
+describe('minor-nation clans (applyMinorOrigin)', () => {
+  it('assigns the nation clan to a clanless recruit when the roll passes', () => {
+    const nation = MINOR_BY_NAME['Galecrest']  // clan Kazehai
+    const s = { stats: { speed: 40, taijutsu: 40 } }
+    applyMinorOrigin(s, nation, () => 0.1)      // roll 0.1 < 0.4 -> clan assigned
+    expect(s.clan).toBe('Kazehai')
+    expect(s.trait).toBe('Gale Step')
+    expect(s.stats.speed).toBeGreaterThan(40)   // clan stat bias applied
+  })
+  it('does NOT override an existing (great) clan', () => {
+    const nation = MINOR_BY_NAME['Galecrest']
+    const s = { clan: 'Mori', trait: 'Forest Birth', stats: { speed: 40 } }
+    applyMinorOrigin(s, nation, () => 0.1)
+    expect(s.clan).toBe('Mori')                 // untouched
+  })
+  it('skips clan when the roll fails', () => {
+    const nation = MINOR_BY_NAME['Galecrest']
+    const s = { stats: { speed: 40 } }
+    applyMinorOrigin(s, nation, () => 0.9)      // 0.9 !< 0.4
+    expect(s.clan).toBeUndefined()
+  })
+  it('every minor nation defines a clan with a stat bias', () => {
+    MINOR_NATIONS.forEach(m => {
+      expect(m.clan).toBeTruthy()
+      expect(m.clan.name).toBeTruthy()
+      expect(Object.keys(m.clan.b).length).toBeGreaterThan(0)
+    })
+  })
+})

@@ -69,6 +69,52 @@ export const CLANS = [
     desc: 'Silent operatives. Shadow missions succeed more often.',
     missionChains: ['mushiba_colony', 'insect_net'],
   },
+  {
+    id: 'tamashii',
+    name: 'Tamashii',
+    icon: '👻',
+    bloodline: 'Soul Touch',
+    passive: { successMod: 0.03, missionRiskReduction: 0.02 },
+    councilWeight: 1.1,
+    approvalNeeded: 50,
+    desc: 'Spirit-walkers who read the enemy\'s intent. Genjutsu edge lowers mission risk.',
+    missionChains: ['tamashii_communion', 'soul_severance'],
+  },
+  {
+    id: 'kusari',
+    name: 'Kusari',
+    icon: '⛓',
+    bloodline: 'Chain Seal',
+    passive: { growthBonus: 0.06, successMod: 0.02 },
+    councilWeight: 1.0,
+    approvalNeeded: 45,
+    desc: 'Vast chakra reserves and sealing mastery. Members grow faster and endure.',
+    missionChains: ['kusari_sealing', 'chain_binding'],
+  },
+  {
+    id: 'mori',
+    name: 'Mori',
+    icon: '🌲',
+    bloodline: 'Forest Birth',
+    passive: { successMod: 0.05, kiaRiskMod: -0.02 },
+    councilWeight: 1.3,
+    approvalNeeded: 60,
+    desc: 'A near-mythic bloodline of life-force techniques. Powerful in the field, hard to kill.',
+    missionChains: ['mori_grove', 'wood_bastion'],
+  },
+
+  // ── Minor-nation regional bloodlines ──────────────────────────────────────
+  // Lesser clans carried by talent recruited from the minor nations (see
+  // minorNations.js). Lighter passives + council weight than the great-village
+  // clans, no signature mission chains — regional, not dynastic.
+  { id: 'ashiba',  name: 'Ashiba',  icon: '🌾', bloodline: 'Reed Step',   minor: true, passive: { scoutConfidenceBonus: 0.04 }, councilWeight: 0.6, approvalNeeded: 35, desc: 'Reedmarsh river-fighters. A little extra scouting instinct.' },
+  { id: 'shiota',  name: 'Shiota',  icon: '⛵', bloodline: 'Brine Body',  minor: true, passive: { successMod: 0.02 },            councilWeight: 0.6, approvalNeeded: 35, desc: 'Saltcliff harbor stock. Steady in the field.' },
+  { id: 'kareha',  name: 'Kareha',  icon: '🍂', bloodline: 'Ash Bloom',   minor: true, passive: { successMod: 0.02 },            councilWeight: 0.6, approvalNeeded: 35, desc: 'Palewood\'s fading line — the odd flash of brilliance.' },
+  { id: 'iwabe',   name: 'Iwabe',   icon: '🧱', bloodline: 'Kiln Skin',   minor: true, passive: { kiaRiskMod: -0.01 },           councilWeight: 0.6, approvalNeeded: 35, desc: 'Kilnrock quarry-forged. Hard to put down.' },
+  { id: 'kazehai', name: 'Kazehai', icon: '🪁', bloodline: 'Gale Step',   minor: true, passive: { successMod: 0.02 },            councilWeight: 0.6, approvalNeeded: 35, desc: 'Galecrest highland runners. Quick on the approach.' },
+  { id: 'dokan',   name: 'Dokan',   icon: '🥉', bloodline: 'Bronze Fist', minor: true, passive: { successMod: 0.02 },            councilWeight: 0.6, approvalNeeded: 35, desc: 'Bronzegate mercenary discipline.' },
+  { id: 'numaki',  name: 'Numaki',  icon: '🕸', bloodline: 'Fen Whisper', minor: true, passive: { scoutConfidenceBonus: 0.05 }, councilWeight: 0.6, approvalNeeded: 35, desc: 'Hollowfen fen-cunning. Reads a battlefield early.' },
+  { id: 'hibari',  name: 'Hibari',  icon: '🪶', bloodline: 'Sky Dart',    minor: true, passive: { successMod: 0.02 },            councilWeight: 0.6, approvalNeeded: 35, desc: 'Skylark courier bloodline. Fleet and precise.' },
 ]
 
 export const CLAN_BY_ID = Object.fromEntries(CLANS.map(c => [c.id, c]))
@@ -86,6 +132,12 @@ export const CLAN_CHAINS = {
   pack_formation:       { n: 'Pack Tactics Drill',        rk: 'C', ryo: 4500,  rep: 4,  reqClanSize: 2, desc: 'Two Okamura members sharpen pack tactics.' },
   mushiba_colony:       { n: 'Colony Calibration',        rk: 'C', ryo: 5000,  rep: 5,  reqClanSize: 1, desc: 'Tune hive bond — intel bonus next month.' },
   insect_net:           { n: 'Hive Surveillance Net',     rk: 'A', ryo: 13000, rep: 9,  reqClanSize: 1, reqRi: 3, desc: 'Blanket an area with surveillance insects.' },
+  tamashii_communion:   { n: 'Ancestral Communion',       rk: 'C', ryo: 4500,  rep: 6,  reqClanSize: 1, desc: 'Commune with clan spirits — morale and insight.' },
+  soul_severance:       { n: 'Soul Severance',            rk: 'A', ryo: 14000, rep: 11, reqClanSize: 1, reqRi: 3, desc: 'Sever a rogue spirit-technique user.' },
+  kusari_sealing:       { n: 'Great Seal Renewal',        rk: 'B', ryo: 9000,  rep: 8,  reqClanSize: 2, desc: 'Reinforce the village\'s binding seals.' },
+  chain_binding:        { n: 'Adamantine Chain Binding',  rk: 'S', ryo: 24000, rep: 15, reqClanSize: 1, reqRi: 3, desc: 'Restrain a primal-class threat with chakra chains.' },
+  mori_grove:           { n: 'Sacred Grove Tending',      rk: 'C', ryo: 4000,  rep: 7,  reqClanSize: 1, desc: 'Tend the clan\'s ancient grove — village morale.' },
+  wood_bastion:         { n: 'Living Bastion',            rk: 'A', ryo: 16000, rep: 13, reqClanSize: 1, reqRi: 3, desc: 'Raise a wood-style fortress — village defense surges.' },
 }
 
 /**

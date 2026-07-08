@@ -12,17 +12,28 @@
  */
 
 export const MINOR_NATIONS = [
-  { n: 'Reedmarsh',  ico: '🌾', region: 'water',     tier: 'D', specialty: 'genjutsu',     blurb: 'River-delta scrappers — every graduate fights like they have something to prove.' },
-  { n: 'Saltcliff',  ico: '⛵', region: 'water',     tier: 'C', specialty: 'chakra',       blurb: 'A harbor stronghold with deep reserves and deeper grudges.' },
-  { n: 'Palewood',   ico: '🍂', region: 'fire',      tier: 'D', specialty: 'ninjutsu',     blurb: 'A fading forest power that still produces the occasional prodigy.' },
-  { n: 'Kilnrock',   ico: '🧱', region: 'earth',     tier: 'C', specialty: 'taijutsu',     blurb: 'Quarry-town toughness — their fighters are carved, not trained.' },
-  { n: 'Galecrest',  ico: '🪁', region: 'wind',      tier: 'C', specialty: 'speed',        blurb: 'Highland runners; the fastest feet outside the great villages.' },
-  { n: 'Bronzegate', ico: '🥉', region: 'iron',      tier: 'C', specialty: 'taijutsu',     blurb: 'Mercenary-guild city — disciplined, contract-hungry, chakra-poor.' },
-  { n: 'Hollowfen',  ico: '🕸', region: 'earth',     tier: 'D', specialty: 'intelligence', blurb: 'Swamp-maze survivors who value cunning over strength.' },
-  { n: 'Skylark',    ico: '🪶', region: 'lightning', tier: 'D', specialty: 'speed',        blurb: 'A mountain-pass waystation famous for couriers and scouts.' },
+  { n: 'Reedmarsh',  ico: '🌾', region: 'water',     tier: 'D', specialty: 'genjutsu',     blurb: 'River-delta scrappers — every graduate fights like they have something to prove.',
+    clan: { name: 'Ashiba', bloodline: 'Reed Step', b: { genjutsu: 8, speed: 6 } } },
+  { n: 'Saltcliff',  ico: '⛵', region: 'water',     tier: 'C', specialty: 'chakra',       blurb: 'A harbor stronghold with deep reserves and deeper grudges.',
+    clan: { name: 'Shiota', bloodline: 'Brine Body', b: { chakra: 10, taijutsu: 5 } } },
+  { n: 'Palewood',   ico: '🍂', region: 'fire',      tier: 'D', specialty: 'ninjutsu',     blurb: 'A fading forest power that still produces the occasional prodigy.',
+    clan: { name: 'Kareha', bloodline: 'Ash Bloom', b: { ninjutsu: 9, intelligence: 5 } } },
+  { n: 'Kilnrock',   ico: '🧱', region: 'earth',     tier: 'C', specialty: 'taijutsu',     blurb: 'Quarry-town toughness — their fighters are carved, not trained.',
+    clan: { name: 'Iwabe', bloodline: 'Kiln Skin', b: { taijutsu: 10, chakra: 5 } } },
+  { n: 'Galecrest',  ico: '🪁', region: 'wind',      tier: 'C', specialty: 'speed',        blurb: 'Highland runners; the fastest feet outside the great villages.',
+    clan: { name: 'Kazehai', bloodline: 'Gale Step', b: { speed: 11, taijutsu: 4 } } },
+  { n: 'Bronzegate', ico: '🥉', region: 'iron',      tier: 'C', specialty: 'taijutsu',     blurb: 'Mercenary-guild city — disciplined, contract-hungry, chakra-poor.',
+    clan: { name: 'Dokan', bloodline: 'Bronze Fist', b: { taijutsu: 10, intelligence: 5 } } },
+  { n: 'Hollowfen',  ico: '🕸', region: 'earth',     tier: 'D', specialty: 'intelligence', blurb: 'Swamp-maze survivors who value cunning over strength.',
+    clan: { name: 'Numaki', bloodline: 'Fen Whisper', b: { intelligence: 10, genjutsu: 6 } } },
+  { n: 'Skylark',    ico: '🪶', region: 'lightning', tier: 'D', specialty: 'speed',        blurb: 'A mountain-pass waystation famous for couriers and scouts.',
+    clan: { name: 'Hibari', bloodline: 'Sky Dart', b: { speed: 10, ninjutsu: 5 } } },
 ]
 
 export const MINOR_BY_NAME = Object.fromEntries(MINOR_NATIONS.map(m => [m.n, m]))
+
+/** All minor-nation clan names (lowercased id → definition), for lookups + mechanics. */
+export const MINOR_CLAN_BY_NAME = Object.fromEntries(MINOR_NATIONS.map(m => [m.clan.name, m.clan]))
 
 /** Exhibition/league-sim strength for a minor nation (well below the great villages). */
 export function minorStrength(nation, rng = Math.random) {
@@ -79,6 +90,15 @@ export function applyMinorOrigin(s, nation, rng = Math.random) {
   if (s.stats && s.stats[nation.specialty] !== undefined) {
     const bump = (nation.tier === 'C' ? 6 : 4) + Math.floor(rng() * 5) // C: 6–10, D: 4–8
     s.stats[nation.specialty] = Math.max(1, Math.min(99, s.stats[nation.specialty] + bump))
+  }
+  // ~40% of a minor nation's talent carries its regional bloodline (if not already
+  // clanned by a great-village clan). Applies the clan's stat bias.
+  if (nation.clan && !s.clan && rng() < 0.4) {
+    s.clan = nation.clan.name
+    s.trait = nation.clan.bloodline
+    if (s.stats) Object.entries(nation.clan.b).forEach(([k, v]) => {
+      if (s.stats[k] !== undefined) s.stats[k] = Math.max(1, Math.min(99, s.stats[k] + v))
+    })
   }
   return s
 }

@@ -11,8 +11,10 @@ import {
 const mkS = (id, clan, ri = 1, status = 'available') => ({ id, clan, ri, status })
 
 describe('CLANS', () => {
-  it('has 6 clans', () => {
-    expect(CLANS).toHaveLength(6)
+  it('has 9 great clans + 8 minor-nation clans (17 total)', () => {
+    expect(CLANS).toHaveLength(17)
+    expect(CLANS.filter(c => c.minor)).toHaveLength(8)
+    expect(CLANS.filter(c => !c.minor)).toHaveLength(9)
   })
   it('all clans have passive entries', () => {
     for (const c of CLANS) {
@@ -25,9 +27,9 @@ describe('CLANS', () => {
       expect(CLAN_BY_ID[c.id]).toBe(c)
     }
   })
-  it('all clans have at least one mission chain', () => {
-    for (const c of CLANS) {
-      expect(c.missionChains.length).toBeGreaterThan(0)
+  it('every great clan has at least one mission chain (minor clans need none)', () => {
+    for (const c of CLANS.filter(c => !c.minor)) {
+      expect(c.missionChains?.length || 0).toBeGreaterThan(0)
     }
   })
 })
@@ -35,7 +37,7 @@ describe('CLANS', () => {
 describe('CLAN_CHAINS', () => {
   it('all chain ids referenced by clans exist in CLAN_CHAINS', () => {
     for (const clan of CLANS) {
-      for (const chainId of clan.missionChains) {
+      for (const chainId of (clan.missionChains || [])) {
         expect(CLAN_CHAINS[chainId], `Missing chain: ${chainId}`).toBeTruthy()
       }
     }
