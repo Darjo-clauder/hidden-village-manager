@@ -27,6 +27,7 @@ import { eraFor, nextShiftIn, transitionLine } from '../../shared/constants/worl
 import { JOURNALIST_BY_ID, pickJournalist, adjustJournalistRel, toneRelDelta } from '../../shared/constants/journalists.js'
 import { nextDeclineYears, findRelegation, pickPromotion } from '../../shared/utils/leagueMembership.js'
 import { resolveBattleCall, callBeatIndex } from '../../shared/utils/battleCalls.js'
+import { staminaStart, finishEffects } from '../../shared/utils/matchSim.js'
 import { sponsorMoodDelta, moodPayoutMult, applyMoodDelta, SPONSOR_QUIT_MOOD } from '../../shared/utils/sponsors.js'
 import { supportDelta, revenueMult, applySupport, FESTIVAL_THRESH, UNREST_THRESH } from '../../shared/utils/populace.js'
 import { effectivePlan, medQuality, recoveryStep, reinjuryChance, returningForm } from '../../shared/utils/medical.js'
@@ -3679,6 +3680,26 @@ function _buildMissionReport(sq, m, succeeded, mev, payout = 0) {
       upUI()
       return rep._callResult
     }
+  }
+  // Match-condition layer: each member enters the viewer with stamina from their
+  // REAL condition (chakra reserves, carried fatigue). The touchline-tactic sim
+  // drains it beat by beat; how they finish becomes real post-match fatigue and
+  // morale via applyCondition (live-only closure, same pattern as applyCall).
+  rep.matchStamina = sq.members.map(id => {
+    const s = G.shinobi.find(x => x.id === id)
+    if (!s) return null
+    return { id: s.id, name: sn(s), role: s.squadRole || 'flex', stamina: staminaStart({ chakra: s.stats?.chakra || 30, workload: s.workload || 0 }) }
+  }).filter(Boolean)
+  rep.applyCondition = avgStamina => {
+    if (rep._condDone) return rep._condResult
+    const fx = finishEffects(avgStamina)
+    if (fx.workloadDelta) sq.members.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s) s.workload = clamp((s.workload || 0) + fx.workloadDelta, 0, 100) })
+    if (fx.moraleDelta) G.morale = clamp(G.morale + fx.moraleDelta, 0, 100)
+    rep._condDone = true
+    rep._condResult = fx
+    if (fx.id !== 'worked') aL(`${sq.n}: ${fx.label} — ${fx.note}`, fx.id === 'fresh' ? 'good' : 'warn')
+    upUI()
+    return fx
   }
   return rep
 }

@@ -8,6 +8,7 @@ import { battleSequence, battleVerdict } from '../../shared/utils/battleViewer.j
 import { BATTLE_CALLS } from '../../shared/utils/battleCalls.js'
 import { arenaFor } from '../../shared/constants/arenas.js'
 import { mountPitch } from './pitchView.js'
+import { MATCH_TACTICS, unitCompRead, beatDrain, staminaBand, finishEffects } from '../../shared/utils/matchSim.js'
 
 // ── Match clock — a pausable, speed-scalable scheduler ─────────────────────────
 // The old fixed setTimeout chain couldn't pause or fast-forward; the clock
@@ -61,6 +62,12 @@ export function replayBattle() {
   const out = document.getElementById('bv-outcome'); if (out) { out.classList.remove('bv-on'); out.innerHTML = '' }
   const mom = document.getElementById('bv-mom'); if (mom) { mom.style.width = '50%'; mom.style.background = '' }
   if (ov.__pitch) { ov.__pitch.reset(); ov.__pitch.resume() }
+  if (ov.__cond) {   // fresh legs for the replay; the settled result stays locked
+    ov.__cond.stamina = [...ov.__cond.start]
+    ov.__cond.tactic = 'balanced'
+    ov.__pitch?.updateStamina(ov.__cond.stamina)
+    _renderTactics(ov)
+  }
   _startClock()
   const b = document.getElementById('bv-ctl-pause'); if (b) b.textContent = '⏸'
   seq.forEach((_, i) => _sched(() => _revealBeat(seq, i), BEAT_MS * (i + 1)))
@@ -130,6 +137,7 @@ export function openBattleViewer(rep) {
         </div>
       </div>
       <div class="bv-pitch-info" id="bv-pitch-info">Hover a shinobi for their name · click to inspect</div>
+      <div class="bv-tactics" id="bv-tactics"></div>
       <div class="bv-mom-wrap"><div class="bv-mom-fill" id="bv-mom" style="width:50%"></div></div>
       <div class="bv-mom-labels"><span>◂ Enemy</span><span>Your squad ▸</span></div>
       <div class="bv-beats" id="bv-beats">${seq.map((b, i) => `
@@ -154,6 +162,16 @@ export function openBattleViewer(rep) {
     onSelect: sel => _showInspect(rep, sel),
   })
 
+  // Condition layer — live stamina + touchline tactics, only for reports that
+  // carry real members (player squad missions). Unit comp sets the profile.
+  if (rep.matchStamina?.length) {
+    const comp = unitCompRead(rep.matchStamina.map(m => m.role))
+    const start = rep.matchStamina.map(m => Math.min(100, m.stamina + comp.startBonus))
+    ov.__cond = { tactic: 'balanced', comp, start, stamina: [...start], members: rep.matchStamina }
+    ov.__pitch?.updateStamina(ov.__cond.stamina)
+    _renderTactics(ov)
+  }
+
   // Reveal every beat up to (but not including) the bet-on beat; then either pause
   // for the micro-call, or play straight through to the outcome.
   _startClock()
@@ -167,6 +185,28 @@ export function openBattleViewer(rep) {
   }
 }
 
+// Touchline strip: unit-comp tags + the live tactic dial + squad condition readout.
+function _renderTactics(ov) {
+  const el = document.getElementById('bv-tactics'); if (!el || !ov.__cond) return
+  const c = ov.__cond
+  const avg = Math.round(c.stamina.reduce((a, v) => a + v, 0) / c.stamina.length)
+  const band = staminaBand(avg)
+  el.classList.add('bv-on')
+  el.innerHTML = `
+    <div class="bv-tac-row">
+      <span class="bv-tac-cond" title="Squad average stamina — manage it with the tactic dial">Condition <b style="color:${band.color}">${avg} · ${band.label}</b></span>
+      ${MATCH_TACTICS.map(t => `<button class="bv-tac-btn${c.tactic === t.id ? ' bv-tac-sel' : ''}" onclick="bvSetTactic('${t.id}')" title="${t.desc}">${t.icon} ${t.label}</button>`).join('')}
+    </div>
+    ${c.comp.tags.length ? `<div class="bv-tac-tags">${c.comp.tags.map(t => `<span class="bv-tac-tag" style="color:${t.good ? '#8fbc8f' : '#f0a030'}" title="${t.desc}">${t.label}</span>`).join('')}</div>` : ''}`
+}
+
+/** Touchline tactic switch — takes effect from the next exchange. */
+export function bvSetTactic(id) {
+  const ov = document.getElementById('bv-overlay'); if (!ov?.__cond) return
+  ov.__cond.tactic = id
+  _renderTactics(ov)
+}
+
 // Clicked-shinobi inspector strip — role + live match grade for your side,
 // a scouting one-liner for the opposition.
 const _GRADE_COLOR_TXT = { A: '#c9a84c', B: '#8fbc8f', C: '#f0a030', D: '#f66' }
@@ -176,7 +216,11 @@ function _showInspect(rep, sel) {
   el.classList.add('bv-on')
   if (sel.side === 'home' && sel.entry) {
     const e = sel.entry
-    el.innerHTML = `<b style="color:#c9a84c">${e.name}</b>${e.role ? ` · <span style="color:#9a9080">${e.role}</span>` : ''}${e.grade ? ` · Match grade <b style="color:${_GRADE_COLOR_TXT[e.grade] || '#888'}">${e.grade}</b>` : ''}${e.detail ? ` <span style="color:#7a7060">(${e.detail})</span>` : ''}${sel.ko ? ' · <span style="color:#cc5a4a">taken out of the fight</span>' : ''}`
+    // Live stamina for the selected shinobi, if the condition layer is running.
+    const cond = document.getElementById('bv-overlay')?.__cond
+    const stam = cond?.stamina?.[sel.idx]
+    const stamHtml = stam != null ? (() => { const bd = staminaBand(stam); return ` · Stamina <b style="color:${bd.color}">${stam}</b> <span style="color:${bd.color}">(${bd.label})</span>` })() : ''
+    el.innerHTML = `<b style="color:#c9a84c">${e.name}</b>${e.role ? ` · <span style="color:#9a9080">${e.role}</span>` : ''}${stamHtml}${e.grade ? ` · Match grade <b style="color:${_GRADE_COLOR_TXT[e.grade] || '#888'}">${e.grade}</b>` : ''}${e.detail ? ` <span style="color:#7a7060">(${e.detail})</span>` : ''}${sel.ko ? ' · <span style="color:#cc5a4a">taken out of the fight</span>' : ''}`
   } else if (sel.side === 'home') {
     el.innerHTML = `<b style="color:#c9a84c">${sel.name}</b>${sel.ko ? ' · <span style="color:#cc5a4a">taken out of the fight</span>' : ''}`
   } else {
@@ -219,6 +263,18 @@ function _revealBeat(seq, i) {
   const b = seq[i]
   const ov = document.getElementById('bv-overlay')
   if (ov?.__pitch) ov.__pitch.playBeat(i, b)
+  // Condition tick: this exchange costs legs — role × tactic × result; a medic
+  // claws some back on won beats. The dial only shapes what happens next.
+  if (ov?.__cond) {
+    const c = ov.__cond
+    c.stamina = c.stamina.map((s, k) => {
+      let v = s - beatDrain({ role: c.members[k].role, tactic: c.tactic, won: b.won, stamina: s, compDrainMult: c.comp.drainMult })
+      if (b.won && c.comp.regenPerWin) v += c.comp.regenPerWin
+      return Math.max(0, Math.min(100, v))
+    })
+    ov.__pitch?.updateStamina(c.stamina)
+    _renderTactics(ov)
+  }
   const mom = document.getElementById('bv-mom')
   if (mom) { mom.style.width = b.momentum + '%'; mom.style.background = b.won ? 'linear-gradient(90deg,#3a6a3a,#8fbc8f)' : 'linear-gradient(90deg,#6a3030,#cc5a4a)' }
   const beat = document.getElementById('bv-beat-' + i); if (beat) beat.classList.add('bv-on')
@@ -229,6 +285,14 @@ function _revealBeat(seq, i) {
 function _revealOutcome(rep) {
   const ovp = document.getElementById('bv-overlay')
   if (ovp?.__pitch) ovp.__pitch.finish(_repWon(rep))
+  // Settle the condition sim: how the player paced the squad becomes real
+  // fatigue/morale (once — replays reuse the locked result).
+  let condFx = rep._condResult || null
+  if (ovp?.__cond && typeof rep.applyCondition === 'function' && !rep._condDone) {
+    const c = ovp.__cond
+    const avg = Math.round(c.stamina.reduce((a, v) => a + v, 0) / c.stamina.length)
+    condFx = rep.applyCondition(avg)
+  }
   const el = document.getElementById('bv-outcome'); if (!el) return
   const league = rep.kind === 'league'
   const tourney = rep.kind === 'tournament'
@@ -243,6 +307,9 @@ function _revealOutcome(rep) {
   const callNote = cr
     ? `<div class="bv-call-note bv-call-${cr.kind}">${cr.label} — ${cr.note}${cr.bonusRyo ? ` <b>(${cr.bonusRyo > 0 ? '+' : ''}${cr.bonusRyo} ryo)</b>` : ''}</div>`
     : ''
+  const condNote = condFx
+    ? `<div class="bv-call-note bv-cond-${condFx.id}">${condFx.label} — ${condFx.note}${condFx.workloadDelta ? ` <b>(${condFx.workloadDelta > 0 ? '+' : ''}${condFx.workloadDelta} fatigue${condFx.moraleDelta ? `, ${condFx.moraleDelta > 0 ? '+' : ''}${condFx.moraleDelta} morale` : ''})</b>` : ''}</div>`
+    : ''
   const detail = (tourney)
     ? `<div class="bv-scoreline">Reached <b>${rep.reachedStage || 'the field'}</b>${rep.kiaTotal ? ` · ${rep.kiaTotal} fallen ☠` : ''}</div>`
     : (league && rep.scoreline)
@@ -254,6 +321,7 @@ function _revealOutcome(rep) {
     <div class="bv-result ${cls}">${label}</div>
     <div class="bv-verdict">${verdict}</div>
     ${callNote}
+    ${condNote}
     ${detail}
     <button class="bv-close" onclick="closeBattleViewer()">Close</button>`
   el.classList.add('bv-on')

@@ -117,6 +117,13 @@ function _drawShinobi(ctx, s, color, edge, hot) {
     ctx.beginPath(); ctx.moveTo(s.x - 4, s.y - 4); ctx.lineTo(s.x + 4, s.y + 4)
     ctx.moveTo(s.x + 4, s.y - 4); ctx.lineTo(s.x - 4, s.y + 4); ctx.stroke()
   }
+  // Condition bar — the live stamina readout under your shinobi.
+  if (s.stamina != null) {
+    const w = 16, x0 = s.x - w / 2, y0 = s.y + R_SHINOBI + 3
+    ctx.fillStyle = 'rgba(6,6,4,.8)'; ctx.fillRect(x0 - 1, y0 - 1, w + 2, 4)
+    const col = s.stamina >= 60 ? '#8fbc8f' : s.stamina >= 35 ? '#c9a84c' : s.stamina >= 15 ? '#f0a030' : '#cc5a4a'
+    ctx.fillStyle = col; ctx.fillRect(x0, y0, w * Math.max(0, s.stamina) / 100, 2)
+  }
 }
 
 export function mountPitch(container, { arena, home = [], away = [], homeLabel = '', awayLabel = '', roster = [], onSelect = null } = {}) {
@@ -246,6 +253,10 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
       })
       re(st.home, 'home'); re(st.away, 'away')
       st.flash = 0; st.selected = null
+    },
+    /** Live condition readout: set home-side stamina values (0-100, by index). */
+    updateStamina(byIdx = []) {
+      st.home.forEach((s, i) => { if (byIdx[i] != null) s.stamina = byIdx[i] })
     },
     pause() { st.paused = true },
     resume() { st.paused = false },
