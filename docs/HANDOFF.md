@@ -1,6 +1,8 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-07-09 · **HEAD:** `ed454ea` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 978 passing / 81 files
+**Last updated:** 2026-07-09 · **HEAD:** `a8a0253` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 981 passing / 81 files
+
+> **Combat FX + larger fields + nation talent (`a8a0253`):** (1) **Combat FX** — the circles fight now: `pitchView` particle system (`ELEMENT_FX`, `_spawnBeatFx`/`_drawFx`/`_updateFx`) throws elemental jutsu projectiles (coloured by chakra nature), melee slashes, support pulses each beat + ambient skirmish; report scores carry `element`. (2) **Larger encounters** — Adept Exam / Grand Tournament now field up to 5v10 (`_tags` by kind) with golden-angle cluster formations (`_pos`) that stay in the hex. (3) **Nation talent** — each great village has an `element` affinity + `archetypes` in `VILLAGE_IDENTITIES`; `nationTalent()` (pure, tested) biases roster generation (~60% affinity, ~50% school title), feeding the exam's elemental cells; shown in roster dossier ("School:") + away-scouting ("Wind affinity"). +6 tests. Browser-verified: clash/slash FX on board, Verdancross "Wind affinity" scout line.
 
 > **Match view — scouting + archive + scroll (`ed454ea`):** (1) **Away scouting** — click an opposition circle to read the opponent's identity/style/blurb (`identityFor`); wired for league matchdays via `rep.oppVillage`. (2) **Replay archive** — every watched match is stashed closure-free in `G.matchArchive` (cap 8); a 📼 Match Replays list in the missions Log re-watches any on the board (read-only — `_fromArchive` skips effects/re-archive). (3) **Capture the scroll** — the objective token is a real bonus: win more exchanges than you lose → rank-scaled intel bounty (`scrollOutcome` pure +2 tests; `rep.applyScroll` closure). Browser-verified: Cragmoor scout line, read-only replay (ryo unchanged), +700 ryo C-rank scroll.
 
