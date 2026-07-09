@@ -7,7 +7,7 @@ import { MATCHDAY_TACTICS, tacticRead, TACTIC_STRONG_MOD, TACTIC_WEAK_MOD } from
 import { h2hLabel } from '../../../shared/utils/rivalry.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { openBattleViewer } from '../liveBattle.js'
-import { squadPower, avgStat, seedEdge, examWrittenProb, examForestNavProb, examForestClashProb, examInjuryChance, examPromotionChance, groupIntoCells, examCohesionGain, elementalHarmony, dreamPromotionBeat } from '../../../shared/utils/stageMath.js'
+import { squadPower, avgStat, seedEdge, examWrittenProb, examForestNavProb, examForestClashProb, examInjuryChance, examPromotionChance, packHarmonicCells, examCohesionGain, elementalHarmony, dreamPromotionBeat } from '../../../shared/utils/stageMath.js'
 import { isHostEligible, minHostBid, hostRevenue, genRivalHostBids, hostBidResolve } from '../../../shared/utils/hostBidding.js'
 
 /** Replay the player's most-recent league fixture as a live matchday. */
@@ -457,8 +457,8 @@ function _renderExamSetup(el, tabHtml) {
     const members = (sq.members || []).map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
     return { sq, members }
   }).filter(o => o.members.length && o.members.every(s => s.status === 'available'))
-  // Quick-form: how many spare promotable trios could be drafted into cells right now.
-  const spareCells = groupIntoCells(_freeAcademyPool(), 3).length
+  // Quick-form: how many spare promotable cells could be drafted right now (harmonic packing).
+  const spareCells = packHarmonicCells(_freeAcademyPool(), 3).length
   const quickFormBtn = spareCells > 0
     ? `<button class="gb" onclick="quickFormExamCells()" style="font-size:8px;padding:3px 8px;border-color:#8fbc8f;color:#8fbc8f;margin-bottom:10px">✚ Quick-form ${spareCells} academy cell${spareCells === 1 ? '' : 's'} & nominate</button>
        <div style="font-size:7px;color:#5a5448;margin-bottom:12px">Drafts your spare Initiate/Adept prospects into three-ninja cells and nominates them — no need to build squads first.</div>`
@@ -505,17 +505,19 @@ export function quickFormExamCells() {
   const maxCands = 8
   const room = maxCands - G.examCands.length
   if (room <= 0) { ntf(t('toast.exam.addCandidates')); return }
-  const cells = groupIntoCells(_freeAcademyPool(), 3).slice(0, room)
+  // Pack elementally-coherent cells so quick-form actually earns the harmony bonus.
+  const cells = packHarmonicCells(_freeAcademyPool(), 3).slice(0, room)
   if (!cells.length) { ntf('No spare Initiate/Adept trios available to form a cell.'); return }
-  let formed = 0
+  let formed = 0, harmonic = 0
   cells.forEach((members, i) => {
     const leader = members.slice().sort((a, b) => b.ri - a.ri || sPow(b) - sPow(a))[0]
     const sq = { id: Math.random().toString(36).slice(2), n: `Academy Cell ${(G.squads || []).length + 1}`, leaderId: leader.id, members: members.map(s => s.id), cohesion: 0, autoFormed: true }
     G.squads.push(sq)
     members.forEach(s => { s.squadId = sq.id })
+    if (elementalHarmony(members.map(s => s.element)).bonus > 0) harmonic++
     if (G.examCands.length < maxCands) { G.examCands.push(sq.id); formed++ }
   })
-  aL(`Formed ${formed} academy cell${formed === 1 ? '' : 's'} from available prospects and nominated them for the exam.`, 'neutral')
+  aL(`Formed ${formed} academy cell${formed === 1 ? '' : 's'} from available prospects${harmonic ? ` (${harmonic} elementally coherent)` : ''} and nominated them for the exam.`, 'neutral')
   rEx(); upUI()
 }
 

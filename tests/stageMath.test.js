@@ -3,7 +3,7 @@ import {
   clamp, squadPower, avgStat, seedEdge, survivalMult,
   examWrittenProb, examForestNavProb, examForestClashProb, examInjuryChance, examPromotionChance,
   warMobilizeProb, warFrontProb, warCasualtyChance, duelScore,
-  groupIntoCells, examCohesionGain, elementalHarmony, dreamPromotionBeat,
+  groupIntoCells, examCohesionGain, elementalHarmony, dreamPromotionBeat, packHarmonicCells,
 } from '../shared/utils/stageMath.js'
 
 describe('stageMath — primitives', () => {
@@ -61,6 +61,21 @@ describe('stageMath — exam field helpers', () => {
     expect(examCohesionGain({ stagesAdvanced: 3 })).toBe(12)     // finalist
     expect(examCohesionGain({ stagesAdvanced: 3, champion: true })).toBe(18) // champion
     expect(examCohesionGain({ stagesAdvanced: 9 })).toBe(12)     // clamps at 3 stages
+  })
+
+  it('packHarmonicCells builds affinity then spectrum then mixed', () => {
+    const el = e => ({ element: e })
+    // six of one nature → two affinity trios
+    expect(packHarmonicCells([el('Fire'), el('Fire'), el('Fire'), el('Fire'), el('Fire'), el('Fire')])
+      .map(c => c.map(s => s.element))).toEqual([['Fire', 'Fire', 'Fire'], ['Fire', 'Fire', 'Fire']])
+    // 2 each of 3 natures → two spectrum trios (no affinity possible)
+    const spectrum = packHarmonicCells([el('Fire'), el('Fire'), el('Water'), el('Water'), el('Earth'), el('Earth')])
+    expect(spectrum.length).toBe(2)
+    spectrum.forEach(c => expect(new Set(c.map(s => s.element)).size).toBe(3)) // all distinct
+    // 3 Fire + a leftover pair that can't fill a cell → one affinity cell, remainder dropped
+    const mixed = packHarmonicCells([el('Fire'), el('Fire'), el('Fire'), el('Water'), el('Earth')])
+    expect(mixed).toEqual([[el('Fire'), el('Fire'), el('Fire')]])
+    expect(packHarmonicCells([el('Fire'), el('Water')])).toEqual([]) // no full cell
   })
 
   it('elementalHarmony rewards focused and full-spectrum cells', () => {

@@ -60,6 +60,41 @@ export function examCohesionGain({ stagesAdvanced = 0, champion = false } = {}) 
   return g
 }
 
+// Draft a pool into cells that maximise elemental harmony (see elementalHarmony):
+// first pack same-nature trios ("affinity"), then build distinct-nature trios
+// ("spectrum") from the remainder, then chunk whatever's left. Pure — items just
+// need an `.element`; input order is preserved within each nature so a power-sorted
+// pool still yields power-ordered affinity cells. Leftovers that can't fill a cell
+// are dropped, matching groupIntoCells. Powers the exam panel's quick-form path.
+export function packHarmonicCells(pool, size = 3) {
+  const groupBy = arr => {
+    const m = new Map()
+    arr.forEach(s => { const k = s.element || '_'; if (!m.has(k)) m.set(k, []); m.get(k).push(s) })
+    return m
+  }
+  const cells = []
+  // 1. affinity trios — full same-nature cells.
+  const rest = []
+  groupBy(pool).forEach(list => {
+    let i = 0
+    for (; i + size <= list.length; i += size) cells.push(list.slice(i, i + size))
+    rest.push(...list.slice(i))
+  })
+  // 2. spectrum cells — one member each from `size` distinct natures, biggest first.
+  const buckets = groupBy(rest)
+  for (;;) {
+    const keys = [...buckets.keys()].filter(k => buckets.get(k).length > 0)
+    if (keys.length < size) break
+    keys.sort((a, b) => buckets.get(b).length - buckets.get(a).length)
+    cells.push(keys.slice(0, size).map(k => buckets.get(k).shift()))
+  }
+  // 3. mixed chunks — whatever nature-fragments remain.
+  const leftover = []
+  buckets.forEach(list => leftover.push(...list))
+  for (let i = 0; i + size <= leftover.length; i += size) cells.push(leftover.slice(i, i + size))
+  return cells
+}
+
 // Elemental makeup of a three-ninja cell — a squad-composition flavour with teeth.
 // A cell whose members all share one chakra nature reads as a focused clan-style unit
 // ("affinity"); one with three distinct natures is a versatile "full spectrum" cell.
