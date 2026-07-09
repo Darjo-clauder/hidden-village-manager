@@ -3,7 +3,7 @@ import {
   clamp, squadPower, avgStat, seedEdge, survivalMult,
   examWrittenProb, examForestNavProb, examForestClashProb, examInjuryChance, examPromotionChance,
   warMobilizeProb, warFrontProb, warCasualtyChance, duelScore,
-  groupIntoCells, examCohesionGain,
+  groupIntoCells, examCohesionGain, elementalHarmony,
 } from '../shared/utils/stageMath.js'
 
 describe('stageMath — primitives', () => {
@@ -61,6 +61,15 @@ describe('stageMath — exam field helpers', () => {
     expect(examCohesionGain({ stagesAdvanced: 3 })).toBe(12)     // finalist
     expect(examCohesionGain({ stagesAdvanced: 3, champion: true })).toBe(18) // champion
     expect(examCohesionGain({ stagesAdvanced: 9 })).toBe(12)     // clamps at 3 stages
+  })
+
+  it('elementalHarmony rewards focused and full-spectrum cells', () => {
+    expect(elementalHarmony(['Fire', 'Fire', 'Fire'])).toEqual({ kind: 'affinity', bonus: 3, label: 'Fire affinity' })
+    expect(elementalHarmony(['Fire', 'Water', 'Wind']).kind).toBe('spectrum')
+    expect(elementalHarmony(['Fire', 'Water', 'Wind']).bonus).toBe(2)
+    expect(elementalHarmony(['Fire', 'Fire', 'Water'])).toEqual({ kind: 'mixed', bonus: 0, label: '' })
+    expect(elementalHarmony(['Fire'])).toEqual({ kind: 'none', bonus: 0, label: '' })
+    expect(elementalHarmony([])).toEqual({ kind: 'none', bonus: 0, label: '' })
   })
 })
 

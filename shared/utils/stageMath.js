@@ -60,6 +60,19 @@ export function examCohesionGain({ stagesAdvanced = 0, champion = false } = {}) 
   return g
 }
 
+// Elemental makeup of a three-ninja cell — a squad-composition flavour with teeth.
+// A cell whose members all share one chakra nature reads as a focused clan-style unit
+// ("affinity"); one with three distinct natures is a versatile "full spectrum" cell.
+// Either coherent shape earns a small cohesion bonus; a lopsided 2-1 mix earns none.
+export function elementalHarmony(elements = []) {
+  const valid = elements.filter(Boolean)
+  if (valid.length < 2) return { kind: 'none', bonus: 0, label: '' }
+  const uniq = new Set(valid)
+  if (uniq.size === 1) return { kind: 'affinity', bonus: 3, label: `${valid[0]} affinity` }
+  if (uniq.size === valid.length) return { kind: 'spectrum', bonus: 2, label: 'Full spectrum' }
+  return { kind: 'mixed', bonus: 0, label: '' }
+}
+
 // ── Adept Exam stage advance probabilities ──────────────────────────────────
 
 // Qualifier — Written Test: rewards intelligence + format fit + seed + posture.

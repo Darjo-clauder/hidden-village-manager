@@ -7,7 +7,7 @@ import { MATCHDAY_TACTICS, tacticRead, TACTIC_STRONG_MOD, TACTIC_WEAK_MOD } from
 import { h2hLabel } from '../../../shared/utils/rivalry.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { openBattleViewer } from '../liveBattle.js'
-import { squadPower, avgStat, seedEdge, examWrittenProb, examForestNavProb, examForestClashProb, examInjuryChance, examPromotionChance, groupIntoCells, examCohesionGain } from '../../../shared/utils/stageMath.js'
+import { squadPower, avgStat, seedEdge, examWrittenProb, examForestNavProb, examForestClashProb, examInjuryChance, examPromotionChance, groupIntoCells, examCohesionGain, elementalHarmony } from '../../../shared/utils/stageMath.js'
 import { isHostEligible, minHostBid, hostRevenue, genRivalHostBids, hostBidResolve } from '../../../shared/utils/hostBidding.js'
 
 /** Replay the player's most-recent league fixture as a live matchday. */
@@ -471,7 +471,9 @@ function _renderExamSetup(el, tabHtml) {
       const ent = G.examCands.includes(sq.id)
       const fmtMatch = fmt_ && members.some(s => fmt_.bonusStats.some(k => (s.stats[k] || 0) >= 35))
       const promotable = members.filter(s => s.ri <= 1).length
-      return `<div class="pi" onclick="tEC('${sq.id}')" style="${ent ? 'border-color:#c9a84c;background:rgba(201,168,76,0.08)' : ''}"><div><div style="font-size:10px;color:#e8e0cc">${sq.n}${sq.identity ? ` <span style="color:#c9a84c;font-size:8px">«${sq.identity.title}»</span>` : ''}${fmtMatch ? ' <span style="color:#8fbc8f;font-size:8px">★ format match</span>' : ''}</div><div style="font-size:8px;color:#7a7060">${members.length} ninja · Pwr ${_squadPow(members, sq.cohesion)} · cohesion ${sq.cohesion ?? 0} · ${promotable} promotable</div><div style="font-size:7px;color:#5a5448">${members.map(s => sn(s) + ' (' + RANKS[s.ri][0] + ')').join(', ')}</div></div>${ent ? '<span style="color:#c9a84c">✓</span>' : ''}</div>`
+      const harmony = elementalHarmony(members.map(s => s.element))
+      const harmonyTag = harmony.bonus > 0 ? ` <span title="Coherent chakra natures — +${harmony.bonus} cohesion after the exam" style="color:#87ceeb;font-size:8px">◈ ${harmony.label}</span>` : ''
+      return `<div class="pi" onclick="tEC('${sq.id}')" style="${ent ? 'border-color:#c9a84c;background:rgba(201,168,76,0.08)' : ''}"><div><div style="font-size:10px;color:#e8e0cc">${sq.n}${sq.identity ? ` <span style="color:#c9a84c;font-size:8px">«${sq.identity.title}»</span>` : ''}${fmtMatch ? ' <span style="color:#8fbc8f;font-size:8px">★ format match</span>' : ''}${harmonyTag}</div><div style="font-size:8px;color:#7a7060">${members.length} ninja · Pwr ${_squadPow(members, sq.cohesion)} · cohesion ${sq.cohesion ?? 0} · ${promotable} promotable</div><div style="font-size:7px;color:#5a5448">${members.map(s => sn(s) + ' (' + RANKS[s.ri][0] + ')').join(', ')}</div></div>${ent ? '<span style="color:#c9a84c">✓</span>' : ''}</div>`
     }).join('') : '<div style="color:#7a7060;font-size:9px">No eligible squads. Build a squad in the Squads panel (all members must be available).</div>') +
     '</div>' +
     (G.examCands.length ? '<button class="gb" onclick="startEx()">Start Exam ►</button>' : '') +
@@ -589,6 +591,11 @@ export function bidToHostExam() {
 // Squad power = average member power, lifted by cohesion (rewards squad-building).
 function _squadPow(members, cohesion = 0) {
   return squadPower(members.map(s => sPow(s)), cohesion)
+}
+// A squad's elemental makeup — resolves a squad-id to its members' chakra natures.
+function _squadHarmony(sq) {
+  const members = (sq?.members || []).map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
+  return elementalHarmony(members.map(s => s.element))
 }
 // Average of a stat across a squad's members.
 function _avgStat(c, k) {
@@ -1031,9 +1038,10 @@ function _runFinals(field, biasMod) {
   G.examCands.forEach(sqId => {
     const sq = G.squads.find(q => q.id === sqId); if (!sq) return
     const st = stagesById[sqId] || 0
-    const gain = examCohesionGain({ stagesAdvanced: st, champion: finalistSquadIds.has(sqId) && playerWon })
+    const harmony = _squadHarmony(sq)
+    const gain = examCohesionGain({ stagesAdvanced: st, champion: finalistSquadIds.has(sqId) && playerWon }) + harmony.bonus
     sq.cohesion = clamp((sq.cohesion || 0) + gain, 0, 100)
-    cohesionNotes.push({ name: sq.n, gain, cohesion: sq.cohesion, reach: stageWord[clamp(st, 0, 3)] })
+    cohesionNotes.push({ name: sq.n, gain, cohesion: sq.cohesion, reach: stageWord[clamp(st, 0, 3)], harmony: harmony.bonus > 0 ? harmony.label : '' })
     sq.members.forEach(id => {
       const s = G.shinobi.find(x => x.id === id); if (!s) return
       s.missId = null
@@ -1061,7 +1069,7 @@ function _runFinals(field, biasMod) {
     : ''
   const cohesionBlock = cohesionNotes.length
     ? `<div style="margin-top:12px;font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Squad Cohesion Earned</div>` +
-      cohesionNotes.map(n => `<div style="font-size:8px;padding:3px 0;border-bottom:1px solid #1e1a14;color:#9a9080"><span style="color:#e8e0cc">${n.name}</span> fought ${n.reach} — <span style="color:#8fbc8f">+${n.gain} cohesion</span> <span style="color:#5a5448">(now ${n.cohesion})</span></div>`).join('')
+      cohesionNotes.map(n => `<div style="font-size:8px;padding:3px 0;border-bottom:1px solid #1e1a14;color:#9a9080"><span style="color:#e8e0cc">${n.name}</span> fought ${n.reach} — <span style="color:#8fbc8f">+${n.gain} cohesion</span> <span style="color:#5a5448">(now ${n.cohesion})</span>${n.harmony ? ` <span style="color:#87ceeb">· ${n.harmony}</span>` : ''}</div>`).join('')
     : ''
   document.getElementById('ef-c').innerHTML = champLine +
     '<div style="font-size:9px;color:#7a7060;margin-bottom:10px">Exam complete!</div>' +
