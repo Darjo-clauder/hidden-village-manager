@@ -653,6 +653,7 @@ body{
 .bv-beat-name{font-size:7px;color:#7a7060;text-transform:uppercase;letter-spacing:1px}
 .bv-beat-mark{font-size:14px;font-weight:bold;text-align:center}
 .bv-beat-line{font-size:8px;color:#c9c0a8;font-style:italic;line-height:1.35}
+.bv-beat-spot{color:#c9a84c;font-style:normal}
 .bv-outcome{margin-top:14px;text-align:center;opacity:0;transform:translateY(6px);transition:opacity .4s,transform .4s}
 .bv-outcome.bv-on{opacity:1;transform:translateY(0)}
 .bv-result{font-size:18px;font-weight:bold;letter-spacing:3px}

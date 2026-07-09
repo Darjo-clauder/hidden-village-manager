@@ -7,6 +7,29 @@ import { FORMATIONS } from '../../../shared/utils/formation.js'
 import { MISSION_APPROACHES } from '../../../shared/utils/missionEngine.js'
 import { heatmapHtml } from '../uikit.js'
 import { t } from '../../../shared/utils/i18n.js'
+import { staminaStart, unitCompRead, staminaBand } from '../../../shared/utils/matchSim.js'
+
+// Pre-match condition read for a squad — projected starting stamina (with the
+// unit-comp bonus) + the comp tags the live match view will use. Lets the player
+// weigh legs and composition BEFORE committing, not just raw power.
+function _squadConditionPreview(sq) {
+  const mbs = (sq.members || []).map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
+  if (!mbs.length) return ''
+  const comp = unitCompRead(mbs.map(s => s.squadRole || 'flex'))
+  const stams = mbs.map(s => Math.min(100, staminaStart({ chakra: s.stats?.chakra || 30, workload: s.workload || 0 }) + comp.startBonus))
+  const avg = Math.round(stams.reduce((a, v) => a + v, 0) / stams.length)
+  const band = staminaBand(avg)
+  const tags = comp.tags.map(tg => `<span title="${tg.desc}" style="font-size:7px;border:1px solid ${tg.good ? '#8fbc8f' : '#f0a030'};color:${tg.good ? '#8fbc8f' : '#f0a030'};padding:1px 5px;cursor:help">${tg.label}</span>`).join(' ')
+  const bars = mbs.map((s, i) => `<span title="${sn(s)} — ${staminaBand(stams[i]).label}" style="display:inline-block;width:22px;height:4px;background:#2e2a22;border-radius:2px;overflow:hidden;vertical-align:middle"><span style="display:block;height:100%;width:${stams[i]}%;background:${staminaBand(stams[i]).color}"></span></span>`).join(' ')
+  return `<div style="font-size:7px;color:#7a7060;margin-top:5px;padding-top:5px;border-top:1px solid #2a2520">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+      <span style="text-transform:uppercase;letter-spacing:1px">Match condition</span>
+      <b style="color:${band.color}">${avg} · ${band.label}</b>
+      <span style="margin-left:auto">${bars}</span>
+    </div>
+    ${tags ? `<div style="display:flex;gap:4px;flex-wrap:wrap">${tags}</div>` : '<span style="color:#3a3630">No composition bonuses — a plain trio.</span>'}
+  </div>`
+}
 
 // Squad × mission-spec fit matrix (P4 heatmap). Fit = squad avg of the two
 // stats most relevant to each spec, normalised 0..1.
@@ -201,9 +224,10 @@ export function oSqA(sqId) {
   if (rB.missionBonus  > 0) bonusLines.push(`+${Math.round(rB.missionBonus*100)}% success`)
   if (rB.riskReduction > 0) bonusLines.push(`−${Math.round(rB.riskReduction*100)}% KIA risk`)
   if (rB.injReduction  > 0) bonusLines.push(`−${Math.round(rB.injReduction*100*0.5)}% injury severity`)
-  const bonusHtml = bonusLines.length
+  const bonusHtml = (bonusLines.length
     ? `<div style="font-size:7px;color:#4a9a4a;margin-top:3px">⚔ Depth chart bonuses: ${bonusLines.join(' · ')}</div>`
-    : `<div style="font-size:7px;color:#3a3630;margin-top:3px">${t('squad.noDepthBonuses')}</div>`
+    : `<div style="font-size:7px;color:#3a3630;margin-top:3px">${t('squad.noDepthBonuses')}</div>`)
+    + _squadConditionPreview(sq)
 
   document.getElementById('msa-t').textContent = 'Assign ' + sq.n + ' (power ' + pw + ')'
   const header = document.getElementById('msa-t')

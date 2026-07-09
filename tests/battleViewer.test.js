@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { battleMomentum, beatNarrative, battleSequence, battleVerdict } from '../shared/utils/battleViewer.js'
+import { battleMomentum, beatNarrative, battleSequence, battleVerdict, spotlightRole, roleBeatFlavor } from '../shared/utils/battleViewer.js'
 
 const PHASES = [
   { name: 'Infiltration', won: true },
@@ -57,6 +57,38 @@ describe('battleSequence', () => {
     expect(seq[0]).toMatchObject({ name: 'Infiltration', won: true })
     expect(typeof seq[0].momentum).toBe('number')
     expect(typeof seq[0].line).toBe('string')
+  })
+})
+
+describe('spotlightRole', () => {
+  it('prefers the phase-natural role when the squad fields it', () => {
+    expect(spotlightRole(['vanguard', 'intel', 'medical'], 'Infiltration')).toBe('intel')
+    expect(spotlightRole(['vanguard', 'intel', 'medical'], 'Engagement')).toBe('vanguard')
+    expect(spotlightRole(['vanguard', 'support', 'medical'], 'Extraction')).toBe('medical')
+  })
+  it('rotates through present roles when the preferred one is absent, deterministically', () => {
+    const roles = ['vanguard', 'support']
+    // Engagement prefers vanguard (present) → vanguard; Infiltration prefers intel (absent) → rotate
+    expect(spotlightRole(roles, 'Infiltration', 0)).toBe('vanguard')
+    expect(spotlightRole(roles, 'Infiltration', 1)).toBe('support')
+    expect(spotlightRole(roles, 'Infiltration', 1)).toBe('support') // deterministic
+  })
+  it('returns null for an empty squad', () => {
+    expect(spotlightRole([], 'Engagement')).toBeNull()
+    expect(spotlightRole(undefined, 'Engagement')).toBeNull()
+  })
+})
+
+describe('roleBeatFlavor', () => {
+  it('gives a nameable verb phrase differing by outcome, deterministic per seed', () => {
+    const won = roleBeatFlavor('vanguard', true, 0)
+    expect(won).toBe(roleBeatFlavor('vanguard', true, 0))
+    expect(won.length).toBeGreaterThan(0)
+    expect(roleBeatFlavor('vanguard', true, 0)).not.toBe(roleBeatFlavor('vanguard', false, 0))
+  })
+  it('falls back to flex phrasing for an unknown role', () => {
+    expect(typeof roleBeatFlavor('ninja-cook', true, 0)).toBe('string')
+    expect(roleBeatFlavor('ninja-cook', true, 0)).toBe(roleBeatFlavor('flex', true, 0))
   })
 })
 

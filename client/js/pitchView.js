@@ -186,7 +186,7 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
         // keep everyone inside the hex (radial clamp is a good approximation)
         const dx = s.x - CX, dy = s.y - CY, d = Math.hypot(dx, dy * 1.15)
         if (d > HEX_R - R_SHINOBI) { const f = (HEX_R - R_SHINOBI) / d; s.x = CX + dx * f; s.y = CY + dy * f }
-        _drawShinobi(ctx, s, col, edge, s === st.hover || s === st.selected)
+        _drawShinobi(ctx, s, col, edge, s === st.hover || s === st.selected || s === st.spot)
       }))
       if (st.flash > 0) {
         ctx.save(); ctx.globalAlpha = st.flash * 0.5
@@ -218,8 +218,10 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
   st.raf = requestAnimationFrame(frame)
 
   return {
-    /** Choreograph one beat: both sides converge, winner surges through, loser reels. */
-    playBeat(i, beat) {
+    /** Choreograph one beat: both sides converge, winner surges through, loser reels.
+     *  `spotIdx` (home-side index) is the shinobi the narration names — they lead
+     *  the charge and briefly wear a spotlight ring. */
+    playBeat(i, beat, spotIdx = -1) {
       const cx = CX + _jit(i, 9) * 55, cy = CY + _jit(i, 11) * 35
       const winSide = beat.won ? st.home : st.away
       const loseSide = beat.won ? st.away : st.home
@@ -230,6 +232,9 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
         s.vx += (beat.won ? 2.2 : -2.2); s.vy += _jit(k, 21) * 3
       })
       if (loseSide.length && i % 2 === 1) loseSide[i % loseSide.length].ko = true
+      // Spotlight the acting shinobi — pull them to the front of the clash + ring.
+      st.spot = (spotIdx >= 0 && st.home[spotIdx]) ? st.home[spotIdx] : null
+      if (st.spot) { st.spot.tx = cx + (beat.won ? -6 : 6); st.spot.ty = cy - 4 }
       st.flash = 1; st.flashCol = beat.won ? '#8fbc8f' : '#cc5a4a'
     },
     /** Final tableau — winners ring the centre, losers scatter to their end. */
@@ -252,7 +257,7 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
         s.tx = s.x; s.ty = s.y
       })
       re(st.home, 'home'); re(st.away, 'away')
-      st.flash = 0; st.selected = null
+      st.flash = 0; st.selected = null; st.spot = null
     },
     /** Live condition readout: set home-side stamina values (0-100, by index). */
     updateStamina(byIdx = []) {

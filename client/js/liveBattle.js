@@ -4,7 +4,7 @@
  * bar and narrative, then reveals the outcome + squad grades. Pure presentation
  * over a mission report — no engine state touched. Auto-plays; Skip jumps to end.
  */
-import { battleSequence, battleVerdict } from '../../shared/utils/battleViewer.js'
+import { battleSequence, battleVerdict, spotlightRole, roleBeatFlavor } from '../../shared/utils/battleViewer.js'
 import { BATTLE_CALLS } from '../../shared/utils/battleCalls.js'
 import { arenaFor } from '../../shared/constants/arenas.js'
 import { mountPitch } from './pitchView.js'
@@ -262,11 +262,18 @@ function _applyCall(call) {
 function _revealBeat(seq, i) {
   const b = seq[i]
   const ov = document.getElementById('bv-overlay')
-  if (ov?.__pitch) ov.__pitch.playBeat(i, b)
-  // Condition tick: this exchange costs legs — role × tactic × result; a medic
-  // claws some back on won beats. The dial only shapes what happens next.
+  // Role-aware spotlight + condition tick. The spotlight names the shinobi whose
+  // role drives this beat (and lights their circle); the tick drains legs by
+  // role × tactic × result, a medic clawing some back on wins. Needs the squad
+  // roster (condition layer) — the beat plays generic otherwise.
+  let spotHtml = '', spotIdx = -1
   if (ov?.__cond) {
     const c = ov.__cond
+    const roles = c.members.map(m => m.role)
+    const role = spotlightRole(roles, b.name, i)
+    spotIdx = role ? roles.indexOf(role) : -1
+    const who = spotIdx >= 0 ? c.members[spotIdx] : null
+    if (who) spotHtml = ` <span class="bv-beat-spot">— ${who.name} ${roleBeatFlavor(role, b.won, i)}.</span>`
     c.stamina = c.stamina.map((s, k) => {
       let v = s - beatDrain({ role: c.members[k].role, tactic: c.tactic, won: b.won, stamina: s, compDrainMult: c.comp.drainMult })
       if (b.won && c.comp.regenPerWin) v += c.comp.regenPerWin
@@ -275,11 +282,12 @@ function _revealBeat(seq, i) {
     ov.__pitch?.updateStamina(c.stamina)
     _renderTactics(ov)
   }
+  if (ov?.__pitch) ov.__pitch.playBeat(i, b, spotIdx)
   const mom = document.getElementById('bv-mom')
   if (mom) { mom.style.width = b.momentum + '%'; mom.style.background = b.won ? 'linear-gradient(90deg,#3a6a3a,#8fbc8f)' : 'linear-gradient(90deg,#6a3030,#cc5a4a)' }
   const beat = document.getElementById('bv-beat-' + i); if (beat) beat.classList.add('bv-on')
   const mark = document.getElementById('bv-mark-' + i); if (mark) { mark.textContent = b.won ? '✓' : '✕'; mark.style.color = b.won ? '#8fbc8f' : '#cc5a4a' }
-  const line = document.getElementById('bv-line-' + i); if (line) line.textContent = b.line
+  const line = document.getElementById('bv-line-' + i); if (line) line.innerHTML = b.line + spotHtml
 }
 
 function _revealOutcome(rep) {
