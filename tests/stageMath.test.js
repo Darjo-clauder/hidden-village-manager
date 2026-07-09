@@ -54,10 +54,13 @@ describe('stageMath — exam field helpers', () => {
     expect(groupIntoCells([1, 2, 3, 4], 2)).toEqual([[1, 2], [3, 4]])
   })
 
-  it('examCohesionGain rewards depth, peaking for champions', () => {
-    expect(examCohesionGain()).toBe(3)                                  // eliminated early
-    expect(examCohesionGain({ reachedFinal: true })).toBe(12)           // finalist
-    expect(examCohesionGain({ reachedFinal: true, champion: true })).toBe(18) // champion
+  it('examCohesionGain drips per stage, peaking for champions', () => {
+    expect(examCohesionGain()).toBe(3)                           // out in the qualifier
+    expect(examCohesionGain({ stagesAdvanced: 1 })).toBe(6)      // survived qualifier
+    expect(examCohesionGain({ stagesAdvanced: 2 })).toBe(9)      // reached semifinal
+    expect(examCohesionGain({ stagesAdvanced: 3 })).toBe(12)     // finalist
+    expect(examCohesionGain({ stagesAdvanced: 3, champion: true })).toBe(18) // champion
+    expect(examCohesionGain({ stagesAdvanced: 9 })).toBe(12)     // clamps at 3 stages
   })
 })
 

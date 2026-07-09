@@ -626,7 +626,7 @@ function _buildExamField() {
       const sq = G.squads.find(q => q.id === sqId); if (!sq) return null
       const members = (sq.members || []).map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
       if (!members.length) return null
-      return { id: sqId, name: sq.n, members, pow: _squadPow(members, sq.cohesion), isPlayer: true, seedBonus: seedBonus(G.vName) }
+      return { id: sqId, name: sq.n, members, pow: _squadPow(members, sq.cohesion), isPlayer: true, seedBonus: seedBonus(G.vName), stageReached: 0 }
     }).filter(Boolean),
     out: [],
   }
@@ -740,6 +740,14 @@ export function sabotageSquad() {
   rEx()
 }
 
+// Credit each still-standing player squad with surviving another bracket round —
+// drives the per-stage cohesion drip settled at cleanup. Call after a round resolves
+// (elimination has already moved the fallen to entry.out, so only survivors bump).
+function _bumpPlayerStages(field) {
+  const pe = field.find(e => e.isPlayer); if (!pe) return
+  pe.alive.forEach(c => { c.stageReached = (c.stageReached || 0) + 1 })
+}
+
 // Eliminate combatants from a village entry by a survival probability; logs player results.
 function _stageSurvival(field, probFn, passLabel, failLabel, res) {
   field.forEach(entry => {
@@ -775,6 +783,7 @@ export function runRound() {
     return _runFinals(field, biasMod)
   }
 
+  _bumpPlayerStages(field)
   ui.exSt.round++
   G.examResults.push(...res.map(x => ({ id: '', name: x.name, result: x.result, promoted: false })))
   _renderRoundOverlay(r, res, field)
@@ -829,6 +838,7 @@ function _runForest(field, res) {
     })
     entry.alive = kept
   })
+  _bumpPlayerStages(field)
   ui.exSt.round++
   G.examResults.push(...res.map(x => ({ id: '', name: x.name, result: x.result, promoted: false })))
   _renderRoundOverlay(1, res, field)
@@ -879,6 +889,7 @@ function _runSemifinal(field, res, biasMod) {
     entry.alive = entry.alive.filter(c => !losers.has(c))
     entry.alive.forEach(c => _applyPostureWorkload(c))
   })
+  _bumpPlayerStages(field)
   ui.exSt.round++
   G.examResults.push(...res.map(x => ({ id: '', name: x.name, result: x.result, promoted: false })))
   _renderSemifinalOverlay(duels, bye, field)
@@ -1008,15 +1019,21 @@ function _runFinals(field, biasMod) {
   }
 
   // Cleanup — restore squad-member statuses (wounds carry into the season) and reset exam state.
-  // Also settle the exam's lasting squad-building reward: cells that fought together bond,
-  // finalists more so, champions most. Reached-final = the squad id survived into playerEntry.alive.
+  // Also settle the exam's lasting squad-building reward: cells bond per bracket round they
+  // survived (finalists most, champions further still). Read each cell's stageReached from
+  // the field — it lives on the combatant whether it finished alive or was eliminated.
   const finalistSquadIds = new Set((playerEntry?.alive || []).map(c => c.id))
+  const stagesById = {}
+  ;[...(playerEntry?.alive || []), ...(playerEntry?.out || [])].forEach(c => { stagesById[c.id] = c.stageReached || 0 })
+  const cohesionNotes = []
+  const stageWord = ['out in the qualifier', 'through the qualifier', 'to the semifinal', 'to the final']
   let woundedCount = 0
   G.examCands.forEach(sqId => {
     const sq = G.squads.find(q => q.id === sqId); if (!sq) return
-    const reachedFinal = finalistSquadIds.has(sqId)
-    const gain = examCohesionGain({ reachedFinal, champion: reachedFinal && playerWon })
+    const st = stagesById[sqId] || 0
+    const gain = examCohesionGain({ stagesAdvanced: st, champion: finalistSquadIds.has(sqId) && playerWon })
     sq.cohesion = clamp((sq.cohesion || 0) + gain, 0, 100)
+    cohesionNotes.push({ name: sq.n, gain, cohesion: sq.cohesion, reach: stageWord[clamp(st, 0, 3)] })
     sq.members.forEach(id => {
       const s = G.shinobi.find(x => x.id === id); if (!s) return
       s.missId = null
@@ -1042,11 +1059,16 @@ function _runFinals(field, biasMod) {
   const champLine = champ
     ? `<div style="font-size:11px;color:${playerWon ? '#c9a84c' : '#9a9080'};margin-bottom:10px">🏆 Champion: ${champ.ico || ''} ${champ.name}${playerWon ? ' (you)' : ''}</div>`
     : ''
+  const cohesionBlock = cohesionNotes.length
+    ? `<div style="margin-top:12px;font-size:8px;color:#7a7060;letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Squad Cohesion Earned</div>` +
+      cohesionNotes.map(n => `<div style="font-size:8px;padding:3px 0;border-bottom:1px solid #1e1a14;color:#9a9080"><span style="color:#e8e0cc">${n.name}</span> fought ${n.reach} — <span style="color:#8fbc8f">+${n.gain} cohesion</span> <span style="color:#5a5448">(now ${n.cohesion})</span></div>`).join('')
+    : ''
   document.getElementById('ef-c').innerHTML = champLine +
     '<div style="font-size:9px;color:#7a7060;margin-bottom:10px">Exam complete!</div>' +
     (res.length
       ? res.map(x => `<div style="font-size:9px;padding:4px 0;border-bottom:1px solid #2e2a22;color:${x.promoted ? '#8fbc8f' : '#e8e0cc'}"><span style="color:#c9a84c">${x.name}</span> — ${x.result}</div>`).join('')
-      : '<div style="font-size:9px;color:#7a7060">Your nominees were eliminated before the final.</div>')
+      : '<div style="font-size:9px;color:#7a7060">Your nominees were eliminated before the final.</div>') +
+    cohesionBlock
   document.getElementById('ov-examfight').classList.add('open'); upUI()
 }
 

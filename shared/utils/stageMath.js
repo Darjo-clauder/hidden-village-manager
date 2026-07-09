@@ -48,13 +48,15 @@ export function groupIntoCells(pool, size = 3) {
 }
 
 // Cohesion a nominated player squad earns from its exam run — advancing deep is a
-// squad-building reward, not just a promotion lottery. Reaching the final is worth
-// the most; champions get a further bump; even eliminated cells gain a little from
-// fighting together. Returned as a delta the caller clamps onto squad cohesion.
-export function examCohesionGain({ reachedFinal = false, champion = false } = {}) {
-  let g = 3                     // participation — every nominated cell bonds a little
-  if (reachedFinal) g += 9      // survived the whole bracket together
-  if (champion) g += 6          // won it all
+// squad-building reward, not just a promotion lottery. `stagesAdvanced` is how many
+// bracket rounds the cell survived (0 = out in the qualifier, 3 = a finalist);
+// champions get a further bump. Every nominated cell gains a little from fighting
+// together. Returned as a delta the caller clamps onto squad cohesion.
+// Legacy-compatible: a finalist (3) lands on 12, a champion on 18 as before, but
+// mid-bracket exits (semifinal 9, forest 6) now scale in between.
+export function examCohesionGain({ stagesAdvanced = 0, champion = false } = {}) {
+  let g = 3 + clamp(stagesAdvanced, 0, 3) * 3   // participation + per-stage drip
+  if (champion) g += 6                          // won it all
   return g
 }
 
