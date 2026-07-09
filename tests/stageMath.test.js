@@ -3,6 +3,7 @@ import {
   clamp, squadPower, avgStat, seedEdge, survivalMult,
   examWrittenProb, examForestNavProb, examForestClashProb, examInjuryChance, examPromotionChance,
   warMobilizeProb, warFrontProb, warCasualtyChance, duelScore,
+  groupIntoCells, examCohesionGain,
 } from '../shared/utils/stageMath.js'
 
 describe('stageMath — primitives', () => {
@@ -42,6 +43,21 @@ describe('stageMath — primitives', () => {
     expect(survivalMult({ hasClan: true })).toBe(0.6)
     expect(survivalMult({})).toBe(1)
     expect(survivalMult()).toBe(1)
+  })
+})
+
+describe('stageMath — exam field helpers', () => {
+  it('groupIntoCells packs full cells and drops the remainder', () => {
+    expect(groupIntoCells([1, 2, 3, 4, 5, 6])).toEqual([[1, 2, 3], [4, 5, 6]])
+    expect(groupIntoCells([1, 2, 3, 4])).toEqual([[1, 2, 3]]) // leftover dropped
+    expect(groupIntoCells([1, 2])).toEqual([])                // no full cell
+    expect(groupIntoCells([1, 2, 3, 4], 2)).toEqual([[1, 2], [3, 4]])
+  })
+
+  it('examCohesionGain rewards depth, peaking for champions', () => {
+    expect(examCohesionGain()).toBe(3)                                  // eliminated early
+    expect(examCohesionGain({ reachedFinal: true })).toBe(12)           // finalist
+    expect(examCohesionGain({ reachedFinal: true, champion: true })).toBe(18) // champion
   })
 })
 

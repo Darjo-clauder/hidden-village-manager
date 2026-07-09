@@ -38,6 +38,26 @@ export function survivalMult({ isVessel = false, hasClan = false } = {}) {
   return 1
 }
 
+// Group a flat pool into fixed-size cells, dropping any leftover that can't fill
+// a full cell (an exam squad must be a complete three-ninja cell). Pure — the
+// caller passes an already-ordered pool. Powers the exam panel's quick-form path.
+export function groupIntoCells(pool, size = 3) {
+  const cells = []
+  for (let i = 0; i + size <= pool.length; i += size) cells.push(pool.slice(i, i + size))
+  return cells
+}
+
+// Cohesion a nominated player squad earns from its exam run — advancing deep is a
+// squad-building reward, not just a promotion lottery. Reaching the final is worth
+// the most; champions get a further bump; even eliminated cells gain a little from
+// fighting together. Returned as a delta the caller clamps onto squad cohesion.
+export function examCohesionGain({ reachedFinal = false, champion = false } = {}) {
+  let g = 3                     // participation — every nominated cell bonds a little
+  if (reachedFinal) g += 9      // survived the whole bracket together
+  if (champion) g += 6          // won it all
+  return g
+}
+
 // ── Adept Exam stage advance probabilities ──────────────────────────────────
 
 // Qualifier — Written Test: rewards intelligence + format fit + seed + posture.
