@@ -7,8 +7,13 @@
 import { battleSequence, battleVerdict, spotlightRole, roleBeatFlavor } from '../../shared/utils/battleViewer.js'
 import { BATTLE_CALLS } from '../../shared/utils/battleCalls.js'
 import { arenaFor } from '../../shared/constants/arenas.js'
-import { mountPitch } from './pitchView.js'
-import { MATCH_TACTICS, unitCompRead, beatDrain, staminaBand, finishEffects } from '../../shared/utils/matchSim.js'
+import { mountPitch, ROLE_TINT } from './pitchView.js'
+import { MATCH_TACTICS, unitCompRead, beatDrain, staminaBand, finishEffects, resolveMatchPrefs, playerOfMatch } from '../../shared/utils/matchSim.js'
+import { G } from './state.js'
+
+// Match preferences live on G (persist in the save). resolveMatchPrefs guards
+// old saves / partial objects.
+function _prefs() { return resolveMatchPrefs(G.matchPrefs || {}) }
 
 // ── Match clock — a pausable, speed-scalable scheduler ─────────────────────────
 // The old fixed setTimeout chain couldn't pause or fast-forward; the clock
@@ -127,8 +132,12 @@ export function openBattleViewer(rep) {
     <div class="bv-card">
       <div class="bv-head">
         <div class="bv-title">${rep.missionName || 'Operation'} <span class="bv-rk">${rep.missionRk || ''}-Rank</span></div>
-        <button class="bv-skip" onclick="skipBattleViewer()">Skip ▸</button>
+        <div class="bv-head-btns">
+          <button class="bv-skip" onclick="bvToggleSettings()" title="Match settings">⚙</button>
+          <button class="bv-skip" onclick="skipBattleViewer()">Skip ▸</button>
+        </div>
       </div>
+      <div class="bv-settings" id="bv-settings"></div>
       <div class="bv-pitch" id="bv-pitch">
         <div class="bv-pitch-ctl">
           <button class="bv-ctl-btn" id="bv-ctl-pause" onclick="bvTogglePause()" title="Pause / resume">⏸</button>
@@ -136,6 +145,7 @@ export function openBattleViewer(rep) {
           <button class="bv-ctl-btn" onclick="replayBattle()" title="Replay from kickoff">↻</button>
         </div>
       </div>
+      <div class="bv-pitch-legend" id="bv-pitch-legend"></div>
       <div class="bv-pitch-info" id="bv-pitch-info">Hover a shinobi for their name · click to inspect</div>
       <div class="bv-tactics" id="bv-tactics"></div>
       <div class="bv-mom-wrap"><div class="bv-mom-fill" id="bv-mom" style="width:50%"></div></div>
@@ -164,13 +174,25 @@ export function openBattleViewer(rep) {
 
   // Condition layer — live stamina + touchline tactics, only for reports that
   // carry real members (player squad missions). Unit comp sets the profile.
+  const pf = _prefs()
   if (rep.matchStamina?.length) {
     const comp = unitCompRead(rep.matchStamina.map(m => m.role))
     const start = rep.matchStamina.map(m => Math.min(100, m.stamina + comp.startBonus))
-    ov.__cond = { tactic: 'balanced', comp, start, stamina: [...start], members: rep.matchStamina }
+    ov.__cond = { tactic: pf.tactic, comp, start, stamina: [...start], members: rep.matchStamina }
     ov.__pitch?.updateStamina(ov.__cond.stamina)
     _renderTactics(ov)
+    // Role legend — maps the board's circle colours to squad roles.
+    const leg = document.getElementById('bv-pitch-legend')
+    if (leg) {
+      const roles = [...new Set(rep.matchStamina.map(m => m.role || 'flex'))]
+      leg.innerHTML = roles.map(r => { const t = ROLE_TINT[r] || ROLE_TINT.flex; return `<span class="bv-leg"><i style="background:${t.fill}"></i>${t.label}</span>` }).join('')
+        + `<span class="bv-leg"><i style="background:${_repArena(rep).palette.accent}"></i>Opposition</span>`
+    }
   }
+
+  // Auto-resolve: settle instantly with the player's default tactic + battle call,
+  // no waiting. The same closures apply, so the result is identical to watching.
+  if (pf.autoResolve) { _finishInstant(pf.battleCall); return }
 
   // Reveal every beat up to (but not including) the bet-on beat; then either pause
   // for the micro-call, or play straight through to the outcome.
@@ -183,6 +205,19 @@ export function openBattleViewer(rep) {
     for (let i = stopBefore; i < seq.length; i++) { _sched(() => _revealBeat(seq, i), BEAT_MS * (i + 1)) }
     _sched(() => _revealOutcome(rep), BEAT_MS * (seq.length + 1))
   }
+}
+
+// Reveal the whole match in one shot: run every beat's effects (drain, KO, call),
+// apply the given battle call, then show the outcome. Shared by Skip (call='none')
+// and auto-resolve (call = the player's default). No animation timers.
+function _finishInstant(call) {
+  _clearTimers()
+  const ov = document.getElementById('bv-overlay'); if (!ov) return
+  const rep = ov.__rep, seq = ov.__seq
+  if (seq) seq.forEach((b, i) => _revealBeat(seq, i))
+  if (rep && typeof rep.applyCall === 'function' && !rep._callDone) rep.applyCall(call)
+  const el = document.getElementById('bv-call'); if (el) { el.classList.remove('bv-on'); el.innerHTML = '' }
+  if (rep) _revealOutcome(rep)
 }
 
 // Touchline strip: unit-comp tags + the live tactic dial + squad condition readout.
@@ -205,6 +240,35 @@ export function bvSetTactic(id) {
   const ov = document.getElementById('bv-overlay'); if (!ov?.__cond) return
   ov.__cond.tactic = id
   _renderTactics(ov)
+}
+
+// ── Match settings popover (⚙) — auto-resolve + defaults, persisted on G ───────
+export function bvToggleSettings() {
+  const el = document.getElementById('bv-settings'); if (!el) return
+  if (el.classList.contains('bv-on')) { el.classList.remove('bv-on'); el.innerHTML = ''; return }
+  _renderSettings()
+  el.classList.add('bv-on')
+}
+function _renderSettings() {
+  const el = document.getElementById('bv-settings'); if (!el) return
+  const p = _prefs()
+  const calls = [{ id: 'commit', label: '⚔ Commit' }, { id: 'disengage', label: '🛡 Disengage' }]
+  el.innerHTML = `
+    <div class="bv-set-row">
+      <label class="bv-set-auto"><input type="checkbox" ${p.autoResolve ? 'checked' : ''} onchange="bvSetPref('autoResolve', this.checked)"> ⚡ Auto-resolve encounters instantly</label>
+    </div>
+    <div class="bv-set-row"><span class="bv-set-lbl">Default tactic</span>
+      ${MATCH_TACTICS.map(t => `<button class="bv-tac-btn${p.tactic === t.id ? ' bv-tac-sel' : ''}" onclick="bvSetPref('tactic','${t.id}')" title="${t.desc}">${t.icon} ${t.label}</button>`).join('')}
+    </div>
+    <div class="bv-set-row"><span class="bv-set-lbl">Default call</span>
+      ${calls.map(c => `<button class="bv-tac-btn${p.battleCall === c.id ? ' bv-tac-sel' : ''}" onclick="bvSetPref('battleCall','${c.id}')">${c.label}</button>`).join('')}
+    </div>
+    <div class="bv-set-note">Auto-resolve settles matches with these defaults — no waiting, same result as watching.</div>`
+}
+/** Persist a match preference on G and re-render the popover. */
+export function bvSetPref(key, value) {
+  G.matchPrefs = { ..._prefs(), [key]: value }
+  _renderSettings()
 }
 
 // Clicked-shinobi inspector strip — role + live match grade for your side,
@@ -336,11 +400,17 @@ function _revealOutcome(rep) {
       : (rep.scores || []).length
         ? `<div class="bv-grades">${rep.scores.map(sc => `<div class="bv-grade"><div class="bv-grade-n">${sc.name}</div><div class="bv-grade-g" style="color:${GRADE_COLOR[sc.grade] || '#888'}">${sc.grade}</div></div>`).join('')}</div>`
         : ''
+  // Player of the Match — top grade, tie-broken by who kept the most in the tank.
+  const stamByName = {}
+  if (ovp?.__cond) ovp.__cond.members.forEach((m, k) => { stamByName[m.name] = ovp.__cond.stamina[k] })
+  const motm = playerOfMatch(rep.scores || [], stamByName)
+  const motmHtml = motm ? `<div class="bv-motm">⭐ Player of the Match — <b>${motm.name}</b><span>${motm.reason}</span></div>` : ''
   el.innerHTML = `
     <div class="bv-result ${cls}">${label}</div>
     <div class="bv-verdict">${verdict}</div>
     ${callNote}
     ${condNote}
+    ${motmHtml}
     ${detail}
     <button class="bv-close" onclick="closeBattleViewer()">Close</button>`
   el.classList.add('bv-on')
@@ -350,15 +420,7 @@ function _revealOutcome(rep) {
 export function chooseBattleCall(call) { _applyCall(call) }
 
 /** Jump straight to the final state. A pending micro-call auto-disengages. */
-export function skipBattleViewer() {
-  _clearTimers()
-  const ov = document.getElementById('bv-overlay'); if (!ov) return
-  const rep = ov.__rep
-  if (rep && typeof rep.applyCall === 'function' && !rep._callDone) rep.applyCall('none')
-  const el = document.getElementById('bv-call'); if (el) { el.classList.remove('bv-on'); el.innerHTML = '' }
-  if (ov.__seq) ov.__seq.forEach((b, i) => _revealBeat(ov.__seq, i))
-  if (rep) _revealOutcome(rep)
-}
+export function skipBattleViewer() { _finishInstant('none') }
 
 export function closeBattleViewer() {
   _clearTimers()

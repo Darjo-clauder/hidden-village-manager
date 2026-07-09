@@ -638,7 +638,19 @@ body{
 .bv-tac-tag{font-size:7px;border:1px solid currentColor;padding:1px 5px;cursor:help}
 .bv-cond-fresh{color:#8fbc8f}
 .bv-cond-redline{color:#f0a030}
-@media (prefers-reduced-motion:reduce){.bv-pitch,.bv-pitch-info,.bv-tactics{display:none!important}}
+.bv-head-btns{display:flex;gap:5px}
+.bv-settings{display:none;background:#0a0a0a;border:1px solid #2e2a22;padding:8px 10px;margin-bottom:8px}
+.bv-settings.bv-on{display:block}
+.bv-set-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.bv-set-lbl{font-size:8px;color:#7a7060;text-transform:uppercase;letter-spacing:1px;min-width:78px}
+.bv-set-auto{font-size:9px;color:#e8e0cc;display:flex;align-items:center;gap:6px;cursor:pointer}
+.bv-set-note{font-size:7px;color:#5a5448;margin-top:2px}
+.bv-pitch-legend{display:flex;gap:9px;flex-wrap:wrap;margin:5px 0 2px}
+.bv-leg{display:flex;align-items:center;gap:3px;font-size:7px;color:#9a9080;text-transform:uppercase;letter-spacing:.5px}
+.bv-leg i{width:7px;height:7px;border-radius:50%;display:inline-block}
+.bv-motm{margin-top:8px;padding:6px 8px;border:1px solid #c9a84c;background:rgba(201,168,76,.08);font-size:9px;color:#c9a84c}
+.bv-motm span{display:block;font-size:7px;color:#9a9080;margin-top:1px}
+@media (prefers-reduced-motion:reduce){.bv-pitch,.bv-pitch-info,.bv-tactics,.bv-pitch-legend{display:none!important}}
 .bv-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .bv-title{font-size:12px;color:#e8e0cc;font-weight:bold;letter-spacing:.5px}
 .bv-rk{font-size:8px;color:#c9a84c;margin-left:4px}

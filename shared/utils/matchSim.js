@@ -84,3 +84,58 @@ export function finishEffects(avgStamina) {
   if (avgStamina >= 30) return { id: 'worked', workloadDelta: 0, moraleDelta: 0, label: 'Hard-worked', note: 'An honest shift — nothing left in reserve, nothing torn.' }
   return { id: 'redline', workloadDelta: 9, moraleDelta: -1, label: 'Ran ragged', note: 'They gave everything and it shows — heavy legs carried into next month.' }
 }
+
+/**
+ * Simulate a squad's stamina across the whole beat sequence at once — used by
+ * the auto-resolve path, which settles the match without animating it. Mirrors
+ * the per-beat drain the live viewer applies, so watching and auto-resolving
+ * a given report reach the same finish. Returns the final per-member stamina.
+ */
+export function simulateFinalStamina({ starts = [], roles = [], beatsWon = [], tactic = 'balanced', comp = { drainMult: 1, regenPerWin: 0 } } = {}) {
+  return starts.map((s0, k) => {
+    let s = s0
+    beatsWon.forEach(won => {
+      s -= beatDrain({ role: roles[k] || 'flex', tactic, won, stamina: s, compDrainMult: comp.drainMult || 1 })
+      if (won && comp.regenPerWin) s += comp.regenPerWin
+      s = clamp(s, 0, 100)
+    })
+    return s
+  })
+}
+
+// ── Match preferences (auto-resolve) ──────────────────────────────────────────
+export const DEFAULT_MATCH_PREFS = { autoResolve: false, tactic: 'balanced', battleCall: 'commit' }
+
+/** Normalise a (possibly partial/old-save) prefs object to safe values. */
+export function resolveMatchPrefs(prefs = {}) {
+  const tactic = TACTIC_BY_ID[prefs.tactic] ? prefs.tactic : DEFAULT_MATCH_PREFS.tactic
+  const battleCall = ['commit', 'disengage', 'none'].includes(prefs.battleCall) ? prefs.battleCall : DEFAULT_MATCH_PREFS.battleCall
+  return { autoResolve: !!prefs.autoResolve, tactic, battleCall }
+}
+
+// ── Player of the Match ───────────────────────────────────────────────────────
+const _GRADE_RANK = { A: 4, B: 3, C: 2, D: 1 }
+
+/**
+ * Pick the standout from the squad's match grades, breaking ties by who kept the
+ * most in the tank (stamina discipline). `scores` = [{ name, grade, role }];
+ * `staminaByName` optional. Returns { name, grade, role, reason } or null.
+ */
+export function playerOfMatch(scores = [], staminaByName = {}) {
+  const rated = scores.filter(s => s && s.name && s.grade)
+  if (!rated.length) return null
+  let best = null
+  rated.forEach(s => {
+    const gr = _GRADE_RANK[s.grade] || 0
+    const stam = staminaByName[s.name] ?? 50
+    const score = gr * 100 + stam
+    if (!best || score > best.score) best = { ...s, score }
+  })
+  if (!best) return null
+  const stam = staminaByName[best.name]
+  const reason = best.grade === 'A' ? `A commanding ${best.role || 'all-round'} display`
+    : best.grade === 'B' ? `The steadiest hand on the squad`
+    : `Carried more than their share on a hard day`
+  const stamNote = stam != null && stam >= 55 ? ' — and still had legs at the end' : ''
+  return { name: best.name, grade: best.grade, role: best.role, reason: reason + stamNote }
+}

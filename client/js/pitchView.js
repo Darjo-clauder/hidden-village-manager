@@ -23,6 +23,16 @@ const CX = W / 2, CY = H / 2
 const HEX_R = 108                 // arena hexagon radius
 const STAND_R = 124               // outer stands radius
 
+// Role tint + glyph for the player's circles — read the board at a glance.
+export const ROLE_TINT = {
+  vanguard: { fill: '#e0774a', edge: '#f6a074', glyph: '⚔', label: 'Vanguard' },
+  support:  { fill: '#5bb8c0', edge: '#8fe0e6', glyph: '✚', label: 'Support' },
+  intel:    { fill: '#9a8fe0', edge: '#c2b8f6', glyph: '◆', label: 'Intel' },
+  medical:  { fill: '#7ac97a', edge: '#a6e6a6', glyph: '✚', label: 'Medic' },
+  flex:     { fill: '#c9a84c', edge: '#e8d5a3', glyph: '●', label: 'Flex' },
+}
+function _roleTint(role) { return ROLE_TINT[role] || ROLE_TINT.flex }
+
 // Deterministic per-index jitter so formations look organic but stable.
 function _jit(i, salt = 0) { const s = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453; return (s - Math.floor(s)) - 0.5 }
 
@@ -40,21 +50,24 @@ function _px(v, axis) { // arena props are authored 0..100; map into the hex bou
   return axis === 'x' ? CX - HEX_R + (v / 100) * HEX_R * 2 : CY - HEX_R * 0.87 + (v / 100) * HEX_R * 1.74
 }
 
-function _drawStadium(ctx, arena) {
+function _drawStadium(ctx, arena, pulse = 0) {
   const { ground, groundAlt, line, glow, accent } = arena.palette
   // Beyond the stands — night.
   ctx.fillStyle = '#060604'; ctx.fillRect(0, 0, W, H)
-  // Stands: a wider hex ring packed with a deterministic crowd.
-  _hexPath(ctx, CX, CY, STAND_R); ctx.fillStyle = '#141210'; ctx.fill()
+  // Stands: a wider hex ring packed with a deterministic crowd. A crowd `pulse`
+  // (a beat swing / KO just landed) brightens the stands — the roar of the crowd.
+  _hexPath(ctx, CX, CY, STAND_R); ctx.fillStyle = pulse > 0 ? '#221d14' : '#141210'; ctx.fill()
   ctx.save()
   _hexPath(ctx, CX, CY, STAND_R); ctx.clip()
   for (let i = 0; i < 260; i++) {
     const a = _jit(i, 41) * Math.PI * 2 * 2
     const rr = HEX_R + 4 + (_jit(i, 43) + 0.5) * (STAND_R - HEX_R - 6)
     const x = CX + Math.cos(a) * rr * 1.04, y = CY + Math.sin(a) * rr * 0.94
-    ctx.fillStyle = i % 3 ? '#2a251c' : glow
-    ctx.globalAlpha = 0.7
-    ctx.fillRect(x, y, 2, 2)
+    // pulse jostles a fraction of the crowd (stand up / wave) and warms the colour
+    const up = pulse > 0 && _jit(i, 57) > 0.5 - pulse * 0.5 ? -1.5 : 0
+    ctx.fillStyle = pulse > 0 && i % 2 ? accent : i % 3 ? '#2a251c' : glow
+    ctx.globalAlpha = 0.7 + pulse * 0.3
+    ctx.fillRect(x, y + up, 2, 2 + (up ? 1 : 0))
   }
   ctx.restore(); ctx.globalAlpha = 1
   // The arena floor — terrain banding clipped to the hex.
@@ -104,9 +117,14 @@ function _drawShinobi(ctx, s, color, edge, hot) {
     ctx.beginPath(); ctx.arc(s.x, s.y, R_SHINOBI + 3.5, 0, Math.PI * 2)
     ctx.strokeStyle = '#fff'; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.5; ctx.stroke(); ctx.globalAlpha = 1
   }
+  // Home circles are tinted by squad role (read the board at a glance); the
+  // opposition stays the arena's single accent colour.
+  const tint = s.role ? _roleTint(s.role) : null
+  const fill = s.ko ? '#555' : (tint ? tint.fill : color)
+  const stroke = tint ? tint.edge : edge
   ctx.beginPath(); ctx.arc(s.x, s.y, R_SHINOBI, 0, Math.PI * 2)
-  ctx.fillStyle = s.ko ? '#555' : color; ctx.fill()
-  ctx.lineWidth = 1.5; ctx.strokeStyle = edge; ctx.stroke()
+  ctx.fillStyle = fill; ctx.fill()
+  ctx.lineWidth = 1.5; ctx.strokeStyle = stroke; ctx.stroke()
   if (s.tag) {
     ctx.font = 'bold 7px monospace'; ctx.textAlign = 'center'
     ctx.fillStyle = '#0a0a0a'
@@ -124,6 +142,24 @@ function _drawShinobi(ctx, s, color, edge, hot) {
     const col = s.stamina >= 60 ? '#8fbc8f' : s.stamina >= 35 ? '#c9a84c' : s.stamina >= 15 ? '#f0a030' : '#cc5a4a'
     ctx.fillStyle = col; ctx.fillRect(x0, y0, w * Math.max(0, s.stamina) / 100, 2)
   }
+}
+
+// The contested objective — a scroll token both sides fight over. Its position
+// tracks who's winning the match, giving the eye a single thing to follow.
+function _drawObjective(ctx, obj) {
+  ctx.save()
+  ctx.translate(obj.x, obj.y)
+  // glow
+  ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2)
+  ctx.fillStyle = 'rgba(201,168,76,.18)'; ctx.fill()
+  // scroll body
+  ctx.fillStyle = '#e8d5a3'; ctx.strokeStyle = '#8a6a2a'; ctx.lineWidth = 1
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-5, -3.5, 10, 7, 1.5) : ctx.rect(-5, -3.5, 10, 7)
+  ctx.fill(); ctx.stroke()
+  // ribbon tie
+  ctx.strokeStyle = '#b03030'; ctx.lineWidth = 1.2
+  ctx.beginPath(); ctx.moveTo(0, -4); ctx.lineTo(0, 4); ctx.stroke()
+  ctx.restore()
 }
 
 export function mountPitch(container, { arena, home = [], away = [], homeLabel = '', awayLabel = '', roster = [], onSelect = null } = {}) {
@@ -149,8 +185,12 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
     home: _formation(home.length ? home : ['', '', ''], 'home'),
     away: _formation(away.length ? away : ['', '', ''], 'away'),
     raf: 0, running: true, paused: false, flash: 0, flashCol: '', hover: null, selected: null,
+    obj: { x: CX, y: CY, tx: CX, ty: CY },   // contested objective token
+    crowd: 0, roar: null,                     // crowd pulse + floating reaction text
   }
-  const _resetTargets = () => { [...st.home, ...st.away].forEach(s => { s.tx = s.x; s.ty = s.y }) }
+  // Tag home circles with their squad role → role-tinted rendering + legend.
+  st.home.forEach((s, i) => { s.role = roster[i]?.role || null })
+  const _resetTargets = () => { [...st.home, ...st.away].forEach(s => { s.tx = s.x; s.ty = s.y }); st.obj.tx = CX; st.obj.ty = CY }
   _resetTargets()
 
   // ── Interaction: hover shows names, click inspects ─────────────────────────
@@ -176,7 +216,12 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
   function frame() {
     if (!st.running) return
     if (!st.paused) {
-      _drawStadium(ctx, arena)
+      _drawStadium(ctx, arena, st.crowd)
+      if (st.crowd > 0) st.crowd -= 0.02
+      // Objective token — a contested scroll dragged toward whoever's winning.
+      st.obj.x += (st.obj.tx - st.obj.x) * 0.06
+      st.obj.y += (st.obj.ty - st.obj.y) * 0.06
+      _drawObjective(ctx, st.obj)
       const all = [[st.home, '#c9a84c', '#e8d5a3'], [st.away, arena.palette.accent, arena.palette.line]]
       all.forEach(([team, col, edge]) => team.forEach((s, i) => {
         s.vx += (s.tx - s.x) * 0.012 + _jit(i, performance.now() / 900 | 0) * 0.12
@@ -188,6 +233,14 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
         if (d > HEX_R - R_SHINOBI) { const f = (HEX_R - R_SHINOBI) / d; s.x = CX + dx * f; s.y = CY + dy * f }
         _drawShinobi(ctx, s, col, edge, s === st.hover || s === st.selected || s === st.spot)
       }))
+      // Crowd reaction text — a roar on a big swing, a groan on a KO.
+      if (st.roar && st.roar.life > 0) {
+        ctx.save(); ctx.globalAlpha = Math.min(1, st.roar.life)
+        ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center'
+        ctx.fillStyle = st.roar.color
+        ctx.fillText(st.roar.text, CX, 30 - (1 - st.roar.life) * 8)
+        ctx.restore(); st.roar.life -= 0.02
+      }
       if (st.flash > 0) {
         ctx.save(); ctx.globalAlpha = st.flash * 0.5
         ctx.beginPath(); ctx.arc(CX, CY, 30 * (1.4 - st.flash), 0, Math.PI * 2)
@@ -235,12 +288,20 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
       // Whoever's caught out. On a lost exchange the caller passes the most-spent
       // home shinobi (koIdx) so pitch + narration agree. Otherwise (opposition
       // loses, no stamina model) rotate a cosmetic KO on odd beats.
-      if (!beat.won && koIdx >= 0 && st.home[koIdx]) st.home[koIdx].ko = true
+      let koHome = false
+      if (!beat.won && koIdx >= 0 && st.home[koIdx]) { st.home[koIdx].ko = true; koHome = true }
       else if (loseSide.length && i % 2 === 1) loseSide[i % loseSide.length].ko = true
       // Spotlight the acting shinobi — pull them to the front of the clash + ring.
       st.spot = (spotIdx >= 0 && st.home[spotIdx]) ? st.home[spotIdx] : null
       if (st.spot) { st.spot.tx = cx + (beat.won ? -6 : 6); st.spot.ty = cy - 4 }
       st.flash = 1; st.flashCol = beat.won ? '#8fbc8f' : '#cc5a4a'
+      // Objective drifts toward the side that won this exchange.
+      st.obj.tx = CX + (beat.won ? -1 : 1) * HEX_R * 0.42; st.obj.ty = cy * 0.5 + CY * 0.5
+      // Crowd reacts: a roar when it's your beat, a groan (or a gasp on a KO) when it's theirs.
+      st.crowd = 1
+      st.roar = koHome ? { text: 'OOF!', color: '#cc5a4a', life: 1 }
+        : beat.won ? { text: 'ROAAR!', color: '#8fbc8f', life: 1 }
+        : { text: 'groan…', color: '#9a9080', life: 1 }
     },
     /** Final tableau — winners ring the centre, losers scatter to their end. */
     finish(won) {
@@ -252,6 +313,9 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
       })
       loseSide.forEach((s, k) => { s.tx = CX + (won ? 1 : -1) * HEX_R * 0.72; s.ty = CY + (k - (loseSide.length - 1) / 2) * 24 })
       st.flash = 1; st.flashCol = won ? '#c9a84c' : '#cc5a4a'
+      st.obj.tx = CX; st.obj.ty = CY   // objective claimed at the centre
+      st.crowd = 1
+      st.roar = won ? { text: 'CHAMPIONS!', color: '#c9a84c', life: 1.4 } : { text: '…', color: '#9a9080', life: 0.6 }
     },
     /** Back to kickoff formations — used by the replay control. */
     reset() {
@@ -263,6 +327,7 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
       })
       re(st.home, 'home'); re(st.away, 'away')
       st.flash = 0; st.selected = null; st.spot = null
+      st.obj.x = CX; st.obj.y = CY; st.obj.tx = CX; st.obj.ty = CY; st.crowd = 0; st.roar = null
     },
     /** Live condition readout: set home-side stamina values (0-100, by index). */
     updateStamina(byIdx = []) {

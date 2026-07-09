@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   staminaStart, MATCH_TACTICS, TACTIC_BY_ID, ROLE_DRAIN,
   unitCompRead, beatDrain, staminaBand, finishEffects,
+  simulateFinalStamina, DEFAULT_MATCH_PREFS, resolveMatchPrefs, playerOfMatch,
 } from '../shared/utils/matchSim.js'
 
 describe('matchSim — starting condition', () => {
@@ -81,5 +82,54 @@ describe('matchSim — condition bands + finish effects', () => {
     const ragged = finishEffects(10)
     expect(ragged.workloadDelta).toBeGreaterThan(0)
     expect(ragged.moraleDelta).toBeLessThanOrEqual(0)
+  })
+})
+
+describe('matchSim — auto-resolve simulation', () => {
+  it('simulateFinalStamina matches beat-by-beat drain for a whole sequence', () => {
+    const starts = [80], roles = ['flex'], beatsWon = [true, false, true]
+    // reproduce the loop by hand
+    let s = 80
+    for (const won of beatsWon) s = Math.max(0, Math.min(100, s - beatDrain({ role: 'flex', tactic: 'balanced', won, stamina: s })))
+    expect(simulateFinalStamina({ starts, roles, beatsWon })).toEqual([s])
+  })
+
+  it('a medic comp regens on won beats; conserve tactic finishes fresher than press', () => {
+    const base = { starts: [80], roles: ['medical'], beatsWon: [true, true] }
+    const withRegen = simulateFinalStamina({ ...base, comp: { drainMult: 1, regenPerWin: 4 } })[0]
+    const noRegen = simulateFinalStamina({ ...base, comp: { drainMult: 1, regenPerWin: 0 } })[0]
+    expect(withRegen).toBeGreaterThan(noRegen)
+    const press = simulateFinalStamina({ starts: [80], roles: ['flex'], beatsWon: [true, true], tactic: 'press' })[0]
+    const conserve = simulateFinalStamina({ starts: [80], roles: ['flex'], beatsWon: [true, true], tactic: 'conserve' })[0]
+    expect(conserve).toBeGreaterThan(press)
+  })
+})
+
+describe('matchSim — match preferences', () => {
+  it('resolveMatchPrefs normalises partial / bad input to safe values', () => {
+    expect(resolveMatchPrefs()).toEqual(DEFAULT_MATCH_PREFS)
+    expect(resolveMatchPrefs({ autoResolve: 1, tactic: 'press', battleCall: 'disengage' }))
+      .toEqual({ autoResolve: true, tactic: 'press', battleCall: 'disengage' })
+    // unknown tactic/call fall back
+    expect(resolveMatchPrefs({ tactic: 'yolo', battleCall: 'nope' }))
+      .toEqual({ autoResolve: false, tactic: 'balanced', battleCall: 'commit' })
+  })
+})
+
+describe('matchSim — player of the match', () => {
+  it('picks the top grade, tie-broken by stamina discipline', () => {
+    const scores = [
+      { name: 'Aoi', grade: 'B', role: 'vanguard' },
+      { name: 'Ren', grade: 'A', role: 'support' },
+      { name: 'Sora', grade: 'A', role: 'intel' },
+    ]
+    // two A's — Sora kept more in the tank
+    const motm = playerOfMatch(scores, { Ren: 30, Sora: 70 })
+    expect(motm.name).toBe('Sora')
+    expect(motm.reason).toMatch(/legs at the end/)
+  })
+  it('returns null for an empty or ungraded squad', () => {
+    expect(playerOfMatch([])).toBeNull()
+    expect(playerOfMatch([{ name: 'X' }])).toBeNull()
   })
 })
