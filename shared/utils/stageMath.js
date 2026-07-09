@@ -73,6 +73,23 @@ export function elementalHarmony(elements = []) {
   return { kind: 'mixed', bonus: 0, label: '' }
 }
 
+// When an exam promotion crosses a rank threshold that answers a shinobi's stated
+// dream, it becomes a personal milestone — a resonant chronicle line and a small
+// legend nudge. `newRi` is the rank index they were just promoted to. Dreams that
+// don't map to a rank milestone return { fulfilled:false } and the caller falls back
+// to the plain promotion note. Kept data-driven so new dreams are one line to wire.
+const _DREAM_MILESTONES = {
+  'To lead a squad of their own': { minRi: 2, note: 'a first real step toward leading a squad of their own', legend: 2 },
+  'To surpass their old sensei':  { minRi: 3, note: 'rising at last to stand level with the sensei who trained them', legend: 3 },
+  'To be remembered in the chronicles': { minRi: 2, note: 'a name now written where it can be remembered', legend: 2 },
+  'To prove a civilian-born can be a legend': { minRi: 3, note: 'proof a civilian-born can climb as high as any clan heir', legend: 3 },
+}
+export function dreamPromotionBeat(dream, newRi) {
+  const m = _DREAM_MILESTONES[dream]
+  if (!m || !m.note || newRi < m.minRi) return { fulfilled: false, note: '', legend: 0 }
+  return { fulfilled: true, note: m.note, legend: m.legend }
+}
+
 // ── Adept Exam stage advance probabilities ──────────────────────────────────
 
 // Qualifier — Written Test: rewards intelligence + format fit + seed + posture.

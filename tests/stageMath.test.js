@@ -3,7 +3,7 @@ import {
   clamp, squadPower, avgStat, seedEdge, survivalMult,
   examWrittenProb, examForestNavProb, examForestClashProb, examInjuryChance, examPromotionChance,
   warMobilizeProb, warFrontProb, warCasualtyChance, duelScore,
-  groupIntoCells, examCohesionGain, elementalHarmony,
+  groupIntoCells, examCohesionGain, elementalHarmony, dreamPromotionBeat,
 } from '../shared/utils/stageMath.js'
 
 describe('stageMath — primitives', () => {
@@ -70,6 +70,21 @@ describe('stageMath — exam field helpers', () => {
     expect(elementalHarmony(['Fire', 'Fire', 'Water'])).toEqual({ kind: 'mixed', bonus: 0, label: '' })
     expect(elementalHarmony(['Fire'])).toEqual({ kind: 'none', bonus: 0, label: '' })
     expect(elementalHarmony([])).toEqual({ kind: 'none', bonus: 0, label: '' })
+  })
+
+  it('dreamPromotionBeat fires only when a promotion clears the dream threshold', () => {
+    // squad-leader dream fulfilled at Adept (ri 2)
+    const led = dreamPromotionBeat('To lead a squad of their own', 2)
+    expect(led.fulfilled).toBe(true)
+    expect(led.legend).toBe(2)
+    // same dream, still Initiate (ri 1) — not yet
+    expect(dreamPromotionBeat('To lead a squad of their own', 1).fulfilled).toBe(false)
+    // sensei dream needs Jonin (ri 3)
+    expect(dreamPromotionBeat('To surpass their old sensei', 2).fulfilled).toBe(false)
+    expect(dreamPromotionBeat('To surpass their old sensei', 3).fulfilled).toBe(true)
+    // an unmapped dream never fires
+    expect(dreamPromotionBeat('To retire quietly and open a teahouse', 4).fulfilled).toBe(false)
+    expect(dreamPromotionBeat(undefined, 4).fulfilled).toBe(false)
   })
 })
 

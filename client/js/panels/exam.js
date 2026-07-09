@@ -7,7 +7,7 @@ import { MATCHDAY_TACTICS, tacticRead, TACTIC_STRONG_MOD, TACTIC_WEAK_MOD } from
 import { h2hLabel } from '../../../shared/utils/rivalry.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { openBattleViewer } from '../liveBattle.js'
-import { squadPower, avgStat, seedEdge, examWrittenProb, examForestNavProb, examForestClashProb, examInjuryChance, examPromotionChance, groupIntoCells, examCohesionGain, elementalHarmony } from '../../../shared/utils/stageMath.js'
+import { squadPower, avgStat, seedEdge, examWrittenProb, examForestNavProb, examForestClashProb, examInjuryChance, examPromotionChance, groupIntoCells, examCohesionGain, elementalHarmony, dreamPromotionBeat } from '../../../shared/utils/stageMath.js'
 import { isHostEligible, minHostBid, hostRevenue, genRivalHostBids, hostBidResolve } from '../../../shared/utils/hostBidding.js'
 
 /** Replay the player's most-recent league fixture as a live matchday. */
@@ -966,7 +966,14 @@ function _runFinals(field, biasMod) {
         aL(sn(s) + ' promoted via Exam!' + (fmtB > 0 ? ' (format bonus applied)' : '') + (biasMod > 0 ? ' (judge bias penalised)' : ''), 'good')
         G.dynastyRecords.examWins = (G.dynastyRecords?.examWins || 0) + 1
         addLegend(5)
-        addChronicle('Exam Promotion', `${sn(s)} of ${c.name} fought through the field of five villages and was promoted to ${RANKS[s.ri]}.`, 'shinobi')
+        // Personal beat: if this promotion answers the shinobi's stated dream, mark it.
+        const beat = dreamPromotionBeat(s.dream, s.ri)
+        if (beat.fulfilled) {
+          if (beat.legend) addLegend(beat.legend)
+          addChronicle('A Dream Realised', `${sn(s)} of ${c.name} was promoted to ${RANKS[s.ri]} at the Adept Exam — ${beat.note}.`, 'shinobi')
+        } else {
+          addChronicle('Exam Promotion', `${sn(s)} of ${c.name} fought through the field of five villages and was promoted to ${RANKS[s.ri]}.`, 'shinobi')
+        }
       } else {
         res.push({ name: sn(s), result: `Reached the final with ${c.name}, not promoted.`, promoted: false })
       }
