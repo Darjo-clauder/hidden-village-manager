@@ -5,7 +5,7 @@ import {
 } from './constants.js'
 import { ARCHETYPE_POOL } from '../../shared/utils/personality.js'
 import { newKageDev } from '../../shared/constants/kageDev.js'
-import { identityFor, rollIntensity, applyIdentityBias } from '../../shared/constants/villageIdentity.js'
+import { identityFor, rollIntensity, applyIdentityBias, nationTalent } from '../../shared/constants/villageIdentity.js'
 import { MINOR_NATIONS, pickMinorNation, applyMinorOrigin, getMinorRel, minorFeeMult } from '../../shared/constants/minorNations.js'
 import { effectiveFeePercent } from '../../shared/utils/agentRelations.js'
 
@@ -167,6 +167,11 @@ export function genVillageRoster(v) {
     s.homeVillage = v.n
     Object.keys(s.stats).forEach(k => { s.stats[k] = clamp(Math.round(s.stats[k] * mult), 1, 99) })
     applyIdentityBias(s.stats, identity, v.identityIntensity || 1)
+    // Nation talent flavour: chakra affinity + signature archetype, so each
+    // village's pool reads distinctly (and feeds the exam's elemental cells).
+    const nt = nationTalent(identity)
+    s.element = nt.element
+    if (nt.archetype) s.nationArchetype = nt.archetype
     return s
   })
 }

@@ -47,19 +47,40 @@ export const MATCH_STYLES = {
 // ── Identities, keyed by RIVAL_VILLAGE_POOL name ───────────────────────────────
 // statBias: signature stats added to every generated roster member (scaled by
 // the per-run intensity). Two stats each, themed to the village.
+// element: chakra-nature affinity the village's roster leans toward (feeds
+//   generation + the exam's elemental-harmony cells). archetypes: signature
+//   flavour titles a share of its shinobi carry, so a Frostmere dossier reads
+//   differently from an Emberfall one.
 export const VILLAGE_IDENTITIES = {
-  Dunehold:    { id: 'dunehold',    label: 'Desert Endurance',  style: 'grinder',     statBias: { speed: 5, taijutsu: 4 },        blurb: 'Desert-forged conditioning — they outlast you, then break you.' },
-  Tidefort:    { id: 'tidefort',    label: 'Tidal Discipline',  style: 'fortress',    statBias: { genjutsu: 5, chakra: 4 },       blurb: 'Patient as the tide — illusion-heavy and maddening to attack.' },
-  Stoneveil:   { id: 'stoneveil',   label: 'Stone Doctrine',    style: 'fortress',    statBias: { taijutsu: 5, chakra: 4 },       blurb: 'A wall with a village behind it. Nothing gets through cheaply.' },
-  Stormreach:  { id: 'stormreach',  label: 'Storm Assault',     style: 'blitz',       statBias: { speed: 6, ninjutsu: 3 },        blurb: 'First strike, fastest strike — devastating when it lands.' },
-  Wellspring:  { id: 'wellspring',  label: 'Deep Reserves',     style: 'balanced',    statBias: { chakra: 5, intelligence: 4 },   blurb: 'Bottomless chakra and cool heads. Never beaten before the end.' },
-  Verdancross: { id: 'verdancross', label: 'Wildgrowth School', style: 'opportunist', statBias: { ninjutsu: 5, intelligence: 4 }, blurb: 'Unorthodox growth techniques — dangerous exactly when underestimated.' },
-  Frostmere:   { id: 'frostmere',   label: 'Winter Patience',   style: 'fortress',    statBias: { genjutsu: 5, intelligence: 4 }, blurb: 'Cold, methodical, unhurried. They wait for your mistake.' },
-  Starhaven:   { id: 'starhaven',   label: 'Prodigy Court',     style: 'opportunist', statBias: { ninjutsu: 5, genjutsu: 4 },     blurb: 'A magnet for gifted outliers — brilliance without a system.' },
-  Cragmoor:    { id: 'cragmoor',    label: 'Mountain Blood',    style: 'grinder',     statBias: { taijutsu: 6, chakra: 3 },       blurb: 'Bred at altitude, built like the cliffs. They bully the weak.' },
-  Emberfall:   { id: 'emberfall',   label: 'Ember Fury',        style: 'blitz',       statBias: { ninjutsu: 6, taijutsu: 3 },     blurb: 'Everything burns — including, some seasons, their own campaign.' },
-  Mistral:     { id: 'mistral',     label: 'Veiled Arts',       style: 'opportunist', statBias: { genjutsu: 5, speed: 4 },        blurb: 'You never see the shape of them until the match is over.' },
-  Thornveil:   { id: 'thornveil',   label: 'Thorn Tactics',     style: 'balanced',    statBias: { intelligence: 5, speed: 4 },    blurb: 'Traps, preparation, and precision. Every engagement is planned.' },
+  Dunehold:    { id: 'dunehold',    label: 'Desert Endurance',  style: 'grinder',     statBias: { speed: 5, taijutsu: 4 },        element: 'Earth',     archetypes: ['Dune Strider', 'Sandveil Ascetic'],   blurb: 'Desert-forged conditioning — they outlast you, then break you.' },
+  Tidefort:    { id: 'tidefort',    label: 'Tidal Discipline',  style: 'fortress',    statBias: { genjutsu: 5, chakra: 4 },       element: 'Water',     archetypes: ['Tide Caller', 'Mist Diver'],          blurb: 'Patient as the tide — illusion-heavy and maddening to attack.' },
+  Stoneveil:   { id: 'stoneveil',   label: 'Stone Doctrine',    style: 'fortress',    statBias: { taijutsu: 5, chakra: 4 },       element: 'Earth',     archetypes: ['Stone Bulwark', 'Granite Monk'],      blurb: 'A wall with a village behind it. Nothing gets through cheaply.' },
+  Stormreach:  { id: 'stormreach',  label: 'Storm Assault',     style: 'blitz',       statBias: { speed: 6, ninjutsu: 3 },        element: 'Lightning', archetypes: ['Storm Striker', 'Gale Skirmisher'],   blurb: 'First strike, fastest strike — devastating when it lands.' },
+  Wellspring:  { id: 'wellspring',  label: 'Deep Reserves',     style: 'balanced',    statBias: { chakra: 5, intelligence: 4 },   element: 'Water',     archetypes: ['Wellkeeper', 'Deep Adept'],           blurb: 'Bottomless chakra and cool heads. Never beaten before the end.' },
+  Verdancross: { id: 'verdancross', label: 'Wildgrowth School', style: 'opportunist', statBias: { ninjutsu: 5, intelligence: 4 }, element: 'Wind',      archetypes: ['Thornweaver', 'Bloomshaper'],         blurb: 'Unorthodox growth techniques — dangerous exactly when underestimated.' },
+  Frostmere:   { id: 'frostmere',   label: 'Winter Patience',   style: 'fortress',    statBias: { genjutsu: 5, intelligence: 4 }, element: 'Water',     archetypes: ['Frost Warden', 'Rime Sentinel'],      blurb: 'Cold, methodical, unhurried. They wait for your mistake.' },
+  Starhaven:   { id: 'starhaven',   label: 'Prodigy Court',     style: 'opportunist', statBias: { ninjutsu: 5, genjutsu: 4 },     element: 'Lightning', archetypes: ['Star Prodigy', 'Astral Savant'],      blurb: 'A magnet for gifted outliers — brilliance without a system.' },
+  Cragmoor:    { id: 'cragmoor',    label: 'Mountain Blood',    style: 'grinder',     statBias: { taijutsu: 6, chakra: 3 },       element: 'Earth',     archetypes: ['Crag Breaker', 'Peakborn Brawler'],   blurb: 'Bred at altitude, built like the cliffs. They bully the weak.' },
+  Emberfall:   { id: 'emberfall',   label: 'Ember Fury',        style: 'blitz',       statBias: { ninjutsu: 6, taijutsu: 3 },     element: 'Fire',      archetypes: ['Flame Duelist', 'Ash Runner'],        blurb: 'Everything burns — including, some seasons, their own campaign.' },
+  Mistral:     { id: 'mistral',     label: 'Veiled Arts',       style: 'opportunist', statBias: { genjutsu: 5, speed: 4 },        element: 'Wind',      archetypes: ['Veil Dancer', 'Whisper Adept'],       blurb: 'You never see the shape of them until the match is over.' },
+  Thornveil:   { id: 'thornveil',   label: 'Thorn Tactics',     style: 'balanced',    statBias: { intelligence: 5, speed: 4 },    element: 'Wind',      archetypes: ['Snare Tactician', 'Bramble Warden'],  blurb: 'Traps, preparation, and precision. Every engagement is planned.' },
+}
+
+// Chakra natures used when a village has no explicit affinity (mirrors ELEMENTS).
+const _ELEMENTS = ['Fire', 'Water', 'Wind', 'Earth', 'Lightning']
+
+/**
+ * Roll a nation-flavoured (element, archetype) for one generated shinobi. The
+ * village's chakra affinity dominates its roster (~60%) but never entirely —
+ * every nation still fields the odd outlier — and a share carry a signature
+ * archetype title. Pure; pass an rng for determinism. Returns { element, archetype }.
+ */
+export function nationTalent(identity, rng = Math.random) {
+  const aff = identity?.element
+  const element = aff && rng() < 0.6 ? aff : _ELEMENTS[Math.floor(rng() * _ELEMENTS.length)]
+  const pool = identity?.archetypes || []
+  const archetype = pool.length && rng() < 0.5 ? pool[Math.floor(rng() * pool.length)] : null
+  return { element, archetype }
 }
 
 const DEFAULT_IDENTITY = { id: 'none', label: 'Unaligned', style: 'balanced', statBias: {}, blurb: '' }

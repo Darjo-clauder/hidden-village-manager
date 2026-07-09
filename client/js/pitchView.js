@@ -33,6 +33,16 @@ export const ROLE_TINT = {
 }
 function _roleTint(role) { return ROLE_TINT[role] || ROLE_TINT.flex }
 
+// Chakra-element flavour for combat FX — colour + glyph of the jutsu thrown.
+export const ELEMENT_FX = {
+  Fire:      { color: '#e0774a', glyph: '🔥' },
+  Water:     { color: '#5b9bd0', glyph: '💧' },
+  Wind:      { color: '#8fd0a0', glyph: '🌀' },
+  Earth:     { color: '#c9a86a', glyph: '⛰' },
+  Lightning: { color: '#e0d060', glyph: '⚡' },
+}
+function _elemFx(el) { return ELEMENT_FX[el] || { color: '#c9a84c', glyph: '✦' } }
+
 // Deterministic per-index jitter so formations look organic but stable.
 function _jit(i, salt = 0) { const s = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453; return (s - Math.floor(s)) - 0.5 }
 
@@ -162,6 +172,45 @@ function _drawObjective(ctx, obj) {
   ctx.restore()
 }
 
+// ── Combat FX — the difference between a fight and a shoving match ─────────────
+// A small particle system layered over the moving circles: elemental jutsu
+// projectiles that arc from a caster to a target and burst, melee slashes
+// between clashing pairs, and support pulses. Each fx is a short-lived object
+// advanced by `t` (0→1) every frame. Pure presentation — no bearing on outcome.
+function _updateFx(st) {
+  st.fx = (st.fx || []).filter(f => { f.t += f.speed; return f.t < 1 })
+}
+function _drawFx(ctx, fx) {
+  ;(fx || []).forEach(f => {
+    if (f.kind === 'proj') {
+      const e = f.t, x = f.sx + (f.tx - f.sx) * e, y = f.sy + (f.ty - f.sy) * e
+      ctx.save(); ctx.globalAlpha = 1 - e * 0.3
+      ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI * 2); ctx.fillStyle = f.color; ctx.fill()
+      // little trailing wisp
+      ctx.globalAlpha = (1 - e) * 0.4
+      ctx.beginPath(); ctx.arc(x - (f.tx - f.sx) * 0.06, y - (f.ty - f.sy) * 0.06, 1.6, 0, Math.PI * 2); ctx.fill()
+      ctx.restore()
+      if (e > 0.82) _burst(ctx, f.tx, f.ty, f.color, (e - 0.82) / 0.18)
+    } else if (f.kind === 'slash') {
+      ctx.save(); ctx.globalAlpha = Math.sin(f.t * Math.PI)
+      ctx.strokeStyle = f.color; ctx.lineWidth = 1.6
+      const mx = (f.sx + f.tx) / 2, my = (f.sy + f.ty) / 2, dx = (f.tx - f.sx) * 0.4, dy = (f.ty - f.sy) * 0.4
+      ctx.beginPath(); ctx.moveTo(mx - dx - dy * 0.4, my - dy + dx * 0.4); ctx.lineTo(mx + dx + dy * 0.4, my + dy - dx * 0.4); ctx.stroke()
+      ctx.restore()
+    } else if (f.kind === 'pulse') {
+      ctx.save(); ctx.globalAlpha = (1 - f.t) * 0.7
+      ctx.beginPath(); ctx.arc(f.sx, f.sy, 4 + f.t * 12, 0, Math.PI * 2)
+      ctx.strokeStyle = f.color; ctx.lineWidth = 1.4; ctx.stroke(); ctx.restore()
+    }
+  })
+}
+function _burst(ctx, x, y, color, e) {
+  ctx.save(); ctx.globalAlpha = 1 - e
+  ctx.strokeStyle = color; ctx.lineWidth = 1.4
+  for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; const r = 3 + e * 9; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * 3, y + Math.sin(a) * 3); ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); ctx.stroke() }
+  ctx.restore()
+}
+
 export function mountPitch(container, { arena, home = [], away = [], homeLabel = '', awayLabel = '', roster = [], onSelect = null } = {}) {
   if (!container || !arena) return null
   const canvas = document.createElement('canvas')
@@ -174,22 +223,31 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
   container.appendChild(label)
   const ctx = canvas.getContext('2d')
 
-  // Kickoff formations — arcs inside each half of the hex.
-  const _formation = (list, side) => list.map((tag, i) => ({
-    tag, side, idx: i,
-    x: CX + (side === 'home' ? -1 : 1) * (HEX_R * 0.5 + _jit(i, side === 'home' ? 1 : 2) * 18),
-    y: CY + (i - (list.length - 1) / 2) * 26 + _jit(i, side === 'home' ? 3 : 4) * 10,
-    vx: 0, vy: 0, tx: 0, ty: 0, ko: false,
-  }))
+  // Kickoff formations — members clustered around each side's anchor. A small
+  // squad forms a neat column; a large bracket field packs into a spread cluster
+  // that stays inside the hex (golden-angle scatter keeps it even, not clumped).
+  const _pos = (n, i, side) => {
+    const ax = CX + (side === 'home' ? -1 : 1) * HEX_R * 0.44
+    if (n <= 3) return { x: ax + _jit(i, side === 'home' ? 1 : 2) * 18, y: CY + (i - (n - 1) / 2) * 26 + _jit(i, 3) * 8 }
+    const rad = Math.min(HEX_R * 0.52, 12 + n * 2.4)
+    const ga = i * 2.399963           // golden angle
+    const rr = rad * Math.sqrt((i + 0.5) / n)
+    return { x: ax + Math.cos(ga) * rr * 0.9, y: CY + Math.sin(ga) * rr }
+  }
+  const _formation = (list, side) => list.map((tag, i) => {
+    const p = _pos(list.length, i, side)
+    return { tag, side, idx: i, x: p.x, y: p.y, vx: 0, vy: 0, tx: 0, ty: 0, ko: false }
+  })
   const st = {
     home: _formation(home.length ? home : ['', '', ''], 'home'),
     away: _formation(away.length ? away : ['', '', ''], 'away'),
     raf: 0, running: true, paused: false, flash: 0, flashCol: '', hover: null, selected: null,
     obj: { x: CX, y: CY, tx: CX, ty: CY },   // contested objective token
     crowd: 0, roar: null,                     // crowd pulse + floating reaction text
+    fx: [],                                   // transient combat effects (jutsu/slashes/pulses)
   }
-  // Tag home circles with their squad role → role-tinted rendering + legend.
-  st.home.forEach((s, i) => { s.role = roster[i]?.role || null })
+  // Tag home circles with their squad role + chakra element → tint + FX flavour.
+  st.home.forEach((s, i) => { s.role = roster[i]?.role || null; s.element = roster[i]?.element || null })
   const _resetTargets = () => { [...st.home, ...st.away].forEach(s => { s.tx = s.x; s.ty = s.y }); st.obj.tx = CX; st.obj.ty = CY }
   _resetTargets()
 
@@ -213,6 +271,36 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
     if (onSelect) onSelect(s ? { side: s.side, idx: s.idx, name: _nameOf(s), ko: s.ko, entry: s.side === 'home' ? roster[s.idx] || null : null } : null)
   })
 
+  // Spawn the combat effects for a beat: the spotlight shinobi's signature action
+  // (elemental jutsu / melee slash / support pulse) plus a little ambient skirmish
+  // so the whole field looks like it's fighting, not just shoving.
+  function _spawnBeatFx(st, i, beat) {
+    if (!st.away.length || !st.home.length) return
+    const cx = CX + _jit(i, 9) * 55, cy = CY + _jit(i, 11) * 35
+    const actor = st.spot || st.home[Math.abs(i) % st.home.length]
+    const target = st.away[Math.abs(i * 7 + 1) % st.away.length]
+    const role = actor?.role
+    if (role === 'medical' || role === 'support') {
+      // Support: a pulse over their own side + a covering jutsu at the enemy.
+      st.fx.push({ kind: 'pulse', sx: actor.x, sy: actor.y, t: 0, speed: 0.05, color: _roleTint(role).fill })
+      const e = _elemFx(actor.element)
+      st.fx.push({ kind: 'proj', sx: actor.x, sy: actor.y, tx: cx + 40, ty: cy, t: 0, speed: 0.06, color: e.color })
+    } else if (role === 'vanguard' || !actor?.element) {
+      // Vanguard / no element: melee — a slash between the actor and an enemy.
+      st.fx.push({ kind: 'slash', sx: actor.x, sy: actor.y, tx: target.x, ty: target.y, t: 0, speed: 0.09, color: beat.won ? '#e8d5a3' : '#cc5a4a' })
+    } else {
+      // Elemental ninjutsu — a coloured jutsu arcs to an enemy and bursts.
+      const e = _elemFx(actor.element)
+      st.fx.push({ kind: 'proj', sx: actor.x, sy: actor.y, tx: target.x, ty: target.y, t: 0, speed: 0.055, color: e.color })
+    }
+    // Ambient skirmish: a couple of slashes between random opposing pairs.
+    for (let k = 0; k < 2; k++) {
+      const h = st.home[Math.abs(i * 3 + k) % st.home.length], a = st.away[Math.abs(i + k * 5) % st.away.length]
+      st.fx.push({ kind: 'slash', sx: h.x, sy: h.y, tx: a.x, ty: a.y, t: 0, speed: 0.12, color: '#7a7060' })
+    }
+    if (st.fx.length > 40) st.fx = st.fx.slice(-40)
+  }
+
   function frame() {
     if (!st.running) return
     if (!st.paused) {
@@ -233,6 +321,8 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
         if (d > HEX_R - R_SHINOBI) { const f = (HEX_R - R_SHINOBI) / d; s.x = CX + dx * f; s.y = CY + dy * f }
         _drawShinobi(ctx, s, col, edge, s === st.hover || s === st.selected || s === st.spot)
       }))
+      // Combat FX drawn over the circles — jutsu, slashes, pulses.
+      _updateFx(st); _drawFx(ctx, st.fx)
       // Crowd reaction text — a roar on a big swing, a groan on a KO.
       if (st.roar && st.roar.life > 0) {
         ctx.save(); ctx.globalAlpha = Math.min(1, st.roar.life)
@@ -295,6 +385,7 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
       st.spot = (spotIdx >= 0 && st.home[spotIdx]) ? st.home[spotIdx] : null
       if (st.spot) { st.spot.tx = cx + (beat.won ? -6 : 6); st.spot.ty = cy - 4 }
       st.flash = 1; st.flashCol = beat.won ? '#8fbc8f' : '#cc5a4a'
+      _spawnBeatFx(st, i, beat)
       // Objective drifts toward the side that won this exchange.
       st.obj.tx = CX + (beat.won ? -1 : 1) * HEX_R * 0.42; st.obj.ty = cy * 0.5 + CY * 0.5
       // Crowd reacts: a roar when it's your beat, a groan (or a gasp on a KO) when it's theirs.
@@ -321,13 +412,12 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
     reset() {
       const re = (team, side) => team.forEach((s, i) => {
         s.ko = false; s.vx = 0; s.vy = 0
-        s.x = CX + (side === 'home' ? -1 : 1) * (HEX_R * 0.5 + _jit(i, side === 'home' ? 1 : 2) * 18)
-        s.y = CY + (i - (team.length - 1) / 2) * 26 + _jit(i, side === 'home' ? 3 : 4) * 10
-        s.tx = s.x; s.ty = s.y
+        const p = _pos(team.length, i, side)
+        s.x = p.x; s.y = p.y; s.tx = s.x; s.ty = s.y
       })
       re(st.home, 'home'); re(st.away, 'away')
       st.flash = 0; st.selected = null; st.spot = null
-      st.obj.x = CX; st.obj.y = CY; st.obj.tx = CX; st.obj.ty = CY; st.crowd = 0; st.roar = null
+      st.obj.x = CX; st.obj.y = CY; st.obj.tx = CX; st.obj.ty = CY; st.crowd = 0; st.roar = null; st.fx = []
     },
     /** Live condition readout: set home-side stamina values (0-100, by index). */
     updateStamina(byIdx = []) {

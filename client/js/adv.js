@@ -3653,7 +3653,7 @@ function _buildMissionReport(sq, m, succeeded, mev, payout = 0) {
     const ratio = statVal / baseline
     const grade = ratio >= 1.3 ? 'A' : ratio >= 1.0 ? 'B' : ratio >= 0.75 ? 'C' : 'D'
     const detail = grade === 'A' ? 'Exceptional' : grade === 'B' ? 'Solid' : grade === 'C' ? 'Below par' : 'Poor showing'
-    return { id: s.id, name: sn(s), role: roleId, grade, detail, statVal: Math.round(statVal) }
+    return { id: s.id, name: sn(s), role: roleId, grade, detail, statVal: Math.round(statVal), element: s.element || null }
   }).filter(Boolean)
   const rep = { missionId: m.id, missionName: m.n, missionRk: m.rk, squadId: sq.id, squadName: sq.n, succeeded, year: G.year, month: G.month, scores,
     spec: m.spec || null,   // drives the animated pitch's mission layout (stealth compound, siege works...)

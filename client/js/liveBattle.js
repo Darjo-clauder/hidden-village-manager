@@ -92,9 +92,20 @@ function _repArena(rep) {
   return arenaFor('mission', { spec: rep.spec })
 }
 
-// Shirt tags for the circles — initials from squad grades where we have names.
+// Shirt tags for the circles. Missions/matchdays field the actual squad (from
+// grades); the bracket encounters (Adept Exam, Grand Tournament) are multi-village
+// melees, so they field a LARGER board — many combatants a side — to read as the
+// big event they are.
 function _tags(rep) {
   const names = (rep.scores || []).map(s => (s.name || '').split(' ').map(w => w[0] || '').join('').slice(0, 2).toUpperCase())
+  if (rep.kind === 'tournament' || rep.kind === 'exam') {
+    const homeN = rep.kind === 'tournament' ? 5 : 4
+    const awayN = rep.kind === 'tournament' ? 10 : 8   // the rest of the field
+    const home = names.length ? names.slice(0, homeN) : Array.from({ length: homeN }, (_, i) => String(i + 1))
+    while (home.length < homeN) home.push(String(home.length + 1))
+    const away = Array.from({ length: awayN }, (_, i) => String(i + 1))
+    return { home, away }
+  }
   const n = Math.min(5, Math.max(3, names.length || 3))
   const home = names.length ? names.slice(0, 5) : Array.from({ length: n }, (_, i) => String(i + 1))
   const away = Array.from({ length: home.length }, (_, i) => String(i + 1))
@@ -296,7 +307,8 @@ function _showInspect(rep, sel) {
     if (opp) {
       const idn = identityFor(opp)
       const st = MATCH_STYLES[idn.style] || MATCH_STYLES.balanced
-      el.innerHTML = `<b style="color:${_repArena(rep).palette.accent}">${opp}</b> · <span style="color:#c9a84c">${idn.label}</span> <span title="${st.desc}" style="color:#9a9080;cursor:help">${st.icon} ${st.label}</span>${idn.blurb ? `<span style="display:block;font-size:7px;color:#7a7060;margin-top:1px">${idn.blurb}</span>` : ''}`
+      const elem = idn.element ? ` · <span style="color:#87ceeb">${idn.element} affinity</span>` : ''
+      el.innerHTML = `<b style="color:${_repArena(rep).palette.accent}">${opp}</b> · <span style="color:#c9a84c">${idn.label}</span> <span title="${st.desc}" style="color:#9a9080;cursor:help">${st.icon} ${st.label}</span>${elem}${idn.blurb ? `<span style="display:block;font-size:7px;color:#7a7060;margin-top:1px">${idn.blurb}</span>` : ''}`
     } else {
       el.innerHTML = `<b>${sel.name}</b> · <span style="color:#7a7060">opposition</span>${sel.ko ? ' · <span style="color:#8fbc8f">taken out of the fight</span>' : ''}`
     }

@@ -1,10 +1,43 @@
 import { describe, it, expect } from 'vitest'
 import {
   VILLAGE_IDENTITIES, MATCH_STYLES, identityFor, rollIntensity, applyIdentityBias, styleParams,
-  identityStageAdv,
+  identityStageAdv, nationTalent,
 } from '../shared/constants/villageIdentity.js'
 import { simMatch } from '../shared/utils/season.js'
 import { mulberry32 } from './helpers/rng.js'
+
+const _ELEMENTS = ['Fire', 'Water', 'Wind', 'Earth', 'Lightning']
+
+describe('nation talent variety', () => {
+  it('every identity has a valid element affinity + signature archetypes', () => {
+    Object.entries(VILLAGE_IDENTITIES).forEach(([name, idn]) => {
+      expect(_ELEMENTS, `${name} element`).toContain(idn.element)
+      expect(Array.isArray(idn.archetypes) && idn.archetypes.length >= 2, `${name} archetypes`).toBe(true)
+    })
+  })
+
+  it('nationTalent leans on the village affinity without being uniform', () => {
+    const idn = VILLAGE_IDENTITIES.Emberfall  // Fire
+    const rng = mulberry32(7)
+    let fire = 0, other = 0, archetyped = 0
+    for (let i = 0; i < 400; i++) {
+      const t = nationTalent(idn, rng)
+      expect(_ELEMENTS).toContain(t.element)
+      t.element === 'Fire' ? fire++ : other++
+      if (t.archetype) { expect(idn.archetypes).toContain(t.archetype); archetyped++ }
+    }
+    expect(fire).toBeGreaterThan(other)          // affinity dominates
+    expect(other).toBeGreaterThan(0)             // but never uniform
+    expect(archetyped).toBeGreaterThan(0)        // some carry a signature title
+    expect(archetyped).toBeLessThan(400)
+  })
+
+  it('falls back to a random element with no affinity, and never archetypes', () => {
+    const t = nationTalent({}, mulberry32(1))
+    expect(_ELEMENTS).toContain(t.element)
+    expect(t.archetype).toBeNull()
+  })
+})
 
 // The pool in client/js/constants.js — kept in lockstep so every drawable village
 // has an identity. If a village is added to the pool, this list (and the identity
