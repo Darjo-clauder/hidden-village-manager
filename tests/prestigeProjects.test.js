@@ -1,7 +1,32 @@
 import { describe, it, expect } from 'vitest'
 import {
   PRESTIGE_PROJECTS, PROJECT_BY_ID, completedEffect, buildProgress, canStartProject,
+  FESTIVAL_BASE_COST, festivalCost, festivalReward,
 } from '../shared/constants/prestigeProjects.js'
+
+describe('prestige sinks — grand works + festival', () => {
+  it('includes mega-tier grand works costed for a millions-deep treasury', () => {
+    const grand = PRESTIGE_PROJECTS.filter(p => p.cost >= 1000000)
+    expect(grand.length).toBeGreaterThanOrEqual(3)
+    // the top wonder should be a real dent in a ~25M balloon
+    expect(Math.max(...PRESTIGE_PROJECTS.map(p => p.cost))).toBeGreaterThanOrEqual(6000000)
+    grand.forEach(p => expect(p.effect.legend).toBeGreaterThan(0))
+  })
+
+  it('festivalCost escalates 1.6x per festival held', () => {
+    expect(festivalCost(0)).toBe(FESTIVAL_BASE_COST)
+    expect(festivalCost(1)).toBe(Math.round(FESTIVAL_BASE_COST * 1.6))
+    expect(festivalCost(3)).toBe(Math.round(FESTIVAL_BASE_COST * 1.6 ** 3))
+    expect(festivalCost(-2)).toBe(FESTIVAL_BASE_COST) // guards negatives
+    // strictly increasing → an ever-growing sink
+    expect(festivalCost(5)).toBeGreaterThan(festivalCost(4))
+  })
+
+  it('festivalReward is a flat prestige payoff', () => {
+    expect(festivalReward().legend).toBeGreaterThan(0)
+    expect(festivalReward().morale).toBeGreaterThan(0)
+  })
+})
 
 describe('prestige projects — data shape', () => {
   it('every project has a unique id, positive cost + buildMonths, and an effect object', () => {

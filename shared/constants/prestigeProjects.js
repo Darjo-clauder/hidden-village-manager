@@ -33,7 +33,33 @@ export const PRESTIGE_PROJECTS = [
   { id: 'hall',       name: 'Hall of Heroes',   icon: '🏛', cost: 70000,  buildMonths: 18,
     desc: 'An eternal hall honouring the village\'s legends.',
     effect: { moraleFloor: 5, legend: 30 } },
+  // ── Grand works — mega-tier sinks for a wealthy dynasty. Same machinery, costs
+  // scaled to a treasury that has grown into the millions; the balloon has somewhere
+  // to go beyond the five founding monuments. Long builds keep them a commitment.
+  { id: 'skyspire',   name: 'The Sky Spire',    icon: '🗼', cost: 1500000, buildMonths: 48,
+    desc: 'A spire visible from every border — the village made legend in stone.',
+    effect: { moraleFloor: 10, legend: 80 } },
+  { id: 'citadel',    name: 'Eternal Citadel',  icon: '🏰', cost: 3000000, buildMonths: 60,
+    desc: 'An impregnable seat of power that will outlast every warden who raised it.',
+    effect: { defBonus: 60, academyBoost: 2, legend: 120 } },
+  { id: 'wonder',     name: 'The Great Wonder', icon: '🌌', cost: 6000000, buildMonths: 72,
+    desc: 'A generational marvel spoken of across the nations for a hundred years.',
+    effect: { moraleFloor: 14, academyBoost: 3, legend: 200 } },
 ]
+
+// ── Grand Festival — a repeatable prestige sink with escalating cost ──────────
+// Projects are one-shot; a treasury that keeps growing needs a sink that keeps
+// taking. A festival converts a large lump of ryo into immediate legend + morale,
+// and each one you throw costs more (1.6x per prior festival) — so the richer the
+// dynasty, the bigger the bill for the same prestige. Convert-not-farm by design.
+export const FESTIVAL_BASE_COST = 300000
+export function festivalCost(timesHeld = 0) {
+  return Math.round(FESTIVAL_BASE_COST * Math.pow(1.6, Math.max(0, timesHeld)))
+}
+// Flat prestige payoff; the rising cost is what makes legend-per-ryo diminish.
+export function festivalReward() {
+  return { legend: 15, morale: 8 }
+}
 
 export const PROJECT_BY_ID = Object.fromEntries(PRESTIGE_PROJECTS.map(p => [p.id, p]))
 

@@ -1,7 +1,7 @@
-import { G, fmt } from '../state.js'
+import { G, fmt, clamp, addLegend, addChronicle } from '../state.js'
 import { UPGRADES_DEF, BUILDING_MAINTENANCE, VILLAGE_DOCTRINES, DOCTRINE_BY_ID } from '../constants.js'
 import { DISTRICTS, getDistrictPassives } from '../../../shared/constants/districts.js'
-import { PRESTIGE_PROJECTS, PROJECT_BY_ID, completedEffect, buildProgress, canStartProject } from '../../../shared/constants/prestigeProjects.js'
+import { PRESTIGE_PROJECTS, PROJECT_BY_ID, completedEffect, buildProgress, canStartProject, festivalCost, festivalReward } from '../../../shared/constants/prestigeProjects.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { aL, ntf, upUI } from '../ui.js'
 
@@ -73,7 +73,38 @@ function _prestigeProjectsHtml() {
     <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">🗿 Prestige Projects</div>
     <div style="font-size:7px;color:#7a7060;margin-bottom:8px">Multi-year monuments. A heavy ryo cost buys lasting prestige — legend, morale, defense — not more money. The dynasty's mark on the world.</div>
     ${rows}
+    ${_festivalHtml()}
   </div>`
+}
+
+// Grand Festival — a repeatable prestige sink whose cost climbs with each one held,
+// so a bloated treasury always has somewhere to bleed. Immediate legend + morale.
+function _festivalHtml() {
+  const held = G.festivalsHeld || 0
+  const cost = festivalCost(held)
+  const rw = festivalReward()
+  const canHold = (G.ryo || 0) >= cost
+  return `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:8px 10px;margin-top:10px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:16px">🎆</span>
+      <div style="flex:1"><div style="font-size:10px;color:#e8e0cc">Grand Festival</div><div style="font-size:7px;color:#7a7060">A lavish village-wide festival — +${rw.legend} legend, +${rw.morale} morale now. ${held ? `Held ${held}× · each costs more.` : 'Repeatable; cost rises each time.'}</div></div>
+      <button class="gb" onclick="holdFestival()" ${canHold ? '' : 'disabled'} style="font-size:8px">Hold · ${fmt(cost)}</button>
+    </div>
+  </div>`
+}
+
+export function holdFestival() {
+  const held = G.festivalsHeld || 0
+  const cost = festivalCost(held)
+  if ((G.ryo || 0) < cost) { ntf('Not enough ryo for a festival on that scale.'); return }
+  const rw = festivalReward()
+  G.ryo -= cost
+  G.festivalsHeld = held + 1
+  addLegend(rw.legend)
+  G.morale = clamp((G.morale || 50) + rw.morale, 0, 100)
+  aL(`Held a Grand Festival for ${fmt(cost)} ryo — the village celebrates. +${rw.legend} legend, +${rw.morale} morale.`, 'good')
+  addChronicle('Grand Festival', `${G.vName} threw a Grand Festival — coffers opened, and the village's name carried further for it.`, 'milestone')
+  upUI()
 }
 
 export function startPrestigeProject(id) {
