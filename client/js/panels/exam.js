@@ -27,6 +27,7 @@ export function watchMatchday() {
     kind: 'league', result, succeeded: result === 'win', phases, verdict,
     scoreline: { home: G.vName, away: opp, hs: playerScore, as: oppScore },
     arena: arenaFor('league', { homeVillage: m.a }),   // play in the actual home side's nation venue
+    oppVillage: opp,   // click a red circle to scout their identity + style
   })
 }
 

@@ -9,6 +9,8 @@ import { BATTLE_CALLS } from '../../shared/utils/battleCalls.js'
 import { arenaFor } from '../../shared/constants/arenas.js'
 import { mountPitch, ROLE_TINT } from './pitchView.js'
 import { MATCH_TACTICS, unitCompRead, beatDrain, staminaBand, finishEffects, resolveMatchPrefs, playerOfMatch } from '../../shared/utils/matchSim.js'
+import { identityFor } from '../../shared/constants/villageIdentity.js'
+import { MATCH_STYLES } from '../../shared/constants/villageIdentity.js'
 import { G } from './state.js'
 
 // Match preferences live on G (persist in the save). resolveMatchPrefs guards
@@ -288,7 +290,16 @@ function _showInspect(rep, sel) {
   } else if (sel.side === 'home') {
     el.innerHTML = `<b style="color:#c9a84c">${sel.name}</b>${sel.ko ? ' · <span style="color:#cc5a4a">taken out of the fight</span>' : ''}`
   } else {
-    el.innerHTML = `<b>${sel.name}</b> · <span style="color:#7a7060">opposition</span>${sel.ko ? ' · <span style="color:#8fbc8f">taken out of the fight</span>' : ''}`
+    // Opposition scouting: when the report names the opponent village, surface its
+    // identity + match style — click a red circle to read who you're up against.
+    const opp = rep.oppVillage
+    if (opp) {
+      const idn = identityFor(opp)
+      const st = MATCH_STYLES[idn.style] || MATCH_STYLES.balanced
+      el.innerHTML = `<b style="color:${_repArena(rep).palette.accent}">${opp}</b> · <span style="color:#c9a84c">${idn.label}</span> <span title="${st.desc}" style="color:#9a9080;cursor:help">${st.icon} ${st.label}</span>${idn.blurb ? `<span style="display:block;font-size:7px;color:#7a7060;margin-top:1px">${idn.blurb}</span>` : ''}`
+    } else {
+      el.innerHTML = `<b>${sel.name}</b> · <span style="color:#7a7060">opposition</span>${sel.ko ? ' · <span style="color:#8fbc8f">taken out of the fight</span>' : ''}`
+    }
   }
 }
 
@@ -376,6 +387,10 @@ function _revealOutcome(rep) {
     const avg = Math.round(c.stamina.reduce((a, v) => a + v, 0) / c.stamina.length)
     condFx = rep.applyCondition(avg)
   }
+  // Settle capture-the-scroll (once) — the objective bounty for holding the token.
+  let scrollFx = rep._scrollResult || null
+  if (typeof rep.applyScroll === 'function' && !rep._scrollDone) scrollFx = rep.applyScroll()
+  _archiveMatch(rep)   // stash a closure-free copy for the replay archive
   const el = document.getElementById('bv-outcome'); if (!el) return
   const league = rep.kind === 'league'
   const tourney = rep.kind === 'tournament'
@@ -392,6 +407,9 @@ function _revealOutcome(rep) {
     : ''
   const condNote = condFx
     ? `<div class="bv-call-note bv-cond-${condFx.id}">${condFx.label} — ${condFx.note}${condFx.workloadDelta ? ` <b>(${condFx.workloadDelta > 0 ? '+' : ''}${condFx.workloadDelta} fatigue${condFx.moraleDelta ? `, ${condFx.moraleDelta > 0 ? '+' : ''}${condFx.moraleDelta} morale` : ''})</b>` : ''}</div>`
+    : ''
+  const scrollNote = (scrollFx && scrollFx.held)
+    ? `<div class="bv-call-note bv-scroll">📜 ${scrollFx.note}${scrollFx.ryo ? ` <b>(+${scrollFx.ryo.toLocaleString()} ryo)</b>` : ''}</div>`
     : ''
   const detail = (tourney)
     ? `<div class="bv-scoreline">Reached <b>${rep.reachedStage || 'the field'}</b>${rep.kiaTotal ? ` · ${rep.kiaTotal} fallen ☠` : ''}</div>`
@@ -410,10 +428,37 @@ function _revealOutcome(rep) {
     <div class="bv-verdict">${verdict}</div>
     ${callNote}
     ${condNote}
+    ${scrollNote}
     ${motmHtml}
     ${detail}
     <button class="bv-close" onclick="closeBattleViewer()">Close</button>`
   el.classList.add('bv-on')
+}
+
+// ── Match replay archive ──────────────────────────────────────────────────────
+// Stash a closure-free snapshot of each watched match so it can be re-watched
+// later from the missions Log. Archived reps carry no applyCall/applyCondition/
+// applyScroll, so replaying them animates without re-applying any effects.
+function _archiveMatch(rep) {
+  if (rep._fromArchive || rep._archived) return
+  rep._archived = true
+  const snap = {
+    missionName: rep.missionName, missionRk: rep.missionRk, kind: rep.kind,
+    phases: (rep.phases || []).map(p => ({ name: p.name, won: p.won })),
+    scores: (rep.scores || []).map(s => ({ name: s.name, role: s.role, grade: s.grade, detail: s.detail })),
+    matchStamina: (rep.matchStamina || []).map(m => ({ name: m.name, role: m.role, stamina: m.stamina })),
+    quality: rep.quality, succeeded: rep.succeeded, verdict: rep.verdict, spec: rep.spec,
+    scoreline: rep.scoreline, oppVillage: rep.oppVillage, arena: rep.arena,
+    result: rep.result, champion: rep.champion, reachedStage: rep.reachedStage,
+    year: G.year, month: G.month, _fromArchive: true,
+  }
+  G.matchArchive = [snap, ...(G.matchArchive || [])].slice(0, 8)
+}
+
+/** Re-watch an archived match (read-only — no effects re-applied). */
+export function watchArchivedMatch(idx) {
+  const snap = (G.matchArchive || [])[idx]
+  if (snap) openBattleViewer({ ...snap })
 }
 
 /** Player's micro-call choice from the prompt (Commit / Disengage). */

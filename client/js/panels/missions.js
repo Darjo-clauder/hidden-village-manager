@@ -693,7 +693,26 @@ export function rMissionLog() {
     return true
   })
 
-  el.innerHTML = `
+  // Match replay archive — re-watch recent matches on the animated board.
+  const archive = G.matchArchive || []
+  const archiveHtml = archive.length ? `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:8px 10px;margin-bottom:12px">
+    <div style="font-size:7px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">📼 Match Replays</div>
+    <div style="display:grid;gap:3px">
+      ${archive.map((a, i) => {
+        const res = a.kind === 'league' ? (a.result === 'win' ? 'W' : a.result === 'draw' ? 'D' : 'L')
+          : a.kind === 'tournament' ? (a.champion ? '🏆' : '—') : (a.succeeded ? '✓' : '✕')
+        const rc = (res === 'W' || res === '✓' || res === '🏆') ? '#8fbc8f' : res === 'D' ? '#c9a84c' : '#f66'
+        return `<div style="display:flex;align-items:center;gap:8px;font-size:8px;padding:2px 4px">
+          <span style="color:#555;width:34px">Y${a.year}M${a.month}</span>
+          <span style="flex:1;color:#e8e0cc">${a.missionName}${a.oppVillage ? ` <span style="color:#7a7060">vs ${a.oppVillage}</span>` : ''}</span>
+          <span style="color:${rc};font-weight:bold;width:14px;text-align:center">${res}</span>
+          <button class="gb" style="font-size:7px;padding:1px 7px;border-color:#c9a84c;color:#c9a84c" onclick="watchArchivedMatch(${i})">▶ Replay</button>
+        </div>`
+      }).join('')}
+    </div>
+  </div>` : ''
+
+  el.innerHTML = archiveHtml + `
     <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap">
       ${filters.map(f => `
         <button onclick="missionLogFilter('${f.id}')"

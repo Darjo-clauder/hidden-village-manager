@@ -27,7 +27,7 @@ import { eraFor, nextShiftIn, transitionLine } from '../../shared/constants/worl
 import { JOURNALIST_BY_ID, pickJournalist, adjustJournalistRel, toneRelDelta } from '../../shared/constants/journalists.js'
 import { nextDeclineYears, findRelegation, pickPromotion } from '../../shared/utils/leagueMembership.js'
 import { resolveBattleCall, callBeatIndex } from '../../shared/utils/battleCalls.js'
-import { staminaStart, finishEffects } from '../../shared/utils/matchSim.js'
+import { staminaStart, finishEffects, scrollOutcome } from '../../shared/utils/matchSim.js'
 import { sponsorMoodDelta, moodPayoutMult, applyMoodDelta, SPONSOR_QUIT_MOOD } from '../../shared/utils/sponsors.js'
 import { supportDelta, revenueMult, applySupport, FESTIVAL_THRESH, UNREST_THRESH } from '../../shared/utils/populace.js'
 import { effectivePlan, medQuality, recoveryStep, reinjuryChance, returningForm } from '../../shared/utils/medical.js'
@@ -3700,6 +3700,25 @@ function _buildMissionReport(sq, m, succeeded, mev, payout = 0) {
     if (fx.id !== 'worked') aL(`${sq.n}: ${fx.label} — ${fx.note}`, fx.id === 'fresh' ? 'good' : 'warn')
     upUI()
     return fx
+  }
+  // Capture-the-scroll: the objective token on the board is a real bonus. Hold it
+  // (win more exchanges than lost) → an intel bounty. Side reward only; the
+  // mission's win/loss is untouched. Applied once by the viewer at the finish.
+  rep.applyScroll = () => {
+    if (rep._scrollDone) return rep._scrollResult
+    const won = (rep.phases || []).filter(p => p.won).length
+    const lost = (rep.phases || []).length - won
+    const r = scrollOutcome({ beatsWon: won, beatsLost: lost, rank: m.rk })
+    if (r.held) {
+      G.ryo = Math.max(0, G.ryo + r.ryo)
+      if (r.legend) addLegend(r.legend)
+      if (r.morale) G.morale = clamp(G.morale + r.morale, 0, 100)
+      aL(`${sq.n}: 📜 ${r.note}`, 'good')
+    }
+    rep._scrollDone = true
+    rep._scrollResult = r
+    upUI()
+    return r
   }
   return rep
 }

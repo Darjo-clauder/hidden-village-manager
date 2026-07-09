@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   staminaStart, MATCH_TACTICS, TACTIC_BY_ID, ROLE_DRAIN,
   unitCompRead, beatDrain, staminaBand, finishEffects,
-  simulateFinalStamina, DEFAULT_MATCH_PREFS, resolveMatchPrefs, playerOfMatch,
+  simulateFinalStamina, DEFAULT_MATCH_PREFS, resolveMatchPrefs, playerOfMatch, scrollOutcome,
 } from '../shared/utils/matchSim.js'
 
 describe('matchSim — starting condition', () => {
@@ -131,5 +131,22 @@ describe('matchSim — player of the match', () => {
   it('returns null for an empty or ungraded squad', () => {
     expect(playerOfMatch([])).toBeNull()
     expect(playerOfMatch([{ name: 'X' }])).toBeNull()
+  })
+})
+
+describe('matchSim — capture the scroll', () => {
+  it('held only when more exchanges won than lost, scaled by rank', () => {
+    expect(scrollOutcome({ beatsWon: 2, beatsLost: 1, rank: 'B' }).held).toBe(true)
+    expect(scrollOutcome({ beatsWon: 2, beatsLost: 1, rank: 'B' }).ryo).toBe(1200)
+    // A-rank bounty exceeds B-rank
+    expect(scrollOutcome({ beatsWon: 3, beatsLost: 0, rank: 'A' }).ryo).toBeGreaterThan(scrollOutcome({ beatsWon: 3, beatsLost: 0, rank: 'B' }).ryo)
+    // held grants a small legend + morale
+    const held = scrollOutcome({ beatsWon: 3, beatsLost: 0, rank: 'S' })
+    expect(held.legend).toBe(1); expect(held.morale).toBe(1)
+  })
+  it('not held on a tie or a loss — no bounty', () => {
+    expect(scrollOutcome({ beatsWon: 1, beatsLost: 1 }).held).toBe(false)
+    expect(scrollOutcome({ beatsWon: 0, beatsLost: 3 }).ryo).toBe(0)
+    expect(scrollOutcome().held).toBe(false)
   })
 })

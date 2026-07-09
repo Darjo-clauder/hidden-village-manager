@@ -113,6 +113,18 @@ export function resolveMatchPrefs(prefs = {}) {
   return { autoResolve: !!prefs.autoResolve, tactic, battleCall }
 }
 
+// ── Capture the scroll — the objective token's mechanical payoff ──────────────
+// The contested scroll on the board is a real bonus objective: hold it (win more
+// exchanges than you lose) and the squad claims an intel bounty. Never changes the
+// mission's win/loss — a side reward, scaled to rank, like the micro-call. Pure.
+const _RANK_SCROLL = { D: 400, C: 700, B: 1200, A: 2000, S: 3200 }
+export function scrollOutcome({ beatsWon = 0, beatsLost = 0, rank = 'C' } = {}) {
+  const held = beatsWon > beatsLost
+  if (!held) return { held: false, ryo: 0, legend: 0, morale: 0, note: 'The opposition kept the scroll — no bounty this time.' }
+  const ryo = _RANK_SCROLL[rank] || _RANK_SCROLL.C
+  return { held: true, ryo, legend: 1, morale: 1, note: `Scroll captured — a ${ryo.toLocaleString()} ryo intel bounty.` }
+}
+
 // ── Player of the Match ───────────────────────────────────────────────────────
 const _GRADE_RANK = { A: 4, B: 3, C: 2, D: 1 }
 
