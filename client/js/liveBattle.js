@@ -9,8 +9,63 @@ import { BATTLE_CALLS } from '../../shared/utils/battleCalls.js'
 import { arenaFor } from '../../shared/constants/arenas.js'
 import { mountPitch } from './pitchView.js'
 
-let _bvTimers = []
-function _clearTimers() { _bvTimers.forEach(clearTimeout); _bvTimers = [] }
+// ── Match clock — a pausable, speed-scalable scheduler ─────────────────────────
+// The old fixed setTimeout chain couldn't pause or fast-forward; the clock
+// accumulates scaled time on a short interval and fires queued reveals when due,
+// which is what makes the ⏸ / speed / replay controls possible.
+let _clock = null
+function _startClock() {
+  _stopClock()
+  _clock = { t: 0, last: performance.now(), paused: false, speed: 1, queue: [] }
+  const sb = document.getElementById('bv-ctl-speed'); if (sb) sb.textContent = '1×'
+  const pb = document.getElementById('bv-ctl-pause'); if (pb) pb.textContent = '⏸'
+  _clock.iv = setInterval(() => {
+    const c = _clock; if (!c) return
+    const now = performance.now()
+    if (!c.paused) c.t += (now - c.last) * c.speed
+    c.last = now
+    c.queue = c.queue.filter(q => { if (q.at <= c.t) { q.fn(); return false } return true })
+  }, 50)
+}
+function _stopClock() { if (_clock) { clearInterval(_clock.iv); _clock = null } }
+function _sched(fn, at) { if (_clock) _clock.queue.push({ fn, at }) }
+function _clearTimers() { _stopClock() }
+
+/** ⏸ / ▶ — pause the reveal clock and the pitch animation together. */
+export function bvTogglePause() {
+  const ov = document.getElementById('bv-overlay'); if (!ov || !_clock) return
+  _clock.paused = !_clock.paused
+  if (ov.__pitch) { _clock.paused ? ov.__pitch.pause() : ov.__pitch.resume() }
+  const b = document.getElementById('bv-ctl-pause'); if (b) b.textContent = _clock.paused ? '▶' : '⏸'
+}
+
+/** Cycle playback speed 1× → 2× → 4×. */
+export function bvCycleSpeed() {
+  if (!_clock) return
+  _clock.speed = _clock.speed >= 4 ? 1 : _clock.speed * 2
+  const b = document.getElementById('bv-ctl-speed'); if (b) b.textContent = _clock.speed + '×'
+}
+
+/** ↻ Replay the whole match from kickoff (outcome + rewards unchanged). */
+export function replayBattle() {
+  const ov = document.getElementById('bv-overlay'); if (!ov) return
+  const rep = ov.__rep, seq = ov.__seq; if (!rep || !seq) return
+  // A pending micro-call locks in as Disengage — replays never re-open bets.
+  if (typeof rep.applyCall === 'function' && !rep._callDone) rep.applyCall('none')
+  const callEl = document.getElementById('bv-call'); if (callEl) { callEl.classList.remove('bv-on'); callEl.innerHTML = '' }
+  seq.forEach((b, i) => {
+    document.getElementById('bv-beat-' + i)?.classList.remove('bv-on')
+    const mk = document.getElementById('bv-mark-' + i); if (mk) { mk.textContent = '·'; mk.style.color = '' }
+    const ln = document.getElementById('bv-line-' + i); if (ln) ln.textContent = ''
+  })
+  const out = document.getElementById('bv-outcome'); if (out) { out.classList.remove('bv-on'); out.innerHTML = '' }
+  const mom = document.getElementById('bv-mom'); if (mom) { mom.style.width = '50%'; mom.style.background = '' }
+  if (ov.__pitch) { ov.__pitch.reset(); ov.__pitch.resume() }
+  _startClock()
+  const b = document.getElementById('bv-ctl-pause'); if (b) b.textContent = '⏸'
+  seq.forEach((_, i) => _sched(() => _revealBeat(seq, i), BEAT_MS * (i + 1)))
+  _sched(() => _revealOutcome(rep), BEAT_MS * (seq.length + 1))
+}
 
 // Resolve the arena for a report: explicit rep.arena wins; otherwise league
 // matches use the home side's nation venue, brackets their special ground,
@@ -67,7 +122,14 @@ export function openBattleViewer(rep) {
         <div class="bv-title">${rep.missionName || 'Operation'} <span class="bv-rk">${rep.missionRk || ''}-Rank</span></div>
         <button class="bv-skip" onclick="skipBattleViewer()">Skip ▸</button>
       </div>
-      <div class="bv-pitch" id="bv-pitch"></div>
+      <div class="bv-pitch" id="bv-pitch">
+        <div class="bv-pitch-ctl">
+          <button class="bv-ctl-btn" id="bv-ctl-pause" onclick="bvTogglePause()" title="Pause / resume">⏸</button>
+          <button class="bv-ctl-btn" id="bv-ctl-speed" onclick="bvCycleSpeed()" title="Playback speed">1×</button>
+          <button class="bv-ctl-btn" onclick="replayBattle()" title="Replay from kickoff">↻</button>
+        </div>
+      </div>
+      <div class="bv-pitch-info" id="bv-pitch-info">Hover a shinobi for their name · click to inspect</div>
       <div class="bv-mom-wrap"><div class="bv-mom-fill" id="bv-mom" style="width:50%"></div></div>
       <div class="bv-mom-labels"><span>◂ Enemy</span><span>Your squad ▸</span></div>
       <div class="bv-beats" id="bv-beats">${seq.map((b, i) => `
@@ -82,23 +144,43 @@ export function openBattleViewer(rep) {
     </div>`
   document.body.appendChild(ov)
 
-  // Animated pitch — the match-engine window above the momentum bar.
+  // Animated pitch — the hexagon-stadium match window above the momentum bar.
   const { home, away } = _tags(rep)
   ov.__pitch = mountPitch(document.getElementById('bv-pitch'), {
     arena: _repArena(rep), home, away,
     homeLabel: rep.squadName || rep.scoreline?.home || '',
     awayLabel: rep.scoreline?.away || '',
+    roster: rep.scores || [],
+    onSelect: sel => _showInspect(rep, sel),
   })
 
   // Reveal every beat up to (but not including) the bet-on beat; then either pause
   // for the micro-call, or play straight through to the outcome.
+  _startClock()
   const stopBefore = cb >= 0 ? cb : seq.length
-  for (let i = 0; i < stopBefore; i++) { _bvTimers.push(setTimeout(() => _revealBeat(seq, i), BEAT_MS * (i + 1))) }
+  for (let i = 0; i < stopBefore; i++) { _sched(() => _revealBeat(seq, i), BEAT_MS * (i + 1)) }
   if (cb >= 0) {
-    _bvTimers.push(setTimeout(() => _promptCall(rep, seq, cb), BEAT_MS * (stopBefore + 1)))
+    _sched(() => _promptCall(rep, seq, cb), BEAT_MS * (stopBefore + 1))
   } else {
-    for (let i = stopBefore; i < seq.length; i++) { _bvTimers.push(setTimeout(() => _revealBeat(seq, i), BEAT_MS * (i + 1))) }
-    _bvTimers.push(setTimeout(() => _revealOutcome(rep), BEAT_MS * (seq.length + 1)))
+    for (let i = stopBefore; i < seq.length; i++) { _sched(() => _revealBeat(seq, i), BEAT_MS * (i + 1)) }
+    _sched(() => _revealOutcome(rep), BEAT_MS * (seq.length + 1))
+  }
+}
+
+// Clicked-shinobi inspector strip — role + live match grade for your side,
+// a scouting one-liner for the opposition.
+const _GRADE_COLOR_TXT = { A: '#c9a84c', B: '#8fbc8f', C: '#f0a030', D: '#f66' }
+function _showInspect(rep, sel) {
+  const el = document.getElementById('bv-pitch-info'); if (!el) return
+  if (!sel) { el.innerHTML = 'Hover a shinobi for their name · click to inspect'; el.classList.remove('bv-on'); return }
+  el.classList.add('bv-on')
+  if (sel.side === 'home' && sel.entry) {
+    const e = sel.entry
+    el.innerHTML = `<b style="color:#c9a84c">${e.name}</b>${e.role ? ` · <span style="color:#9a9080">${e.role}</span>` : ''}${e.grade ? ` · Match grade <b style="color:${_GRADE_COLOR_TXT[e.grade] || '#888'}">${e.grade}</b>` : ''}${e.detail ? ` <span style="color:#7a7060">(${e.detail})</span>` : ''}${sel.ko ? ' · <span style="color:#cc5a4a">taken out of the fight</span>' : ''}`
+  } else if (sel.side === 'home') {
+    el.innerHTML = `<b style="color:#c9a84c">${sel.name}</b>${sel.ko ? ' · <span style="color:#cc5a4a">taken out of the fight</span>' : ''}`
+  } else {
+    el.innerHTML = `<b>${sel.name}</b> · <span style="color:#7a7060">opposition</span>${sel.ko ? ' · <span style="color:#8fbc8f">taken out of the fight</span>' : ''}`
   }
 }
 
@@ -117,20 +199,20 @@ function _promptCall(rep, seq, cb) {
   el.classList.add('bv-on')
   // Animate the countdown, then auto-disengage if untouched.
   requestAnimationFrame(() => { const f = document.getElementById('bv-call-timer'); if (f) { f.style.transition = `width ${CALL_MS}ms linear`; f.style.width = '0%' } })
-  _bvTimers.push(setTimeout(() => _applyCall('none'), CALL_MS))
+  _sched(() => _applyCall('none'), (_clock?.t || 0) + CALL_MS)
 }
 
 // Apply the chosen call, dismiss the prompt, then finish the reveal from the bet beat.
 function _applyCall(call) {
-  _clearTimers()
   const ov = document.getElementById('bv-overlay'); if (!ov) return
   const rep = ov.__rep, seq = ov.__seq
   const cb = rep?.microCall?.beatIndex ?? -1
   if (rep && typeof rep.applyCall === 'function' && !rep._callDone) rep.applyCall(call)
   const el = document.getElementById('bv-call'); if (el) { el.classList.remove('bv-on'); el.innerHTML = '' }
   if (!seq) return
-  for (let i = Math.max(0, cb); i < seq.length; i++) { _bvTimers.push(setTimeout(() => _revealBeat(seq, i), BEAT_MS * (i - cb + 1))) }
-  _bvTimers.push(setTimeout(() => _revealOutcome(rep), BEAT_MS * (seq.length - cb + 1)))
+  _startClock()
+  for (let i = Math.max(0, cb); i < seq.length; i++) { _sched(() => _revealBeat(seq, i), BEAT_MS * (i - cb + 1)) }
+  _sched(() => _revealOutcome(rep), BEAT_MS * (seq.length - cb + 1))
 }
 
 function _revealBeat(seq, i) {
