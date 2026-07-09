@@ -1,6 +1,8 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-07-08 · **HEAD:** `9cfe7de` (committed local; push/mirror pending) · **Branch:** `master` · **Tests:** 947 passing / 79 files
+**Last updated:** 2026-07-08 · **HEAD:** `0bd506c` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 951 passing / 79 files
+
+> **Follow-ups (2026-07-08, `40bf9b8`, `0bd506c`):** (1) **Harmonic quick-form** — exam quick-form now packs elementally-coherent cells (`packHarmonicCells` in stageMath.js: affinity trios → spectrum trios → mixed), so using it actually earns the harmony cohesion bonus. (2) **Prestige treasury sinks** — addresses the late-game ~25M balloon: three mega-tier grand works (Sky Spire 1.5M / Eternal Citadel 3M / Great Wonder 6M, pure data through the existing tested project machinery) + a repeatable **Grand Festival** (`festivalCost`/`festivalReward`, cost climbs 1.6× per hold → ryo→legend/morale, an unbounded sink) in the Upgrades panel. Both unit-tested; `vite build` clean. Festival is reachable in-browser from a fresh game's Upgrades panel (button disabled until affordable).
 
 > **DIRECTION: Steam launch DEFERRED** until the user is satisfied with feature polish — focus on gameplay/depth, not store/signing gates.
 
