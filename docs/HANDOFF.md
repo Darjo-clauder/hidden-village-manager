@@ -1,6 +1,8 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-07-09 · **HEAD:** `a59b885` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 971 passing / 81 files
+**Last updated:** 2026-07-09 · **HEAD:** `bb514b2` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 971 passing / 81 files
+
+> **Stamina-driven KO + squad-card comp read (`bb514b2`):** on a LOST beat the most-spent shinobi is the one caught — `_revealBeat` picks `koIdx` = min post-drain stamina, names them in red ("… loses the thread of the fight", "…, legs gone" when <15), and passes koIdx to `playBeat` so the pitch KOs that exact circle (won beats still spotlight the phase role-hero; opposition keeps cosmetic rotation). The Squads-panel squad card now shows the same `_squadConditionPreview` (stamina band + bars + comp tags) as the assign overlay. Browser-verified on a ✓✕✓ mission (red caught-shinobi line) + squad card "MATCH CONDITION 91·Fresh".
 
 > **Role narration + pre-match condition (`a59b885`):** (1) beat narration now names the shinobi whose role drives each exchange and lights their pitch circle — `spotlightRole` (phase→natural role: intel/vanguard/medic, else rotate) + `roleBeatFlavor` (nameable verb-phrase banks) in `battleViewer.js`, wired into `_revealBeat` (needs the condition layer's roster; generic otherwise); `playBeat(i,b,spotIdx)` rings the acting circle. (2) the squad-assign overlay (`oSqA` in squads.js) shows a pre-match **CONDITION** read — projected starting stamina (with unit-comp bonus) as a band + per-member bars + the comp tags — via `_squadConditionPreview`. +5 tests. Browser-verified (named gold spotlights on all beats, overlay "MATCH CONDITION 94 · Fresh").
 
