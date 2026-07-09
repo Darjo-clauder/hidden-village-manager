@@ -6,9 +6,38 @@
  */
 import { battleSequence, battleVerdict } from '../../shared/utils/battleViewer.js'
 import { BATTLE_CALLS } from '../../shared/utils/battleCalls.js'
+import { arenaFor } from '../../shared/constants/arenas.js'
+import { mountPitch } from './pitchView.js'
 
 let _bvTimers = []
 function _clearTimers() { _bvTimers.forEach(clearTimeout); _bvTimers = [] }
+
+// Resolve the arena for a report: explicit rep.arena wins; otherwise league
+// matches use the home side's nation venue, brackets their special ground,
+// missions their spec layout.
+function _repArena(rep) {
+  if (rep.arena) return rep.arena
+  if (rep.kind === 'league') return arenaFor('league', { homeVillage: rep.scoreline?.home })
+  if (rep.kind === 'tournament') return arenaFor('tournament')
+  if (rep.kind === 'academy') return arenaFor('academy')
+  return arenaFor('mission', { spec: rep.spec })
+}
+
+// Shirt tags for the circles — initials from squad grades where we have names.
+function _tags(rep) {
+  const names = (rep.scores || []).map(s => (s.name || '').split(' ').map(w => w[0] || '').join('').slice(0, 2).toUpperCase())
+  const n = Math.min(5, Math.max(3, names.length || 3))
+  const home = names.length ? names.slice(0, 5) : Array.from({ length: n }, (_, i) => String(i + 1))
+  const away = Array.from({ length: home.length }, (_, i) => String(i + 1))
+  return { home, away }
+}
+
+// Did "our side" win, for the final tableau?
+function _repWon(rep) {
+  if (rep.kind === 'tournament') return !!rep.champion
+  if (rep.kind === 'league') return rep.result === 'win'
+  return !!rep.succeeded
+}
 
 const GRADE_COLOR = { A: '#c9a84c', B: '#8fbc8f', C: '#f0a030', D: '#f66' }
 const BEAT_MS = 1100
@@ -38,6 +67,7 @@ export function openBattleViewer(rep) {
         <div class="bv-title">${rep.missionName || 'Operation'} <span class="bv-rk">${rep.missionRk || ''}-Rank</span></div>
         <button class="bv-skip" onclick="skipBattleViewer()">Skip ▸</button>
       </div>
+      <div class="bv-pitch" id="bv-pitch"></div>
       <div class="bv-mom-wrap"><div class="bv-mom-fill" id="bv-mom" style="width:50%"></div></div>
       <div class="bv-mom-labels"><span>◂ Enemy</span><span>Your squad ▸</span></div>
       <div class="bv-beats" id="bv-beats">${seq.map((b, i) => `
@@ -51,6 +81,14 @@ export function openBattleViewer(rep) {
       <div class="bv-outcome" id="bv-outcome"></div>
     </div>`
   document.body.appendChild(ov)
+
+  // Animated pitch — the match-engine window above the momentum bar.
+  const { home, away } = _tags(rep)
+  ov.__pitch = mountPitch(document.getElementById('bv-pitch'), {
+    arena: _repArena(rep), home, away,
+    homeLabel: rep.squadName || rep.scoreline?.home || '',
+    awayLabel: rep.scoreline?.away || '',
+  })
 
   // Reveal every beat up to (but not including) the bet-on beat; then either pause
   // for the micro-call, or play straight through to the outcome.
@@ -97,6 +135,8 @@ function _applyCall(call) {
 
 function _revealBeat(seq, i) {
   const b = seq[i]
+  const ov = document.getElementById('bv-overlay')
+  if (ov?.__pitch) ov.__pitch.playBeat(i, b)
   const mom = document.getElementById('bv-mom')
   if (mom) { mom.style.width = b.momentum + '%'; mom.style.background = b.won ? 'linear-gradient(90deg,#3a6a3a,#8fbc8f)' : 'linear-gradient(90deg,#6a3030,#cc5a4a)' }
   const beat = document.getElementById('bv-beat-' + i); if (beat) beat.classList.add('bv-on')
@@ -105,6 +145,8 @@ function _revealBeat(seq, i) {
 }
 
 function _revealOutcome(rep) {
+  const ovp = document.getElementById('bv-overlay')
+  if (ovp?.__pitch) ovp.__pitch.finish(_repWon(rep))
   const el = document.getElementById('bv-outcome'); if (!el) return
   const league = rep.kind === 'league'
   const tourney = rep.kind === 'tournament'
@@ -151,7 +193,8 @@ export function skipBattleViewer() {
 
 export function closeBattleViewer() {
   _clearTimers()
-  const ov = document.getElementById('bv-overlay'); if (ov) ov.remove()
+  const ov = document.getElementById('bv-overlay')
+  if (ov) { if (ov.__pitch) ov.__pitch.destroy(); ov.remove() }
 }
 
 if (typeof window !== 'undefined') {

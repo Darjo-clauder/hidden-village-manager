@@ -7,6 +7,7 @@ import { t } from '../../../shared/utils/i18n.js'
 import { kageMod, kagePerk } from '../../../shared/constants/kageDev.js'
 import { identityFor, identityStageAdv } from '../../../shared/constants/villageIdentity.js'
 import { openBattleViewer } from '../liveBattle.js'
+import { arenaFor } from '../../../shared/constants/arenas.js'
 import { squadPower, seedEdge, survivalMult as _survivalMult, warMobilizeProb, warFrontProb, warCasualtyChance, duelScore } from '../../../shared/utils/stageMath.js'
 
 /** Replay the player's run through the last Grand Tournament as a live bracket. */
@@ -23,6 +24,7 @@ export function watchTournament() {
     missionName: `Year ${run.year} Grand Tournament`, missionRk: 'Grand Tournament',
     kind: 'tournament', phases, champion: run.champion, reachedStage, kiaTotal, verdict,
     succeeded: run.champion,
+    arena: arenaFor('tournament'),   // the Grand Colosseum
   })
 }
 

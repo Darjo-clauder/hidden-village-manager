@@ -7,6 +7,7 @@ import { MATCHDAY_TACTICS, tacticRead, TACTIC_STRONG_MOD, TACTIC_WEAK_MOD } from
 import { h2hLabel } from '../../../shared/utils/rivalry.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { openBattleViewer } from '../liveBattle.js'
+import { arenaFor } from '../../../shared/constants/arenas.js'
 import { squadPower, avgStat, seedEdge, examWrittenProb, examForestNavProb, examForestClashProb, examInjuryChance, examPromotionChance, packHarmonicCells, examCohesionGain, elementalHarmony, dreamPromotionBeat } from '../../../shared/utils/stageMath.js'
 import { isHostEligible, minHostBid, hostRevenue, genRivalHostBids, hostBidResolve } from '../../../shared/utils/hostBidding.js'
 
@@ -25,6 +26,7 @@ export function watchMatchday() {
     missionName: `${G.vName} vs ${opp}`, missionRk: `Matchday ${lastPlayed + 1}`,
     kind: 'league', result, succeeded: result === 'win', phases, verdict,
     scoreline: { home: G.vName, away: opp, hs: playerScore, as: oppScore },
+    arena: arenaFor('league', { homeVillage: m.a }),   // play in the actual home side's nation venue
   })
 }
 
@@ -41,6 +43,7 @@ export function watchExam() {
     missionName: `Year ${run.year} Adept Exam`, missionRk: 'Adept Exam',
     kind: 'tournament', phases, champion: run.champion, reachedStage, verdict,
     succeeded: run.champion,
+    arena: arenaFor('exam'),   // the Proving Forest — the exam's own ground
   })
 }
 import { leagueLeaders } from '../../../shared/utils/seasonStats.js'

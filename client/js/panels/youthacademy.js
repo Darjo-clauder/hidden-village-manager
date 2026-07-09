@@ -3,6 +3,22 @@ import { DEV_TRACKS, INTENSITY_LEVELS, DEV_CURVES } from '../constants.js'
 import { aL, ntf } from '../ui.js'
 import { clamp } from '../state.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
+import { openBattleViewer } from '../liveBattle.js'
+import { arenaFor } from '../../../shared/constants/arenas.js'
+
+/** Replay the last Youth Cup as an academy-day match on the training ground. */
+export function watchYouthCup() {
+  const run = G._youthCupRun
+  if (!run || !run.phases?.length) return
+  const verdict = run.champion
+    ? `${run.entrant} won the Youth Cup — a name to remember.`
+    : `${run.entrant} bowed out; ${run.championVillage || 'a rival'} took the cup.`
+  openBattleViewer({
+    missionName: `Year ${run.year} Youth Cup — ${run.entrant}`, missionRk: 'Academy Day',
+    kind: 'academy', phases: run.phases, succeeded: run.champion, verdict,
+    arena: arenaFor('academy'),
+  })
+}
 
 window._yaTab = 'class'
 
@@ -33,7 +49,9 @@ export function rYA() {
       return `<div style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:12px;margin-bottom:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <span style="color:#c9a84c;font-size:.82rem;text-transform:uppercase;letter-spacing:.08em">🎓 Youth Cup</span>
-          <span style="font-size:.78rem;color:${held.playerChampion ? '#8fbc8f' : '#888'}">Holder: <b>${held.championVillage || held.champion}</b> (Y${held.year})${held.playerChampion ? ' — you' : ''}</span>
+          <span style="display:flex;align-items:center;gap:8px;font-size:.78rem;color:${held.playerChampion ? '#8fbc8f' : '#888'}">
+            ${G._youthCupRun?.phases?.length ? `<button class="gb" style="font-size:.65rem;padding:2px 8px;border-color:#c9a84c;color:#c9a84c" onclick="watchYouthCup()">▶ Watch</button>` : ''}
+            Holder: <b>${held.championVillage || held.champion}</b> (Y${held.year})${held.playerChampion ? ' — you' : ''}</span>
         </div>
         <div style="display:grid;gap:2px">
           ${hist.map(h => `<div style="display:flex;gap:8px;font-size:.75rem;color:${h.playerChampion ? '#8fbc8f' : '#9a9080'}">

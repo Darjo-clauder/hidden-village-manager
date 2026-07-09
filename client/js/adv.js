@@ -2712,6 +2712,14 @@ export function adv() {
     G.youthCupHistory.push({ year: G.year, champion: cup.champion?.name, championVillage: cup.champion?.village, playerChampion: cup.champion?.village === G.vName })
     if (G.youthCupHistory.length > 10) G.youthCupHistory.shift()
 
+    // Record the deepest player entrant's path as viewer beats — powers the
+    // "Watch the Youth Cup" academy-day replay on the training-ground pitch.
+    const _bestRun = mine.map(s => sn(s))
+      .map(nm => ({ nm, phases: cup.rounds.map(r => { const m2 = r.matches.find(x => x.a.name === nm || x.b.name === nm); return m2 ? { name: r.stage, won: m2.winner.name === nm } : null }).filter(Boolean) }))
+      .filter(r => r.phases.length)
+      .sort((a, b) => b.phases.filter(p => p.won).length - a.phases.filter(p => p.won).length)[0]
+    if (_bestRun) G._youthCupRun = { year: G.year, entrant: _bestRun.nm, phases: _bestRun.phases, champion: cup.champion?.name === _bestRun.nm, championVillage: cup.champion?.village }
+
     const _summ = []
     mine.forEach(s => {
       const run = entrantRun(cup, sn(s))
@@ -3647,6 +3655,7 @@ function _buildMissionReport(sq, m, succeeded, mev, payout = 0) {
     return { id: s.id, name: sn(s), role: roleId, grade, detail, statVal: Math.round(statVal) }
   }).filter(Boolean)
   const rep = { missionId: m.id, missionName: m.n, missionRk: m.rk, squadId: sq.id, squadName: sq.n, succeeded, year: G.year, month: G.month, scores,
+    spec: m.spec || null,   // drives the animated pitch's mission layout (stealth compound, siege works...)
     phases: mev?.phases || null, quality: mev?.quality || null, margin: mev?.margin ?? null }
   // R8 live-battle micro-call: let the player bet on the final beat during the viewer.
   // The outcome is fixed; only the quality band + a small reward delta move. The

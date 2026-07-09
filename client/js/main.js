@@ -21,7 +21,7 @@ import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRet
 import { rSco, assignScout, setScoutBudget, toggleWatchlist, trialDay, signProspect, draftSort, scoutCtx, scoutHover, toggleScoutDossier } from './panels/scouting.js'
 import { retainScout, dismissScout } from './scoutEngine.js'
 import { setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule, depCtx, depHover } from './panels/depthchart.js'
-import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab } from './panels/youthacademy.js'
+import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab, watchYouthCup } from './panels/youthacademy.js'
 import { rMeet, doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction, consultSeniorGroup } from './panels/meetings.js'
 import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms, confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide, sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter, trSort, trCtx, trHover } from './panels/transfers.js'
 import { rLeg, legTab, designateSuccessor, resolveLegacyDecision, triggerDynastyHandoff, sellDraftPick } from './panels/legacy.js'
@@ -162,7 +162,7 @@ Object.assign(window, {
   // depth chart
   setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule, depCtx, depHover,
   // youth academy
-  yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab,
+  yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab, watchYouthCup,
   // people management
   doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction, consultSeniorGroup,
   // transfer market
