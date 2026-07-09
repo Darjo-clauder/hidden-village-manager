@@ -220,8 +220,9 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
   return {
     /** Choreograph one beat: both sides converge, winner surges through, loser reels.
      *  `spotIdx` (home-side index) is the shinobi the narration names — they lead
-     *  the charge and briefly wear a spotlight ring. */
-    playBeat(i, beat, spotIdx = -1) {
+     *  the charge and briefly wear a spotlight ring. `koIdx` (home-side) is the
+     *  most-spent shinobi caught out on a lost exchange. */
+    playBeat(i, beat, spotIdx = -1, koIdx = -1) {
       const cx = CX + _jit(i, 9) * 55, cy = CY + _jit(i, 11) * 35
       const winSide = beat.won ? st.home : st.away
       const loseSide = beat.won ? st.away : st.home
@@ -231,7 +232,11 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
         s.ty = cy + _jit(k, 19) * 45
         s.vx += (beat.won ? 2.2 : -2.2); s.vy += _jit(k, 21) * 3
       })
-      if (loseSide.length && i % 2 === 1) loseSide[i % loseSide.length].ko = true
+      // Whoever's caught out. On a lost exchange the caller passes the most-spent
+      // home shinobi (koIdx) so pitch + narration agree. Otherwise (opposition
+      // loses, no stamina model) rotate a cosmetic KO on odd beats.
+      if (!beat.won && koIdx >= 0 && st.home[koIdx]) st.home[koIdx].ko = true
+      else if (loseSide.length && i % 2 === 1) loseSide[i % loseSide.length].ko = true
       // Spotlight the acting shinobi — pull them to the front of the clash + ring.
       st.spot = (spotIdx >= 0 && st.home[spotIdx]) ? st.home[spotIdx] : null
       if (st.spot) { st.spot.tx = cx + (beat.won ? -6 : 6); st.spot.ty = cy - 4 }

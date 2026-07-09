@@ -119,6 +119,7 @@ export function rSq() {
         <div style="background:#2e2a22;height:3px;border-radius:2px"><div style="background:${chem.color};height:3px;border-radius:2px;width:${chem.score}%"></div></div>
       </div>
       ${synHtml}
+      ${_squadConditionPreview(sq)}
       <div style="display:flex;gap:10px;font-size:8px;color:#7a7060;margin-top:6px">
         <span>W: <b style="color:#8fbc8f">${sq.wins||0}</b></span>
         <span>L: <b style="color:#f66">${sq.losses||0}</b></span>

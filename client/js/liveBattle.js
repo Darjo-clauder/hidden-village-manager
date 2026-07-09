@@ -266,23 +266,34 @@ function _revealBeat(seq, i) {
   // role drives this beat (and lights their circle); the tick drains legs by
   // role × tactic × result, a medic clawing some back on wins. Needs the squad
   // roster (condition layer) — the beat plays generic otherwise.
-  let spotHtml = '', spotIdx = -1
+  let spotHtml = '', spotIdx = -1, koIdx = -1
   if (ov?.__cond) {
     const c = ov.__cond
-    const roles = c.members.map(m => m.role)
-    const role = spotlightRole(roles, b.name, i)
-    spotIdx = role ? roles.indexOf(role) : -1
-    const who = spotIdx >= 0 ? c.members[spotIdx] : null
-    if (who) spotHtml = ` <span class="bv-beat-spot">— ${who.name} ${roleBeatFlavor(role, b.won, i)}.</span>`
+    // Drain first so "who's caught" reflects this exchange's toll.
     c.stamina = c.stamina.map((s, k) => {
       let v = s - beatDrain({ role: c.members[k].role, tactic: c.tactic, won: b.won, stamina: s, compDrainMult: c.comp.drainMult })
       if (b.won && c.comp.regenPerWin) v += c.comp.regenPerWin
       return Math.max(0, Math.min(100, v))
     })
+    const roles = c.members.map(m => m.role)
+    if (b.won) {
+      // Won exchange: the role that drives this phase takes the credit.
+      const role = spotlightRole(roles, b.name, i)
+      spotIdx = role ? roles.indexOf(role) : -1
+      const who = spotIdx >= 0 ? c.members[spotIdx] : null
+      if (who) spotHtml = ` <span class="bv-beat-spot">— ${who.name} ${roleBeatFlavor(role, b.won, i)}.</span>`
+    } else {
+      // Lost exchange: the most-spent shinobi is the one caught out. Their legs,
+      // not their role, decide it — the whole point of managing stamina.
+      koIdx = c.stamina.reduce((best, s, k) => s < c.stamina[best] ? k : best, 0)
+      spotIdx = koIdx
+      const who = c.members[koIdx]
+      if (who) spotHtml = ` <span class="bv-beat-spot" style="color:#cc5a4a">— ${who.name} ${roleBeatFlavor(who.role, false, i)}${c.stamina[koIdx] < 15 ? ', legs gone' : ''}.</span>`
+    }
     ov.__pitch?.updateStamina(c.stamina)
     _renderTactics(ov)
   }
-  if (ov?.__pitch) ov.__pitch.playBeat(i, b, spotIdx)
+  if (ov?.__pitch) ov.__pitch.playBeat(i, b, spotIdx, koIdx)
   const mom = document.getElementById('bv-mom')
   if (mom) { mom.style.width = b.momentum + '%'; mom.style.background = b.won ? 'linear-gradient(90deg,#3a6a3a,#8fbc8f)' : 'linear-gradient(90deg,#6a3030,#cc5a4a)' }
   const beat = document.getElementById('bv-beat-' + i); if (beat) beat.classList.add('bv-on')
