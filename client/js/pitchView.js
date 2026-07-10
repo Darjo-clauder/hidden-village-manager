@@ -312,9 +312,11 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
       _drawObjective(ctx, st.obj)
       const all = [[st.home, '#c9a84c', '#e8d5a3'], [st.away, arena.palette.accent, arena.palette.line]]
       all.forEach(([team, col, edge]) => team.forEach((s, i) => {
-        s.vx += (s.tx - s.x) * 0.012 + _jit(i, performance.now() / 900 | 0) * 0.12
-        s.vy += (s.ty - s.y) * 0.012 + _jit(i + 7, performance.now() / 900 | 0) * 0.12
-        s.vx *= 0.9; s.vy *= 0.9
+        // Snappier steering so the squad commits to the clash within a beat rather
+        // than drifting; a little idle wander keeps them alive without floatiness.
+        s.vx += (s.tx - s.x) * 0.026 + _jit(i, performance.now() / 900 | 0) * 0.07
+        s.vy += (s.ty - s.y) * 0.026 + _jit(i + 7, performance.now() / 900 | 0) * 0.07
+        s.vx *= 0.86; s.vy *= 0.86
         s.x += s.vx; s.y += s.vy
         // keep everyone inside the hex (radial clamp is a good approximation)
         const dx = s.x - CX, dy = s.y - CY, d = Math.hypot(dx, dy * 1.15)
@@ -394,19 +396,36 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
         : beat.won ? { text: 'ROAAR!', color: '#8fbc8f', life: 1 }
         : { text: 'groan…', color: '#9a9080', life: 1 }
     },
-    /** Final tableau — winners ring the centre, losers scatter to their end. */
-    finish(won) {
+    /** Final tableau. `result`: 'win' (home rings the centre), 'loss' (away does),
+     *  or 'draw' (both sides hold their own half at the line — nobody claims it).
+     *  Accepts a legacy boolean for safety. */
+    finish(result) {
+      const res = result === true ? 'win' : result === false ? 'loss' : (result || 'loss')
+      st.home.forEach(s => { s.ko = false }); st.away.forEach(s => { s.ko = false })
+      if (res === 'draw') {
+        // Honours even — each side lines up on its own side of halfway, objective dead centre.
+        const line = (team, side) => team.forEach((s, k) => {
+          s.tx = CX + (side === 'home' ? -1 : 1) * HEX_R * 0.30
+          s.ty = CY + (k - (team.length - 1) / 2) * Math.min(24, HEX_R * 1.4 / team.length)
+        })
+        line(st.home, 'home'); line(st.away, 'away')
+        st.obj.tx = CX; st.obj.ty = CY
+        st.flash = 1; st.flashCol = '#c9a84c'; st.crowd = 0.6
+        st.roar = { text: 'HONOURS EVEN', color: '#c9a84c', life: 1 }
+        return
+      }
+      const won = res === 'win'
       const winSide = won ? st.home : st.away
       const loseSide = won ? st.away : st.home
       winSide.forEach((s, k) => {
         const a = (k / winSide.length) * Math.PI * 2
-        s.tx = CX + Math.cos(a) * 28; s.ty = CY + Math.sin(a) * 24; s.ko = false
+        s.tx = CX + Math.cos(a) * 28; s.ty = CY + Math.sin(a) * 24
       })
-      loseSide.forEach((s, k) => { s.tx = CX + (won ? 1 : -1) * HEX_R * 0.72; s.ty = CY + (k - (loseSide.length - 1) / 2) * 24 })
+      loseSide.forEach((s, k) => { s.tx = CX + (won ? 1 : -1) * HEX_R * 0.72; s.ty = CY + (k - (loseSide.length - 1) / 2) * Math.min(24, HEX_R * 1.4 / loseSide.length) })
       st.flash = 1; st.flashCol = won ? '#c9a84c' : '#cc5a4a'
-      st.obj.tx = CX; st.obj.ty = CY   // objective claimed at the centre
+      st.obj.tx = won ? CX - HEX_R * 0.2 : CX + HEX_R * 0.2; st.obj.ty = CY   // claimed toward the victor
       st.crowd = 1
-      st.roar = won ? { text: 'CHAMPIONS!', color: '#c9a84c', life: 1.4 } : { text: '…', color: '#9a9080', life: 0.6 }
+      st.roar = won ? { text: 'VICTORY!', color: '#c9a84c', life: 1.4 } : { text: '…', color: '#9a9080', life: 0.6 }
     },
     /** Back to kickoff formations — used by the replay control. */
     reset() {

@@ -112,11 +112,12 @@ function _tags(rep) {
   return { home, away }
 }
 
-// Did "our side" win, for the final tableau?
-function _repWon(rep) {
-  if (rep.kind === 'tournament') return !!rep.champion
-  if (rep.kind === 'league') return rep.result === 'win'
-  return !!rep.succeeded
+// Our side's final result, for the tableau: 'win' | 'loss' | 'draw'. A league
+// draw is neither a win nor a loss — the board must not stage it as a defeat.
+function _repResult(rep) {
+  if (rep.kind === 'tournament') return rep.champion ? 'win' : 'loss'
+  if (rep.kind === 'league') return rep.result === 'draw' ? 'draw' : rep.result === 'win' ? 'win' : 'loss'
+  return rep.succeeded ? 'win' : 'loss'
 }
 
 const GRADE_COLOR = { A: '#c9a84c', B: '#8fbc8f', C: '#f0a030', D: '#f66' }
@@ -390,7 +391,7 @@ function _revealBeat(seq, i) {
 
 function _revealOutcome(rep) {
   const ovp = document.getElementById('bv-overlay')
-  if (ovp?.__pitch) ovp.__pitch.finish(_repWon(rep))
+  if (ovp?.__pitch) ovp.__pitch.finish(_repResult(rep))
   // Settle the condition sim: how the player paced the squad becomes real
   // fatigue/morale (once — replays reuse the locked result).
   let condFx = rep._condResult || null
