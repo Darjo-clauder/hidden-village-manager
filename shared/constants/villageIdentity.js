@@ -69,6 +69,17 @@ export const VILLAGE_IDENTITIES = {
 // Chakra natures used when a village has no explicit affinity (mirrors ELEMENTS).
 const _ELEMENTS = ['Fire', 'Water', 'Wind', 'Earth', 'Lightning']
 
+import { MINOR_BY_NAME } from './minorNations.js'
+
+/**
+ * Chakra-element affinity for ANY named origin — a great village's themed
+ * element, a minor nation's regional element, or null for unthemed names
+ * (the player's custom village rolls its own persistent affinity instead).
+ */
+export function elementAffinityFor(name) {
+  return VILLAGE_IDENTITIES[name]?.element || MINOR_BY_NAME[name]?.element || null
+}
+
 /**
  * Roll a nation-flavoured (element, archetype) for one generated shinobi. The
  * village's chakra affinity dominates its roster (~60%) but never entirely —

@@ -5,7 +5,7 @@ import {
 } from './constants.js'
 import { ARCHETYPE_POOL } from '../../shared/utils/personality.js'
 import { newKageDev } from '../../shared/constants/kageDev.js'
-import { identityFor, rollIntensity, applyIdentityBias, nationTalent } from '../../shared/constants/villageIdentity.js'
+import { identityFor, rollIntensity, applyIdentityBias, nationTalent, elementAffinityFor } from '../../shared/constants/villageIdentity.js'
 import { MINOR_NATIONS, pickMinorNation, applyMinorOrigin, getMinorRel, minorFeeMult } from '../../shared/constants/minorNations.js'
 import { effectiveFeePercent } from '../../shared/utils/agentRelations.js'
 
@@ -44,6 +44,11 @@ export function mS(ri = 0) {
   const origin = _oRoll < 0.05 ? pk(_liveRivals.length ? _liveRivals : RIVAL_VILLAGE_POOL.map(v => v.n))
     : _oRoll < 0.09 ? pk(MINOR_NATIONS).n
     : null
+  // Chakra nature leans toward where they're from: a foreign origin's affinity,
+  // else the player village's own (G.vElement). ~60% affinity, never uniform —
+  // same shape as the great villages' nationTalent bias.
+  const _affinity = (origin ? elementAffinityFor(origin) : G.vElement) || null
+  const _element = _affinity && Math.random() < 0.6 ? _affinity : pk(ELEMENTS)
   return {
     id: Math.random().toString(36).slice(2), fn: pk(FNAMES), ln: pk(LNAMES),
     clan: clan?.n || null, trait: clan?.t || null, spec: pk(SPECS), age, ri,
@@ -51,7 +56,7 @@ export function mS(ri = 0) {
     status: 'available', injDays: 0, injuryType: null, missId: null, squadId: null,
     salary: sal, months: 0, wins: 0, winsB: 0, winsS: 0, streak: 0,
     pers: p, backstory: pk(BACKSTORIES), archetype: pk(ARCHETYPES),
-    element: pk(ELEMENTS), quirk: pk(QUIRKS), dream: pk(DREAMS),
+    element: _element, quirk: pk(QUIRKS), dream: pk(DREAMS),
     scouted: false, monthsWaiting: 0, rivalId: null, origin, jk: null,
     darkMoment: null, jutsu: [], bonds: [], prodigy: false, familyId: null, mentor: null,
     workload: 0, consecutiveMissions: 0, traumaStatus: null, traumaCount: 0, returningForm: 100,
@@ -233,6 +238,7 @@ export function initState() {
   const _climate = { economy: _eco.id, economyMod: _eco.incomeMod, threat: _thr.id, raidMod: _thr.raidMod }
   Object.assign(G, {
     vName: 'Hidden Village', kName: 'Warden', vIcon: '🍃',
+    vElement: pk(ELEMENTS),   // the player village's chakra affinity — its talent pool leans this way
     year: 1, month: 1, ryo: 60000, reputation: 10, morale: 75,
     shinobi: [], squads: [], aM: [], log: [], prospects: [],
     villages: _villages,

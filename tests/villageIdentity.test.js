@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import {
   VILLAGE_IDENTITIES, MATCH_STYLES, identityFor, rollIntensity, applyIdentityBias, styleParams,
-  identityStageAdv, nationTalent,
+  identityStageAdv, nationTalent, elementAffinityFor,
 } from '../shared/constants/villageIdentity.js'
+import { MINOR_NATIONS } from '../shared/constants/minorNations.js'
 import { simMatch } from '../shared/utils/season.js'
 import { mulberry32 } from './helpers/rng.js'
 
@@ -36,6 +37,18 @@ describe('nation talent variety', () => {
     const t = nationTalent({}, mulberry32(1))
     expect(_ELEMENTS).toContain(t.element)
     expect(t.archetype).toBeNull()
+  })
+
+  it('every minor nation carries a valid element affinity', () => {
+    MINOR_NATIONS.forEach(m => expect(_ELEMENTS, m.n).toContain(m.element))
+  })
+
+  it('elementAffinityFor resolves great villages, minor nations, and null otherwise', () => {
+    expect(elementAffinityFor('Emberfall')).toBe('Fire')
+    expect(elementAffinityFor('Galecrest')).toBe('Wind')     // minor nation
+    expect(elementAffinityFor('Skylark')).toBe('Lightning')  // minor nation
+    expect(elementAffinityFor('Kasumi Hollow')).toBeNull()   // custom player name
+    expect(elementAffinityFor()).toBeNull()
   })
 })
 

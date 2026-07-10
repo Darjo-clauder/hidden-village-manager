@@ -12,21 +12,21 @@
  */
 
 export const MINOR_NATIONS = [
-  { n: 'Reedmarsh',  ico: '🌾', region: 'water',     tier: 'D', specialty: 'genjutsu',     blurb: 'River-delta scrappers — every graduate fights like they have something to prove.',
+  { n: 'Reedmarsh',  element: 'Water', ico: '🌾', region: 'water',     tier: 'D', specialty: 'genjutsu',     blurb: 'River-delta scrappers — every graduate fights like they have something to prove.',
     clan: { name: 'Ashiba', bloodline: 'Reed Step', b: { genjutsu: 8, speed: 6 } } },
-  { n: 'Saltcliff',  ico: '⛵', region: 'water',     tier: 'C', specialty: 'chakra',       blurb: 'A harbor stronghold with deep reserves and deeper grudges.',
+  { n: 'Saltcliff',  element: 'Water', ico: '⛵', region: 'water',     tier: 'C', specialty: 'chakra',       blurb: 'A harbor stronghold with deep reserves and deeper grudges.',
     clan: { name: 'Shiota', bloodline: 'Brine Body', b: { chakra: 10, taijutsu: 5 } } },
-  { n: 'Palewood',   ico: '🍂', region: 'fire',      tier: 'D', specialty: 'ninjutsu',     blurb: 'A fading forest power that still produces the occasional prodigy.',
+  { n: 'Palewood',   element: 'Fire', ico: '🍂', region: 'fire',      tier: 'D', specialty: 'ninjutsu',     blurb: 'A fading forest power that still produces the occasional prodigy.',
     clan: { name: 'Kareha', bloodline: 'Ash Bloom', b: { ninjutsu: 9, intelligence: 5 } } },
-  { n: 'Kilnrock',   ico: '🧱', region: 'earth',     tier: 'C', specialty: 'taijutsu',     blurb: 'Quarry-town toughness — their fighters are carved, not trained.',
+  { n: 'Kilnrock',   element: 'Earth', ico: '🧱', region: 'earth',     tier: 'C', specialty: 'taijutsu',     blurb: 'Quarry-town toughness — their fighters are carved, not trained.',
     clan: { name: 'Iwabe', bloodline: 'Kiln Skin', b: { taijutsu: 10, chakra: 5 } } },
-  { n: 'Galecrest',  ico: '🪁', region: 'wind',      tier: 'C', specialty: 'speed',        blurb: 'Highland runners; the fastest feet outside the great villages.',
+  { n: 'Galecrest',  element: 'Wind', ico: '🪁', region: 'wind',      tier: 'C', specialty: 'speed',        blurb: 'Highland runners; the fastest feet outside the great villages.',
     clan: { name: 'Kazehai', bloodline: 'Gale Step', b: { speed: 11, taijutsu: 4 } } },
-  { n: 'Bronzegate', ico: '🥉', region: 'iron',      tier: 'C', specialty: 'taijutsu',     blurb: 'Mercenary-guild city — disciplined, contract-hungry, chakra-poor.',
+  { n: 'Bronzegate', element: 'Earth', ico: '🥉', region: 'iron',      tier: 'C', specialty: 'taijutsu',     blurb: 'Mercenary-guild city — disciplined, contract-hungry, chakra-poor.',
     clan: { name: 'Dokan', bloodline: 'Bronze Fist', b: { taijutsu: 10, intelligence: 5 } } },
-  { n: 'Hollowfen',  ico: '🕸', region: 'earth',     tier: 'D', specialty: 'intelligence', blurb: 'Swamp-maze survivors who value cunning over strength.',
+  { n: 'Hollowfen',  element: 'Water', ico: '🕸', region: 'earth',     tier: 'D', specialty: 'intelligence', blurb: 'Swamp-maze survivors who value cunning over strength.',
     clan: { name: 'Numaki', bloodline: 'Fen Whisper', b: { intelligence: 10, genjutsu: 6 } } },
-  { n: 'Skylark',    ico: '🪶', region: 'lightning', tier: 'D', specialty: 'speed',        blurb: 'A mountain-pass waystation famous for couriers and scouts.',
+  { n: 'Skylark',    element: 'Lightning', ico: '🪶', region: 'lightning', tier: 'D', specialty: 'speed',        blurb: 'A mountain-pass waystation famous for couriers and scouts.',
     clan: { name: 'Hibari', bloodline: 'Sky Dart', b: { speed: 10, ninjutsu: 5 } } },
 ]
 
