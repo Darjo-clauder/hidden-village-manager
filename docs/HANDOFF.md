@@ -1,6 +1,8 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-07-09 · **HEAD:** `27da3f1` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 983 passing / 81 files
+**Last updated:** 2026-07-09 · **HEAD:** `885a1b5` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 983 passing / 81 files
+
+> **Board↔text audit (`885a1b5`):** fixed a real mismatch — a league DRAW called `finish(false)` → staged as a defeat (opposition rings centre). Now `_repResult` returns win/loss/draw and pitch `finish()` is result-aware; a draw lines both sides on their own half + "HONOURS EVEN" (verified live on a 1-1). Also tuned steering (lerp 0.012→0.026) so squads commit to the clash instead of drifting. Everything else (beat text, ✓/✕ marks, momentum, KO of the named shinobi, win/loss tableaus) already agreed — driven from the same `_revealBeat`.
 
 > **World affinities + big-board verify (`27da3f1`):** both scoping notes closed. (1) All 8 minor nations carry an `element` affinity; `elementAffinityFor(name)` resolves great→themed / minor→regional / custom→null. Player village rolls persistent `G.vElement` at founding; `mS()` leans element generation on origin affinity (foreign origin's, else the village's) at ~60%; old saves fill via initState default. Empirically verified: fresh game vElement Earth → roster 15/22 Earth. (2) **Larger bracket board verified live** — full Adept Exam driven via quick-form (4 rounds) → recap on the Proving Forest showed 5 player circles vs 10-strong opposition cluster. Zero console errors, +2 tests.
 
