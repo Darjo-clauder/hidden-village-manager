@@ -1,6 +1,8 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-07-09 · **HEAD:** `a8a0253` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 981 passing / 81 files
+**Last updated:** 2026-07-09 · **HEAD:** `27da3f1` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 983 passing / 81 files
+
+> **World affinities + big-board verify (`27da3f1`):** both scoping notes closed. (1) All 8 minor nations carry an `element` affinity; `elementAffinityFor(name)` resolves great→themed / minor→regional / custom→null. Player village rolls persistent `G.vElement` at founding; `mS()` leans element generation on origin affinity (foreign origin's, else the village's) at ~60%; old saves fill via initState default. Empirically verified: fresh game vElement Earth → roster 15/22 Earth. (2) **Larger bracket board verified live** — full Adept Exam driven via quick-form (4 rounds) → recap on the Proving Forest showed 5 player circles vs 10-strong opposition cluster. Zero console errors, +2 tests.
 
 > **Combat FX + larger fields + nation talent (`a8a0253`):** (1) **Combat FX** — the circles fight now: `pitchView` particle system (`ELEMENT_FX`, `_spawnBeatFx`/`_drawFx`/`_updateFx`) throws elemental jutsu projectiles (coloured by chakra nature), melee slashes, support pulses each beat + ambient skirmish; report scores carry `element`. (2) **Larger encounters** — Adept Exam / Grand Tournament now field up to 5v10 (`_tags` by kind) with golden-angle cluster formations (`_pos`) that stay in the hex. (3) **Nation talent** — each great village has an `element` affinity + `archetypes` in `VILLAGE_IDENTITIES`; `nationTalent()` (pure, tested) biases roster generation (~60% affinity, ~50% school title), feeding the exam's elemental cells; shown in roster dossier ("School:") + away-scouting ("Wind affinity"). +6 tests. Browser-verified: clash/slash FX on board, Verdancross "Wind affinity" scout line.
 
