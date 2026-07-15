@@ -217,19 +217,85 @@ function _carrierToken(st) {
 }
 
 // Zone-control tint — five faint vertical bands over the arena floor, tilted
-// toward whoever controls each (blueprint §2.5). Kept subtle: it's context, not paint.
-const _ZONE_XS = [0.10, 0.30, 0.50, 0.70, 0.90]
-function _drawZoneTint(ctx, ctl) {
+// toward whoever controls each (blueprint §2.5). Subtle by default; the Z
+// overlay chip boosts it to a full tactical read with band labels.
+const _ZONE_NAMES = ['HG', 'HD', 'N', 'AD', 'AG']
+function _drawZoneTint(ctx, ctl, boosted) {
   if (!ctl) return
   ctx.save()
   _hexPath(ctx, CX, CY, HEX_R); ctx.clip()
   const bandW = HEX_R * 2 / 5
+  const cap = boosted ? 0.28 : 0.1
   ctl.forEach((v, i) => {
-    if (Math.abs(v) < 0.08) return
+    if (Math.abs(v) < 0.08 && !boosted) return
     ctx.fillStyle = v > 0 ? '#c9a84c' : '#cc5a4a'
-    ctx.globalAlpha = Math.min(0.1, Math.abs(v) * 0.1)
+    ctx.globalAlpha = Math.min(cap, Math.abs(v) * cap)
     ctx.fillRect(CX - HEX_R + i * bandW, CY - HEX_R, bandW, HEX_R * 2)
+    if (boosted) {
+      ctx.globalAlpha = 0.7
+      ctx.font = '7px monospace'; ctx.textAlign = 'center'
+      ctx.fillStyle = v > 0.08 ? '#c9a84c' : v < -0.08 ? '#cc5a4a' : '#7a7060'
+      ctx.fillText(_ZONE_NAMES[i], CX - HEX_R + (i + 0.5) * bandW, CY + HEX_R - 8)
+    }
   })
+  ctx.restore(); ctx.globalAlpha = 1
+}
+
+// ── Tactical overlays (blueprint §2.3) — one field overlay at a time ──────────
+const PRESS_RADIUS = 42
+function _drawOverlay(ctx, st, arena) {
+  const mode = st.overlay
+  if (!mode || mode === 'zones') return   // zones handled by the boosted tint
+  const car = _carrierToken(st)
+  ctx.save()
+  _hexPath(ctx, CX, CY, HEX_R); ctx.clip()
+  if (mode === 'lanes' && car) {
+    // Passing lanes: carrier → each teammate; a defender near the line makes it
+    // a blocked (dotted red) lane, otherwise opacity = openness.
+    const mates = (car.side === 'home' ? st.home : st.away).filter(s => s !== car && !s.ko)
+    const foes = car.side === 'home' ? st.away : st.home
+    mates.forEach(m => {
+      // distance from each foe to the lane segment
+      let blocked = false
+      foes.forEach(f => {
+        const dx = m.x - car.x, dy = m.y - car.y
+        const len2 = dx * dx + dy * dy || 1
+        const t = Math.max(0, Math.min(1, ((f.x - car.x) * dx + (f.y - car.y) * dy) / len2))
+        const px = car.x + t * dx, py = car.y + t * dy
+        if (Math.hypot(f.x - px, f.y - py) < R_SHINOBI * 2.2) blocked = true
+      })
+      ctx.beginPath(); ctx.moveTo(car.x, car.y); ctx.lineTo(m.x, m.y)
+      ctx.setLineDash(blocked ? [3, 3] : [])
+      ctx.strokeStyle = blocked ? '#cc5a4a' : '#8fbc8f'
+      ctx.globalAlpha = blocked ? 0.55 : 0.45
+      ctx.lineWidth = 1.2; ctx.stroke()
+      ctx.setLineDash([])
+    })
+  } else if (mode === 'pressure' && car) {
+    // Pressure: red gradient blobs around defenders inside the press radius.
+    const foes = car.side === 'home' ? st.away : st.home
+    foes.forEach(f => {
+      const d = Math.hypot(f.x - car.x, f.y - car.y)
+      if (d > PRESS_RADIUS * 1.6) return
+      const intensity = Math.max(0, 1 - d / (PRESS_RADIUS * 1.6))
+      const g = ctx.createRadialGradient(f.x, f.y, 2, f.x, f.y, PRESS_RADIUS * 0.7)
+      g.addColorStop(0, `rgba(204,90,74,${0.35 * intensity})`)
+      g.addColorStop(1, 'rgba(204,90,74,0)')
+      ctx.fillStyle = g
+      ctx.beginPath(); ctx.arc(f.x, f.y, PRESS_RADIUS * 0.7, 0, Math.PI * 2); ctx.fill()
+    })
+  } else if (mode === 'shape') {
+    // Formation silhouettes: thin lines linking each side's live tokens.
+    const draw = (team, color) => {
+      const live = team.filter(s => !s.ko)
+      if (live.length < 2) return
+      ctx.beginPath(); ctx.moveTo(live[0].x, live[0].y)
+      live.slice(1).forEach(s => ctx.lineTo(s.x, s.y))
+      if (live.length > 2) ctx.closePath()
+      ctx.strokeStyle = color; ctx.globalAlpha = 0.4; ctx.lineWidth = 1; ctx.stroke()
+    }
+    draw(st.home, '#c9a84c'); draw(st.away, arena.palette.accent)
+  }
   ctx.restore(); ctx.globalAlpha = 1
 }
 
@@ -324,6 +390,7 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
     fx: [],                                   // transient combat effects (jutsu/slashes/pulses)
     carrier: null,                            // { side, idx } — who holds the scroll
     zoneCtl: null,                            // 5-band zone control (−1..+1 each)
+    overlay: null,                            // active field overlay (lanes/pressure/zones/shape)
   }
   // Tag home circles with their squad role + chakra element → tint + FX flavour.
   st.home.forEach((s, i) => { s.role = roster[i]?.role || null; s.element = roster[i]?.element || null })
@@ -383,7 +450,8 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
   function drawFrame() {
     if (!st.paused) {
       _drawStadium(ctx, arena, st.crowd)
-      _drawZoneTint(ctx, st.zoneCtl)
+      _drawZoneTint(ctx, st.zoneCtl, st.overlay === 'zones')
+      _drawOverlay(ctx, st, arena)
       if (st.crowd > 0) st.crowd -= 0.02
       // Objective token: rides with the carrier when someone holds it, else eases
       // toward its contested drift point.
@@ -553,6 +621,8 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
     },
     /** Zone-control strip from the match engine (5 values, −1..+1). */
     setZoneControl(ctl) { st.zoneCtl = ctl },
+    /** Field overlay: 'lanes' | 'pressure' | 'zones' | 'shape' | null (one at a time). */
+    setOverlay(mode) { st.overlay = st.overlay === mode ? null : mode; return st.overlay },
     /**
      * Stage one possession-phase event from the match engine script
      * (carry/pass/pass_fail/intercept/strike/block/turnover). Moves the acting

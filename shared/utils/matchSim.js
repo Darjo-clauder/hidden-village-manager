@@ -129,18 +129,20 @@ export function scrollOutcome({ beatsWon = 0, beatsLost = 0, rank = 'C' } = {}) 
 const _GRADE_RANK = { A: 4, B: 3, C: 2, D: 1 }
 
 /**
- * Pick the standout from the squad's match grades, breaking ties by who kept the
- * most in the tank (stamina discipline). `scores` = [{ name, grade, role }];
- * `staminaByName` optional. Returns { name, grade, role, reason } or null.
+ * Pick the standout from the squad's match grades, breaking ties by in-match
+ * contribution (strikes/interceptions from the possession sim) then stamina
+ * discipline. `scores` = [{ name, grade, role }]; `staminaByName` and
+ * `statBonusByName` optional. Returns { name, grade, role, reason } or null.
  */
-export function playerOfMatch(scores = [], staminaByName = {}) {
+export function playerOfMatch(scores = [], staminaByName = {}, statBonusByName = {}) {
   const rated = scores.filter(s => s && s.name && s.grade)
   if (!rated.length) return null
   let best = null
   rated.forEach(s => {
     const gr = _GRADE_RANK[s.grade] || 0
     const stam = staminaByName[s.name] ?? 50
-    const score = gr * 100 + stam
+    const bonus = statBonusByName[s.name] || 0
+    const score = gr * 100 + bonus * 10 + stam
     if (!best || score > best.score) best = { ...s, score }
   })
   if (!best) return null

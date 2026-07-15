@@ -9,7 +9,8 @@ import { BATTLE_CALLS } from '../../shared/utils/battleCalls.js'
 import { arenaFor } from '../../shared/constants/arenas.js'
 import { mountPitch, ROLE_TINT } from './pitchView.js'
 import { MATCH_TACTICS, unitCompRead, beatDrain, staminaBand, finishEffects, resolveMatchPrefs, playerOfMatch } from '../../shared/utils/matchSim.js'
-import { buildMatchScript, zoneControlFrom, tickerLine, ZONE_X, mulberry32 } from '../../shared/utils/matchEngine.js'
+import { buildPeriod, statsFrom, zoneControlFrom, tickerLine, ZONE_X, mulberry32 } from '../../shared/utils/matchEngine.js'
+import { TEMPO, tacticsForStyle, evalSituations, effectiveTactics } from '../../shared/constants/tactics.js'
 import { identityFor } from '../../shared/constants/villageIdentity.js'
 import { MATCH_STYLES } from '../../shared/constants/villageIdentity.js'
 import { G } from './state.js'
@@ -33,7 +34,12 @@ function _startClock() {
     const now = performance.now()
     if (!c.paused) c.t += (now - c.last) * c.speed
     c.last = now
-    c.queue = c.queue.filter(q => { if (q.at <= c.t) { q.fn(); return false } return true })
+    // Split due items out FIRST, then fire them — callbacks may _sched more work
+    // (lazy period builds do), and firing inside the filter would clobber those
+    // additions when the filter's return value overwrote the queue.
+    const due = []
+    c.queue = c.queue.filter(q => (q.at <= c.t ? (due.push(q), false) : true))
+    due.forEach(q => q.fn())
   }, 50)
 }
 function _stopClock() { if (_clock) { clearInterval(_clock.iv); _clock = null } }
@@ -76,10 +82,13 @@ export function replayBattle() {
     ov.__pitch?.updateStamina(ov.__cond.stamina)
     _renderTactics(ov)
   }
-  // Fresh event log + ticker; the seeded script replays identically.
+  // Fresh event log + ticker + match state; the seeded periods replay identically.
   ov.__evLog = []
   const tk = document.getElementById('bv-ticker'); if (tk) tk.innerHTML = ''
-  if (ov.__script) ov.__tickRng = mulberry32(ov.__script.seed ^ 0x5f3759df)
+  if (ov.__match) {
+    ov.__match.pts = 0; ov.__match.ko = { home: 0, away: 0 }; ov.__match.lineOffset = { home: 0, away: 0 }
+    ov.__tickRng = mulberry32((ov.__match.seedStr.length * 2654435761) ^ 0x5f3759df)
+  }
   _startClock()
   const b = document.getElementById('bv-ctl-pause'); if (b) b.textContent = '⏸'
   _scheduleMatch(rep, seq, 0, -1)   // call already locked — full run-through
@@ -157,6 +166,10 @@ export function openBattleViewer(rep) {
       <div class="bv-settings" id="bv-settings"></div>
       <div class="bv-pitch" id="bv-pitch">
         <div class="bv-pitch-ctl">
+          <button class="bv-ctl-btn bv-ovl" id="bv-ovl-lanes" onclick="bvSetOverlay('lanes')" title="Passing lanes overlay">L</button>
+          <button class="bv-ctl-btn bv-ovl" id="bv-ovl-pressure" onclick="bvSetOverlay('pressure')" title="Pressure overlay">P</button>
+          <button class="bv-ctl-btn bv-ovl" id="bv-ovl-zones" onclick="bvSetOverlay('zones')" title="Zone control overlay">Z</button>
+          <button class="bv-ctl-btn bv-ovl" id="bv-ovl-shape" onclick="bvSetOverlay('shape')" title="Formation shape overlay">S</button>
           <button class="bv-ctl-btn" id="bv-ctl-pause" onclick="bvTogglePause()" title="Pause / resume">⏸</button>
           <button class="bv-ctl-btn" id="bv-ctl-speed" onclick="bvCycleSpeed()" title="Playback speed">1×</button>
           <button class="bv-ctl-btn" onclick="replayBattle()" title="Replay from kickoff">↻</button>
@@ -209,15 +222,21 @@ export function openBattleViewer(rep) {
   }
 
   // Possession-phase script (matchEngine): each beat expands into a period of
-  // seeded phases whose points always honour the recorded result. Deterministic
-  // per report → replays are archival.
-  ov.__script = buildMatchScript({
-    beats: seq.map(b => ({ name: b.name, won: b.won })),
+  // Match state for the possession sim: lazy per-period scripts (so situational
+  // tactics can shape the play), event log, deterministic ticker RNG, tactics
+  // rows for both sides, KO/points tracking, and bracket line rotation.
+  const awayStyle = identityFor(rep.oppVillage || '').style
+  ov.__match = {
     seedStr: `${rep.missionName || 'op'}|${rep.year ?? G.year}|${rep.month ?? G.month}`,
-    nHome: home.length, nAway: away.length,   // size the script to the actual board
-  })
+    nHome: home.length, nAway: away.length,
+    homeTactics: tacticsForStyle('balanced'),
+    awayTactics: tacticsForStyle(awayStyle),
+    pts: 0, ko: { home: 0, away: 0 },
+    isBracket: rep.kind === 'tournament' || rep.kind === 'exam',
+    lineOffset: { home: 0, away: 0 },
+  }
   ov.__evLog = []
-  ov.__tickRng = mulberry32(ov.__script.seed ^ 0x5f3759df)
+  ov.__tickRng = mulberry32((ov.__match.seedStr.length * 2654435761) ^ 0x5f3759df)
 
   // Auto-resolve: settle instantly with the player's default tactic + battle call,
   // no waiting. The same closures apply, so the result is identical to watching.
@@ -229,6 +248,8 @@ export function openBattleViewer(rep) {
 
 // Period/phase scheduling (blueprint §1.3): each beat = one period of
 // PHASE_MS×PHASES_PER phases; the beat's text reveal fires at the period's end.
+// Periods are BUILT at their boundary (`_startPeriod`) so situational tactics —
+// late push, protect the lead, man down, redline — genuinely reshape the play.
 // `fromBeat` lets the micro-call resume mid-match; `cb` = the bet-on beat index.
 const PHASE_MS = 850
 const PHASES_PER = 3
@@ -237,13 +258,8 @@ function _scheduleMatch(rep, seq, fromBeat, cb) {
   const ov = document.getElementById('bv-overlay'); if (!ov) return
   const stopBefore = cb >= 0 ? cb : seq.length
   const base = i => (i - fromBeat) * PERIOD_MS   // period i's window start on this clock
-  for (let i = fromBeat; i < seq.length; i++) {
-    const isPast = i >= stopBefore && cb >= 0
-    if (isPast) break
-    const per = ov.__script?.periods[i]
-    if (per) per.phases.forEach((ph, pi) => ph.events.forEach(ev => {
-      _sched(() => _stagePhaseEvent(ev), base(i) + (pi + ev.at) * PHASE_MS + 120)
-    }))
+  for (let i = fromBeat; i < stopBefore; i++) {
+    _sched(() => _startPeriod(seq, i), base(i) + 20)
     _sched(() => _revealBeat(seq, i), base(i) + PERIOD_MS)
   }
   if (cb >= 0 && stopBefore < seq.length + 1) {
@@ -253,13 +269,63 @@ function _scheduleMatch(rep, seq, fromBeat, cb) {
   }
 }
 
+// Period boundary: evaluate situations (⚑), rotate bracket lines, build the
+// period with the EFFECTIVE tempo, and schedule its phase events.
+function _startPeriod(seq, i) {
+  const ov = document.getElementById('bv-overlay'); if (!ov?.__match) return
+  const m = ov.__match
+  // Situations from live state: score so far, KOs, squad condition.
+  const avgStamina = ov.__cond
+    ? ov.__cond.stamina.reduce((a, v) => a + v, 0) / ov.__cond.stamina.length
+    : 100
+  const sits = evalSituations({
+    periodIdx: i, totalPeriods: seq.length, pointsSoFar: m.pts,
+    homeKo: m.ko.home, awayKo: m.ko.away, avgStamina,
+  })
+  sits.forEach(s => _tickRaw(`⚑ ${s.label} — ${s.note}`, 'bv-tick-sit'))
+  const eff = effectiveTactics(m.homeTactics, sits)
+  // Bracket boards rotate a fresh line each period — the "line change".
+  if (m.isBracket) {
+    m.lineOffset = { home: (i * 3) % Math.max(1, m.nHome), away: (i * 3) % Math.max(1, m.nAway) }
+    if (i > 0) _tickRaw('⇄ Line change — fresh legs into the arena.', 'bv-tick-sit')
+  }
+  const per = buildPeriod({
+    seedStr: m.seedStr, periodIdx: i, won: seq[i].won,
+    nHome: m.nHome, nAway: m.nAway, phasesPerPeriod: PHASES_PER,
+    tempoPasses: { home: TEMPO[eff.tempo]?.passes ?? 1, away: TEMPO[m.awayTactics.tempo]?.passes ?? 1 },
+  })
+  m.pts += per.phases.reduce((a, p) => a + p.point, 0)
+  const t0 = _clock?.t || 0
+  per.phases.forEach((ph, pi) => ph.events.forEach(ev => {
+    _sched(() => _stagePhaseEvent(ev), t0 + (pi + ev.at) * PHASE_MS + 100)
+  }))
+}
+
 // Stage one scripted event: choreograph it on the pitch, log it, tick it, tint zones.
+// Bracket boards rotate through their larger field via the period's line offset.
 function _stagePhaseEvent(ev) {
   const ov = document.getElementById('bv-overlay'); if (!ov) return
-  ov.__pitch?.phaseEvent(ev, ZONE_X[ev.zone] ?? 0.5)
-  ov.__evLog.push(ev)
+  const m = ov.__match
+  let staged = ev
+  if (m?.isBracket) {
+    const off = m.lineOffset[ev.side === 'home' ? 'home' : 'away'] || 0
+    const n = ev.side === 'home' ? m.nHome : m.nAway
+    staged = { ...ev, actor: (ev.actor + off) % Math.max(1, n), target: ev.target != null ? (ev.target + off) % Math.max(1, n) : ev.target }
+  }
+  ov.__pitch?.phaseEvent(staged, ZONE_X[staged.zone] ?? 0.5)
+  ov.__evLog.push(staged)
   ov.__pitch?.setZoneControl(zoneControlFrom(ov.__evLog))
-  _tick(ev)
+  _tick(staged)
+}
+
+// Raw ticker line (situations, line changes) — bypasses the event templates.
+function _tickRaw(text, cls = '') {
+  const el = document.getElementById('bv-ticker'); if (!el) return
+  const line = document.createElement('div')
+  line.className = 'bv-tick-line ' + cls
+  line.textContent = text
+  el.prepend(line)
+  while (el.children.length > 5) el.removeChild(el.lastChild)
 }
 
 // Commentary ticker — every board event, one line, same record (blueprint §6.2).
@@ -320,6 +386,14 @@ export function bvSetTactic(id) {
   const ov = document.getElementById('bv-overlay'); if (!ov?.__cond) return
   ov.__cond.tactic = id
   _renderTactics(ov)
+}
+
+/** Field overlay chip (L/P/Z/S) — one at a time; clicking again clears it. */
+export function bvSetOverlay(mode) {
+  const ov = document.getElementById('bv-overlay'); if (!ov?.__pitch) return
+  const active = ov.__pitch.setOverlay(mode)
+  document.querySelectorAll('.bv-ovl').forEach(b => b.classList.remove('bv-ovl-on'))
+  if (active) document.getElementById('bv-ovl-' + active)?.classList.add('bv-ovl-on')
 }
 
 // ── Match settings popover (⚙) — auto-resolve + defaults, persisted on G ───────
@@ -446,6 +520,11 @@ function _revealBeat(seq, i) {
     ov.__pitch?.updateStamina(c.stamina)
     _renderTactics(ov)
   }
+  // KO bookkeeping for the situation engine (man down / power phase).
+  if (ov?.__match) {
+    if (!b.won && koIdx >= 0) ov.__match.ko.home++
+    else if (i % 2 === 1) ov.__match.ko[b.won ? 'away' : 'home']++   // mirrors the pitch's cosmetic KO
+  }
   if (ov?.__pitch) ov.__pitch.playBeat(i, b, spotIdx, koIdx)
   const mom = document.getElementById('bv-mom')
   if (mom) { mom.style.width = b.momentum + '%'; mom.style.background = b.won ? 'linear-gradient(90deg,#3a6a3a,#8fbc8f)' : 'linear-gradient(90deg,#6a3030,#cc5a4a)' }
@@ -496,10 +575,24 @@ function _revealOutcome(rep) {
       : (rep.scores || []).length
         ? `<div class="bv-grades">${rep.scores.map(sc => `<div class="bv-grade"><div class="bv-grade-n">${sc.name}</div><div class="bv-grade-g" style="color:${GRADE_COLOR[sc.grade] || '#888'}">${sc.grade}</div></div>`).join('')}</div>`
         : ''
-  // Player of the Match — top grade, tie-broken by who kept the most in the tank.
+  // Post-match stats sheet from the possession-sim event log (blueprint §6.3).
+  const sheet = (ovp?.__evLog?.length) ? statsFrom(ovp.__evLog) : null
+  const nameOfIdx = idx => rep.matchStamina?.[idx]?.name || rep.scores?.[idx]?.name || `№${+idx + 1}`
+  const sheetHtml = sheet ? `<div class="bv-sheet">
+    <div class="bv-sheet-row"><span>Possession</span>
+      <span class="bv-sheet-bar"><i style="width:${sheet.possessionPct}%"></i></span>
+      <b>${sheet.possessionPct}%</b></div>
+    <div class="bv-sheet-row"><span>Strikes (blocked)</span><b>${sheet.strikesHome} (${sheet.blocksHome}) — ${sheet.strikesAway} (${sheet.blocksAway})</b></div>
+    <div class="bv-sheet-row"><span>Pass completion</span><b>${sheet.passPct}%</b></div>
+    ${Object.entries(sheet.byHomeActor).map(([idx, r]) =>
+      `<div class="bv-sheet-line">${nameOfIdx(idx)} — ${r.strikes ? `✦${r.strikes} ` : ''}${r.intercepts ? `⚡${r.intercepts} ` : ''}${r.passes ? `↦${r.passes}` : ''}</div>`).join('')}
+  </div>` : ''
+  // Player of the Match — top grade, tie-broken by sim contribution then stamina.
   const stamByName = {}
   if (ovp?.__cond) ovp.__cond.members.forEach((m, k) => { stamByName[m.name] = ovp.__cond.stamina[k] })
-  const motm = playerOfMatch(rep.scores || [], stamByName)
+  const bonusByName = {}
+  if (sheet) Object.entries(sheet.byHomeActor).forEach(([idx, r]) => { bonusByName[nameOfIdx(idx)] = r.strikes * 3 + r.intercepts * 2 })
+  const motm = playerOfMatch(rep.scores || [], stamByName, bonusByName)
   const motmHtml = motm ? `<div class="bv-motm">⭐ Player of the Match — <b>${motm.name}</b><span>${motm.reason}</span></div>` : ''
   el.innerHTML = `
     <div class="bv-result ${cls}">${label}</div>
@@ -509,6 +602,7 @@ function _revealOutcome(rep) {
     ${scrollNote}
     ${motmHtml}
     ${detail}
+    ${sheetHtml}
     <button class="bv-close" onclick="closeBattleViewer()">Close</button>`
   el.classList.add('bv-on')
 }

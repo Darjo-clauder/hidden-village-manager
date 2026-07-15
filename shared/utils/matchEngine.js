@@ -46,7 +46,7 @@ export const ZONE_X = { HG: 0.10, HD: 0.30, N: 0.50, AD: 0.70, AG: 0.90 }
  * types: carry, pass, pass_fail, intercept, strike, block, turnover
  * `actor`/`target` are side-relative indices (renderer maps them to tokens).
  */
-function _buildPhase(rng, side, point, nHome, nAway) {
+function _buildPhase(rng, side, point, nHome, nAway, tempoPasses = 1) {
   const atk = side === 'home' ? nHome : nAway
   const def = side === 'home' ? nAway : nHome
   const pick = n => Math.floor(rng() * Math.max(1, n))
@@ -57,9 +57,9 @@ function _buildPhase(rng, side, point, nHome, nAway) {
   ev.push({ type: 'carry', at: 0.05, actor: carrier, zone: path[0], side })
   const succeeds = side === 'home' ? point > 0 : point < 0   // does this side bank the phase?
   if (succeeds) {
-    // Clean build-up: one or two passes up the bands, then a strike on the gate.
-    // A lone shinobi has nobody to pass to — they carry the whole way instead.
-    const passes = 1 + (rng() < 0.5 ? 1 : 0)
+    // Build-up length follows the attacking side's TEMPO (patient probes with an
+    // extra pass, direct goes straight at the gate). A lone shinobi carries instead.
+    const passes = tempoPasses + (rng() < 0.5 ? 1 : 0)
     for (let p = 0; p < passes; p++) {
       if (atk < 2) { ev.push({ type: 'carry', at: 0.2 + p * 0.25, actor: carrier, zone: path[Math.min(p + 1, 2)], side }); continue }
       let rcv = pick(atk); if (rcv === carrier) rcv = (rcv + 1) % atk
@@ -102,22 +102,71 @@ export function planPeriodPoints(rng, won, nPhases = 3) {
 }
 
 /**
- * Build the full match script from the resolved beats.
- *   phases: [{ name, won }]  (the report's beats — one period each)
+ * Build ONE period lazily — seeded per (report, period index) so a period's
+ * phases are deterministic regardless of when they're built. This is what lets
+ * the viewer evaluate situational tactics at the period boundary and have the
+ * effective TEMPO genuinely shape the play (blueprint §3.3), while replays stay
+ * archival: same situations → same seed path → same phases.
+ */
+export function buildPeriod({ seedStr = '', periodIdx = 0, won = false, nHome = 3, nAway = 3, phasesPerPeriod = 3, tempoPasses = { home: 1, away: 1 } } = {}) {
+  const rng = mulberry32(seedFrom(seedStr) ^ (0x9e3779b9 * (periodIdx + 1) | 0))
+  const pts = planPeriodPoints(rng, !!won, phasesPerPeriod)
+  return {
+    won: !!won,
+    phases: pts.map(p => {
+      const side = p >= 0 ? 'home' : 'away'
+      return _buildPhase(rng, side, p, nHome, nAway, tempoPasses[side] ?? 1)
+    }),
+  }
+}
+
+/**
+ * Build the full match script from the resolved beats (eager form — used by
+ * auto-resolve, tests and anywhere situations aren't in play).
+ *   beats: [{ name, won }]  (the report's beats — one period each)
  *   seedStr: any stable string from the report
+ *   tempoPasses: { home, away } — build-up passes per banked phase (from TEMPO)
  * Returns { periods: [{ name, won, phases: [phase] }], seed }.
  */
-export function buildMatchScript({ beats = [], seedStr = '', nHome = 3, nAway = 3, phasesPerPeriod = 3 } = {}) {
+export function buildMatchScript({ beats = [], seedStr = '', nHome = 3, nAway = 3, phasesPerPeriod = 3, tempoPasses = { home: 1, away: 1 } } = {}) {
   const seed = seedFrom(seedStr)
-  const rng = mulberry32(seed)
-  const periods = beats.map(b => {
-    const pts = planPeriodPoints(rng, !!b.won, phasesPerPeriod)
-    return {
-      name: b.name, won: !!b.won,
-      phases: pts.map(p => _buildPhase(rng, p >= 0 ? 'home' : 'away', p, nHome, nAway)),
-    }
-  })
+  const periods = beats.map((b, i) => ({
+    name: b.name,
+    ...buildPeriod({ seedStr, periodIdx: i, won: b.won, nHome, nAway, phasesPerPeriod, tempoPasses }),
+  }))
   return { periods, seed }
+}
+
+// ── Post-match stats (blueprint §6.3) — aggregate the event log ───────────────
+/**
+ * Sheet from the full event list: possession %, strikes (on target / blocked),
+ * pass completion, interceptions + strikes per home actor index.
+ */
+export function statsFrom(events = []) {
+  const s = {
+    possHome: 0, possAway: 0,
+    strikesHome: 0, strikesAway: 0, blocksHome: 0, blocksAway: 0,
+    passOk: 0, passFail: 0, intercepts: 0,
+    byHomeActor: {},   // idx → { strikes, intercepts, passes }
+  }
+  const bump = (idx, k) => {
+    const rec = s.byHomeActor[idx] || (s.byHomeActor[idx] = { strikes: 0, intercepts: 0, passes: 0 })
+    rec[k]++
+  }
+  events.forEach(e => {
+    const home = e.side === 'home'
+    if (e.type === 'carry' || e.type === 'pass') home ? s.possHome++ : s.possAway++
+    if (e.type === 'pass') { s.passOk++; if (home) bump(e.actor, 'passes') }
+    if (e.type === 'pass_fail') s.passFail++
+    if (e.type === 'intercept') { s.intercepts++; if (home) bump(e.actor, 'intercepts') }
+    if (e.type === 'strike') { home ? s.strikesHome++ : s.strikesAway++; if (home) bump(e.actor, 'strikes') }
+    if (e.type === 'block') home ? s.blocksHome++ : s.blocksAway++
+  })
+  const possTot = s.possHome + s.possAway
+  s.possessionPct = possTot ? Math.round(s.possHome / possTot * 100) : 50
+  const passTot = s.passOk + s.passFail
+  s.passPct = passTot ? Math.round(s.passOk / passTot * 100) : 0
+  return s
 }
 
 /** Running zone control (−1..+1 per band) from the events seen so far — feeds
