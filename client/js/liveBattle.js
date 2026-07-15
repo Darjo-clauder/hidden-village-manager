@@ -39,6 +39,7 @@ function _startClock() {
     // additions when the filter's return value overwrote the queue.
     const due = []
     c.queue = c.queue.filter(q => (q.at <= c.t ? (due.push(q), false) : true))
+    due.sort((a, b) => a.at - b.at)   // same-tick items fire in TIME order, not insertion order
     due.forEach(q => q.fn())
   }, 50)
 }
@@ -84,9 +85,12 @@ export function replayBattle() {
   }
   // Fresh event log + ticker + match state; the seeded periods replay identically.
   ov.__evLog = []
+  ov.__revealed = new Set()
+  ov.__callHandled = false
   const tk = document.getElementById('bv-ticker'); if (tk) tk.innerHTML = ''
   if (ov.__match) {
     ov.__match.pts = 0; ov.__match.ko = { home: 0, away: 0 }; ov.__match.lineOffset = { home: 0, away: 0 }
+    ov.__match.built = new Set()
     ov.__tickRng = mulberry32((ov.__match.seedStr.length * 2654435761) ^ 0x5f3759df)
   }
   _startClock()
@@ -231,7 +235,7 @@ export function openBattleViewer(rep) {
     nHome: home.length, nAway: away.length,
     homeTactics: tacticsForStyle('balanced'),
     awayTactics: tacticsForStyle(awayStyle),
-    pts: 0, ko: { home: 0, away: 0 },
+    pts: 0, ko: { home: 0, away: 0 }, built: new Set(),
     isBracket: rep.kind === 'tournament' || rep.kind === 'exam',
     lineOffset: { home: 0, away: 0 },
   }
@@ -294,6 +298,7 @@ function _startPeriod(seq, i) {
     nHome: m.nHome, nAway: m.nAway, phasesPerPeriod: PHASES_PER,
     tempoPasses: { home: TEMPO[eff.tempo]?.passes ?? 1, away: TEMPO[m.awayTactics.tempo]?.passes ?? 1 },
   })
+  m.built.add(i)
   m.pts += per.phases.reduce((a, p) => a + p.point, 0)
   const t0 = _clock?.t || 0
   per.phases.forEach((ph, pi) => ph.events.forEach(ev => {
@@ -360,6 +365,22 @@ function _finishInstant(call) {
   _clearTimers()
   const ov = document.getElementById('bv-overlay'); if (!ov) return
   const rep = ov.__rep, seq = ov.__seq
+  // Complete the event log for any periods never staged (skipped or auto-resolved)
+  // so the post-match stats sheet always covers the full match, not a fragment.
+  const m = ov.__match
+  if (m && seq) {
+    seq.forEach((b, i) => {
+      if (m.built.has(i)) return
+      const per = buildPeriod({
+        seedStr: m.seedStr, periodIdx: i, won: b.won,
+        nHome: m.nHome, nAway: m.nAway, phasesPerPeriod: PHASES_PER,
+        tempoPasses: { home: TEMPO[m.homeTactics.tempo]?.passes ?? 1, away: TEMPO[m.awayTactics.tempo]?.passes ?? 1 },
+      })
+      m.built.add(i)
+      per.phases.forEach(ph => ov.__evLog.push(...ph.events))
+    })
+    ov.__pitch?.setZoneControl(zoneControlFrom(ov.__evLog))
+  }
   if (seq) seq.forEach((b, i) => _revealBeat(seq, i))
   if (rep && typeof rep.applyCall === 'function' && !rep._callDone) rep.applyCall(call)
   const el = document.getElementById('bv-call'); if (el) { el.classList.remove('bv-on'); el.innerHTML = '' }
@@ -469,14 +490,20 @@ function _promptCall(rep, seq, cb) {
     </div>
     <div class="bv-call-timer"><div class="bv-call-timer-fill" id="bv-call-timer"></div></div>`
   el.classList.add('bv-on')
-  // Animate the countdown, then auto-disengage if untouched.
-  requestAnimationFrame(() => { const f = document.getElementById('bv-call-timer'); if (f) { f.style.transition = `width ${CALL_MS}ms linear`; f.style.width = '0%' } })
+  // Animate the countdown, then auto-disengage if untouched. The visual bar must
+  // run at the CLOCK's pace — at 2× the timer fires in half the real time.
+  const speed = _clock?.speed || 1
+  requestAnimationFrame(() => { const f = document.getElementById('bv-call-timer'); if (f) { f.style.transition = `width ${CALL_MS / speed}ms linear`; f.style.width = '0%' } })
   _sched(() => _applyCall('none'), (_clock?.t || 0) + CALL_MS)
 }
 
 // Apply the chosen call, dismiss the prompt, then finish the reveal from the bet beat.
+// Guarded against double-fire (double-click / auto-timer racing a click): a second
+// call would re-run _scheduleMatch and double-count points, KOs and events.
 function _applyCall(call) {
   const ov = document.getElementById('bv-overlay'); if (!ov) return
+  if (ov.__callHandled) return
+  ov.__callHandled = true
   const rep = ov.__rep, seq = ov.__seq
   const cb = rep?.microCall?.beatIndex ?? -1
   if (rep && typeof rep.applyCall === 'function' && !rep._callDone) rep.applyCall(call)
@@ -489,6 +516,13 @@ function _applyCall(call) {
 function _revealBeat(seq, i) {
   const b = seq[i]
   const ov = document.getElementById('bv-overlay')
+  // Idempotence: a beat reveals once per run (skip re-reveals every beat) — else
+  // the condition drain and KO bookkeeping would double-count.
+  if (ov) {
+    ov.__revealed = ov.__revealed || new Set()
+    if (ov.__revealed.has(i)) return
+    ov.__revealed.add(i)
+  }
   // Role-aware spotlight + condition tick. The spotlight names the shinobi whose
   // role drives this beat (and lights their circle); the tick drains legs by
   // role × tactic × result, a medic clawing some back on wins. Needs the squad
