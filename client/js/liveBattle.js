@@ -9,6 +9,7 @@ import { BATTLE_CALLS } from '../../shared/utils/battleCalls.js'
 import { arenaFor } from '../../shared/constants/arenas.js'
 import { mountPitch, ROLE_TINT } from './pitchView.js'
 import { MATCH_TACTICS, unitCompRead, beatDrain, staminaBand, finishEffects, resolveMatchPrefs, playerOfMatch } from '../../shared/utils/matchSim.js'
+import { buildMatchScript, zoneControlFrom, tickerLine, ZONE_X, mulberry32 } from '../../shared/utils/matchEngine.js'
 import { identityFor } from '../../shared/constants/villageIdentity.js'
 import { MATCH_STYLES } from '../../shared/constants/villageIdentity.js'
 import { G } from './state.js'
@@ -75,10 +76,13 @@ export function replayBattle() {
     ov.__pitch?.updateStamina(ov.__cond.stamina)
     _renderTactics(ov)
   }
+  // Fresh event log + ticker; the seeded script replays identically.
+  ov.__evLog = []
+  const tk = document.getElementById('bv-ticker'); if (tk) tk.innerHTML = ''
+  if (ov.__script) ov.__tickRng = mulberry32(ov.__script.seed ^ 0x5f3759df)
   _startClock()
   const b = document.getElementById('bv-ctl-pause'); if (b) b.textContent = '⏸'
-  seq.forEach((_, i) => _sched(() => _revealBeat(seq, i), BEAT_MS * (i + 1)))
-  _sched(() => _revealOutcome(rep), BEAT_MS * (seq.length + 1))
+  _scheduleMatch(rep, seq, 0, -1)   // call already locked — full run-through
 }
 
 // Resolve the arena for a report: explicit rep.arena wins; otherwise league
@@ -121,7 +125,6 @@ function _repResult(rep) {
 }
 
 const GRADE_COLOR = { A: '#c9a84c', B: '#8fbc8f', C: '#f0a030', D: '#f66' }
-const BEAT_MS = 1100
 const CALL_MS = 6000   // window to make the micro-call before it auto-disengages
 
 // A micro-call is offered when the report carries an unresolved applyCall (player
@@ -171,6 +174,7 @@ export function openBattleViewer(rep) {
           <div class="bv-beat-line" id="bv-line-${i}"></div>
         </div>`).join('')}
       </div>
+      <div class="bv-ticker" id="bv-ticker"></div>
       <div class="bv-call" id="bv-call"></div>
       <div class="bv-outcome" id="bv-outcome"></div>
     </div>`
@@ -204,21 +208,83 @@ export function openBattleViewer(rep) {
     }
   }
 
+  // Possession-phase script (matchEngine): each beat expands into a period of
+  // seeded phases whose points always honour the recorded result. Deterministic
+  // per report → replays are archival.
+  ov.__script = buildMatchScript({
+    beats: seq.map(b => ({ name: b.name, won: b.won })),
+    seedStr: `${rep.missionName || 'op'}|${rep.year ?? G.year}|${rep.month ?? G.month}`,
+    nHome: home.length, nAway: away.length,   // size the script to the actual board
+  })
+  ov.__evLog = []
+  ov.__tickRng = mulberry32(ov.__script.seed ^ 0x5f3759df)
+
   // Auto-resolve: settle instantly with the player's default tactic + battle call,
   // no waiting. The same closures apply, so the result is identical to watching.
   if (pf.autoResolve) { _finishInstant(pf.battleCall); return }
 
-  // Reveal every beat up to (but not including) the bet-on beat; then either pause
-  // for the micro-call, or play straight through to the outcome.
   _startClock()
+  _scheduleMatch(rep, seq, 0, cb)
+}
+
+// Period/phase scheduling (blueprint §1.3): each beat = one period of
+// PHASE_MS×PHASES_PER phases; the beat's text reveal fires at the period's end.
+// `fromBeat` lets the micro-call resume mid-match; `cb` = the bet-on beat index.
+const PHASE_MS = 850
+const PHASES_PER = 3
+const PERIOD_MS = PHASE_MS * PHASES_PER
+function _scheduleMatch(rep, seq, fromBeat, cb) {
+  const ov = document.getElementById('bv-overlay'); if (!ov) return
   const stopBefore = cb >= 0 ? cb : seq.length
-  for (let i = 0; i < stopBefore; i++) { _sched(() => _revealBeat(seq, i), BEAT_MS * (i + 1)) }
-  if (cb >= 0) {
-    _sched(() => _promptCall(rep, seq, cb), BEAT_MS * (stopBefore + 1))
-  } else {
-    for (let i = stopBefore; i < seq.length; i++) { _sched(() => _revealBeat(seq, i), BEAT_MS * (i + 1)) }
-    _sched(() => _revealOutcome(rep), BEAT_MS * (seq.length + 1))
+  const base = i => (i - fromBeat) * PERIOD_MS   // period i's window start on this clock
+  for (let i = fromBeat; i < seq.length; i++) {
+    const isPast = i >= stopBefore && cb >= 0
+    if (isPast) break
+    const per = ov.__script?.periods[i]
+    if (per) per.phases.forEach((ph, pi) => ph.events.forEach(ev => {
+      _sched(() => _stagePhaseEvent(ev), base(i) + (pi + ev.at) * PHASE_MS + 120)
+    }))
+    _sched(() => _revealBeat(seq, i), base(i) + PERIOD_MS)
   }
+  if (cb >= 0 && stopBefore < seq.length + 1) {
+    _sched(() => _promptCall(rep, seq, cb), base(stopBefore) + 200)
+  } else {
+    _sched(() => _revealOutcome(rep), base(seq.length) + 500)
+  }
+}
+
+// Stage one scripted event: choreograph it on the pitch, log it, tick it, tint zones.
+function _stagePhaseEvent(ev) {
+  const ov = document.getElementById('bv-overlay'); if (!ov) return
+  ov.__pitch?.phaseEvent(ev, ZONE_X[ev.zone] ?? 0.5)
+  ov.__evLog.push(ev)
+  ov.__pitch?.setZoneControl(zoneControlFrom(ov.__evLog))
+  _tick(ev)
+}
+
+// Commentary ticker — every board event, one line, same record (blueprint §6.2).
+// Priority filter: at 2×+ only the high-signal events; carries/passes drop out.
+const _TICK_PRIORITY = { strike: 3, block: 3, intercept: 3, turnover: 2, pass_fail: 2, pass: 1, carry: 1 }
+function _tick(ev) {
+  const el = document.getElementById('bv-ticker'); if (!el) return
+  const speed = _clock?.speed || 1
+  if (speed >= 4) return
+  if (speed >= 2 && (_TICK_PRIORITY[ev.type] || 0) < 2) return
+  const ov = document.getElementById('bv-overlay')
+  const names = (side, idx) => {
+    if (side === 'home') {
+      const r = ov?.__rep
+      return r?.matchStamina?.[idx]?.name || r?.scores?.[idx]?.name || (r?.squadName ? `${r.squadName} №${idx + 1}` : `№${idx + 1}`)
+    }
+    const oppn = ov?.__rep?.oppVillage || ov?.__rep?.scoreline?.away || 'Opposition'
+    return `${oppn} №${(idx ?? 0) + 1}`
+  }
+  const roll = Math.floor((ov?.__tickRng?.() ?? 0) * 8)
+  const line = document.createElement('div')
+  line.className = 'bv-tick-line' + (ev.side === 'home' ? ' bv-tick-home' : '')
+  line.textContent = tickerLine(ev, names, roll)
+  el.prepend(line)
+  while (el.children.length > 5) el.removeChild(el.lastChild)
 }
 
 // Reveal the whole match in one shot: run every beat's effects (drain, KO, call),
@@ -343,8 +409,7 @@ function _applyCall(call) {
   const el = document.getElementById('bv-call'); if (el) { el.classList.remove('bv-on'); el.innerHTML = '' }
   if (!seq) return
   _startClock()
-  for (let i = Math.max(0, cb); i < seq.length; i++) { _sched(() => _revealBeat(seq, i), BEAT_MS * (i - cb + 1)) }
-  _sched(() => _revealOutcome(rep), BEAT_MS * (seq.length - cb + 1))
+  _scheduleMatch(rep, seq, Math.max(0, cb), -1)   // resume phases from the bet period
 }
 
 function _revealBeat(seq, i) {

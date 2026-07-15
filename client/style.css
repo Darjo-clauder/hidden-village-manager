@@ -649,6 +649,10 @@ body{
 .bv-leg{display:flex;align-items:center;gap:3px;font-size:7px;color:#9a9080;text-transform:uppercase;letter-spacing:.5px}
 .bv-leg i{width:7px;height:7px;border-radius:50%;display:inline-block}
 .bv-scroll{color:#c9a84c}
+.bv-ticker{max-height:52px;overflow:hidden;margin-top:6px;display:flex;flex-direction:column;gap:1px}
+.bv-tick-line{font-size:7px;color:#7a7060;line-height:1.5;animation:bv-tick-in .25s ease}
+.bv-tick-line.bv-tick-home{color:#b8a878}
+@keyframes bv-tick-in{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
 .bv-motm{margin-top:8px;padding:6px 8px;border:1px solid #c9a84c;background:rgba(201,168,76,.08);font-size:9px;color:#c9a84c}
 .bv-motm span{display:block;font-size:7px;color:#9a9080;margin-top:1px}
 @media (prefers-reduced-motion:reduce){.bv-pitch,.bv-pitch-info,.bv-tactics,.bv-pitch-legend{display:none!important}}

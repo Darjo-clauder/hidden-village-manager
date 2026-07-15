@@ -118,20 +118,39 @@ function _drawStadium(ctx, arena, pulse = 0) {
   ctx.globalAlpha = 1
 }
 
-function _drawShinobi(ctx, s, color, edge, hot) {
+// Token anatomy (blueprint §2.1): role fill + element edge ring + stamina arc +
+// facing wedge + role badge + possession pip. Every mark answers a question.
+function _drawShinobi(ctx, s, color, edge, hot, carrying) {
   ctx.save()
   ctx.globalAlpha = 0.25
   ctx.beginPath(); ctx.arc(s.x - s.vx * 3, s.y - s.vy * 3, R_SHINOBI * 0.7, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill()
   ctx.restore()
-  if (hot) { // hovered/selected — glow ring
-    ctx.beginPath(); ctx.arc(s.x, s.y, R_SHINOBI + 3.5, 0, Math.PI * 2)
+  if (hot) { // hovered/selected/spotlit — glow ring
+    ctx.beginPath(); ctx.arc(s.x, s.y, R_SHINOBI + 4.5, 0, Math.PI * 2)
     ctx.strokeStyle = '#fff'; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.5; ctx.stroke(); ctx.globalAlpha = 1
   }
-  // Home circles are tinted by squad role (read the board at a glance); the
-  // opposition stays the arena's single accent colour.
   const tint = s.role ? _roleTint(s.role) : null
   const fill = s.ko ? '#555' : (tint ? tint.fill : color)
   const stroke = tint ? tint.edge : edge
+  ctx.globalAlpha = s.ko ? 0.6 : 1
+  // Element edge ring — a thin chakra-nature halo outside the token.
+  if (s.element && !s.ko) {
+    ctx.beginPath(); ctx.arc(s.x, s.y, R_SHINOBI + 1.6, 0, Math.PI * 2)
+    ctx.strokeStyle = _elemFx(s.element).color; ctx.lineWidth = 1; ctx.globalAlpha = 0.55; ctx.stroke()
+    ctx.globalAlpha = s.ko ? 0.6 : 1
+  }
+  // Facing wedge — orientation from velocity (only when actually moving).
+  const spd = Math.hypot(s.vx, s.vy)
+  if (spd > 0.25 && !s.ko) {
+    const a = Math.atan2(s.vy, s.vx)
+    ctx.beginPath()
+    ctx.moveTo(s.x + Math.cos(a) * (R_SHINOBI + 4), s.y + Math.sin(a) * (R_SHINOBI + 4))
+    ctx.lineTo(s.x + Math.cos(a + 2.6) * (R_SHINOBI + 0.5), s.y + Math.sin(a + 2.6) * (R_SHINOBI + 0.5))
+    ctx.lineTo(s.x + Math.cos(a - 2.6) * (R_SHINOBI + 0.5), s.y + Math.sin(a - 2.6) * (R_SHINOBI + 0.5))
+    ctx.closePath(); ctx.fillStyle = stroke; ctx.globalAlpha = 0.7; ctx.fill()
+    ctx.globalAlpha = s.ko ? 0.6 : 1
+  }
+  // Body
   ctx.beginPath(); ctx.arc(s.x, s.y, R_SHINOBI, 0, Math.PI * 2)
   ctx.fillStyle = fill; ctx.fill()
   ctx.lineWidth = 1.5; ctx.strokeStyle = stroke; ctx.stroke()
@@ -140,18 +159,36 @@ function _drawShinobi(ctx, s, color, edge, hot) {
     ctx.fillStyle = '#0a0a0a'
     ctx.fillText(s.tag, s.x, s.y + 2.5)
   }
+  // Role badge — small glyph disc at the token's shoulder.
+  if (tint && !s.ko) {
+    const bx = s.x + R_SHINOBI * 0.85, by = s.y - R_SHINOBI * 0.85
+    ctx.beginPath(); ctx.arc(bx, by, 3.4, 0, Math.PI * 2)
+    ctx.fillStyle = 'rgba(6,6,4,.9)'; ctx.fill()
+    ctx.font = '5px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = tint.edge
+    ctx.fillText(tint.glyph, bx, by + 1.8)
+  }
   if (s.ko) {
     ctx.strokeStyle = '#cc5a4a'; ctx.lineWidth = 1.5
     ctx.beginPath(); ctx.moveTo(s.x - 4, s.y - 4); ctx.lineTo(s.x + 4, s.y + 4)
     ctx.moveTo(s.x + 4, s.y - 4); ctx.lineTo(s.x - 4, s.y + 4); ctx.stroke()
   }
-  // Condition bar — the live stamina readout under your shinobi.
-  if (s.stamina != null) {
-    const w = 16, x0 = s.x - w / 2, y0 = s.y + R_SHINOBI + 3
-    ctx.fillStyle = 'rgba(6,6,4,.8)'; ctx.fillRect(x0 - 1, y0 - 1, w + 2, 4)
+  // Stamina arc — replaces the old bar; wraps the lower hemisphere, band-coloured.
+  if (s.stamina != null && !s.ko) {
+    const frac = Math.max(0, Math.min(1, s.stamina / 100))
     const col = s.stamina >= 60 ? '#8fbc8f' : s.stamina >= 35 ? '#c9a84c' : s.stamina >= 15 ? '#f0a030' : '#cc5a4a'
-    ctx.fillStyle = col; ctx.fillRect(x0, y0, w * Math.max(0, s.stamina) / 100, 2)
+    ctx.beginPath(); ctx.arc(s.x, s.y, R_SHINOBI + 3, Math.PI * 0.75, Math.PI * 0.75 + Math.PI * 1.5, false)
+    ctx.strokeStyle = 'rgba(6,6,4,.75)'; ctx.lineWidth = 2.4; ctx.stroke()
+    ctx.beginPath(); ctx.arc(s.x, s.y, R_SHINOBI + 3, Math.PI * 0.75, Math.PI * 0.75 + Math.PI * 1.5 * frac, false)
+    ctx.strokeStyle = col; ctx.lineWidth = 1.6; ctx.stroke()
   }
+  // Possession pip — the carrier wears the gold mark.
+  if (carrying) {
+    ctx.beginPath(); ctx.arc(s.x, s.y + R_SHINOBI + 6, 2.2, 0, Math.PI * 2)
+    ctx.fillStyle = '#e8c95f'; ctx.fill()
+    ctx.beginPath(); ctx.arc(s.x, s.y + R_SHINOBI + 6, 3.6, 0, Math.PI * 2)
+    ctx.strokeStyle = 'rgba(232,201,95,.5)'; ctx.lineWidth = 1; ctx.stroke()
+  }
+  ctx.globalAlpha = 1
 }
 
 // The contested objective — a scroll token both sides fight over. Its position
@@ -170,6 +207,30 @@ function _drawObjective(ctx, obj) {
   ctx.strokeStyle = '#b03030'; ctx.lineWidth = 1.2
   ctx.beginPath(); ctx.moveTo(0, -4); ctx.lineTo(0, 4); ctx.stroke()
   ctx.restore()
+}
+
+// Resolve the current carrier record ({side, idx}) to its token.
+function _carrierToken(st) {
+  if (!st.carrier) return null
+  const team = st.carrier.side === 'home' ? st.home : st.away
+  return team[st.carrier.idx] || null
+}
+
+// Zone-control tint — five faint vertical bands over the arena floor, tilted
+// toward whoever controls each (blueprint §2.5). Kept subtle: it's context, not paint.
+const _ZONE_XS = [0.10, 0.30, 0.50, 0.70, 0.90]
+function _drawZoneTint(ctx, ctl) {
+  if (!ctl) return
+  ctx.save()
+  _hexPath(ctx, CX, CY, HEX_R); ctx.clip()
+  const bandW = HEX_R * 2 / 5
+  ctl.forEach((v, i) => {
+    if (Math.abs(v) < 0.08) return
+    ctx.fillStyle = v > 0 ? '#c9a84c' : '#cc5a4a'
+    ctx.globalAlpha = Math.min(0.1, Math.abs(v) * 0.1)
+    ctx.fillRect(CX - HEX_R + i * bandW, CY - HEX_R, bandW, HEX_R * 2)
+  })
+  ctx.restore(); ctx.globalAlpha = 1
 }
 
 // ── Combat FX — the difference between a fight and a shoving match ─────────────
@@ -201,6 +262,22 @@ function _drawFx(ctx, fx) {
       ctx.save(); ctx.globalAlpha = (1 - f.t) * 0.7
       ctx.beginPath(); ctx.arc(f.sx, f.sy, 4 + f.t * 12, 0, Math.PI * 2)
       ctx.strokeStyle = f.color; ctx.lineWidth = 1.4; ctx.stroke(); ctx.restore()
+    } else if (f.kind === 'marker') {
+      // Event marker (blueprint §2.4): glyph pops at the event point, drifts, fades.
+      ctx.save(); ctx.globalAlpha = Math.min(1, (1 - f.t) * 1.6)
+      ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center'
+      ctx.fillStyle = f.color
+      ctx.fillText(f.glyph, f.sx + (f.dx || 0) * f.t * 6, f.sy - f.t * 8)
+      ctx.restore()
+    } else if (f.kind === 'passline') {
+      // Pass: bright line passer→receiver that flashes then fades; failed passes
+      // render red to the interception point.
+      ctx.save(); ctx.globalAlpha = Math.sin(Math.min(1, f.t) * Math.PI) * 0.9
+      ctx.strokeStyle = f.color; ctx.lineWidth = 1.4
+      ctx.setLineDash(f.fail ? [3, 2] : [])
+      ctx.beginPath(); ctx.moveTo(f.sx, f.sy); ctx.lineTo(f.tx, f.ty); ctx.stroke()
+      ctx.setLineDash([])
+      ctx.restore()
     }
   })
 }
@@ -245,6 +322,8 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
     obj: { x: CX, y: CY, tx: CX, ty: CY },   // contested objective token
     crowd: 0, roar: null,                     // crowd pulse + floating reaction text
     fx: [],                                   // transient combat effects (jutsu/slashes/pulses)
+    carrier: null,                            // { side, idx } — who holds the scroll
+    zoneCtl: null,                            // 5-band zone control (−1..+1 each)
   }
   // Tag home circles with their squad role + chakra element → tint + FX flavour.
   st.home.forEach((s, i) => { s.role = roster[i]?.role || null; s.element = roster[i]?.element || null })
@@ -301,27 +380,46 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
     if (st.fx.length > 40) st.fx = st.fx.slice(-40)
   }
 
-  function frame() {
-    if (!st.running) return
+  function drawFrame() {
     if (!st.paused) {
       _drawStadium(ctx, arena, st.crowd)
+      _drawZoneTint(ctx, st.zoneCtl)
       if (st.crowd > 0) st.crowd -= 0.02
-      // Objective token — a contested scroll dragged toward whoever's winning.
-      st.obj.x += (st.obj.tx - st.obj.x) * 0.06
-      st.obj.y += (st.obj.ty - st.obj.y) * 0.06
+      // Objective token: rides with the carrier when someone holds it, else eases
+      // toward its contested drift point.
+      const car = _carrierToken(st)
+      if (car) { st.obj.tx = car.x + 8; st.obj.ty = car.y - 8 }
+      st.obj.x += (st.obj.tx - st.obj.x) * (car ? 0.25 : 0.06)
+      st.obj.y += (st.obj.ty - st.obj.y) * (car ? 0.25 : 0.06)
       _drawObjective(ctx, st.obj)
+      // Separation pass: tokens repel inside 1.5 diameters — no more stacking
+      // into one indistinct blob (blueprint §5.2).
+      const everyone = [...st.home, ...st.away]
+      for (let a = 0; a < everyone.length; a++) for (let b = a + 1; b < everyone.length; b++) {
+        const A = everyone[a], B = everyone[b]
+        const dx = B.x - A.x, dy = B.y - A.y
+        const d = Math.hypot(dx, dy) || 0.001
+        const min = R_SHINOBI * 3
+        if (d < min) {
+          const push = (min - d) / min * 0.5
+          const ux = dx / d, uy = dy / d
+          A.vx -= ux * push; A.vy -= uy * push
+          B.vx += ux * push; B.vy += uy * push
+        }
+      }
       const all = [[st.home, '#c9a84c', '#e8d5a3'], [st.away, arena.palette.accent, arena.palette.line]]
       all.forEach(([team, col, edge]) => team.forEach((s, i) => {
-        // Snappier steering so the squad commits to the clash within a beat rather
-        // than drifting; a little idle wander keeps them alive without floatiness.
-        s.vx += (s.tx - s.x) * 0.026 + _jit(i, performance.now() / 900 | 0) * 0.07
-        s.vy += (s.ty - s.y) * 0.026 + _jit(i + 7, performance.now() / 900 | 0) * 0.07
-        s.vx *= 0.86; s.vy *= 0.86
+        // Snappy steering + role accel profile (§5.1); a spent squad visibly slows.
+        const accel = 0.026 * (s.role === 'vanguard' ? 1.2 : s.role === 'medical' ? 0.85 : 1)
+        const spdCap = s.stamina != null ? 0.6 + 0.4 * (s.stamina / 100) : 1
+        s.vx += (s.tx - s.x) * accel + _jit(i, performance.now() / 900 | 0) * 0.07
+        s.vy += (s.ty - s.y) * accel + _jit(i + 7, performance.now() / 900 | 0) * 0.07
+        s.vx *= 0.86 * (0.9 + 0.1 * spdCap); s.vy *= 0.86 * (0.9 + 0.1 * spdCap)
         s.x += s.vx; s.y += s.vy
         // keep everyone inside the hex (radial clamp is a good approximation)
         const dx = s.x - CX, dy = s.y - CY, d = Math.hypot(dx, dy * 1.15)
         if (d > HEX_R - R_SHINOBI) { const f = (HEX_R - R_SHINOBI) / d; s.x = CX + dx * f; s.y = CY + dy * f }
-        _drawShinobi(ctx, s, col, edge, s === st.hover || s === st.selected || s === st.spot)
+        _drawShinobi(ctx, s, col, edge, s === st.hover || s === st.selected || s === st.spot, s === car)
       }))
       // Combat FX drawn over the circles — jutsu, slashes, pulses.
       _updateFx(st); _drawFx(ctx, st.fx)
@@ -358,9 +456,20 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
         ctx.fillText(nm, hs.x, hs.y - R_SHINOBI - 7)
       }
     }
+  }
+  function frame() {
+    if (!st.running) return
+    drawFrame()
     st.raf = requestAnimationFrame(frame)
   }
   st.raf = requestAnimationFrame(frame)
+  // rAF is suspended in hidden/backgrounded tabs, but the match clock keeps
+  // revealing beats — without a fallback the board would freeze and desync from
+  // the text. A slow interval keeps the sim rendering while hidden (also what
+  // makes headless verification possible).
+  st.iv = setInterval(() => {
+    if (typeof document !== 'undefined' && document.hidden && st.running) drawFrame()
+  }, 66)
 
   return {
     /** Choreograph one beat: both sides converge, winner surges through, loser reels.
@@ -435,15 +544,73 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
         s.x = p.x; s.y = p.y; s.tx = s.x; s.ty = s.y
       })
       re(st.home, 'home'); re(st.away, 'away')
-      st.flash = 0; st.selected = null; st.spot = null
+      st.flash = 0; st.selected = null; st.spot = null; st.carrier = null; st.zoneCtl = null
       st.obj.x = CX; st.obj.y = CY; st.obj.tx = CX; st.obj.ty = CY; st.crowd = 0; st.roar = null; st.fx = []
     },
     /** Live condition readout: set home-side stamina values (0-100, by index). */
     updateStamina(byIdx = []) {
       st.home.forEach((s, i) => { if (byIdx[i] != null) s.stamina = byIdx[i] })
     },
+    /** Zone-control strip from the match engine (5 values, −1..+1). */
+    setZoneControl(ctl) { st.zoneCtl = ctl },
+    /**
+     * Stage one possession-phase event from the match engine script
+     * (carry/pass/pass_fail/intercept/strike/block/turnover). Moves the acting
+     * tokens, hands the objective around, and pops the event marker — the
+     * choreography layer of blueprint §1.3. zoneX = band centre (0..1).
+     */
+    phaseEvent(ev, zoneX = 0.5) {
+      const px = CX - HEX_R + zoneX * HEX_R * 2
+      const py = CY + _jit(ev.actor + (ev.at * 40 | 0), 23) * HEX_R * 0.55
+      const team = ev.side === 'home' ? st.home : st.away
+      const foes = ev.side === 'home' ? st.away : st.home
+      const actor = team[ev.actor % team.length]; if (!actor) return
+      const mark = (glyph, color) => st.fx.push({ kind: 'marker', glyph, color, sx: px, sy: py - 10, dx: ev.side === 'home' ? 1 : -1, t: 0, speed: 0.02 })
+      if (ev.type === 'carry') {
+        st.carrier = { side: ev.side, idx: ev.actor % team.length }
+        actor.tx = px; actor.ty = py
+        // nearest foe reacts — a token presses the new carrier
+        const presser = foes[(ev.actor + 1) % foes.length]
+        if (presser) { presser.tx = px + (ev.side === 'home' ? 18 : -18); presser.ty = py }
+      } else if (ev.type === 'pass') {
+        const rcv = team[ev.target % team.length]
+        if (rcv) {
+          rcv.tx = px; rcv.ty = py + _jit(ev.target, 29) * 20
+          st.fx.push({ kind: 'passline', sx: actor.x, sy: actor.y, tx: rcv.tx, ty: rcv.ty, t: 0, speed: 0.05, color: '#e8d5a3' })
+          st.carrier = { side: ev.side, idx: ev.target % team.length }
+        }
+      } else if (ev.type === 'pass_fail') {
+        st.fx.push({ kind: 'passline', sx: actor.x, sy: actor.y, tx: px, ty: py, t: 0, speed: 0.05, color: '#cc5a4a', fail: true })
+        st.carrier = null
+        mark('✕', '#cc5a4a')
+      } else if (ev.type === 'intercept') {
+        st.carrier = { side: ev.side, idx: ev.actor % team.length }
+        actor.tx = px; actor.ty = py
+        actor.vx += (ev.side === 'home' ? -1.5 : 1.5)   // burst onto the loose scroll
+        mark('⚡', '#87ceeb')
+        st.crowd = Math.max(st.crowd, 0.5)
+      } else if (ev.type === 'strike' || ev.type === 'block') {
+        actor.tx = px + (ev.side === 'home' ? -14 : 14); actor.ty = py
+        const e = _elemFx(actor.element)
+        st.fx.push({ kind: 'proj', sx: actor.x, sy: actor.y, tx: px, ty: py, t: 0, speed: 0.07, color: e.color })
+        if (ev.type === 'block') {
+          const blocker = foes[(ev.target ?? 0) % foes.length]
+          if (blocker) { blocker.tx = px; blocker.ty = py }
+          mark('▣', '#9a9080')
+        } else {
+          mark('✦', ev.side === 'home' ? '#c9a84c' : arena.palette.accent)
+          st.crowd = Math.max(st.crowd, ev.side === 'home' ? 1 : 0.6)
+          if (ev.side === 'home') st.roar = { text: 'ROAAR!', color: '#8fbc8f', life: 0.9 }
+        }
+      } else if (ev.type === 'turnover') {
+        st.carrier = null
+        actor.tx = px; actor.ty = py
+        mark('✕', '#9a9080')
+      }
+      if (st.fx.length > 48) st.fx = st.fx.slice(-48)
+    },
     pause() { st.paused = true },
     resume() { st.paused = false },
-    destroy() { st.running = false; cancelAnimationFrame(st.raf); canvas.remove(); label.remove() },
+    destroy() { st.running = false; cancelAnimationFrame(st.raf); clearInterval(st.iv); canvas.remove(); label.remove() },
   }
 }
