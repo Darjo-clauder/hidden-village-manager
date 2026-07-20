@@ -29,6 +29,7 @@ import { nextDeclineYears, findRelegation, pickPromotion } from '../../shared/ut
 import { resolveBattleCall, callBeatIndex } from '../../shared/utils/battleCalls.js'
 import { staminaStart, finishEffects, scrollOutcome } from '../../shared/utils/matchSim.js'
 import { opportunityGrowthMod } from '../../shared/utils/depthPressure.js'
+import { tickCadence, idleCohesionDecay, grindMod, grindCohesionPenalty } from '../../shared/utils/squadCadence.js'
 import { sponsorMoodDelta, moodPayoutMult, applyMoodDelta, SPONSOR_QUIT_MOOD } from '../../shared/utils/sponsors.js'
 import { supportDelta, revenueMult, applySupport, FESTIVAL_THRESH, UNREST_THRESH } from '../../shared/utils/populace.js'
 import { effectivePlan, medQuality, recoveryStep, reinjuryChance, returningForm } from '../../shared/utils/medical.js'
@@ -1265,13 +1266,22 @@ export function adv() {
     }
   }
 
-  // ── Squad monthly tick (monthsActive, anniversary) ───────────────────────
+  // ── Squad monthly tick (monthsActive, anniversary, deployment cadence) ────
   G.squads.forEach(sq => {
     sq.monthsActive = (sq.monthsActive || 0) + 1
     if (sq.monthsActive > 0 && sq.monthsActive % 12 === 0) {
       const years = sq.monthsActive / 12
       aL(sq.n + ' marks ' + years + ' year' + (years > 1 ? 's' : '') + ' as a unit.', 'ev')
       addChronicle('Squad Anniversary', sq.n + ' has been together for ' + years + ' year' + (years > 1 ? 's' : '') + '. Cohesion: ' + (sq.cohesion || 0) + '.', 'squad')
+    }
+    sq.deployedThisMonth = G.aM.some(am => am.isSquad && am.squadId === sq.id)
+    const cadence = tickCadence(sq)
+    sq.consecutiveDeployMonths = cadence.consecutiveDeployMonths
+    sq.idleMonths = cadence.idleMonths
+    const decay = idleCohesionDecay(sq.idleMonths)
+    if (decay > 0 && (sq.cohesion || 0) > 0) {
+      sq.cohesion = Math.max(0, (sq.cohesion || 0) - decay)
+      if (sq.idleMonths === 2) aL(sq.n + ' has gone quiet — cohesion is starting to slip.', 'warn')
     }
   })
 
@@ -1449,7 +1459,8 @@ export function adv() {
         return acc + (ms.declineMod || 0) * 0.5  // half-weight per member so one declining vet doesn't cripple a squad
       }, 0)
       const sqFatigueMod = sq.members.reduce((acc, id) => { const mb = G.shinobi.find(x => x.id === id); return acc + (mb ? fatiguePenalty(mb) : 0) }, 0) / Math.max(1, sq.members.length)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod() + (am._scMod || 0) + sqFatigueMod + _appMod.sc - _appMod.risk - (am._riskMod || 0) + kageMod(G, 'command'), 0.1, successCeiling(m.rk))
+      const sqGrindMod = grindMod(sq.consecutiveDeployMonths || 0)
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod() + (am._scMod || 0) + sqFatigueMod + sqGrindMod + _appMod.sc - _appMod.risk - (am._riskMod || 0) + kageMod(G, 'command'), 0.1, successCeiling(m.rk))
 
       const _mev = resolveMission(sc)
       const _mq = qualityEffects(_mev.quality)
@@ -1605,7 +1616,7 @@ export function adv() {
             if (_mev.quality === 'disaster') addMemory(survivor, 'mission_disaster', m.id || m.n, { year: G.year, month: G.month })
           })
         }
-        sq.cohesion = Math.max(0, (sq.cohesion ?? 0) + (hadKIA ? -15 : -4))
+        sq.cohesion = Math.max(0, (sq.cohesion ?? 0) + (hadKIA ? -15 : -4) - grindCohesionPenalty(sq.consecutiveDeployMonths || 0))
         sq.losses++
         const _sqFailNarr = pickSquadNarrative(m.rk, 'failure', sq.n)
         const _sqFailTag = _mev.quality === 'disaster' ? '💥 Disaster — ' : ''

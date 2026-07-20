@@ -8,10 +8,23 @@ import { MISSION_APPROACHES } from '../../../shared/utils/missionEngine.js'
 import { heatmapHtml } from '../uikit.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { staminaStart, unitCompRead, staminaBand } from '../../../shared/utils/matchSim.js'
+import { grindMod, idleCohesionDecay } from '../../../shared/utils/squadCadence.js'
 
 // Pre-match condition read for a squad — projected starting stamina (with the
 // unit-comp bonus) + the comp tags the live match view will use. Lets the player
 // weigh legs and composition BEFORE committing, not just raw power.
+// Deployment cadence note — grinding squads show a live success penalty,
+// idle squads show the cohesion they're bleeding, so rotation has visible stakes.
+function _cadenceNote(sq) {
+  const consec = sq.consecutiveDeployMonths || 0
+  const idle = sq.idleMonths || 0
+  const gm = grindMod(consec)
+  if (gm < 0) return `<div style="font-size:7px;color:#f0a030;margin-top:3px">⚠ ${consec}mo straight in the field — ${Math.round(-gm * 100)}% success penalty</div>`
+  const decay = idleCohesionDecay(idle)
+  if (decay > 0) return `<div style="font-size:7px;color:#87ceeb;margin-top:3px">💤 Idle ${idle}mo — losing ${decay} cohesion/mo</div>`
+  return ''
+}
+
 function _squadConditionPreview(sq) {
   const mbs = (sq.members || []).map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
   if (!mbs.length) return ''
@@ -110,6 +123,7 @@ export function rSq() {
           <span style="color:#c9a84c">${cohesion}/100</span>
         </div>
         <div style="background:#2e2a22;height:3px;border-radius:2px"><div style="background:#c9a84c;height:3px;border-radius:2px;width:${cohesionPct}"></div></div>
+        ${_cadenceNote(sq)}
       </div>
       <div style="margin-bottom:6px">
         <div style="display:flex;justify-content:space-between;font-size:8px;color:#7a7060;margin-bottom:3px">
