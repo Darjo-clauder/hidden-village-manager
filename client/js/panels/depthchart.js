@@ -4,6 +4,7 @@ import { ensureDepthEntry, assignDepthSlot, toggleDepthLock, evalDepth, resolveA
 import { aL, ntf, upUI } from '../ui.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { openContextMenu, showHoverPreview, hideHoverPreview } from '../uikit.js'
+import { opportunityBand } from '../../../shared/utils/depthPressure.js'
 
 const RANK_LABELS = RANKS
 const RANK_RI     = [0, 1, 2, 3, 4]
@@ -29,6 +30,7 @@ export function depHover(e, id) {
     ${row('Power', sPow(s))}
     ${row('Stat avg', statAvg)}
     ${row('Status', s.status)}
+    ${(() => { const ob = opportunityBand(s.workload); return `<div class="hp-row"><span>Opportunity</span><b style="color:${ob.color}">${ob.label}</b></div>` })()}
     ${s.clan ? row('Clan', s.clan) : ''}`)
 }
 
@@ -144,7 +146,10 @@ function _squadDepthTable(sq) {
               </div>
               ${activeId ? (() => {
                 const active = G.shinobi.find(s => s.id === activeId)
-                return active ? `<div style="font-size:7px;color:var(--green);margin-bottom:4px">▶ ${active.fn} ${active.ln}</div>` : ''
+                if (!active) return ''
+                const ob = opportunityBand(active.workload)
+                return `<div style="font-size:7px;color:var(--green);margin-bottom:1px">▶ ${active.fn} ${active.ln}</div>
+                  <div style="font-size:6px;color:${ob.color};margin-bottom:4px" title="${ob.note}">${ob.label}</div>`
               })() : `<div style="font-size:7px;color:var(--red);margin-bottom:4px">▶ No active starter</div>`}
               ${['starter','backup','emergency'].map(slotKey => {
                 const sid = slot[slotKey]
@@ -182,11 +187,13 @@ function _slotHtml(s, cls) {
   const phaseColors = { developing:'var(--blue)', prime:'var(--green)', veteran:'var(--gold)', declining:'var(--red)' }
   const phaseIcons  = { developing:'↑', prime:'★', veteran:'◆', declining:'↓' }
   const phase = s.phase || 'prime'
+  const ob = opportunityBand(s.workload)
   return `
-    <div class="depth-slot ${cls}" title="${s.fn} ${s.ln}" oncontextmenu="return depCtx(event,'${s.id}')" onmousemove="depHover(event,'${s.id}')" onmouseleave="hideHoverPreview()">
+    <div class="depth-slot ${cls}" title="${s.fn} ${s.ln} — ${ob.note}" oncontextmenu="return depCtx(event,'${s.id}')" onmousemove="depHover(event,'${s.id}')" onmouseleave="hideHoverPreview()">
       <div style="font-size:9px;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.fn} ${s.ln}</div>
       <div style="font-size:7px;color:var(--text-dim);margin-top:2px">Avg: ${statAvg}</div>
       <div style="font-size:7px;color:${phaseColors[phase]};margin-top:1px">${phaseIcons[phase]} ${phase}</div>
+      ${cls === 'available' ? `<div style="font-size:7px;color:${ob.color};margin-top:1px">${ob.label}</div>` : ''}
       ${statusLabel ? `<div style="font-size:7px;color:${statusColor};margin-top:1px">${statusLabel}</div>` : ''}
     </div>`
 }

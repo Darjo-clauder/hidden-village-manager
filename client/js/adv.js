@@ -28,6 +28,7 @@ import { JOURNALIST_BY_ID, pickJournalist, adjustJournalistRel, toneRelDelta } f
 import { nextDeclineYears, findRelegation, pickPromotion } from '../../shared/utils/leagueMembership.js'
 import { resolveBattleCall, callBeatIndex } from '../../shared/utils/battleCalls.js'
 import { staminaStart, finishEffects, scrollOutcome } from '../../shared/utils/matchSim.js'
+import { opportunityGrowthMod } from '../../shared/utils/depthPressure.js'
 import { sponsorMoodDelta, moodPayoutMult, applyMoodDelta, SPONSOR_QUIT_MOOD } from '../../shared/utils/sponsors.js'
 import { supportDelta, revenueMult, applySupport, FESTIVAL_THRESH, UNREST_THRESH } from '../../shared/utils/populace.js'
 import { effectivePlan, medQuality, recoveryStep, reinjuryChance, returningForm } from '../../shared/utils/medical.js'
@@ -1064,7 +1065,7 @@ export function adv() {
 
       // Stat growth
       const mentorBoost = 1 + mentorGrowthBonus(s, G.shinobi) + (cp.growthBonus || 0) + (dp.statGrowthBonus || 0) + ((DOCTRINE_BY_ID[G.villageDoctrine]?.growthMod) || 0) + kageMod(G, 'mentorship')
-      if (Math.random() < 0.25 * tgM * mentorBoost) {
+      if (Math.random() < 0.25 * tgM * mentorBoost * opportunityGrowthMod(s.workload)) {
         const k = pk(['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed'])
         const kG = k === 'intelligence' && s.pers.n === 'Bookworm' ? 2 : 1
         if (sPow(s) < s.potential) s.stats[k] = clamp(s.stats[k] + rnd(1, kG * 2), 0, 99)
