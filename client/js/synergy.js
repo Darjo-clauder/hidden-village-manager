@@ -39,29 +39,29 @@ const ISC_TRIO = new Set(['Kagero', 'Tsuchida', 'Tamashii'])
 // ── Chemistry effects (trait combos) ─────────────────────────────────────────
 const CHEMISTRY = [
   { match: t => t.filter(x => x === 'Ambitious').length >= 2,
-    label: 'Rival Spirits',     desc: '+10% power, -6% success — two Ambitious shinobi push each other hard.',  powerMod: 0.10, successMod: -0.06, color: '#fa0' },
+    label: 'Rival Spirits',     desc: '+10% power, -6% success — two Ambitious shinobi push each other hard.',  powerMod: 0.10, successMod: -0.06, color: 'var(--orange)' },
   { match: t => t.includes('Protective') && t.includes('Reckless'),
-    label: 'Cover Fire',        desc: '+8% success — Protective cancels out Reckless\'s risk penalty.',          powerMod: 0,    successMod: 0.08,  color: '#8fbc8f' },
+    label: 'Cover Fire',        desc: '+8% success — Protective cancels out Reckless\'s risk penalty.',          powerMod: 0,    successMod: 0.08,  color: 'var(--green)' },
   { match: t => t.includes('Loyal') && t.includes('Charismatic'),
-    label: 'Band of Brothers',  desc: '+6% success — loyalty and charisma create unshakeable unit cohesion.',   powerMod: 0,    successMod: 0.06,  color: '#8fbc8f' },
+    label: 'Band of Brothers',  desc: '+6% success — loyalty and charisma create unshakeable unit cohesion.',   powerMod: 0,    successMod: 0.06,  color: 'var(--green)' },
   { match: t => t.includes('Lone Wolf'),
-    label: 'Friction',          desc: '-4% success — Lone Wolf resents squad structure.',                        powerMod: 0,    successMod: -0.04, color: '#f66' },
+    label: 'Friction',          desc: '-4% success — Lone Wolf resents squad structure.',                        powerMod: 0,    successMod: -0.04, color: 'var(--red)' },
   { match: t => t.includes('Vengeful') && t.includes('Protective'),
-    label: 'Sworn Vengeance',   desc: '+12% power — they will not let each other fall.',                         powerMod: 0.12, successMod: 0,     color: '#cc7fb8' },
+    label: 'Sworn Vengeance',   desc: '+12% power — they will not let each other fall.',                         powerMod: 0.12, successMod: 0,     color: 'var(--purple)' },
   { match: t => t.includes('Hot-headed') && t.includes('Calm'),
-    label: 'Yin-Yang',          desc: '+4% success — Calm steadies the Hot-headed one at critical moments.',     powerMod: 0,    successMod: 0.04,  color: '#87ceeb' },
+    label: 'Yin-Yang',          desc: '+4% success — Calm steadies the Hot-headed one at critical moments.',     powerMod: 0,    successMod: 0.04,  color: 'var(--blue)' },
   { match: t => t.includes('Stoic') && t.includes('Charismatic'),
-    label: 'Silent Strength',   desc: '+5% power — composed presence amplifies the leader\'s energy.',           powerMod: 0.05, successMod: 0,     color: '#87ceeb' },
+    label: 'Silent Strength',   desc: '+5% power — composed presence amplifies the leader\'s energy.',           powerMod: 0.05, successMod: 0,     color: 'var(--blue)' },
   { match: t => t.includes('Bookworm') && t.includes('Hot-headed'),
-    label: 'Theory Meets Fury', desc: '-3% success — constant tactical disagreements slow the team.',            powerMod: 0,    successMod: -0.03, color: '#fa0' },
+    label: 'Theory Meets Fury', desc: '-3% success — constant tactical disagreements slow the team.',            powerMod: 0,    successMod: -0.03, color: 'var(--orange)' },
   { match: t => t.includes('Cowardly') && t.includes('Loyal'),
-    label: 'Courage by Proxy',  desc: '+5% success — loyalty overrides cowardice when it counts.',               powerMod: 0,    successMod: 0.05,  color: '#8fbc8f' },
+    label: 'Courage by Proxy',  desc: '+5% success — loyalty overrides cowardice when it counts.',               powerMod: 0,    successMod: 0.05,  color: 'var(--green)' },
   { match: t => t.includes('Greedy') && t.includes('Honorable'),
-    label: 'Uneasy Tension',    desc: '-4% success — fundamentally opposed values create friction.',              powerMod: 0,    successMod: -0.04, color: '#fa0' },
+    label: 'Uneasy Tension',    desc: '-4% success — fundamentally opposed values create friction.',              powerMod: 0,    successMod: -0.04, color: 'var(--orange)' },
   { match: t => t.includes('Ambitious') && t.includes('Charismatic'),
-    label: 'Natural Leaders',   desc: '+8% power — two forces of will pulling in the same direction.',           powerMod: 0.08, successMod: 0,     color: '#c9a84c' },
+    label: 'Natural Leaders',   desc: '+8% power — two forces of will pulling in the same direction.',           powerMod: 0.08, successMod: 0,     color: 'var(--gold)' },
   { match: t => t.filter(x => x === 'Loyal').length >= 2,
-    label: 'Oath Brothers',     desc: '+8% success — unwavering mutual loyalty is its own force multiplier.',    powerMod: 0,    successMod: 0.08,  color: '#c9a84c' },
+    label: 'Oath Brothers',     desc: '+8% success — unwavering mutual loyalty is its own force multiplier.',    powerMod: 0,    successMod: 0.08,  color: 'var(--gold)' },
 ]
 
 // ── Named squad identities (unlock at cohesion ≥ 75) ─────────────────────────
@@ -92,7 +92,7 @@ export function sqSynergy(sq, shinobi) {
   if (rivalPairs.length >= 2) {
     powerMod += 0.15
     successMod -= 0.08
-    bonuses.push({ label: 'Rivals in Arms', desc: '+15% power, -8% success — rivalry pushes limits but fractures teamwork.', color: '#fa0' })
+    bonuses.push({ label: 'Rivals in Arms', desc: '+15% power, -8% success — rivalry pushes limits but fractures teamwork.', color: 'var(--orange)' })
   }
 
   // ── Clan combos ───────────────────────────────────────────────────────────
@@ -103,7 +103,7 @@ export function sqSynergy(sq, shinobi) {
   if ([...ISC_TRIO].every(c => clanSet.has(c))) {
     powerMod += 0.35
     successMod += 0.12
-    bonuses.push({ label: 'Three-Minds Formation', desc: '+35% power, +12% success — the legendary formation reborn.', color: '#c9a84c' })
+    bonuses.push({ label: 'Three-Minds Formation', desc: '+35% power, +12% success — the legendary formation reborn.', color: 'var(--gold)' })
   } else {
     // Cross-clan combos (check before same-clan so they don't stack)
     const appliedCrossClans = new Set()
@@ -112,7 +112,7 @@ export function sqSynergy(sq, shinobi) {
       if (clanSet.has(a) && clanSet.has(b) && !appliedCrossClans.has(a) && !appliedCrossClans.has(b)) {
         powerMod += combo.powerMod
         successMod += (combo.successMod || 0)
-        bonuses.push({ label: combo.label, desc: combo.desc, color: '#c9a84c' })
+        bonuses.push({ label: combo.label, desc: combo.desc, color: 'var(--gold)' })
         appliedCrossClans.add(a)
         appliedCrossClans.add(b)
       }
@@ -125,7 +125,7 @@ export function sqSynergy(sq, shinobi) {
       if (count >= 2 && !appliedCrossClans.has(clan)) {
         const combo = SAME_CLAN_COMBOS[clan] || { label: clan + ' Kinship', desc: '+8% power — shared blood, shared instinct.', powerMod: 0.08 }
         powerMod += combo.powerMod
-        bonuses.push({ label: combo.label, desc: combo.desc, color: '#87ceeb' })
+        bonuses.push({ label: combo.label, desc: combo.desc, color: 'var(--blue)' })
       }
     })
   }
@@ -146,14 +146,14 @@ export function sqSynergy(sq, shinobi) {
     const uniqueOrigins = new Set(origins)
     if (uniqueOrigins.size >= 2) {
       powerMod += 0.14; successMod += 0.03
-      bonuses.push({ label: 'Foreign Legion', desc: '+14% power — diverse village origins create unpredictable tactics.', color: '#cc7fb8' })
+      bonuses.push({ label: 'Foreign Legion', desc: '+14% power — diverse village origins create unpredictable tactics.', color: 'var(--purple)' })
     } else {
       powerMod += 0.07
-      bonuses.push({ label: origins[0] + ' Techniques', desc: '+7% power — exotic jutsu from ' + origins[0] + ' surprise the enemy.', color: '#87ceeb' })
+      bonuses.push({ label: origins[0] + ' Techniques', desc: '+7% power — exotic jutsu from ' + origins[0] + ' surprise the enemy.', color: 'var(--blue)' })
     }
   } else if (origins.length === 1) {
     powerMod += 0.06
-    bonuses.push({ label: origins[0] + ' Arts', desc: '+6% power — techniques from ' + origins[0] + ' give the team an edge.', color: '#87ceeb' })
+    bonuses.push({ label: origins[0] + ' Arts', desc: '+6% power — techniques from ' + origins[0] + ' give the team an edge.', color: 'var(--blue)' })
   }
 
   // ── Cohesion bonus ────────────────────────────────────────────────────────
@@ -164,7 +164,7 @@ export function sqSynergy(sq, shinobi) {
   if (sq.identity) {
     powerMod += IDENTITY_BONUS.powerMod
     successMod += IDENTITY_BONUS.successMod
-    bonuses.push({ label: sq.identity.title, desc: sq.identity.desc + ' ' + sq.identity.bonus, color: '#c9a84c' })
+    bonuses.push({ label: sq.identity.title, desc: sq.identity.desc + ' ' + sq.identity.bonus, color: 'var(--gold)' })
   }
 
   return {
@@ -192,7 +192,7 @@ export function sqSynergy(sq, shinobi) {
  */
 export function calcChemistry(sq, shinobiList) {
   const members = sq.members.map(id => shinobiList.find(s => s.id === id)).filter(Boolean)
-  if (!members.length) return { score: 0, tier: 'Unknown', color: '#555' }
+  if (!members.length) return { score: 0, tier: 'Unknown', color: 'var(--text-faint)' }
 
   let score = 50  // neutral baseline
 
@@ -234,7 +234,7 @@ export function calcChemistry(sq, shinobiList) {
   score = Math.max(0, Math.min(100, score))
 
   const tier  = score >= 80 ? 'Exceptional' : score >= 65 ? 'Strong' : score >= 45 ? 'Stable' : score >= 25 ? 'Tense' : 'Fractured'
-  const color = score >= 80 ? '#c9a84c'     : score >= 65 ? '#8fbc8f' : score >= 45 ? '#87ceeb' : score >= 25 ? '#fa0'   : '#f66'
+  const color = score >= 80 ? 'var(--gold)'     : score >= 65 ? 'var(--green)' : score >= 45 ? 'var(--blue)' : score >= 25 ? 'var(--orange)'   : 'var(--red)'
 
   return { score, tier, color }
 }

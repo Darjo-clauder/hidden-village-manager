@@ -298,35 +298,35 @@ function _eliteSquads() {
 function _renderWarMuster(el, tabHtml) {
   const last = G._warResult
   const canWatch = !!(G._warRun && G._warRun.stages && G._warRun.stages.length)
-  const recap = last ? `<div style="border:1px solid ${last.champ?.player ? '#c9a84c' : '#5a2a2a'};background:#0d0606;padding:10px;margin-bottom:12px">
+  const recap = last ? `<div style="border:1px solid ${last.champ?.player ? 'var(--gold)' : '#5a2a2a'};background:#0d0606;padding:10px;margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-        <div style="font-size:11px;color:${last.champ?.player ? '#c9a84c' : '#e8a0a0'}">${last.champ ? `🏯 Last Grand Tournament — Champion: ${last.champ.ico || ''} ${last.champ.name}${last.champ.player ? ' (you)' : ''}` : 'Grand Tournament concluded.'}</div>
-        ${canWatch ? `<button class="gb" style="font-size:7px;padding:2px 8px;border-color:#c9a84c;color:#c9a84c;white-space:nowrap" onclick="watchTournament()">▶ Watch your run</button>` : ''}
+        <div style="font-size:11px;color:${last.champ?.player ? 'var(--gold)' : '#e8a0a0'}">${last.champ ? `🏯 Last Grand Tournament — Champion: ${last.champ.ico || ''} ${last.champ.name}${last.champ.player ? ' (you)' : ''}` : 'Grand Tournament concluded.'}</div>
+        ${canWatch ? `<button class="gb" style="font-size:7px;padding:2px 8px;border-color:var(--gold);color:var(--gold);white-space:nowrap" onclick="watchTournament()">▶ Watch your run</button>` : ''}
       </div>
-      ${last.fallen ? `<div style="font-size:8px;color:#f88;margin-top:4px">${last.fallen} of our shinobi fell.</div>` : ''}
+      ${last.fallen ? `<div style="font-size:8px;color:var(--red-soft);margin-top:4px">${last.fallen} of our shinobi fell.</div>` : ''}
     </div>` : ''
 
   if (!G.warSched) {
     return (el.innerHTML = tabHtml + recap +
-      `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:12px">
-        <div style="font-size:11px;color:#c9a84c;margin-bottom:6px">🏯 Grand Tournament</div>
-        <div style="font-size:9px;color:#7a7060;line-height:1.5">The Grand Tournament is the annual clash of the great powers — fought by your <b>elite (Veteran and above)</b>, in squads, to the death. It is mustered each <b>Year-end (Month 12)</b>. Win the Adept Exams to graduate prospects into your tournament pool; the standings seed the bracket.</div>
-        <div style="font-size:8px;color:#5a5448;margin-top:8px">No tournament is mustering. The next Grand Tournament mobilizes at Month 12.</div>
+      `<div style="border:1px solid var(--border);background:var(--bg);padding:12px">
+        <div style="font-size:11px;color:var(--gold);margin-bottom:6px">🏯 Grand Tournament</div>
+        <div style="font-size:9px;color:var(--text-dim);line-height:1.5">The Grand Tournament is the annual clash of the great powers — fought by your <b>elite (Veteran and above)</b>, in squads, to the death. It is mustered each <b>Year-end (Month 12)</b>. Win the Adept Exams to graduate prospects into your tournament pool; the standings seed the bracket.</div>
+        <div style="font-size:8px;color:var(--text-faint);margin-top:8px">No tournament is mustering. The next Grand Tournament mobilizes at Month 12.</div>
       </div>`)
   }
 
   const elite = _eliteSquads()
   return (el.innerHTML = tabHtml + recap +
-    `<div style="border:1px solid #c9a84c;background:#0d0a04;padding:10px;margin-bottom:12px">
-      <div style="font-size:11px;color:#c9a84c">🏯 The Grand Tournament is mobilizing!</div>
-      <div style="font-size:8px;color:#7a7060;margin-top:4px">Muster up to ${WAR_MAX_SQUADS} elite squads (Veteran+). Casualties are expected — vessel and bloodline clans survive more often.</div>
+    `<div style="border:1px solid var(--gold);background:var(--sunken);padding:10px;margin-bottom:12px">
+      <div style="font-size:11px;color:var(--gold)">🏯 The Grand Tournament is mobilizing!</div>
+      <div style="font-size:8px;color:var(--text-dim);margin-top:4px">Muster up to ${WAR_MAX_SQUADS} elite squads (Veteran+). Casualties are expected — vessel and bloodline clans survive more often.</div>
     </div>` +
     '<div style="margin-bottom:12px">' +
     (elite.length ? elite.map(({ sq, members }) => {
       const ent = G.warCands.includes(sq.id)
       const protCount = members.filter(s => (G.beasts || []).some(b => b.sealed && b.jk === s.id) || s.clan).length
-      return `<div class="pi" onclick="musterWar('${sq.id}')" style="${ent ? 'border-color:#c9a84c;background:rgba(201,168,76,0.08)' : ''}"><div><div style="font-size:10px;color:#e8e0cc">${sq.n}${sq.identity ? ` <span style="color:#c9a84c;font-size:8px">«${sq.identity.title}»</span>` : ''}</div><div style="font-size:8px;color:#7a7060">${members.length} elite · Pwr ${_squadPow(members, sq.cohesion)} · cohesion ${sq.cohesion ?? 0}${protCount ? ` · <span style="color:#8fbc8f">${protCount} protected</span>` : ''}</div><div style="font-size:7px;color:#5a5448">${members.map(s => sn(s) + ' (' + RANKS[s.ri][0] + ')').join(', ')}</div></div>${ent ? '<span style="color:#c9a84c">✓</span>' : ''}</div>`
-    }).join('') : '<div style="color:#7a7060;font-size:9px">No eligible elite squads. Form a squad of all-Veteran+ shinobi (all available) in the Squads panel.</div>') +
+      return `<div class="pi" onclick="musterWar('${sq.id}')" style="${ent ? 'border-color:var(--gold);background:rgba(201,168,76,0.08)' : ''}"><div><div style="font-size:10px;color:var(--text-hi)">${sq.n}${sq.identity ? ` <span style="color:var(--gold);font-size:8px">«${sq.identity.title}»</span>` : ''}</div><div style="font-size:8px;color:var(--text-dim)">${members.length} elite · Pwr ${_squadPow(members, sq.cohesion)} · cohesion ${sq.cohesion ?? 0}${protCount ? ` · <span style="color:var(--green)">${protCount} protected</span>` : ''}</div><div style="font-size:7px;color:var(--text-faint)">${members.map(s => sn(s) + ' (' + RANKS[s.ri][0] + ')').join(', ')}</div></div>${ent ? '<span style="color:var(--gold)">✓</span>' : ''}</div>`
+    }).join('') : '<div style="color:var(--text-dim);font-size:9px">No eligible elite squads. Form a squad of all-Veteran+ shinobi (all available) in the Squads panel.</div>') +
     '</div>' +
     (G.warCands.length ? '<button class="gb" onclick="startWar()">Commit to War ►</button>' : ''))
 }
@@ -338,24 +338,24 @@ function _renderActiveWar(el, tabHtml) {
     .sort((a, b) => b.alive.length - a.alive.length || b.alive.reduce((x, c) => x + c.pow, 0) - a.alive.reduce((x, c) => x + c.pow, 0))
   const totalAlive = field.reduce((a, e) => a + e.alive.length, 0)
   const totalFallen = field.reduce((a, e) => a + (e.fallen?.length || 0), 0)
-  el.innerHTML = tabHtml + `<div style="background:#0d0808;border:1px solid #c9a84c;padding:14px">
-    <div style="font-size:8px;letter-spacing:3px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">Grand Tournament — ${WAR_STAGES[r] || 'Final Stand'}</div>
-    <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${standing.length} villages in the field · ${totalAlive} squads standing · <span style="color:#f88">${totalFallen} fallen</span></div>
+  el.innerHTML = tabHtml + `<div style="background:#0d0808;border:1px solid var(--gold);padding:14px">
+    <div style="font-size:8px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:8px">Grand Tournament — ${WAR_STAGES[r] || 'Final Stand'}</div>
+    <div style="font-size:8px;color:var(--text-dim);margin-bottom:8px">${standing.length} villages in the field · ${totalAlive} squads standing · <span style="color:var(--red-soft)">${totalFallen} fallen</span></div>
     <div style="display:grid;gap:8px;margin-bottom:10px">
-      ${standing.map((e, i) => `<div style="border:1px solid ${e.isPlayer ? '#c9a84c' : '#2e2a22'};padding:7px;background:${e.isPlayer ? 'rgba(201,168,76,0.06)' : '#0a0a0a'}">
-        <div style="font-size:9px;color:${e.isPlayer ? '#c9a84c' : '#9a9080'};margin-bottom:4px">${i === 0 ? '◆ ' : ''}${e.seed ? `<span style="color:#7a7060">#${e.seed}</span> ` : ''}${e.ico || '🏳'} ${e.name}${e.isPlayer ? ' (you)' : ''} <span style="color:#7a7060">— ${e.alive.length} squads${e.fallen?.length ? ` · <span style="color:#f88">${e.fallen.length} dead</span>` : ''}</span></div>
-        ${e.alive.map(c => `<div style="font-size:8px;padding:2px 0;color:${c.isPlayer ? '#e8e0cc' : '#7a7060'}">${c.name} · ${(c.members || []).length}-ninja · Pwr ${c.pow}</div>`).join('')}
+      ${standing.map((e, i) => `<div style="border:1px solid ${e.isPlayer ? 'var(--gold)' : 'var(--border)'};padding:7px;background:${e.isPlayer ? 'rgba(201,168,76,0.06)' : 'var(--bg)'}">
+        <div style="font-size:9px;color:${e.isPlayer ? 'var(--gold)' : 'var(--text-mid)'};margin-bottom:4px">${i === 0 ? '◆ ' : ''}${e.seed ? `<span style="color:var(--text-dim)">#${e.seed}</span> ` : ''}${e.ico || '🏳'} ${e.name}${e.isPlayer ? ' (you)' : ''} <span style="color:var(--text-dim)">— ${e.alive.length} squads${e.fallen?.length ? ` · <span style="color:var(--red-soft)">${e.fallen.length} dead</span>` : ''}</span></div>
+        ${e.alive.map(c => `<div style="font-size:8px;padding:2px 0;color:${c.isPlayer ? 'var(--text-hi)' : 'var(--text-dim)'}">${c.name} · ${(c.members || []).length}-ninja · Pwr ${c.pow}</div>`).join('')}
       </div>`).join('')}
     </div>
     <div style="margin-bottom:10px">
-      <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:4px">Command Order — your squads only</div>
+      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px">Command Order — your squads only</div>
       <div style="display:flex;gap:5px">
         ${WAR_COMMANDS.map(cmd => {
           const sel = (ui.warSt.command || 'hold') === cmd.id
-          return `<div onclick="setWarCommand('${cmd.id}')" title="${cmd.desc}" style="flex:1;text-align:center;padding:5px 4px;cursor:pointer;border:1px solid ${sel ? '#c9a84c' : '#2e2a22'};background:${sel ? 'rgba(201,168,76,.10)' : 'transparent'}">
+          return `<div onclick="setWarCommand('${cmd.id}')" title="${cmd.desc}" style="flex:1;text-align:center;padding:5px 4px;cursor:pointer;border:1px solid ${sel ? 'var(--gold)' : 'var(--border)'};background:${sel ? 'rgba(201,168,76,.10)' : 'transparent'}">
             <div style="font-size:12px">${cmd.icon}</div>
-            <div style="font-size:8px;color:${sel ? '#c9a84c' : '#9a9080'};font-weight:${sel ? 'bold' : 'normal'}">${cmd.label}</div>
-            <div style="font-size:6px;color:#555;margin-top:1px">${cmd.adv > 0 ? '+' : ''}${Math.round(cmd.adv * 100)}% · ${cmd.kiaMult < 1 ? '−' : cmd.kiaMult > 1 ? '+' : ''}${Math.abs(Math.round((cmd.kiaMult - 1) * 100))}% KIA</div>
+            <div style="font-size:8px;color:${sel ? 'var(--gold)' : 'var(--text-mid)'};font-weight:${sel ? 'bold' : 'normal'}">${cmd.label}</div>
+            <div style="font-size:6px;color:var(--text-faint);margin-top:1px">${cmd.adv > 0 ? '+' : ''}${Math.round(cmd.adv * 100)}% · ${cmd.kiaMult < 1 ? '−' : cmd.kiaMult > 1 ? '+' : ''}${Math.abs(Math.round((cmd.kiaMult - 1) * 100))}% KIA</div>
           </div>`
         }).join('')}
       </div>

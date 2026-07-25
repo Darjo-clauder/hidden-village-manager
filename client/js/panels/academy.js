@@ -83,58 +83,58 @@ function renderPipeline() {
     const DEV_STATS = ['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed']
     const bonusStat = DEV_STATS.reduce((best, k) => (student.stats[k] > student.stats[best] ? k : best), DEV_STATS[0])
 
-    return `<div style="border:1px solid #2a2a2a;border-left:3px solid #c9a84c;padding:12px;margin-bottom:10px;background:#111">
+    return `<div style="border:1px solid var(--surface-3);border-left:3px solid var(--gold);padding:12px;margin-bottom:10px;background:var(--sunken)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div>
-          <div style="font-size:9px;color:#e8e0cc;font-weight:bold">${sn(mentor)} <span style="color:#7a7060">→</span> ${sn(student)}</div>
-          <div style="font-size:7px;color:#7a7060;margin-top:2px">${RANKS[mentor.ri]} mentoring ${RANKS[student.ri]} · ${m.months}mo elapsed</div>
+          <div style="font-size:9px;color:var(--text-hi);font-weight:bold">${sn(mentor)} <span style="color:var(--text-dim)">→</span> ${sn(student)}</div>
+          <div style="font-size:7px;color:var(--text-dim);margin-top:2px">${RANKS[mentor.ri]} mentoring ${RANKS[student.ri]} · ${m.months}mo elapsed</div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:8px;color:#c9a84c">${pct}%</div>
-          <div style="font-size:7px;color:#7a7060">of 12mo</div>
+          <div style="font-size:8px;color:var(--gold)">${pct}%</div>
+          <div style="font-size:7px;color:var(--text-dim)">of 12mo</div>
         </div>
       </div>
 
       <!-- Progress bar -->
-      <div style="background:#1a1a1a;border:1px solid #333;height:6px;border-radius:3px;margin-bottom:8px">
-        <div style="background:#c9a84c;width:${pct}%;height:100%;border-radius:3px;transition:width 0.3s"></div>
+      <div style="background:var(--surface);border:1px solid var(--border);height:6px;border-radius:3px;margin-bottom:8px">
+        <div style="background:var(--gold);width:${pct}%;height:100%;border-radius:3px;transition:width 0.3s"></div>
       </div>
 
       <!-- Milestones -->
       <div style="display:flex;gap:8px;margin-bottom:8px">
-        <div style="flex:1;text-align:center;padding:5px;border:1px solid ${milestone3?'#8fbc8f':'#2a2a2a'};background:${milestone3?'rgba(143,188,143,.08)':'transparent'}">
-          <div style="font-size:7px;color:${milestone3?'#8fbc8f':'#3a3630'}">Mo 3</div>
-          <div style="font-size:7px;color:${milestone3?'#8fbc8f':'#3a3630'};margin-top:2px">${milestone3?'✓ Bond memory':'Memory bond'}</div>
+        <div style="flex:1;text-align:center;padding:5px;border:1px solid ${milestone3?'var(--green)':'var(--surface-3)'};background:${milestone3?'rgba(143,188,143,.08)':'transparent'}">
+          <div style="font-size:7px;color:${milestone3?'var(--green)':'var(--border-hi)'}">Mo 3</div>
+          <div style="font-size:7px;color:${milestone3?'var(--green)':'var(--border-hi)'};margin-top:2px">${milestone3?'✓ Bond memory':'Memory bond'}</div>
         </div>
-        <div style="flex:1;text-align:center;padding:5px;border:1px solid ${milestone6?'#8fbc8f':'#2a2a2a'};background:${milestone6?'rgba(143,188,143,.08)':'transparent'}">
-          <div style="font-size:7px;color:${milestone6?'#8fbc8f':'#3a3630'}">Mo 6</div>
-          <div style="font-size:7px;color:${milestone6?'#8fbc8f':'#3a3630'};margin-top:2px">${milestone6?'✓ Morale +8':'+8 morale'}</div>
+        <div style="flex:1;text-align:center;padding:5px;border:1px solid ${milestone6?'var(--green)':'var(--surface-3)'};background:${milestone6?'rgba(143,188,143,.08)':'transparent'}">
+          <div style="font-size:7px;color:${milestone6?'var(--green)':'var(--border-hi)'}">Mo 6</div>
+          <div style="font-size:7px;color:${milestone6?'var(--green)':'var(--border-hi)'};margin-top:2px">${milestone6?'✓ Morale +8':'+8 morale'}</div>
         </div>
-        <div style="flex:1;text-align:center;padding:5px;border:1px solid ${milestone12?'#c9a84c':'#2a2a2a'};background:${milestone12?'rgba(201,168,76,.08)':'transparent'}">
-          <div style="font-size:7px;color:${milestone12?'#c9a84c':'#3a3630'}">Mo 12</div>
-          <div style="font-size:7px;color:${milestone12?'#c9a84c':'#3a3630'};margin-top:2px">${milestone12?'✓ Grad bonus':'+3 ' + bonusStat}</div>
+        <div style="flex:1;text-align:center;padding:5px;border:1px solid ${milestone12?'var(--gold)':'var(--surface-3)'};background:${milestone12?'rgba(201,168,76,.08)':'transparent'}">
+          <div style="font-size:7px;color:${milestone12?'var(--gold)':'var(--border-hi)'}">Mo 12</div>
+          <div style="font-size:7px;color:${milestone12?'var(--gold)':'var(--border-hi)'};margin-top:2px">${milestone12?'✓ Grad bonus':'+3 ' + bonusStat}</div>
         </div>
       </div>
 
       <!-- Student stat preview -->
-      <div style="font-size:8px;color:#7a7060;margin-bottom:6px">
-        ${student.fn}'s strongest path: <span style="color:#e8e0cc">${bonusStat}</span>
-        <span style="color:#c9a84c">${student.stats[bonusStat]}</span>
-        ${!milestone12 ? `<span style="color:#7a7060"> → projected <span style="color:#c9a84c">${Math.min(99, student.stats[bonusStat] + 3)}</span> at graduation</span>` : '<span style="color:#8fbc8f"> (graduated)</span>'}
+      <div style="font-size:8px;color:var(--text-dim);margin-bottom:6px">
+        ${student.fn}'s strongest path: <span style="color:var(--text-hi)">${bonusStat}</span>
+        <span style="color:var(--gold)">${student.stats[bonusStat]}</span>
+        ${!milestone12 ? `<span style="color:var(--text-dim)"> → projected <span style="color:var(--gold)">${Math.min(99, student.stats[bonusStat] + 3)}</span> at graduation</span>` : '<span style="color:var(--green)"> (graduated)</span>'}
       </div>
 
-      <button class="gb" style="font-size:7px;border-color:#7a7060;color:#7a7060;padding:2px 8px" onclick="releaseMentor('${mentor.id}')">${t('academy.endMentorship')}</button>
+      <button class="gb" style="font-size:7px;border-color:var(--text-dim);color:var(--text-dim);padding:2px 8px" onclick="releaseMentor('${mentor.id}')">${t('academy.endMentorship')}</button>
     </div>`
   }).join('')
 }
 
 // ── Hidden attribute display ──────────────────────────────────────────────────
 const ATTR_LABELS = {
-  resilience:    { short: 'RES', color: '#8fbc8f' },
-  coachability:  { short: 'COA', color: '#87ceeb' },
-  pressure:      { short: 'PRS', color: '#c9a84c' },
-  adaptability:  { short: 'ADP', color: '#cc7fb8' },
-  leadership:    { short: 'LDR', color: '#f0a030' },
+  resilience:    { short: 'RES', color: 'var(--green)' },
+  coachability:  { short: 'COA', color: 'var(--blue)' },
+  pressure:      { short: 'PRS', color: 'var(--gold)' },
+  adaptability:  { short: 'ADP', color: 'var(--purple)' },
+  leadership:    { short: 'LDR', color: 'var(--orange)' },
 }
 
 function _hiddenAttrsHtml(p) {
@@ -145,34 +145,34 @@ function _hiddenAttrsHtml(p) {
   if (revealedCount === 0 && !(p.bestConfidence >= 65)) return ''
 
   const slots = attrs.map(attr => {
-    const meta = ATTR_LABELS[attr.key] || { short: attr.key.slice(0, 3).toUpperCase(), color: '#888' }
+    const meta = ATTR_LABELS[attr.key] || { short: attr.key.slice(0, 3).toUpperCase(), color: 'var(--text-dim)' }
     if (!attr.revealed) {
       return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;opacity:.35">
-        <div style="font-size:6px;color:#666">${meta.short}</div>
-        <div style="font-size:9px;color:#555">?</div>
+        <div style="font-size:6px;color:var(--text-faint)">${meta.short}</div>
+        <div style="font-size:9px;color:var(--text-faint)">?</div>
       </div>`
     }
     const pct = Math.round((attr.value / 20) * 100)
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px" title="${attr.key}: ${attr.value}/20">
       <div style="font-size:6px;color:${meta.color}">${meta.short}</div>
       <div style="font-size:9px;color:${meta.color};font-weight:bold">${attr.value}</div>
-      <div style="width:18px;height:2px;background:#2e2a22;border-radius:1px">
+      <div style="width:18px;height:2px;background:var(--border);border-radius:1px">
         <div style="width:${pct}%;height:100%;background:${meta.color};border-radius:1px"></div>
       </div>
     </div>`
   }).join('')
 
-  return `<div style="margin-top:7px;padding-top:6px;border-top:1px solid #2e2a22">
-    <div style="font-size:7px;color:#555;margin-bottom:4px">Hidden Attributes — ${revealedCount}/5 revealed</div>
+  return `<div style="margin-top:7px;padding-top:6px;border-top:1px solid var(--border)">
+    <div style="font-size:7px;color:var(--text-faint);margin-bottom:4px">Hidden Attributes — ${revealedCount}/5 revealed</div>
     <div style="display:flex;gap:8px">${slots}</div>
   </div>`
 }
 
 const CURVE_META = {
-  linear:       { label: 'Linear',       color: '#87ceeb', desc: 'Steady growth across career' },
-  early_peak:   { label: 'Early Peak',   color: '#c9a84c', desc: 'Fast growth, hard ceiling at 19' },
-  late_bloomer: { label: 'Late Bloomer', color: '#cc7fb8', desc: 'Slow start, accelerates after 21' },
-  volatile:     { label: 'Volatile',     color: '#f0a030', desc: 'Unpredictable swings each month' },
+  linear:       { label: 'Linear',       color: 'var(--blue)', desc: 'Steady growth across career' },
+  early_peak:   { label: 'Early Peak',   color: 'var(--gold)', desc: 'Fast growth, hard ceiling at 19' },
+  late_bloomer: { label: 'Late Bloomer', color: 'var(--purple)', desc: 'Slow start, accelerates after 21' },
+  volatile:     { label: 'Volatile',     color: 'var(--orange)', desc: 'Unpredictable swings each month' },
 }
 
 function _developmentHtml(p) {
@@ -185,25 +185,25 @@ function _developmentHtml(p) {
 
   const curveHtml = p.curveRevealed && p.developmentCurve
     ? (() => {
-        const m = CURVE_META[p.developmentCurve] || { label: p.developmentCurve, color: '#888', desc: '' }
+        const m = CURVE_META[p.developmentCurve] || { label: p.developmentCurve, color: 'var(--text-dim)', desc: '' }
         return `<span style="color:${m.color};font-size:7px" title="${m.desc}">⬡ ${m.label}</span>`
       })()
     : ''
 
   const progressHtml = hasPotential
     ? `<div style="margin-top:4px">
-        <div style="display:flex;justify-content:space-between;font-size:7px;color:#555;margin-bottom:2px">
-          <span>Dev progress <span style="color:#e8e0cc">${ability}</span> → pot <span style="color:#c9a84c">${potential}</span></span>
-          <span style="color:#888">${pct}%</span>
+        <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--text-faint);margin-bottom:2px">
+          <span>Dev progress <span style="color:var(--text-hi)">${ability}</span> → pot <span style="color:var(--gold)">${potential}</span></span>
+          <span style="color:var(--text-dim)">${pct}%</span>
         </div>
-        <div style="background:#2e2a22;height:3px;border-radius:2px">
-          <div style="background:linear-gradient(to right,#4a90a4,#c9a84c);height:3px;border-radius:2px;width:${pct}%"></div>
+        <div style="background:var(--border);height:3px;border-radius:2px">
+          <div style="background:linear-gradient(to right,#4a90a4,var(--gold));height:3px;border-radius:2px;width:${pct}%"></div>
         </div>
       </div>`
     : ''
 
   const mileHtml = milestones.length
-    ? `<div style="font-size:7px;color:#8fbc8f;margin-top:3px">✦ ${milestones[milestones.length - 1].ability} reached Y${milestones[milestones.length - 1].year}</div>`
+    ? `<div style="font-size:7px;color:var(--green);margin-top:3px">✦ ${milestones[milestones.length - 1].ability} reached Y${milestones[milestones.length - 1].year}</div>`
     : ''
 
   if (!curveHtml && !progressHtml) return ''
@@ -218,13 +218,13 @@ function _scoutHistoryHtml(p) {
   if (!history || history.length === 0) return ''
   const latest = history[history.length - 1]
   const best = p.bestConfidence || latest.confidence
-  const qualColor = best >= 80 ? '#c9a84c' : best >= 65 ? '#87ceeb' : best >= 50 ? '#9cf' : '#888'
+  const qualColor = best >= 80 ? 'var(--gold)' : best >= 65 ? 'var(--blue)' : best >= 50 ? 'var(--blue-hi)' : 'var(--text-dim)'
   const qualLabel = best >= 80 ? 'Elite' : best >= 65 ? 'Detailed' : best >= 50 ? 'General' : 'Impression'
-  return `<div style="margin-top:4px;font-size:7.5px;color:#555">
+  return `<div style="margin-top:4px;font-size:7.5px;color:var(--text-faint)">
     ${history.length} report${history.length > 1 ? 's' : ''} ·
     Best: <span style="color:${qualColor}">${qualLabel} (${best}%)</span>
-    ${p.conflictingRanges?.length ? ' · <span style="color:#f99">⚠ conflicting reads</span>' : ''}
-    ${p.trialDayDone ? ' · <span style="color:#8fbc8f">✓ trial day</span>' : ''}
+    ${p.conflictingRanges?.length ? ' · <span style="color:var(--red-soft)">⚠ conflicting reads</span>' : ''}
+    ${p.trialDayDone ? ' · <span style="color:var(--green)">✓ trial day</span>' : ''}
   </div>`
 }
 
@@ -242,7 +242,7 @@ function _rivalOfferHtml(p) {
       <button class="gb gb-g" onclick="matchRivalOffer('${p.id}')" ${canMatch ? '' : 'disabled'}
         style="font-size:7px">Match — ${matchCost.toLocaleString()} ryo</button>
       <button class="gb" onclick="exceedRivalOffer('${p.id}')" ${canExceed ? '' : 'disabled'}
-        style="font-size:7px;color:#c9a84c;border-color:#c9a84c">Exceed +20% — ${exceedCost.toLocaleString()} ryo</button>
+        style="font-size:7px;color:var(--gold);border-color:var(--gold)">Exceed +20% — ${exceedCost.toLocaleString()} ryo</button>
       <button class="gb gb-r" onclick="confirm('Let ${p.fn} ${p.ln} go to ${offer.village}? They will sign elsewhere.') && declineRivalOffer('${p.id}')"
         style="font-size:7px">${t('academy.letGo')}</button>
     </div>
@@ -257,29 +257,29 @@ function _trainingPlanHtml(p) {
 
   const badge = active
     ? `<span style="font-size:7px;padding:1px 6px;border:1px solid ${active.color};color:${active.color};border-radius:2px">${active.icon} ${active.label}</span>`
-    : `<span style="font-size:7px;color:#555">${t('academy.noPlan')}</span>`
+    : `<span style="font-size:7px;color:var(--text-faint)">${t('academy.noPlan')}</span>`
 
   const coachHint = coachRevealed
-    ? `<span style="font-size:7px;color:#cc7fb8;margin-left:6px" title="Coachability amplifies plan bonus">COA ${coachAttr.value}/20 +${Math.round(coachAttr.value / 20 * 10)}%</span>`
+    ? `<span style="font-size:7px;color:var(--purple);margin-left:6px" title="Coachability amplifies plan bonus">COA ${coachAttr.value}/20 +${Math.round(coachAttr.value / 20 * 10)}%</span>`
     : ''
 
   const opts = TRAINING_PLANS.map(pl =>
     `<option value="${pl.id}" ${p.trainingPlanId === pl.id ? 'selected' : ''}>${pl.icon} ${pl.label}</option>`
   ).join('')
 
-  return `<div style="margin-top:7px;padding-top:6px;border-top:1px solid #2e2a22">
+  return `<div style="margin-top:7px;padding-top:6px;border-top:1px solid var(--border)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
       <div style="display:flex;align-items:center;gap:4px">${badge}${coachHint}</div>
     </div>
     <div style="display:flex;gap:5px;align-items:center">
       <select onchange="setTrainingPlan('${p.id}',this.value)"
-        style="flex:1;background:#1a1a12;border:1px solid #3a3620;color:#c9a84c;font-size:7px;padding:2px 4px;border-radius:2px">
+        style="flex:1;background:#1a1a12;border:1px solid #3a3620;color:var(--gold);font-size:7px;padding:2px 4px;border-radius:2px">
         <option value="">— Assign plan…</option>
         ${opts}
       </select>
-      ${active ? `<span style="font-size:7px;color:#555" title="${active.desc}">?</span>` : ''}
+      ${active ? `<span style="font-size:7px;color:var(--text-faint)" title="${active.desc}">?</span>` : ''}
     </div>
-    ${active ? `<div style="font-size:7px;color:#555;margin-top:3px;font-style:italic">${active.desc}</div>` : ''}
+    ${active ? `<div style="font-size:7px;color:var(--text-faint);margin-top:3px;font-style:italic">${active.desc}</div>` : ''}
   </div>`
 }
 
@@ -300,7 +300,7 @@ function rnd(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a }
 export function rAc() {
   document.getElementById('acl').innerHTML = G.prospects.map(p => {
     const potText = p.scouted ? p.potential : '???'
-    const potColor = p.scouted ? '#c9a84c' : '#7a7060'
+    const potColor = p.scouted ? 'var(--gold)' : 'var(--text-dim)'
     const scoutingAm = G.aM.find(am => am.isScout && am.scoutTargetId === p.id)
     const canRecruit = G.ryo >= 2000
     const archFlavorTrunc = (p.archetype?.flavor || '').slice(0, 90) + ((p.archetype?.flavor || '').length > 90 ? '…' : '')
@@ -309,46 +309,48 @@ export function rAc() {
     // Patience bar (turns grey then red as they wait)
     const waited = p.monthsWaiting || 0
     const patience = Math.max(0, 100 - waited * 12.5)
-    const patienceColor = patience > 60 ? '#8fbc8f' : patience > 30 ? '#fa0' : '#f66'
+    const patienceColor = patience > 60 ? 'var(--green)' : patience > 30 ? 'var(--orange)' : 'var(--red)'
     const patienceLabel = patience > 60 ? 'Patient' : patience > 30 ? 'Restless' : 'Leaving soon'
 
     const currentSensei = p.mentor ? G.shinobi.find(s => s.id === p.mentor) : null
     const familySib = p.familyId ? G.prospects.filter(x => x.id !== p.id && x.familyId === p.familyId) : []
     const isScoutSourced = !!p.fromRegion
-    const urgencyBorder = isScoutSourced && p.urgencyMonths <= 2 && p.rivalInterest ? 'border-color:#f66' : p.prodigy ? 'border-color:#c9a84c;box-shadow:0 0 8px rgba(201,168,76,0.2)' : waited >= 6 ? 'border-color:#f66' : ''
+    const urgencyBorder = isScoutSourced && p.urgencyMonths <= 2 && p.rivalInterest ? 'border-color:var(--red)' : p.prodigy ? 'border-color:var(--gold);box-shadow:0 0 8px rgba(201,168,76,0.2)' : waited >= 6 ? 'border-color:var(--red)' : ''
     return `<div class="card" style="${urgencyBorder}" oncontextmenu="return acCtx(event,'${p.id}')">
-      ${isScoutSourced && p.rivalInterest && p.urgencyMonths > 0 ? `<div style="background:#3a0000;border-radius:3px;padding:2px 6px;font-size:7px;color:#f99;margin-bottom:5px">⚠ Rival village interest — ${p.urgencyMonths}m urgency window</div>` : ''}
+      ${isScoutSourced && p.rivalInterest && p.urgencyMonths > 0 ? `<div style="background:#3a0000;border-radius:3px;padding:2px 6px;font-size:7px;color:var(--red-soft);margin-bottom:5px">⚠ Rival village interest — ${p.urgencyMonths}m urgency window</div>` : ''}
       ${isScoutSourced ? `<div style="font-size:7px;color:#9b7fbf;margin-bottom:4px">🗺 Scouted by ${p.scoutName||'unknown'} · ${p.origin}</div>` : ''}
       <div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:7px">
         <div style="flex:1">
-          <div style="font-size:11px;color:${p.prodigy ? '#c9a84c' : '#e8e0cc'};font-weight:bold" onmousemove="acHover(event,'${p.id}')" onmouseleave="hideHoverPreview()">${sn(p)}${p.prodigy ? ' <span style="font-size:8px;color:#c9a84c">✦ PRODIGY</span>' : ''}</div>
-          <div style="font-size:8px;color:#7a7060">${p.clan ? p.clan + ' · ' + p.trait : p.spec} · Age ${p.age}${p.origin ? ' · <span style="color:#cc7fb8">from ' + p.origin + '</span>' : ''}</div>
-          ${p.archetype ? `<div style="font-size:8px;color:#cc7fb8;margin-top:2px;letter-spacing:1px">${p.archetype.n}</div>` : ''}
-          ${rival ? `<div style="font-size:8px;color:#f66;margin-top:2px">⚔ Rivals with ${sn(rival)}</div>` : ''}
-          ${familySib.length ? `<div style="font-size:8px;color:#87ceeb;margin-top:2px">👪 ${p.ln} family — with ${familySib.map(x => x.fn).join(', ')}</div>` : ''}
-          ${currentSensei ? `<div style="font-size:8px;color:#c9a84c;margin-top:2px">Sensei: ${sn(currentSensei)}</div>` : ''}
+          <div style="font-size:11px;color:${p.prodigy ? 'var(--gold)' : 'var(--text-hi)'};font-weight:bold" onmousemove="acHover(event,'${p.id}')" onmouseleave="hideHoverPreview()">${sn(p)}${p.prodigy ? ' <span style="font-size:8px;color:var(--gold)">✦ PRODIGY</span>' : ''}</div>
+          <div style="font-size:8px;color:var(--text-dim)">${p.clan ? p.clan + ' · ' + p.trait : (p.spec || '—')} · Age ${p.age}${p.origin ? ' · <span style="color:var(--purple)">from ' + p.origin + '</span>' : ''}</div>
+          ${p.archetype ? `<div style="font-size:8px;color:var(--purple);margin-top:2px;letter-spacing:1px">${p.archetype.n}</div>` : ''}
+          ${rival ? `<div style="font-size:8px;color:var(--red);margin-top:2px">⚔ Rivals with ${sn(rival)}</div>` : ''}
+          ${familySib.length ? `<div style="font-size:8px;color:var(--blue);margin-top:2px">👪 ${p.ln} family — with ${familySib.map(x => x.fn).join(', ')}</div>` : ''}
+          ${currentSensei ? `<div style="font-size:8px;color:var(--gold);margin-top:2px">Sensei: ${sn(currentSensei)}</div>` : ''}
         </div>
-        <span class="rk ${RKC[p.ri]}">${RANKS[p.ri]}</span>
+        ${p.ri === undefined || p.ri === null
+          ? `<span class="rk" style="color:var(--text-dim);border-color:var(--border)">Prospect</span>`
+          : `<span class="rk ${RKC[p.ri]}">${RANKS[p.ri]}</span>`}
       </div>
-      <div style="font-size:8px;color:#7a7060;font-style:italic;margin-bottom:7px;line-height:1.5">${archFlavorTrunc}</div>
+      <div style="font-size:8px;color:var(--text-dim);font-style:italic;margin-bottom:7px;line-height:1.5">${archFlavorTrunc}</div>
       <div class="sg">${sBars(p)}</div>
       <div style="margin-top:7px;display:flex;align-items:center;justify-content:space-between">
         ${p.pers ? `<span class="trait-tag ${pCl(p.pers)}">${p.pers.n}</span>` : ''}
         <div style="font-size:8px">
-          Pwr <span style="color:#e8e0cc">${sPow(p)}</span>
+          Pwr <span style="color:var(--text-hi)">${sPow(p)}</span>
           &nbsp;·&nbsp;
           Pot <span style="color:${potColor}">${isScoutSourced && p.potRange && !p.potRange.exact ? p.potRange.lo + '–' + p.potRange.hi + '?' : potText}</span>
-          ${p.scouted ? '' : isScoutSourced ? '' : '<span style="color:#3a3630;font-size:7px"> (unverified)</span>'}
+          ${p.scouted ? '' : isScoutSourced ? '' : '<span style="color:var(--border-hi);font-size:7px"> (unverified)</span>'}
         </div>
       </div>
       ${_trainingPlanHtml(p)}
       ${_developmentHtml(p)}
       <div style="margin-top:6px">
-        <div style="display:flex;justify-content:space-between;font-size:7px;color:#7a7060;margin-bottom:2px">
+        <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--text-dim);margin-bottom:2px">
           <span>Patience — <span style="color:${patienceColor}">${patienceLabel}</span></span>
           <span style="color:${patienceColor}">${waited}m waiting</span>
         </div>
-        <div style="background:#2e2a22;height:2px;border-radius:1px">
+        <div style="background:var(--border);height:2px;border-radius:1px">
           <div style="background:${patienceColor};height:2px;border-radius:1px;width:${patience}%"></div>
         </div>
       </div>
@@ -358,15 +360,15 @@ export function rAc() {
       <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
         <button class="gb gb-g" onclick="rec('${p.id}')" ${canRecruit ? '' : 'disabled'}>${t('academy.recruit')}</button>
         ${scoutingAm
-          ? `<div style="font-size:9px;color:#fa0;align-self:center">⟳ Being scouted…</div>`
+          ? `<div style="font-size:9px;color:var(--orange);align-self:center">⟳ Being scouted…</div>`
           : p.scouted
-            ? `<div style="font-size:9px;color:#8fbc8f;align-self:center">✓ Scouted</div>`
+            ? `<div style="font-size:9px;color:var(--green);align-self:center">✓ Scouted</div>`
             : `<button class="gb" onclick="oScout('${p.id}')" ${G.ryo >= 3000 ? '' : 'disabled'}>Scout — 3,000 ryo ►</button>`
         }
         ${!p.mentor ? `<button class="gb" onclick="oSensei('${p.id}')">${t('academy.assignSensei')}</button>` : ''}
       </div>
     </div>`
-  }).join('') || `<div style="color:#7a7060;font-size:10px">${t('academy.prospects.none')}</div>`
+  }).join('') || `<div style="color:var(--text-dim);font-size:10px">${t('academy.prospects.none')}</div>`
 }
 
 export function rec(id) {
@@ -414,10 +416,10 @@ export function oScout(prospectId) {
   document.getElementById('scout-list').innerHTML = scouts.map(s =>
     `<div class="pi" onclick="doScout('${s.id}')">
       <div>
-        <div style="font-size:10px;color:#e8e0cc">${sn(s)}</div>
-        <div style="font-size:8px;color:#7a7060">${RANKS[s.ri]} · Pwr ${sPow(s)}</div>
+        <div style="font-size:10px;color:var(--text-hi)">${sn(s)}</div>
+        <div style="font-size:8px;color:var(--text-dim)">${RANKS[s.ri]} · Pwr ${sPow(s)}</div>
       </div>
-      <span style="font-size:9px;color:#8fbc8f">Deploy ►</span>
+      <span style="font-size:9px;color:var(--green)">Deploy ►</span>
     </div>`
   ).join('')
   document.getElementById('ov-scout').classList.add('open')
@@ -432,10 +434,10 @@ export function oSensei(prospectId) {
   document.getElementById('sensei-list').innerHTML = available.map(s =>
     `<div class="pi" onclick="doSensei('${s.id}')">
       <div>
-        <div style="font-size:10px;color:#e8e0cc">${sn(s)}</div>
-        <div style="font-size:8px;color:#7a7060">${RANKS[s.ri]} · ${s.pers.n} · Pwr ${sPow(s)}</div>
+        <div style="font-size:10px;color:var(--text-hi)">${sn(s)}</div>
+        <div style="font-size:8px;color:var(--text-dim)">${RANKS[s.ri]} · ${s.pers.n} · Pwr ${sPow(s)}</div>
       </div>
-      <span style="font-size:9px;color:#c9a84c">${t('academy.assign')}</span>
+      <span style="font-size:9px;color:var(--gold)">${t('academy.assign')}</span>
     </div>`
   ).join('')
   document.getElementById('ov-sensei').classList.add('open')

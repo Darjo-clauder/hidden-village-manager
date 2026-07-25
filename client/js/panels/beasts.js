@@ -114,9 +114,9 @@ function _extractionBlock(b) {
     const chance = Math.round(stageSuccessChance(op.stage, pStr, hStr) * 100)
     return `<div style="margin-top:8px;padding:8px;border:1px solid var(--orange);background:rgba(0,0,0,.35)">
       <div style="font-size:8px;color:var(--orange);font-weight:bold;margin-bottom:4px">⚔ Extraction underway — Stage ${op.stage + 1}/3: ${stageName}</div>
-      <div style="display:flex;gap:4px;margin-bottom:5px">${EXTRACTION_STAGES.map((s, i) => `<div style="flex:1;height:4px;border-radius:2px;background:${i < op.stage ? '#8fbc8f' : i === op.stage ? 'var(--orange)' : '#333'}"></div>`).join('')}</div>
+      <div style="display:flex;gap:4px;margin-bottom:5px">${EXTRACTION_STAGES.map((s, i) => `<div style="flex:1;height:4px;border-radius:2px;background:${i < op.stage ? 'var(--green)' : i === op.stage ? 'var(--orange)' : 'var(--border)'}"></div>`).join('')}</div>
       ${(op.log || []).slice(-3).map(l => `<div style="font-size:7px;color:var(--text-dim)">${l}</div>`).join('')}
-      <div style="font-size:8px;color:var(--text-dim);margin:5px 0">Next stage success chance: <b style="color:${chance >= 60 ? '#8fbc8f' : chance >= 40 ? '#f0a030' : '#f66'}">${chance}%</b> · a failed stage risks war (${Math.round(warRiskOnFail(op.stage) * 100)}%).</div>
+      <div style="font-size:8px;color:var(--text-dim);margin:5px 0">Next stage success chance: <b style="color:${chance >= 60 ? 'var(--green)' : chance >= 40 ? 'var(--orange)' : 'var(--red)'}">${chance}%</b> · a failed stage risks war (${Math.round(warRiskOnFail(op.stage) * 100)}%).</div>
       <div style="display:flex;gap:6px">
         <button class="gb gb-g" style="font-size:8px" onclick="advanceBeastExtraction()">Advance operation ▸</button>
         <button class="gb gb-r" style="font-size:8px" onclick="abortBeastExtraction()">Abort</button>

@@ -12,26 +12,26 @@ export function rMem() {
   const kia     = G.memorial.filter(m => !m.transfer).length
   const totalWins = G.memorial.reduce((a, m) => a + (m.wins || 0), 0)
 
-  const summary = `<div style="display:flex;gap:18px;margin-bottom:14px;padding:10px 12px;background:var(--surface,#1a1814);border:1px solid var(--border,#2e2a22)">
-    <div><div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px">${t("memorial.fallen")}</div><div style="font-size:15px;color:#f66;font-family:'Courier New',monospace">${kia}</div></div>
-    <div><div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px">${t("memorial.honored")}</div><div style="font-size:15px;color:#c9a84c;font-family:'Courier New',monospace">${honored}</div></div>
-    <div><div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px">${t("memorial.missionsServed")}</div><div style="font-size:15px;color:#8fbc8f;font-family:'Courier New',monospace">${totalWins}</div></div>
-    <div style="margin-left:auto;align-self:center;font-size:7px;color:#7a7060;max-width:180px;text-align:right">Honoring a fallen shinobi grants +legend and lifts village morale — their sacrifice is remembered.</div>
+  const summary = `<div style="display:flex;gap:18px;margin-bottom:14px;padding:10px 12px;background:var(--surface,var(--surface));border:1px solid var(--border,var(--border))">
+    <div><div style="font-size:7px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("memorial.fallen")}</div><div style="font-size:15px;color:var(--red);font-family:'Courier New',monospace">${kia}</div></div>
+    <div><div style="font-size:7px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("memorial.honored")}</div><div style="font-size:15px;color:var(--gold);font-family:'Courier New',monospace">${honored}</div></div>
+    <div><div style="font-size:7px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("memorial.missionsServed")}</div><div style="font-size:15px;color:var(--green);font-family:'Courier New',monospace">${totalWins}</div></div>
+    <div style="margin-left:auto;align-self:center;font-size:7px;color:var(--text-dim);max-width:180px;text-align:right">Honoring a fallen shinobi grants +legend and lifts village morale — their sacrifice is remembered.</div>
   </div>`
 
   el.innerHTML = summary +
-    `<div style="font-size:9px;color:#7a7060;margin-bottom:12px;letter-spacing:2px;text-transform:uppercase">${t("memorial.inMemory")}</div>` +
+    `<div style="font-size:9px;color:var(--text-dim);margin-bottom:12px;letter-spacing:2px;text-transform:uppercase">${t("memorial.inMemory")}</div>` +
     [...G.memorial].reverse().map((m, idx) => {
       const monthName = MONTHS[m.month - 1]?.n || 'M' + m.month
       const key = (m.name || '') + '_' + m.year + '_' + m.month
       const isHonored = (G.honoredFallen || []).includes(key)
-      return `<div style="padding:10px 12px;border-bottom:1px solid #2e2a22;${isHonored ? 'border-left:2px solid #c9a84c;background:rgba(201,168,76,.04)' : ''}">
+      return `<div style="padding:10px 12px;border-bottom:1px solid var(--border);${isHonored ? 'border-left:2px solid var(--gold);background:rgba(201,168,76,.04)' : ''}">
         <div style="display:flex;align-items:center;gap:8px">
           <div style="flex:1">
-            <div style="font-size:11px;color:#e8e0cc;font-weight:bold">${m.name}${isHonored ? ' <span style="font-size:8px;color:#c9a84c">✦ Honored</span>' : ''}</div>
-            <div style="font-size:8px;color:#7a7060;margin-top:2px">${m.rank}${m.clan ? ' · ' + m.clan + ' Clan' : ''} · Fell Y${m.year} ${monthName}</div>
-            ${m.transfer ? '' : `<div style="font-size:8px;color:#7a7060;margin-top:2px">Mission: "${m.mission || '—'}" · Wins: ${m.wins || 0}</div>`}
-            ${m.lastWords ? `<div style="font-size:8px;color:#f66;margin-top:4px;font-style:italic">${m.lastWords}</div>` : ''}
+            <div style="font-size:11px;color:var(--text-hi);font-weight:bold">${m.name}${isHonored ? ' <span style="font-size:8px;color:var(--gold)">✦ Honored</span>' : ''}</div>
+            <div style="font-size:8px;color:var(--text-dim);margin-top:2px">${m.rank}${m.clan ? ' · ' + m.clan + ' Clan' : ''} · Fell Y${m.year} ${monthName}</div>
+            ${m.transfer ? '' : `<div style="font-size:8px;color:var(--text-dim);margin-top:2px">Mission: "${m.mission || '—'}" · Wins: ${m.wins || 0}</div>`}
+            ${m.lastWords ? `<div style="font-size:8px;color:var(--red);margin-top:4px;font-style:italic">${m.lastWords}</div>` : ''}
           </div>
           ${!m.transfer && !isHonored
             ? `<button class="gb" style="font-size:7px;padding:3px 8px;flex-shrink:0" onclick="honorFallen('${key.replace(/'/g, '')}')">Honor ✦</button>`

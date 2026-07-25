@@ -13,32 +13,32 @@ export function rKageDev() {
   const path = k.path ? PATH_BY_ID[k.path] : null
 
   // ── Header: level + XP + points ────────────────────────────────────────────
-  const header = `<div style="background:var(--surface,#1a1814);border:1px solid var(--accent-border);border-top:2px solid var(--accent);padding:13px 15px;margin-bottom:14px">
+  const header = `<div style="background:var(--surface,var(--surface));border:1px solid var(--accent-border);border-top:2px solid var(--accent);padding:13px 15px;margin-bottom:14px">
     <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
       <span style="font-size:16px;color:var(--accent);font-weight:bold">${G.kName || 'Warden'}</span>
-      <span style="font-size:9px;color:#7a7060">Level ${k.level}${path ? ` · ${path.icon} ${path.n}` : ''}</span>
-      ${k.points > 0 ? `<span style="margin-left:auto;font-size:9px;color:#8fbc8f">● ${k.points} development point${k.points !== 1 ? 's' : ''} to spend</span>` : `<span style="margin-left:auto;font-size:8px;color:#555">${t('kagedev.noPoints')}</span>`}
+      <span style="font-size:9px;color:var(--text-dim)">Level ${k.level}${path ? ` · ${path.icon} ${path.n}` : ''}</span>
+      ${k.points > 0 ? `<span style="margin-left:auto;font-size:9px;color:var(--green)">● ${k.points} development point${k.points !== 1 ? 's' : ''} to spend</span>` : `<span style="margin-left:auto;font-size:8px;color:var(--text-faint)">${t('kagedev.noPoints')}</span>`}
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
-      <span style="font-size:7px;color:#7a7060;text-transform:uppercase;letter-spacing:1px;width:24px">XP</span>
-      <div style="flex:1;background:#0d0d0d;height:6px;border-radius:3px;overflow:hidden"><div style="height:6px;width:${xpPct}%;background:var(--accent);transition:width .3s"></div></div>
-      <span style="font-size:8px;color:#7a7060;font-family:var(--font-num,'Courier New',monospace)">${k.xp} / ${xpNext}</span>
+      <span style="font-size:7px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;width:24px">XP</span>
+      <div style="flex:1;background:var(--bg);height:6px;border-radius:3px;overflow:hidden"><div style="height:6px;width:${xpPct}%;background:var(--accent);transition:width .3s"></div></div>
+      <span style="font-size:8px;color:var(--text-dim);font-family:var(--font-num,'Courier New',monospace)">${k.xp} / ${xpNext}</span>
     </div>
-    <div style="font-size:7px;color:#3a3630;margin-top:5px">Earn XP each month by completing missions, promoting at the Adept Exam, and surviving the Nation War.</div>
+    <div style="font-size:7px;color:var(--border-hi);margin-top:5px">Earn XP each month by completing missions, promoting at the Adept Exam, and surviving the Nation War.</div>
   </div>`
 
   // ── Path selection (one-time) ──────────────────────────────────────────────
   const pathHtml = `<div style="margin-bottom:16px">
-    <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:8px">Warden Path ${path ? `<span style="color:var(--accent);margin-left:6px">${path.icon} ${path.n} — chosen</span>` : '<span style="color:var(--orange);margin-left:6px">choose your background (permanent)</span>'}</div>
+    <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">Warden Path ${path ? `<span style="color:var(--accent);margin-left:6px">${path.icon} ${path.n} — chosen</span>` : '<span style="color:var(--orange);margin-left:6px">choose your background (permanent)</span>'}</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">
       ${KAGE_PATHS.map(p => {
         const sel = k.path === p.id
         const locked = k.path && !sel
         return `<div style="border:1px solid ${sel ? 'var(--accent)' : 'var(--border)'};background:${sel ? 'var(--accent-bg)' : 'transparent'};padding:10px;opacity:${locked ? 0.4 : 1}">
           <div style="font-size:10px;color:${sel ? 'var(--accent)' : 'var(--text-hi)'};font-weight:bold;margin-bottom:3px">${p.icon} ${p.n}</div>
-          <div style="font-size:8px;color:#7a7060;line-height:1.5;margin-bottom:7px">${p.desc}</div>
+          <div style="font-size:8px;color:var(--text-dim);line-height:1.5;margin-bottom:7px">${p.desc}</div>
           ${sel ? '<div style="font-size:8px;color:var(--accent)">✓ Active</div>'
-                : k.path ? '<div style="font-size:7px;color:#555">— not chosen</div>'
+                : k.path ? '<div style="font-size:7px;color:var(--text-faint)">— not chosen</div>'
                 : `<button class="gb gb-g" style="font-size:7px" onclick="chooseKagePath('${p.id}')">Choose ▸</button>`}
         </div>`
       }).join('')}
@@ -47,25 +47,25 @@ export function rKageDev() {
 
   // ── Attributes ─────────────────────────────────────────────────────────────
   const attrsHtml = `<div>
-    <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:8px">${t('kagedev.attributes')}</div>
+    <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">${t('kagedev.attributes')}</div>
     <div style="display:grid;gap:6px">
       ${KAGE_ATTRS.map(a => {
         const v = k.attrs[a.id] || 0
         const maxed = v >= KAGE_ATTR_CAP
         const pct = Math.round((v / KAGE_ATTR_CAP) * 100)
         const bonus = Math.round(v * a.per * 100)
-        return `<div style="background:var(--surface,#1a1814);border:1px solid var(--border);padding:9px 11px">
+        return `<div style="background:var(--surface,var(--surface));border:1px solid var(--border);padding:9px 11px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
             <span style="font-size:13px">${a.icon}</span>
             <span style="font-size:10px;color:var(--text-hi);font-weight:bold">${a.n}</span>
             <span style="font-size:9px;color:var(--accent);font-family:var(--font-num,'Courier New',monospace);margin-left:4px">${v}/${KAGE_ATTR_CAP}</span>
-            <span style="font-size:8px;color:#8fbc8f;margin-left:4px">+${bonus}%</span>
+            <span style="font-size:8px;color:var(--green);margin-left:4px">+${bonus}%</span>
             <span style="margin-left:auto">${maxed
-              ? '<span style="font-size:8px;color:#8fbc8f">MAX</span>'
+              ? '<span style="font-size:8px;color:var(--green)">MAX</span>'
               : `<button class="gb gb-g" style="font-size:8px;padding:2px 9px" onclick="spendKagePt('${a.id}')" ${k.points > 0 ? '' : 'disabled'}>+ Invest</button>`}</span>
           </div>
-          <div style="background:#0d0d0d;height:5px;border-radius:2px;overflow:hidden;margin-bottom:4px"><div style="height:5px;width:${pct}%;background:var(--accent)"></div></div>
-          <div style="font-size:7px;color:#7a7060">${a.desc}</div>
+          <div style="background:var(--bg);height:5px;border-radius:2px;overflow:hidden;margin-bottom:4px"><div style="height:5px;width:${pct}%;background:var(--accent)"></div></div>
+          <div style="font-size:7px;color:var(--text-dim)">${a.desc}</div>
         </div>`
       }).join('')}
     </div>

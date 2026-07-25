@@ -10,7 +10,7 @@ import { BUDGET_KEYS, DEFAULT_ALLOCATION, normalizeAllocation, monthsToConverge,
 
 function tierColor(name) {
   const t = FINANCE_TIERS.find(x => x.n === name)
-  return t ? t.color : '#8fbc8f'
+  return t ? t.color : 'var(--green)'
 }
 
 function daimyoLabel() {
@@ -20,15 +20,15 @@ function daimyoLabel() {
 }
 
 function row(label, value, color) {
-  return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid #1a1814">
-    <span style="font-size:9px;color:#7a7060">${label}</span>
-    <span style="font-size:9px;color:${color || '#e8e0cc'};font-weight:bold">${value}</span>
+  return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--surface)">
+    <span style="font-size:9px;color:var(--text-dim)">${label}</span>
+    <span style="font-size:9px;color:${color || 'var(--text-hi)'};font-weight:bold">${value}</span>
   </div>`
 }
 
 export function rFi() {
   const fin = G.finances
-  if (!fin) { document.getElementById('fil').innerHTML = `<div style="color:#7a7060;font-size:9px">${tr('fin.none')}</div>`; return }
+  if (!fin) { document.getElementById('fil').innerHTML = `<div style="color:var(--text-dim);font-size:9px">${tr('fin.none')}</div>`; return }
 
   const snap = fin.history[fin.history.length - 1]
   const tier = FINANCE_TIERS.find(t => t.n === fin.healthTier) || FINANCE_TIERS[1]
@@ -46,7 +46,7 @@ export function rFi() {
   const commByRank = fin.missionCommissions || {D:0,C:0,B:0,A:0,S:0}
   const commissions = Object.entries(MISSION_COMMISSION).map(([rk, amt]) => {
     const cnt = commByRank[rk] || 0
-    return cnt > 0 ? `<span style="font-size:8px;color:#7a7060">${rk}×${cnt}=+${fmt(cnt*amt)}</span>` : null
+    return cnt > 0 ? `<span style="font-size:8px;color:var(--text-dim)">${rk}×${cnt}=+${fmt(cnt*amt)}</span>` : null
   }).filter(Boolean).join(' ')
 
   // Expenditure breakdown
@@ -82,7 +82,7 @@ export function rFi() {
     .map(r => {
       const grp = G.shinobi.filter(s => s.ri === r.ri)
       const total = grp.reduce((a, s) => a + s.salary, 0)
-      return `<div style="padding:2px 0 2px 12px;font-size:8px;color:#7a7060">└ ${grp.length}× ${r.n} = <span style="color:#f66">-${fmt(total)}</span></div>`
+      return `<div style="padding:2px 0 2px 12px;font-size:8px;color:var(--text-dim)">└ ${grp.length}× ${r.n} = <span style="color:var(--red)">-${fmt(total)}</span></div>`
     }).join('')
 
   // History — 12-month net line chart (P4 chart kit)
@@ -95,51 +95,51 @@ export function rFi() {
           labels: [`Y${hist[0].year}M${hist[0].month}`, `Y${hist[hist.length - 1].year}M${hist[hist.length - 1].month}`],
           format: v => (v >= 0 ? '+' : '') + fmt(v),
         })}
-        <div style="font-size:7px;color:#555;margin-top:2px">Monthly net, last ${hist.length} months · latest <span style="color:${hist[hist.length - 1].net >= 0 ? '#8fbc8f' : '#f66'}">${hist[hist.length - 1].net >= 0 ? '+' : ''}${fmt(hist[hist.length - 1].net)}</span></div>
+        <div style="font-size:7px;color:var(--text-faint);margin-top:2px">Monthly net, last ${hist.length} months · latest <span style="color:${hist[hist.length - 1].net >= 0 ? 'var(--green)' : 'var(--red)'}">${hist[hist.length - 1].net >= 0 ? '+' : ''}${fmt(hist[hist.length - 1].net)}</span></div>
       </div>`
     : ''
 
   document.getElementById('fil').innerHTML = `
     <!-- Health tier -->
-    <div style="background:rgba(${tc==='#c9a84c'?'201,168,76':tc==='#8fbc8f'?'143,188,143':tc==='#f0a030'?'240,160,48':tc==='#f99'?'255,153,153':'255,102,102'},0.08);border:1px solid ${tc};padding:12px 14px;margin-bottom:14px">
+    <div style="background:rgba(${tc==='var(--gold)'?'201,168,76':tc==='var(--green)'?'143,188,143':tc==='var(--orange)'?'240,160,48':tc==='var(--red-soft)'?'255,153,153':'255,102,102'},0.08);border:1px solid ${tc};padding:12px 14px;margin-bottom:14px">
       <div style="font-size:8px;letter-spacing:2px;color:${tc};text-transform:uppercase;margin-bottom:3px">${tr('fin.health')}</div>
       <div style="font-size:18px;font-weight:bold;color:${tc}">${fin.healthTier}</div>
-      <div style="font-size:9px;color:#7a7060;margin-top:3px">${tier.desc}</div>
-      ${fin.deficitMonths > 0 ? `<div style="margin-top:6px;font-size:9px;color:#f99">⚠ Deficit streak: ${fin.deficitMonths} month${fin.deficitMonths!==1?'s':''} — debt spiral triggers at 3.</div>` : ''}
+      <div style="font-size:9px;color:var(--text-dim);margin-top:3px">${tier.desc}</div>
+      ${fin.deficitMonths > 0 ? `<div style="margin-top:6px;font-size:9px;color:var(--red-soft)">⚠ Deficit streak: ${fin.deficitMonths} month${fin.deficitMonths!==1?'s':''} — debt spiral triggers at 3.</div>` : ''}
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
 
     <!-- INCOME -->
-    <div style="background:#1a1814;border:1px solid #2e2a22;padding:12px">
-      <div style="font-size:8px;letter-spacing:2px;color:#8fbc8f;text-transform:uppercase;margin-bottom:8px">${tr('fin.incomeMonth')}</div>
-      ${row('Village Revenue (tax base · rep ' + (G.reputation||0) + ')', '+' + fmt(villageRev), '#8fbc8f')}
-      ${row('Trade Routes (' + G.tradeRoutes.filter(r=>r.active).length + ' active)', '+' + fmt(trI), '#8fbc8f')}
-      ${row('Contracts (' + G.contracts.filter(c=>c.active).length + ' active)', '+' + fmt(coI), '#8fbc8f')}
-      ${jkI > 0 ? row('Vessel (Niryuu)', '+' + fmt(jkI), '#c9a84c') : ''}
-      ${daimyoB > 0 ? row('Daimyo Bonus (' + daimyoLbl + ')', '+' + fmt(daimyoB), '#c9a84c') : ''}
-      ${fin.examFees > 0 ? row('Exam Hosting Fees', '+' + fmt(fin.examFees), '#8fbc8f') : ''}
-      ${fin.loanFees > 0 ? row('Loan Fees Received', '+' + fmt(fin.loanFees), '#8fbc8f') : ''}
-      ${natBonus !== 0 ? row('Nation Bonus', (natBonus >= 0 ? '+' : '') + fmt(natBonus), natBonus >= 0 ? '#c9a84c' : '#fa0') : ''}
-      <div style="padding:4px 0;margin-top:2px;border-top:1px solid #2e2a22;display:flex;justify-content:space-between">
-        <span style="font-size:9px;color:#e8e0cc;font-weight:bold">${tr('fin.total')}</span>
-        <span style="font-size:9px;color:#8fbc8f;font-weight:bold">+${fmt(totalIncome)}</span>
+    <div style="background:var(--surface);border:1px solid var(--border);padding:12px">
+      <div style="font-size:8px;letter-spacing:2px;color:var(--green);text-transform:uppercase;margin-bottom:8px">${tr('fin.incomeMonth')}</div>
+      ${row('Village Revenue (tax base · rep ' + (G.reputation||0) + ')', '+' + fmt(villageRev), 'var(--green)')}
+      ${row('Trade Routes (' + G.tradeRoutes.filter(r=>r.active).length + ' active)', '+' + fmt(trI), 'var(--green)')}
+      ${row('Contracts (' + G.contracts.filter(c=>c.active).length + ' active)', '+' + fmt(coI), 'var(--green)')}
+      ${jkI > 0 ? row('Vessel (Niryuu)', '+' + fmt(jkI), 'var(--gold)') : ''}
+      ${daimyoB > 0 ? row('Daimyo Bonus (' + daimyoLbl + ')', '+' + fmt(daimyoB), 'var(--gold)') : ''}
+      ${fin.examFees > 0 ? row('Exam Hosting Fees', '+' + fmt(fin.examFees), 'var(--green)') : ''}
+      ${fin.loanFees > 0 ? row('Loan Fees Received', '+' + fmt(fin.loanFees), 'var(--green)') : ''}
+      ${natBonus !== 0 ? row('Nation Bonus', (natBonus >= 0 ? '+' : '') + fmt(natBonus), natBonus >= 0 ? 'var(--gold)' : 'var(--orange)') : ''}
+      <div style="padding:4px 0;margin-top:2px;border-top:1px solid var(--border);display:flex;justify-content:space-between">
+        <span style="font-size:9px;color:var(--text-hi);font-weight:bold">${tr('fin.total')}</span>
+        <span style="font-size:9px;color:var(--green);font-weight:bold">+${fmt(totalIncome)}</span>
       </div>
-      ${commissions ? `<div style="margin-top:6px;font-size:8px;color:#7a7060;letter-spacing:1px">MISSIONS THIS MONTH:</div><div style="margin-top:3px">${commissions}</div>` : ''}
+      ${commissions ? `<div style="margin-top:6px;font-size:8px;color:var(--text-dim);letter-spacing:1px">MISSIONS THIS MONTH:</div><div style="margin-top:3px">${commissions}</div>` : ''}
     </div>
 
     <!-- EXPENDITURE -->
-    <div style="background:#1a1814;border:1px solid #2e2a22;padding:12px">
-      <div style="font-size:8px;letter-spacing:2px;color:#f66;text-transform:uppercase;margin-bottom:8px">${tr('fin.expenditureMonth')}</div>
-      ${row('Shinobi Wages (' + G.shinobi.length + ' active)', '-' + fmt(shinobiSal), '#f66')}
+    <div style="background:var(--surface);border:1px solid var(--border);padding:12px">
+      <div style="font-size:8px;letter-spacing:2px;color:var(--red);text-transform:uppercase;margin-bottom:8px">${tr('fin.expenditureMonth')}</div>
+      ${row('Shinobi Wages (' + G.shinobi.length + ' active)', '-' + fmt(shinobiSal), 'var(--red)')}
       ${rankSal}
-      ${staffSal > 0 ? row('Staff Salaries (' + (G.staff||[]).length + ' staff · cap-exempt)', '-' + fmt(staffSal), '#f99') : ''}
-      ${maintenance > 0 ? row('Building Maintenance', '-' + fmt(maintenance), '#fa0') : ''}
-      ${(fin.scoutCostThisMonth||0) > 0 ? row('Scout Costs', '-' + fmt(fin.scoutCostThisMonth), '#fa0') : ''}
-      ${luxuryTax > 0 ? row('Luxury Tax (over cap)', '-' + fmt(luxuryTax), '#f44') : ''}
-      <div style="padding:4px 0;margin-top:2px;border-top:1px solid #2e2a22;display:flex;justify-content:space-between">
-        <span style="font-size:9px;color:#e8e0cc;font-weight:bold">${tr('fin.total')}</span>
-        <span style="font-size:9px;color:#f66;font-weight:bold">-${fmt(totalExpend)}</span>
+      ${staffSal > 0 ? row('Staff Salaries (' + (G.staff||[]).length + ' staff · cap-exempt)', '-' + fmt(staffSal), 'var(--red-soft)') : ''}
+      ${maintenance > 0 ? row('Building Maintenance', '-' + fmt(maintenance), 'var(--orange)') : ''}
+      ${(fin.scoutCostThisMonth||0) > 0 ? row('Scout Costs', '-' + fmt(fin.scoutCostThisMonth), 'var(--orange)') : ''}
+      ${luxuryTax > 0 ? row('Luxury Tax (over cap)', '-' + fmt(luxuryTax), 'var(--red)') : ''}
+      <div style="padding:4px 0;margin-top:2px;border-top:1px solid var(--border);display:flex;justify-content:space-between">
+        <span style="font-size:9px;color:var(--text-hi);font-weight:bold">${tr('fin.total')}</span>
+        <span style="font-size:9px;color:var(--red);font-weight:bold">-${fmt(totalExpend)}</span>
       </div>
     </div>
 
@@ -150,57 +150,57 @@ export function rFi() {
     ${_budgetPriorityHtml()}
 
     <!-- Net -->
-    <div style="background:#0d0b08;border:1px solid ${netNow>=0?'#8fbc8f':'#f66'};padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+    <div style="background:#0d0b08;border:1px solid ${netNow>=0?'var(--green)':'var(--red)'};padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
       <div>
-        <div style="font-size:8px;letter-spacing:2px;color:#7a7060;text-transform:uppercase">${tr('fin.monthlyNet')}</div>
-        <div style="font-size:22px;font-weight:bold;color:${netNow>=0?'#8fbc8f':'#f66'}">${netNow>=0?'+':''}${fmt(netNow)}</div>
+        <div style="font-size:8px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase">${tr('fin.monthlyNet')}</div>
+        <div style="font-size:22px;font-weight:bold;color:${netNow>=0?'var(--green)':'var(--red)'}">${netNow>=0?'+':''}${fmt(netNow)}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:8px;color:#7a7060">${tr('fin.treasury')}</div>
-        <div style="font-size:16px;color:#c9a84c;font-weight:bold">${fmt(G.ryo)}</div>
+        <div style="font-size:8px;color:var(--text-dim)">${tr('fin.treasury')}</div>
+        <div style="font-size:16px;color:var(--gold);font-weight:bold">${fmt(G.ryo)}</div>
       </div>
     </div>
 
     <!-- Transfer vs Wage budget summary -->
-    <div style="background:#1a1814;border:1px solid #2e2a22;padding:12px;margin-bottom:14px">
-      <div style="font-size:8px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:8px">${tr('fin.budgetPools')}</div>
+    <div style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
+      <div style="font-size:8px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">${tr('fin.budgetPools')}</div>
       <div style="display:flex;gap:16px">
         <div>
-          <div style="font-size:7px;color:#7a7060;margin-bottom:2px">${tr('fin.wageBudget')}</div>
-          <div style="font-size:14px;color:#f99;font-weight:bold">-${fmt(shinobiSal + staffSal)}</div>
-          <div style="font-size:8px;color:#7a7060">${G.shinobi.length} shinobi · ${(G.staff||[]).length} staff</div>
+          <div style="font-size:7px;color:var(--text-dim);margin-bottom:2px">${tr('fin.wageBudget')}</div>
+          <div style="font-size:14px;color:var(--red-soft);font-weight:bold">-${fmt(shinobiSal + staffSal)}</div>
+          <div style="font-size:8px;color:var(--text-dim)">${G.shinobi.length} shinobi · ${(G.staff||[]).length} staff</div>
         </div>
         <div>
-          <div style="font-size:7px;color:#7a7060;margin-bottom:2px">${tr('fin.transferBudget')}</div>
-          <div style="font-size:14px;color:#fa0;font-weight:bold">-${fmt(maintenance + (fin.scoutCostThisMonth||0))}</div>
-          <div style="font-size:8px;color:#7a7060">${tr('fin.maintScouts')}</div>
+          <div style="font-size:7px;color:var(--text-dim);margin-bottom:2px">${tr('fin.transferBudget')}</div>
+          <div style="font-size:14px;color:var(--orange);font-weight:bold">-${fmt(maintenance + (fin.scoutCostThisMonth||0))}</div>
+          <div style="font-size:8px;color:var(--text-dim)">${tr('fin.maintScouts')}</div>
         </div>
         <div>
-          <div style="font-size:7px;color:#7a7060;margin-bottom:2px">${tr('fin.passiveIncome')}</div>
-          <div style="font-size:14px;color:#8fbc8f;font-weight:bold">+${fmt(trI + coI + jkI + daimyoB)}</div>
-          <div style="font-size:8px;color:#7a7060">${tr('fin.routesContracts')}</div>
+          <div style="font-size:7px;color:var(--text-dim);margin-bottom:2px">${tr('fin.passiveIncome')}</div>
+          <div style="font-size:14px;color:var(--green);font-weight:bold">+${fmt(trI + coI + jkI + daimyoB)}</div>
+          <div style="font-size:8px;color:var(--text-dim)">${tr('fin.routesContracts')}</div>
         </div>
       </div>
     </div>
 
     <!-- History -->
     ${hist.length > 0 ? `
-    <div style="background:#1a1814;border:1px solid #2e2a22;padding:12px;margin-bottom:14px">
-      <div style="font-size:8px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:6px">${tr('fin.history', { n: hist.length })}</div>
-      ${hist.map(h => `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #111;font-size:8px">
-        <span style="color:#3a3630">Y${h.year}M${h.month}</span>
-        <span style="color:#7a7060">+${fmt(h.totalIncome)} income</span>
-        <span style="color:#7a7060">-${fmt(h.totalExpend)} exp</span>
-        <span style="color:${h.net>=0?'#8fbc8f':'#f66'};font-weight:bold">${h.net>=0?'+':''}${fmt(h.net)}</span>
+    <div style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
+      <div style="font-size:8px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">${tr('fin.history', { n: hist.length })}</div>
+      ${hist.map(h => `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--sunken);font-size:8px">
+        <span style="color:var(--border-hi)">Y${h.year}M${h.month}</span>
+        <span style="color:var(--text-dim)">+${fmt(h.totalIncome)} income</span>
+        <span style="color:var(--text-dim)">-${fmt(h.totalExpend)} exp</span>
+        <span style="color:${h.net>=0?'var(--green)':'var(--red)'};font-weight:bold">${h.net>=0?'+':''}${fmt(h.net)}</span>
       </div>`).join('')}
       ${sparkline}
-      <div style="font-size:8px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin:12px 0 6px">${tr('fin.incomeMix')}</div>
+      <div style="font-size:8px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin:12px 0 6px">${tr('fin.incomeMix')}</div>
       ${barRowsSvg([
-        { label: 'Village rev', value: villageRev, color: '#8fbc8f' },
-        { label: 'Trade routes', value: trI, color: '#8fbc8f' },
-        { label: 'Contracts', value: coI, color: '#8fbc8f' },
-        ...(jkI > 0 ? [{ label: 'Vessel', value: jkI, color: '#c9a84c' }] : []),
-        ...(daimyoB > 0 ? [{ label: 'Daimyo bonus', value: daimyoB, color: '#c9a84c' }] : []),
+        { label: 'Village rev', value: villageRev, color: 'var(--green)' },
+        { label: 'Trade routes', value: trI, color: 'var(--green)' },
+        { label: 'Contracts', value: coI, color: 'var(--green)' },
+        ...(jkI > 0 ? [{ label: 'Vessel', value: jkI, color: 'var(--gold)' }] : []),
+        ...(daimyoB > 0 ? [{ label: 'Daimyo bonus', value: daimyoB, color: 'var(--gold)' }] : []),
       ].filter(b => b.value > 0), { format: v => '+' + fmt(v) })}
     </div>` : ''}
 
@@ -241,38 +241,38 @@ function _budgetPriorityHtml() {
     infra:    (fx) => `Maintenance ×${fx.maintMult.toFixed(2)}`,
   }
 
-  return `<div style="background:#1a1814;border:1px solid #2e2a22;padding:12px 14px;margin-bottom:14px">
+  return `<div style="background:var(--surface);border:1px solid var(--border);padding:12px 14px;margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-      <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase">${tr('fin.budgetPriority')}</div>
-      <div style="font-size:7px;color:${lag > 0 ? '#f0a030' : '#8fbc8f'}">
+      <div style="font-size:8px;letter-spacing:2px;color:var(--gold);text-transform:uppercase">${tr('fin.budgetPriority')}</div>
+      <div style="font-size:7px;color:${lag > 0 ? 'var(--orange)' : 'var(--green)'}">
         ${lag > 0 ? `⏳ ${lag}mo until fully funded` : '✓ fully funded'}
       </div>
     </div>
-    <div style="font-size:7px;color:#7a7060;margin-bottom:10px;line-height:1.5">
+    <div style="font-size:7px;color:var(--text-dim);margin-bottom:10px;line-height:1.5">
       Always splits to 100% — funding one track starves the others. Changes take effect gradually, so commit early.
     </div>
     ${BUDGET_KEYS.map(k => {
       const band = trackBand(effective[k])
       const drift = target[k] - effective[k]
       return `<div style="margin-bottom:9px">
-        <div style="display:flex;justify-content:space-between;font-size:8px;color:#7a7060;margin-bottom:3px">
+        <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-dim);margin-bottom:3px">
           <span>${labels[k]} <span style="color:${band.color};font-size:7px">${band.label}</span></span>
-          <span style="color:#e8e0cc">
-            ${effective[k]}%${drift !== 0 ? `<span style="color:#f0a030"> → ${target[k]}%</span>` : ''}
-            <span style="color:#555;font-size:7px">— ${fxLabel[k](fxNow)}${drift !== 0 ? ` → ${fxLabel[k](fxTarget).split(' ').pop()}` : ''}</span>
+          <span style="color:var(--text-hi)">
+            ${effective[k]}%${drift !== 0 ? `<span style="color:var(--orange)"> → ${target[k]}%</span>` : ''}
+            <span style="color:var(--text-faint);font-size:7px">— ${fxLabel[k](fxNow)}${drift !== 0 ? ` → ${fxLabel[k](fxTarget).split(' ').pop()}` : ''}</span>
           </span>
         </div>
         <div style="position:relative">
           <input type="range" min="0" max="100" value="${target[k]}"
             oninput="setBudgetPriority('${k}', this.value)"
-            style="width:100%;accent-color:#c9a84c">
-          <div style="height:3px;background:#111;border-radius:2px;margin-top:1px">
+            style="width:100%;accent-color:var(--gold)">
+          <div style="height:3px;background:var(--sunken);border-radius:2px;margin-top:1px">
             <div style="height:100%;width:${effective[k]}%;background:${band.color};border-radius:2px;transition:width .3s"></div>
           </div>
         </div>
       </div>`
     }).join('')}
-    <div style="font-size:7px;color:#555;margin-top:2px">Slider = target · bar = what's actually funded right now.</div>
+    <div style="font-size:7px;color:var(--text-faint);margin-top:2px">Slider = target · bar = what's actually funded right now.</div>
   </div>`
 }
 
@@ -290,22 +290,22 @@ function _capHtml(payroll) {
   const pctW = Math.min(100, Math.round(cs.pct * 100))
   const nextTier = { D:'C', C:'B', B:'A', A:'S', S:null }[G.prestigeTier || 'D']
   const nextCap = nextTier ? SALARY_CAP[nextTier] : null
-  return `<div style="background:#1a1814;border:1px solid ${cs.color}44;padding:12px;margin-bottom:14px">
+  return `<div style="background:var(--surface);border:1px solid ${cs.color}44;padding:12px;margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <div style="font-size:8px;letter-spacing:2px;color:${cs.color};text-transform:uppercase">${tr('fin.salaryCap', { tier: G.prestigeTier||'D' })}</div>
       <div style="font-size:9px;color:${cs.color};font-weight:bold">${cs.label}</div>
     </div>
-    <div style="background:#111;border-radius:3px;overflow:hidden;height:8px;margin-bottom:6px">
+    <div style="background:var(--sunken);border-radius:3px;overflow:hidden;height:8px;margin-bottom:6px">
       <div style="height:100%;width:${pctW}%;background:${cs.color};transition:width .3s"></div>
     </div>
-    <div style="display:flex;justify-content:space-between;font-size:8px;color:#7a7060;margin-bottom:4px">
-      <span>Payroll: <b style="color:#e8e0cc">${fmt(payroll)}</b></span>
-      <span>Cap: <b style="color:#e8e0cc">${fmt(cs.cap)}</b></span>
+    <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-dim);margin-bottom:4px">
+      <span>Payroll: <b style="color:var(--text-hi)">${fmt(payroll)}</b></span>
+      <span>Cap: <b style="color:var(--text-hi)">${fmt(cs.cap)}</b></span>
       <span>${pctW}% used</span>
     </div>
-    ${cs.overBy > 0 ? `<div style="font-size:8px;color:#f99;margin-top:4px">Over cap by ${fmt(cs.overBy)} ryo → luxury tax: <b>-${fmt(cs.luxuryTax)}/mo</b></div>` : ''}
-    ${cs.hardBlock ? `<div style="font-size:8px;color:#f44;margin-top:4px;font-weight:bold">⛔ Hard cap exceeded — new signings blocked until payroll drops below ${fmt(Math.round(cs.cap * 1.30))}.</div>` : ''}
-    ${nextCap ? `<div style="font-size:7px;color:#444;margin-top:4px">Raise prestige to ${nextTier} to unlock ${fmt(nextCap)} cap.</div>` : ''}
+    ${cs.overBy > 0 ? `<div style="font-size:8px;color:var(--red-soft);margin-top:4px">Over cap by ${fmt(cs.overBy)} ryo → luxury tax: <b>-${fmt(cs.luxuryTax)}/mo</b></div>` : ''}
+    ${cs.hardBlock ? `<div style="font-size:8px;color:var(--red);margin-top:4px;font-weight:bold">⛔ Hard cap exceeded — new signings blocked until payroll drops below ${fmt(Math.round(cs.cap * 1.30))}.</div>` : ''}
+    ${nextCap ? `<div style="font-size:7px;color:var(--border-hi);margin-top:4px">Raise prestige to ${nextTier} to unlock ${fmt(nextCap)} cap.</div>` : ''}
   </div>`
 }
 
@@ -314,15 +314,15 @@ function _projectionHtml(hist, netNow) {
   const months = []
   for (let i = 1; i <= 6; i++) months.push(Math.round(netNow + trend * i))
   const finalRyo = months.reduce((a,m) => a + m, G.ryo)
-  return `<div style="background:#1a1814;border:1px solid #2e2a22;padding:12px;margin-bottom:14px">
-    <div style="font-size:8px;letter-spacing:2px;color:#87ceeb;text-transform:uppercase;margin-bottom:8px">6-Month Projection</div>
+  return `<div style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
+    <div style="font-size:8px;letter-spacing:2px;color:var(--blue);text-transform:uppercase;margin-bottom:8px">6-Month Projection</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-      ${months.map((m,i) => `<div style="flex:1;min-width:60px;background:#111;border-radius:3px;padding:5px;text-align:center">
-        <div style="font-size:7px;color:#555">+${i+1}mo</div>
-        <div style="font-size:9px;color:${m>=0?'#8fbc8f':'#f66'};font-weight:bold">${m>=0?'+':''}${fmt(m)}</div>
+      ${months.map((m,i) => `<div style="flex:1;min-width:60px;background:var(--sunken);border-radius:3px;padding:5px;text-align:center">
+        <div style="font-size:7px;color:var(--text-faint)">+${i+1}mo</div>
+        <div style="font-size:9px;color:${m>=0?'var(--green)':'var(--red)'};font-weight:bold">${m>=0?'+':''}${fmt(m)}</div>
       </div>`).join('')}
     </div>
-    <div style="font-size:8px;color:#7a7060">Projected treasury in 6 months: <b style="color:#c9a84c">${fmt(finalRyo)}</b> ryo (based on current contracts, salaries, and trade routes; trend-extrapolated).</div>
+    <div style="font-size:8px;color:var(--text-dim)">Projected treasury in 6 months: <b style="color:var(--gold)">${fmt(finalRyo)}</b> ryo (based on current contracts, salaries, and trade routes; trend-extrapolated).</div>
   </div>`
 }
 
@@ -348,26 +348,26 @@ function _analyticsHtml() {
   const legVals = last.map(s => s.legend || 0)
 
   const statBlock = (label, color, vals) => `
-    <div style="background:#111;border:1px solid #222;border-radius:4px;padding:8px">
+    <div style="background:var(--sunken);border:1px solid var(--border-dim);border-radius:4px;padding:8px">
       <div style="font-size:7px;color:${color};text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">${label}</div>
       ${sparkBar(vals, color)}
-      <div style="display:flex;justify-content:space-between;font-size:7px;color:#555;margin-top:3px">
+      <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--text-faint);margin-top:3px">
         <span>${Math.round(Math.min(...vals))}</span>
         <span style="color:${color}">${Math.round(vals[vals.length-1])}</span>
         <span>${Math.round(Math.max(...vals))}</span>
       </div>
     </div>`
 
-  return `<div style="background:#1a1814;border:1px solid #2e2a22;padding:12px;margin-bottom:14px">
-    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:10px">📊 Analytics Snapshot (last ${last.length} months)</div>
+  return `<div style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
+    <div style="font-size:8px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:10px">📊 Analytics Snapshot (last ${last.length} months)</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px">
-      ${statBlock('Treasury', '#c9a84c', ryoVals)}
-      ${statBlock('Reputation', '#87ceeb', repVals)}
-      ${statBlock('Avg Power', '#9cf', powVals)}
-      ${statBlock('Morale', '#8fbc8f', morVals)}
-      ${statBlock('Legend', '#f0a030', legVals)}
+      ${statBlock('Treasury', 'var(--gold)', ryoVals)}
+      ${statBlock('Reputation', 'var(--blue)', repVals)}
+      ${statBlock('Avg Power', 'var(--blue-hi)', powVals)}
+      ${statBlock('Morale', 'var(--green)', morVals)}
+      ${statBlock('Legend', 'var(--orange)', legVals)}
     </div>
-    <div style="font-size:7px;color:#444;margin-top:6px">Min / Current / Max over period. Updates each month.</div>
+    <div style="font-size:7px;color:var(--border-hi);margin-top:6px">Min / Current / Max over period. Updates each month.</div>
   </div>`
 }
 
@@ -375,10 +375,10 @@ function _daimyoObjectivesHtml() {
   const obj = G.daimyoObjectives
   if (!obj) return ''
   const defs = obj.ids.map(id => DAIMYO_OBJECTIVES.find(o => o.id === id)).filter(Boolean)
-  return `<div style="background:#1a1814;border:1px solid #c9a84c44;padding:12px;margin-bottom:14px">
-    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">${tr('fin.daimyoObjectives', { year: obj.year })}</div>
-    ${defs.map(d => `<div style="padding:4px 0;border-bottom:1px solid #111"><div style="font-size:9px;color:#e8e0cc">${d.n}</div><div style="font-size:8px;color:#7a7060">${d.desc}</div></div>`).join('')}
-    <div style="font-size:8px;color:#7a7060;margin-top:8px">Budget multiplier: <b style="color:${(G.daimyoBudgetMult||1)>=1?'#8fbc8f':'#f66'}">${(G.daimyoBudgetMult||1).toFixed(2)}x</b>. Meet all 3 by December for a budget increase — miss any for a cut.</div>
+  return `<div style="background:var(--surface);border:1px solid #c9a84c44;padding:12px;margin-bottom:14px">
+    <div style="font-size:8px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:8px">${tr('fin.daimyoObjectives', { year: obj.year })}</div>
+    ${defs.map(d => `<div style="padding:4px 0;border-bottom:1px solid var(--sunken)"><div style="font-size:9px;color:var(--text-hi)">${d.n}</div><div style="font-size:8px;color:var(--text-dim)">${d.desc}</div></div>`).join('')}
+    <div style="font-size:8px;color:var(--text-dim);margin-top:8px">Budget multiplier: <b style="color:${(G.daimyoBudgetMult||1)>=1?'var(--green)':'var(--red)'}">${(G.daimyoBudgetMult||1).toFixed(2)}x</b>. Meet all 3 by December for a budget increase — miss any for a cut.</div>
   </div>`
 }
 
@@ -386,19 +386,19 @@ function _sponsorshipHtml() {
   const offer = G.sponsorshipOffer
   const active = G.sponsorship
   if (!offer && !active) return ''
-  return `<div style="background:#1a1814;border:1px solid #cc7fb844;padding:12px;margin-bottom:14px">
-    <div style="font-size:8px;letter-spacing:2px;color:#cc7fb8;text-transform:uppercase;margin-bottom:8px">${tr('fin.sponsorship')}</div>
+  return `<div style="background:var(--surface);border:1px solid #cc7fb844;padding:12px;margin-bottom:14px">
+    <div style="font-size:8px;letter-spacing:2px;color:var(--purple);text-transform:uppercase;margin-bottom:8px">${tr('fin.sponsorship')}</div>
     ${active ? (() => {
       const mt = moodTier(active.mood)
       const mult = moodPayoutMult(active.mood)
       const eff = Math.round(active.monthlyRyo * mult)
-      return `<div style="font-size:9px;color:#e8e0cc;margin-bottom:4px">${active.n} — active</div>
-      <div style="font-size:8px;color:#8fbc8f;margin-bottom:4px">+${fmt(eff)} ryo/month ${mult !== 1 ? `<span style="color:${mt.color}">(${mult > 1 ? '+' : ''}${Math.round((mult - 1) * 100)}% mood)</span>` : ''}</div>
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:8px;color:#7a7060">Mood:</span><span style="font-size:8px;color:${mt.color}">${mt.label}</span><div style="flex:1;max-width:90px;height:4px;background:#222;border-radius:2px;overflow:hidden"><div style="height:100%;width:${active.mood ?? 60}%;background:${mt.color}"></div></div></div>
-      <div style="font-size:8px;color:#7a7060">Obligation: ${active.obligation}</div>` })() : ''}
-    ${offer ? `<div style="font-size:9px;color:#e8e0cc;margin-bottom:4px">${offer.n} — offer pending${offer.negotiated ? ' (revised)' : ''}</div>
-      <div style="font-size:8px;color:#8fbc8f;margin-bottom:4px">+${fmt(offer.monthlyRyo)} ryo/month</div>
-      <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${offer.desc} Obligation: ${offer.obligation}</div>
+      return `<div style="font-size:9px;color:var(--text-hi);margin-bottom:4px">${active.n} — active</div>
+      <div style="font-size:8px;color:var(--green);margin-bottom:4px">+${fmt(eff)} ryo/month ${mult !== 1 ? `<span style="color:${mt.color}">(${mult > 1 ? '+' : ''}${Math.round((mult - 1) * 100)}% mood)</span>` : ''}</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:8px;color:var(--text-dim)">Mood:</span><span style="font-size:8px;color:${mt.color}">${mt.label}</span><div style="flex:1;max-width:90px;height:4px;background:var(--border-dim);border-radius:2px;overflow:hidden"><div style="height:100%;width:${active.mood ?? 60}%;background:${mt.color}"></div></div></div>
+      <div style="font-size:8px;color:var(--text-dim)">Obligation: ${active.obligation}</div>` })() : ''}
+    ${offer ? `<div style="font-size:9px;color:var(--text-hi);margin-bottom:4px">${offer.n} — offer pending${offer.negotiated ? ' (revised)' : ''}</div>
+      <div style="font-size:8px;color:var(--green);margin-bottom:4px">+${fmt(offer.monthlyRyo)} ryo/month</div>
+      <div style="font-size:8px;color:var(--text-dim);margin-bottom:8px">${offer.desc} Obligation: ${offer.obligation}</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="gb" onclick="acceptSponsorship()">Accept</button>${offer.negotiated ? '' : `<button class="gb" onclick="negotiateSponsor('push_pay')" title="Ask for a higher stipend — a weak hand risks them walking">💰 Push</button><button class="gb" onclick="negotiateSponsor('ease_terms')" title="Trade pay to drop their restriction">📝 Ease clause</button>`}<button class="gb gb-r" onclick="declineSponsorship()">Decline</button></div>` : ''}
   </div>`
 }
@@ -407,10 +407,10 @@ function _blackLedgerHtml() {
   const ledger = G.blackLedger || { balance: 0, history: [] }
   if (ledger.balance === 0 && ledger.history.length === 0) return ''
   return `<div style="background:#1a0d0d;border:1px solid #74444;padding:12px;margin-bottom:14px">
-    <div style="font-size:8px;letter-spacing:2px;color:#f66;text-transform:uppercase;margin-bottom:8px">${tr('fin.blackMarket')}</div>
-    <div style="font-size:9px;color:#e8e0cc;margin-bottom:6px">Accumulated exposure: <b style="color:#f0a030">${fmt(ledger.balance)}</b></div>
-    <div style="font-size:8px;color:#7a7060;margin-bottom:6px">Higher balances raise the monthly chance rival intel exposes your dealings — a major diplomatic and financial penalty.</div>
-    ${ledger.history.slice(-5).reverse().map(h => `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:8px;color:#7a7060"><span>Y${h.year}M${h.month}</span><span style="color:${h.amount>=0?'#8fbc8f':'#f66'}">${h.amount>=0?'+':''}${fmt(h.amount)}</span></div>`).join('')}
+    <div style="font-size:8px;letter-spacing:2px;color:var(--red);text-transform:uppercase;margin-bottom:8px">${tr('fin.blackMarket')}</div>
+    <div style="font-size:9px;color:var(--text-hi);margin-bottom:6px">Accumulated exposure: <b style="color:var(--orange)">${fmt(ledger.balance)}</b></div>
+    <div style="font-size:8px;color:var(--text-dim);margin-bottom:6px">Higher balances raise the monthly chance rival intel exposes your dealings — a major diplomatic and financial penalty.</div>
+    ${ledger.history.slice(-5).reverse().map(h => `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:8px;color:var(--text-dim)"><span>Y${h.year}M${h.month}</span><span style="color:${h.amount>=0?'var(--green)':'var(--red)'}">${h.amount>=0?'+':''}${fmt(h.amount)}</span></div>`).join('')}
   </div>`
 }
 
@@ -418,16 +418,16 @@ function _yearEndHtml() {
   const reports = G.yearEndReports || []
   if (!reports.length) return ''
   const r = reports[reports.length - 1]
-  return `<div style="background:#1a1814;border:1px solid #2e2a22;padding:12px;margin-bottom:14px">
-    <div style="font-size:8px;letter-spacing:2px;color:#8fbc8f;text-transform:uppercase;margin-bottom:8px">${tr('fin.report', { year: r.year })}</div>
+  return `<div style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
+    <div style="font-size:8px;letter-spacing:2px;color:var(--green);text-transform:uppercase;margin-bottom:8px">${tr('fin.report', { year: r.year })}</div>
     <div style="display:flex;gap:14px;margin-bottom:8px">
-      <div><div style="font-size:7px;color:#7a7060">Income</div><div style="font-size:12px;color:#8fbc8f;font-weight:bold">${fmt(r.totalIncome)}</div></div>
-      <div><div style="font-size:7px;color:#7a7060">Expenditure</div><div style="font-size:12px;color:#f66;font-weight:bold">${fmt(r.totalExpend)}</div></div>
-      <div><div style="font-size:7px;color:#7a7060">Net</div><div style="font-size:12px;color:${r.net>=0?'#8fbc8f':'#f66'};font-weight:bold">${r.net>=0?'+':''}${fmt(r.net)}</div></div>
+      <div><div style="font-size:7px;color:var(--text-dim)">Income</div><div style="font-size:12px;color:var(--green);font-weight:bold">${fmt(r.totalIncome)}</div></div>
+      <div><div style="font-size:7px;color:var(--text-dim)">Expenditure</div><div style="font-size:12px;color:var(--red);font-weight:bold">${fmt(r.totalExpend)}</div></div>
+      <div><div style="font-size:7px;color:var(--text-dim)">Net</div><div style="font-size:12px;color:${r.net>=0?'var(--green)':'var(--red)'};font-weight:bold">${r.net>=0?'+':''}${fmt(r.net)}</div></div>
     </div>
-    <div style="font-size:8px;color:#7a7060;margin-bottom:6px">
+    <div style="font-size:8px;color:var(--text-dim);margin-bottom:6px">
       Trade: ${fmt(r.streams.tradeRoutes)} · Contracts: ${fmt(r.streams.contracts)} · Daimyo: ${fmt(r.streams.daimyoBonus)} · Missions: ${fmt(r.streams.missionCommissions)} · Sponsorship: ${fmt(r.streams.sponsorship)} · Wages: -${fmt(r.streams.wages)} · Maintenance: -${fmt(r.streams.maintenance)}
     </div>
-    <div style="font-size:9px;color:#c9a84c;font-style:italic">"${r.daimyoReaction}"</div>
+    <div style="font-size:9px;color:var(--gold);font-style:italic">"${r.daimyoReaction}"</div>
   </div>`
 }

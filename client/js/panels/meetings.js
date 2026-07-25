@@ -15,7 +15,7 @@ export function rMeet() {
 
   el.innerHTML = `
     <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-      ${tabs.map(t => `<button onclick="meetTab('${t}')" style="background:${window._meetTab===t?'#2a2210':'#1a1a1a'};border:1px solid ${window._meetTab===t?'#c9a84c':'#333'};color:${window._meetTab===t?'#c9a84c':'#999'};border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.78rem">${tabLabels[t]}${t==='awards'&&pendingBadge>0?' ('+pendingBadge+')':''}</button>`).join('')}
+      ${tabs.map(t => `<button onclick="meetTab('${t}')" style="background:${window._meetTab===t?'var(--gold-bg)':'var(--surface)'};border:1px solid ${window._meetTab===t?'var(--gold)':'var(--border)'};color:${window._meetTab===t?'var(--gold)':'var(--text-mid)'};border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.78rem">${tabLabels[t]}${t==='awards'&&pendingBadge>0?' ('+pendingBadge+')':''}</button>`).join('')}
     </div>
     ${window._meetTab === 'overview' ? _overviewTab() :
       window._meetTab === 'web' ? _webTab() :
@@ -31,39 +31,39 @@ export function meetTab(t) { window._meetTab = t; rMeet() }
 function _overviewTab() {
   const queue = G.meetingQueue || []
   const harmony = G.harmonyScore ?? 70
-  const harmonyColor = harmony >= 70 ? '#8fbc8f' : harmony >= 45 ? '#f0a030' : '#f66'
+  const harmonyColor = harmony >= 70 ? 'var(--green)' : harmony >= 45 ? 'var(--orange)' : 'var(--red)'
   const leaders = getLeadershipGroup()
 
   return `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
       <!-- Dressing Room Harmony -->
-      <div style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:12px">
-        <div style="font-size:.8rem;color:#aaa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Dressing Room Harmony</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px">
+        <div style="font-size:.8rem;color:var(--text-mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Dressing Room Harmony</div>
         <div style="font-size:2rem;color:${harmonyColor};font-weight:bold;margin-bottom:4px">${harmony}</div>
-        <div style="background:#111;border-radius:3px;height:6px;overflow:hidden;margin-bottom:6px">
+        <div style="background:var(--sunken);border-radius:3px;height:6px;overflow:hidden;margin-bottom:6px">
           <div style="background:${harmonyColor};width:${harmony}%;height:100%"></div>
         </div>
-        <div style="font-size:.75rem;color:#666">
+        <div style="font-size:.75rem;color:var(--text-faint)">
           ${harmony >= 70 ? '✓ Positive atmosphere — passive morale bonus active' :
             harmony >= 45 ? '⚠ Tension present — monitor carefully' :
             '✗ Crisis risk — harmony events may trigger'}
         </div>
       </div>
       <!-- Leadership Group -->
-      <div style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:12px">
-        <div style="font-size:.8rem;color:#aaa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Leadership Group</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px">
+        <div style="font-size:.8rem;color:var(--text-mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Leadership Group</div>
         ${leaders.length === 0
-          ? '<div style="color:#555;font-size:.8rem">No senior shinobi yet.</div>'
+          ? '<div style="color:var(--text-faint);font-size:.8rem">No senior shinobi yet.</div>'
           : leaders.map(s => {
               const loyScore = (s.pMatrix?.loyalty || 0) + Math.floor(s.months / 12)
               return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:.8rem">
-                <span style="color:#c9a84c;width:18px">${s.legendStatus ? '★' : '·'}</span>
-                <span style="color:#e8d5a3;flex:1">${sn(s)}</span>
-                <span style="color:#888">${RANKS[s.ri]}</span>
-                <span style="color:${(s.pMatrix?.loyalty||0)>=14?'#8fbc8f':'#aaa'};font-size:.7rem">Loy ${s.pMatrix?.loyalty||'?'}</span>
+                <span style="color:var(--gold);width:18px">${s.legendStatus ? '★' : '·'}</span>
+                <span style="color:var(--gold-hi);flex:1">${sn(s)}</span>
+                <span style="color:var(--text-dim)">${RANKS[s.ri]}</span>
+                <span style="color:${(s.pMatrix?.loyalty||0)>=14?'var(--green)':'var(--text-mid)'};font-size:.7rem">Loy ${s.pMatrix?.loyalty||'?'}</span>
               </div>`
             }).join('')}
-        <div style="font-size:.7rem;color:#555;margin-top:6px">Top 5 by loyalty + tenure. High-loyalty leaders boost harmony and mediate losses.</div>
+        <div style="font-size:.7rem;color:var(--text-faint);margin-top:6px">Top 5 by loyalty + tenure. High-loyalty leaders boost harmony and mediate losses.</div>
       </div>
     </div>
 
@@ -71,30 +71,30 @@ function _overviewTab() {
     ${(() => {
       const sg = G.seniorGroup || []
       const sgMorale = G.seniorGroupMorale ?? 75
-      const sgColor = sgMorale >= 65 ? '#8fbc8f' : sgMorale >= 40 ? '#f0a030' : '#f66'
-      return `<div style="background:#1a1a1a;border:1px solid #444;border-radius:6px;padding:12px;margin-bottom:16px">
+      const sgColor = sgMorale >= 65 ? 'var(--green)' : sgMorale >= 40 ? 'var(--orange)' : 'var(--red)'
+      return `<div style="background:var(--surface);border:1px solid var(--border-hi);border-radius:6px;padding:12px;margin-bottom:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div style="font-size:.8rem;color:#aaa;text-transform:uppercase;letter-spacing:.08em">⭐ Senior Group</div>
+          <div style="font-size:.8rem;color:var(--text-mid);text-transform:uppercase;letter-spacing:.08em">⭐ Senior Group</div>
           <div style="font-size:.78rem">Group Morale: <span style="color:${sgColor};font-weight:bold">${sgMorale}</span></div>
         </div>
         ${sg.length === 0
-          ? '<div style="color:#555;font-size:.8rem">No senior members yet. The top 3 shinobi by wins + commitment (with 12+ months service) form the senior group.</div>'
+          ? '<div style="color:var(--text-faint);font-size:.8rem">No senior members yet. The top 3 shinobi by wins + commitment (with 12+ months service) form the senior group.</div>'
           : `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
               ${sg.map((s, i) => {
                 const medals = ['🥇','🥈','🥉']
-                return `<div style="background:#0f0f0f;border:1px solid #333;border-radius:5px;padding:8px 12px;flex:1;min-width:120px">
-                  <div style="font-size:.9rem;margin-bottom:2px">${medals[i] || '·'} <span style="color:#e8d5a3">${sn(s)}</span></div>
-                  <div style="font-size:.72rem;color:#888">${RANKS[s.ri] ?? 'Ninja'} · ${s.wins||0}W · Commit ${s.commitment||0}</div>
+                return `<div style="background:#0f0f0f;border:1px solid var(--border);border-radius:5px;padding:8px 12px;flex:1;min-width:120px">
+                  <div style="font-size:.9rem;margin-bottom:2px">${medals[i] || '·'} <span style="color:var(--gold-hi)">${sn(s)}</span></div>
+                  <div style="font-size:.72rem;color:var(--text-dim)">${RANKS[s.ri] ?? 'Ninja'} · ${s.wins||0}W · Commit ${s.commitment||0}</div>
                 </div>`
               }).join('')}
             </div>
-            <div style="background:#111;border-radius:3px;height:5px;overflow:hidden;margin-bottom:8px">
+            <div style="background:var(--sunken);border-radius:3px;height:5px;overflow:hidden;margin-bottom:8px">
               <div style="background:${sgColor};width:${sgMorale}%;height:100%;transition:width .3s"></div>
             </div>
-            <div style="font-size:.72rem;color:#666">
+            <div style="font-size:.72rem;color:var(--text-faint)">
               ${sgMorale >= 65 ? '✓ Senior group content — morale bleed minimal' : sgMorale >= 40 ? '⚠ Senior group restless — morale drain active' : '✗ Senior group in crisis — village morale bleeding each month'}
             </div>
-            <button onclick="consultSeniorGroup()" style="margin-top:8px;background:#1a1a2e;border:1px solid #4a4a8a;color:#9cf;border-radius:4px;padding:5px 12px;cursor:pointer;font-size:.77rem">🗣 Consult Group</button>`
+            <button onclick="consultSeniorGroup()" style="margin-top:8px;background:var(--surface-2);border:1px solid var(--blue-bg);color:var(--blue-hi);border-radius:4px;padding:5px 12px;cursor:pointer;font-size:.77rem">🗣 Consult Group</button>`
         }
       </div>`
     })()}
@@ -105,51 +105,51 @@ function _overviewTab() {
       if (!ledger.length) return ''
       const open = ledger.filter(p => p.status === 'open')
       const recent = ledger.filter(p => p.status !== 'open').slice(-4).reverse()
-      const stCol = { open: '#f0a030', kept: '#8fbc8f', broken: '#f66' }
+      const stCol = { open: 'var(--orange)', kept: 'var(--green)', broken: 'var(--red)' }
       const row = p => {
         const due = p.status === 'open' ? `due Y${p.dueYear} M${p.dueMonth}` : p.status === 'kept' ? '✓ kept' : '✗ broken'
-        return `<div style="display:flex;align-items:center;gap:8px;font-size:.75rem;padding:3px 0;border-bottom:1px solid #222">
+        return `<div style="display:flex;align-items:center;gap:8px;font-size:.75rem;padding:3px 0;border-bottom:1px solid var(--border-dim)">
           <span>${PROMISE_TYPES[p.type]?.icon || '🤝'}</span>
-          <span style="color:#e8d5a3;flex:1">${p.name}</span>
-          <span style="color:#888;flex:2">${p.detail}</span>
+          <span style="color:var(--gold-hi);flex:1">${p.name}</span>
+          <span style="color:var(--text-dim);flex:2">${p.detail}</span>
           <span style="color:${stCol[p.status]};white-space:nowrap">${due}</span>
         </div>`
       }
-      return `<div style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:12px;margin-bottom:16px">
-        <div style="font-size:.8rem;color:#aaa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">🤝 Promises Ledger${open.length ? ` — ${open.length} open` : ''}</div>
-        ${open.map(row).join('') || '<div style="color:#555;font-size:.75rem">No open promises.</div>'}
-        ${recent.length ? `<div style="font-size:.68rem;color:#555;margin-top:6px;text-transform:uppercase;letter-spacing:.05em">Recently resolved</div>${recent.map(row).join('')}` : ''}
-        <div style="font-size:.7rem;color:#555;margin-top:6px">Promises made in negotiations are tracked to their deadline. Kept promises lift commitment; broken ones cut deep and breed resentment.</div>
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:16px">
+        <div style="font-size:.8rem;color:var(--text-mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">🤝 Promises Ledger${open.length ? ` — ${open.length} open` : ''}</div>
+        ${open.map(row).join('') || '<div style="color:var(--text-faint);font-size:.75rem">No open promises.</div>'}
+        ${recent.length ? `<div style="font-size:.68rem;color:var(--text-faint);margin-top:6px;text-transform:uppercase;letter-spacing:.05em">Recently resolved</div>${recent.map(row).join('')}` : ''}
+        <div style="font-size:.7rem;color:var(--text-faint);margin-top:6px">Promises made in negotiations are tracked to their deadline. Kept promises lift commitment; broken ones cut deep and breed resentment.</div>
       </div>`
     })()}
 
     <!-- Pending Meetings -->
-    <div style="font-size:.85rem;color:#aaa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">
+    <div style="font-size:.85rem;color:var(--text-mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">
       Pending Meetings (${queue.length})
     </div>
 
     ${queue.length === 0
-      ? '<div style="color:#555;text-align:center;padding:30px;font-size:.85rem">No pending meetings. Advance month — shinobi will request time as situations develop.</div>'
+      ? '<div style="color:var(--text-faint);text-align:center;padding:30px;font-size:.85rem">No pending meetings. Advance month — shinobi will request time as situations develop.</div>'
       : queue.map(mtg => {
           const s = (G.shinobi || []).find(x => x.id === mtg.shinobiId)
           if (!s) return ''
           const def = MEETING_TYPES.find(t => t.id === mtg.type)
           if (!def) return ''
-          const urgencyColor = def.urgency === 'critical' ? '#f66' : def.urgency === 'medium' ? '#f0a030' : '#8fbc8f'
+          const urgencyColor = def.urgency === 'critical' ? 'var(--red)' : def.urgency === 'medium' ? 'var(--orange)' : 'var(--green)'
           const desc = def.desc.replace('%name%', s.fn)
-          return `<div style="background:#1a1a1a;border:1px solid ${urgencyColor === '#f66' ? '#f66' : '#333'};border-radius:6px;padding:14px;margin-bottom:12px">
+          return `<div style="background:var(--surface);border:1px solid ${urgencyColor === 'var(--red)' ? 'var(--red)' : 'var(--border)'};border-radius:6px;padding:14px;margin-bottom:12px">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
               <span style="font-size:1.4rem">${def.icon}</span>
               <div style="flex:1">
-                <div style="color:#e8d5a3;font-weight:bold">${sn(s)} — ${def.n}</div>
-                <div style="font-size:.75rem;color:#888">${RANKS[s.ri]} · Y${mtg.year}M${mtg.month} · <span style="color:${urgencyColor}">${def.urgency.toUpperCase()}</span></div>
+                <div style="color:var(--gold-hi);font-weight:bold">${sn(s)} — ${def.n}</div>
+                <div style="font-size:.75rem;color:var(--text-dim)">${RANKS[s.ri]} · Y${mtg.year}M${mtg.month} · <span style="color:${urgencyColor}">${def.urgency.toUpperCase()}</span></div>
               </div>
-              <div style="text-align:right;font-size:.75rem;color:#aaa">
-                <div>Morale: <span style="color:${(s.indMorale||70)>=60?'#8fbc8f':'#f66'}">${s.indMorale||70}</span></div>
-                <div>Commit: <span style="color:${(s.commitment||70)>=40?'#c9a84c':'#f66'}">${s.commitment||70}</span></div>
+              <div style="text-align:right;font-size:.75rem;color:var(--text-mid)">
+                <div>Morale: <span style="color:${(s.indMorale||70)>=60?'var(--green)':'var(--red)'}">${s.indMorale||70}</span></div>
+                <div>Commit: <span style="color:${(s.commitment||70)>=40?'var(--gold)':'var(--red)'}">${s.commitment||70}</span></div>
               </div>
             </div>
-            <div style="font-size:.82rem;color:#aaa;margin-bottom:10px;font-style:italic">"${desc}"</div>
+            <div style="font-size:.82rem;color:var(--text-mid);margin-bottom:10px;font-style:italic">"${desc}"</div>
             <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
               ${def.responses.map(r => {
                 const eff = r.effect
@@ -165,12 +165,12 @@ function _overviewTab() {
                 ].filter(Boolean)
                 const isBad = (eff.indMorale || 0) < 0 || (eff.commitment || 0) < -5
                 const isGood = (eff.indMorale || 0) >= 10 || eff.promote || eff.traumaClear
-                const btnColor = isGood ? '#1a2e1a' : isBad ? '#2e1a1a' : '#1a1a2e'
-                const txtColor = isGood ? '#8fbc8f' : isBad ? '#f99' : '#87ceeb'
-                return `<button onclick="doMeeting('${mtg.id}','${r.id}')" style="background:${btnColor};border:1px solid #333;border-radius:5px;padding:8px 6px;cursor:pointer;text-align:left;font-size:.75rem">
+                const btnColor = isGood ? 'var(--green-bg)' : isBad ? 'var(--red-bg)' : 'var(--surface-2)'
+                const txtColor = isGood ? 'var(--green)' : isBad ? 'var(--red-soft)' : 'var(--blue)'
+                return `<button onclick="doMeeting('${mtg.id}','${r.id}')" style="background:${btnColor};border:1px solid var(--border);border-radius:5px;padding:8px 6px;cursor:pointer;text-align:left;font-size:.75rem">
                   <div style="color:${txtColor};font-weight:bold;margin-bottom:3px">${r.n}</div>
-                  <div style="color:#666;font-size:.7rem;margin-bottom:5px">${r.desc}</div>
-                  ${effectHints.map(h => `<div style="font-size:.68rem;color:#777">${h}</div>`).join('')}
+                  <div style="color:var(--text-faint);font-size:.7rem;margin-bottom:5px">${r.desc}</div>
+                  ${effectHints.map(h => `<div style="font-size:.68rem;color:var(--text-dim)">${h}</div>`).join('')}
                 </button>`
               }).join('')}
             </div>
@@ -179,20 +179,20 @@ function _overviewTab() {
     }
 
     <!-- Village Morale summary -->
-    <div style="margin-top:20px;background:#111;border:1px solid #333;border-radius:6px;padding:12px">
-      <div style="font-size:.8rem;color:#aaa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Individual Morale Overview</div>
+    <div style="margin-top:20px;background:var(--sunken);border:1px solid var(--border);border-radius:6px;padding:12px">
+      <div style="font-size:.8rem;color:var(--text-mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Individual Morale Overview</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px">
         ${(G.shinobi || []).slice(0, 12).map(s => {
           const m = s.indMorale ?? 70
-          const mColor = m >= 70 ? '#8fbc8f' : m >= 45 ? '#f0a030' : '#f66'
+          const mColor = m >= 70 ? 'var(--green)' : m >= 45 ? 'var(--orange)' : 'var(--red)'
           const c = s.commitment ?? 70
-          const cColor = c >= 50 ? '#c9a84c' : c >= 25 ? '#f0a030' : '#f66'
-          return `<div style="background:#1a1a1a;border:1px solid #222;border-radius:4px;padding:6px;font-size:.75rem">
-            <div style="color:#e8d5a3;margin-bottom:3px">${s.fn} ${s.ln}</div>
+          const cColor = c >= 50 ? 'var(--gold)' : c >= 25 ? 'var(--orange)' : 'var(--red)'
+          return `<div style="background:var(--surface);border:1px solid var(--border-dim);border-radius:4px;padding:6px;font-size:.75rem">
+            <div style="color:var(--gold-hi);margin-bottom:3px">${s.fn} ${s.ln}</div>
             <div style="display:flex;gap:8px;font-size:.7rem">
               <span>Mor: <span style="color:${mColor}">${m}</span></span>
               <span>Com: <span style="color:${cColor}">${c}</span></span>
-              ${s.legendStatus ? '<span style="color:#c9a84c">★</span>' : ''}
+              ${s.legendStatus ? '<span style="color:var(--gold)">★</span>' : ''}
             </div>
           </div>`
         }).join('')}
@@ -205,29 +205,29 @@ function _overviewTab() {
 function _webTab() {
   const { nodes, edges } = buildRelationshipWeb()
   if (!edges.length) {
-    return '<div style="color:#555;text-align:center;padding:30px;font-size:.85rem">No bonds or rivalries have formed yet. They emerge as squads share missions together.</div>'
+    return '<div style="color:var(--text-faint);text-align:center;padding:30px;font-size:.85rem">No bonds or rivalries have formed yet. They emerge as squads share missions together.</div>'
   }
   const positive = edges.filter(e => e.sign > 0)
   const negative = edges.filter(e => e.sign < 0)
   return `
-    <div style="font-size:.8rem;color:#aaa;margin-bottom:10px">Visible fault lines and friendships across the roster — at a glance, where harmony is strong and where it might break.</div>
+    <div style="font-size:.8rem;color:var(--text-mid);margin-bottom:10px">Visible fault lines and friendships across the roster — at a glance, where harmony is strong and where it might break.</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
       <div>
-        <div style="font-size:.78rem;color:#8fbc8f;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Bonds (${positive.length})</div>
-        ${positive.length === 0 ? '<div style="color:#444;font-size:.8rem">None yet.</div>' : positive.map(e => `
-          <div style="background:#13201a;border:1px solid #2a3a2a;border-radius:5px;padding:7px 10px;margin-bottom:6px;font-size:.8rem">
-            <span style="color:#e8d5a3">${e.aName}</span> <span style="color:#8fbc8f">↔ ${e.type} ↔</span> <span style="color:#e8d5a3">${e.bName}</span>
+        <div style="font-size:.78rem;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Bonds (${positive.length})</div>
+        ${positive.length === 0 ? '<div style="color:var(--border-hi);font-size:.8rem">None yet.</div>' : positive.map(e => `
+          <div style="background:#13201a;border:1px solid var(--green-bg);border-radius:5px;padding:7px 10px;margin-bottom:6px;font-size:.8rem">
+            <span style="color:var(--gold-hi)">${e.aName}</span> <span style="color:var(--green)">↔ ${e.type} ↔</span> <span style="color:var(--gold-hi)">${e.bName}</span>
           </div>`).join('')}
       </div>
       <div>
-        <div style="font-size:.78rem;color:#f88;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Rivalries (${negative.length})</div>
-        ${negative.length === 0 ? '<div style="color:#444;font-size:.8rem">None yet.</div>' : negative.map(e => `
+        <div style="font-size:.78rem;color:var(--red-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Rivalries (${negative.length})</div>
+        ${negative.length === 0 ? '<div style="color:var(--border-hi);font-size:.8rem">None yet.</div>' : negative.map(e => `
           <div style="background:#201313;border:1px solid #3a2a2a;border-radius:5px;padding:7px 10px;margin-bottom:6px;font-size:.8rem">
-            <span style="color:#e8d5a3">${e.aName}</span> <span style="color:#f88">⚡ Rivals ⚡</span> <span style="color:#e8d5a3">${e.bName}</span>
+            <span style="color:var(--gold-hi)">${e.aName}</span> <span style="color:var(--red-soft)">⚡ Rivals ⚡</span> <span style="color:var(--gold-hi)">${e.bName}</span>
           </div>`).join('')}
       </div>
     </div>
-    <div style="margin-top:16px;font-size:.72rem;color:#555">Squads with concentrated rivalries are fault lines for harmony crises. Squads dense with bonds resist them.</div>
+    <div style="margin-top:16px;font-size:.72rem;color:var(--text-faint)">Squads with concentrated rivalries are fault lines for harmony crises. Squads dense with bonds resist them.</div>
   `
 }
 
@@ -235,15 +235,15 @@ function _webTab() {
 function _rumorsTab() {
   const rumors = (G.rumors || []).filter(r => !r.resolved).slice().reverse()
   return `
-    <div style="font-size:.8rem;color:#aaa;margin-bottom:12px">Unhappy shinobi talk. Rumors surface from sustained low commitment — an early warning, but not always reliable (some are baseless).</div>
-    ${rumors.length === 0 ? '<div style="color:#555;text-align:center;padding:30px;font-size:.85rem">No active rumors.</div>' :
+    <div style="font-size:.8rem;color:var(--text-mid);margin-bottom:12px">Unhappy shinobi talk. Rumors surface from sustained low commitment — an early warning, but not always reliable (some are baseless).</div>
+    ${rumors.length === 0 ? '<div style="color:var(--text-faint);text-align:center;padding:30px;font-size:.85rem">No active rumors.</div>' :
       rumors.map(r => `
-        <div style="background:#1a1a1a;border:1px solid #443;border-radius:6px;padding:12px;margin-bottom:10px">
-          <div style="font-size:.72rem;color:#888;margin-bottom:4px">Y${r.year}M${r.month}</div>
-          <div style="font-size:.85rem;color:#e8d5a3;font-style:italic;margin-bottom:10px">"${r.text}"</div>
+        <div style="background:var(--surface);border:1px solid #443;border-radius:6px;padding:12px;margin-bottom:10px">
+          <div style="font-size:.72rem;color:var(--text-dim);margin-bottom:4px">Y${r.year}M${r.month}</div>
+          <div style="font-size:.85rem;color:var(--gold-hi);font-style:italic;margin-bottom:10px">"${r.text}"</div>
           <div style="display:flex;gap:8px">
-            <button onclick="rumorAction('${r.id}','investigate')" style="background:#1a2e2e;border:1px solid #333;color:#87ceeb;border-radius:5px;padding:5px 10px;cursor:pointer;font-size:.75rem">Investigate</button>
-            <button onclick="rumorAction('${r.id}','dismiss')" style="background:#222;border:1px solid #333;color:#999;border-radius:5px;padding:5px 10px;cursor:pointer;font-size:.75rem">Dismiss</button>
+            <button onclick="rumorAction('${r.id}','investigate')" style="background:#1a2e2e;border:1px solid var(--border);color:var(--blue);border-radius:5px;padding:5px 10px;cursor:pointer;font-size:.75rem">Investigate</button>
+            <button onclick="rumorAction('${r.id}','dismiss')" style="background:var(--border-dim);border:1px solid var(--border);color:var(--text-mid);border-radius:5px;padding:5px 10px;cursor:pointer;font-size:.75rem">Dismiss</button>
           </div>
         </div>`).join('')}
   `
@@ -252,13 +252,13 @@ function _rumorsTab() {
 // ── Noticeboard tab ───────────────────────────────────────────────────────────
 function _boardTab() {
   const notices = (G.noticeboard || []).slice().reverse()
-  const typeColor = { good: '#8fbc8f', bad: '#f66', warn: '#f0a030', neutral: '#999' }
+  const typeColor = { good: 'var(--green)', bad: 'var(--red)', warn: 'var(--orange)', neutral: 'var(--text-mid)' }
   return `
-    <div style="font-size:.8rem;color:#aaa;margin-bottom:10px">The village's living record — wins, losses, promotions, and rivalries, as the village itself would tell it.</div>
+    <div style="font-size:.8rem;color:var(--text-mid);margin-bottom:10px">The village's living record — wins, losses, promotions, and rivalries, as the village itself would tell it.</div>
     <div style="max-height:520px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
-      ${notices.length === 0 ? '<div style="color:#555;text-align:center;padding:30px;font-size:.85rem">Nothing posted yet.</div>' :
-        notices.map(n => `<div style="background:#161616;border-left:3px solid ${typeColor[n.type]||'#555'};padding:7px 10px;font-size:.8rem;color:#ccc">
-          <span style="color:#666;font-size:.72rem">Y${n.year}M${n.month}</span> — ${n.text}
+      ${notices.length === 0 ? '<div style="color:var(--text-faint);text-align:center;padding:30px;font-size:.85rem">Nothing posted yet.</div>' :
+        notices.map(n => `<div style="background:#161616;border-left:3px solid ${typeColor[n.type]||'var(--text-faint)'};padding:7px 10px;font-size:.8rem;color:var(--text-hi)">
+          <span style="color:var(--text-faint);font-size:.72rem">Y${n.year}M${n.month}</span> — ${n.text}
         </div>`).join('')}
     </div>
   `
@@ -270,26 +270,26 @@ function _awardsTab() {
   const reviews = G.reviewQueue || []
   return `
     ${awards.length === 0 && reviews.length === 0
-      ? '<div style="color:#555;text-align:center;padding:30px;font-size:.85rem">No pending service awards or reviews.</div>' : ''}
+      ? '<div style="color:var(--text-faint);text-align:center;padding:30px;font-size:.85rem">No pending service awards or reviews.</div>' : ''}
     ${awards.map(a => {
       const s = (G.shinobi || []).find(x => x.id === a.shinobiId)
       if (!s) return ''
       const def = SERVICE_AWARDS.find(sa => sa.years === a.years)
       if (!def) return ''
       const desc = def.desc.replace('%name%', s.fn)
-      return `<div style="background:#1a1a1a;border:1px solid #c9a84c;border-radius:6px;padding:14px;margin-bottom:12px">
+      return `<div style="background:var(--surface);border:1px solid var(--gold);border-radius:6px;padding:14px;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
           <span style="font-size:1.4rem">${def.icon}</span>
           <div style="flex:1">
-            <div style="color:#e8d5a3;font-weight:bold">${sn(s)} — ${def.n}</div>
-            <div style="font-size:.75rem;color:#888">${RANKS[s.ri]} · ${a.years} years of service</div>
+            <div style="color:var(--gold-hi);font-weight:bold">${sn(s)} — ${def.n}</div>
+            <div style="font-size:.75rem;color:var(--text-dim)">${RANKS[s.ri]} · ${a.years} years of service</div>
           </div>
         </div>
-        <div style="font-size:.82rem;color:#aaa;margin-bottom:10px;font-style:italic">"${desc}"</div>
+        <div style="font-size:.82rem;color:var(--text-mid);margin-bottom:10px;font-style:italic">"${desc}"</div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
-          ${def.responses.map(r => `<button onclick="resolveServiceAward('${a.id}','${r.id}')" style="background:#1a1a2e;border:1px solid #333;border-radius:5px;padding:8px 6px;cursor:pointer;text-align:left;font-size:.75rem">
-            <div style="color:#87ceeb;font-weight:bold;margin-bottom:3px">${r.n}</div>
-            <div style="color:#666;font-size:.7rem">${r.desc}</div>
+          ${def.responses.map(r => `<button onclick="resolveServiceAward('${a.id}','${r.id}')" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:8px 6px;cursor:pointer;text-align:left;font-size:.75rem">
+            <div style="color:var(--blue);font-weight:bold;margin-bottom:3px">${r.n}</div>
+            <div style="color:var(--text-faint);font-size:.7rem">${r.desc}</div>
           </button>`).join('')}
         </div>
       </div>`
@@ -297,15 +297,15 @@ function _awardsTab() {
     ${reviews.map(rv => {
       const s = (G.shinobi || []).find(x => x.id === rv.shinobiId)
       if (!s) return ''
-      const outcomeColor = rv.outcome === 'exceeded' ? '#8fbc8f' : rv.outcome === 'met' ? '#f0a030' : '#f66'
+      const outcomeColor = rv.outcome === 'exceeded' ? 'var(--green)' : rv.outcome === 'met' ? 'var(--orange)' : 'var(--red)'
       const outcomeLabel = rv.outcome === 'exceeded' ? 'Exceeded Expectations' : rv.outcome === 'met' ? 'Met Expectations' : 'Disappointed'
-      return `<div style="background:#1a1a1a;border:1px solid #333;border-radius:6px;padding:14px;margin-bottom:12px">
-        <div style="color:#e8d5a3;font-weight:bold;margin-bottom:4px">${sn(s)} — Annual Review (Year ${rv.year})</div>
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:12px">
+        <div style="color:var(--gold-hi);font-weight:bold;margin-bottom:4px">${sn(s)} — Annual Review (Year ${rv.year})</div>
         <div style="font-size:.8rem;color:${outcomeColor};margin-bottom:10px">${outcomeLabel} · ${s.wins} mission wins this career</div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
-          ${REVIEW_RESPONSES.map(r => `<button onclick="resolveReview('${rv.id}','${r.id}')" style="background:#1a1a2e;border:1px solid #333;border-radius:5px;padding:8px 6px;cursor:pointer;text-align:left;font-size:.75rem">
-            <div style="color:#87ceeb;font-weight:bold;margin-bottom:3px">${r.n}</div>
-            <div style="color:#666;font-size:.7rem">${r.desc}</div>
+          ${REVIEW_RESPONSES.map(r => `<button onclick="resolveReview('${rv.id}','${r.id}')" style="background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:8px 6px;cursor:pointer;text-align:left;font-size:.75rem">
+            <div style="color:var(--blue);font-weight:bold;margin-bottom:3px">${r.n}</div>
+            <div style="color:var(--text-faint);font-size:.7rem">${r.desc}</div>
           </button>`).join('')}
         </div>
       </div>`

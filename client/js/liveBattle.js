@@ -137,7 +137,7 @@ function _repResult(rep) {
   return rep.succeeded ? 'win' : 'loss'
 }
 
-const GRADE_COLOR = { A: '#c9a84c', B: '#8fbc8f', C: '#f0a030', D: '#f66' }
+const GRADE_COLOR = { A: 'var(--gold)', B: 'var(--green)', C: 'var(--orange)', D: 'var(--red)' }
 const CALL_MS = 6000   // window to make the micro-call before it auto-disengages
 
 // A micro-call is offered when the report carries an unresolved applyCall (player
@@ -399,7 +399,7 @@ function _renderTactics(ov) {
       <span class="bv-tac-cond" title="Squad average stamina — manage it with the tactic dial">Condition <b style="color:${band.color}">${avg} · ${band.label}</b></span>
       ${MATCH_TACTICS.map(t => `<button class="bv-tac-btn${c.tactic === t.id ? ' bv-tac-sel' : ''}" onclick="bvSetTactic('${t.id}')" title="${t.desc}">${t.icon} ${t.label}</button>`).join('')}
     </div>
-    ${c.comp.tags.length ? `<div class="bv-tac-tags">${c.comp.tags.map(t => `<span class="bv-tac-tag" style="color:${t.good ? '#8fbc8f' : '#f0a030'}" title="${t.desc}">${t.label}</span>`).join('')}</div>` : ''}`
+    ${c.comp.tags.length ? `<div class="bv-tac-tags">${c.comp.tags.map(t => `<span class="bv-tac-tag" style="color:${t.good ? 'var(--green)' : 'var(--orange)'}" title="${t.desc}">${t.label}</span>`).join('')}</div>` : ''}`
 }
 
 /** Touchline tactic switch — takes effect from the next exchange. */
@@ -448,7 +448,7 @@ export function bvSetPref(key, value) {
 
 // Clicked-shinobi inspector strip — role + live match grade for your side,
 // a scouting one-liner for the opposition.
-const _GRADE_COLOR_TXT = { A: '#c9a84c', B: '#8fbc8f', C: '#f0a030', D: '#f66' }
+const _GRADE_COLOR_TXT = { A: 'var(--gold)', B: 'var(--green)', C: 'var(--orange)', D: 'var(--red)' }
 function _showInspect(rep, sel) {
   const el = document.getElementById('bv-pitch-info'); if (!el) return
   if (!sel) { el.innerHTML = 'Hover a shinobi for their name · click to inspect'; el.classList.remove('bv-on'); return }
@@ -459,9 +459,9 @@ function _showInspect(rep, sel) {
     const cond = document.getElementById('bv-overlay')?.__cond
     const stam = cond?.stamina?.[sel.idx]
     const stamHtml = stam != null ? (() => { const bd = staminaBand(stam); return ` · Stamina <b style="color:${bd.color}">${stam}</b> <span style="color:${bd.color}">(${bd.label})</span>` })() : ''
-    el.innerHTML = `<b style="color:#c9a84c">${e.name}</b>${e.role ? ` · <span style="color:#9a9080">${e.role}</span>` : ''}${stamHtml}${e.grade ? ` · Match grade <b style="color:${_GRADE_COLOR_TXT[e.grade] || '#888'}">${e.grade}</b>` : ''}${e.detail ? ` <span style="color:#7a7060">(${e.detail})</span>` : ''}${sel.ko ? ' · <span style="color:#cc5a4a">taken out of the fight</span>' : ''}`
+    el.innerHTML = `<b style="color:var(--gold)">${e.name}</b>${e.role ? ` · <span style="color:var(--text-mid)">${e.role}</span>` : ''}${stamHtml}${e.grade ? ` · Match grade <b style="color:${_GRADE_COLOR_TXT[e.grade] || 'var(--text-dim)'}">${e.grade}</b>` : ''}${e.detail ? ` <span style="color:var(--text-dim)">(${e.detail})</span>` : ''}${sel.ko ? ' · <span style="color:var(--red)">taken out of the fight</span>' : ''}`
   } else if (sel.side === 'home') {
-    el.innerHTML = `<b style="color:#c9a84c">${sel.name}</b>${sel.ko ? ' · <span style="color:#cc5a4a">taken out of the fight</span>' : ''}`
+    el.innerHTML = `<b style="color:var(--gold)">${sel.name}</b>${sel.ko ? ' · <span style="color:var(--red)">taken out of the fight</span>' : ''}`
   } else {
     // Opposition scouting: when the report names the opponent village, surface its
     // identity + match style — click a red circle to read who you're up against.
@@ -469,10 +469,10 @@ function _showInspect(rep, sel) {
     if (opp) {
       const idn = identityFor(opp)
       const st = MATCH_STYLES[idn.style] || MATCH_STYLES.balanced
-      const elem = idn.element ? ` · <span style="color:#87ceeb">${idn.element} affinity</span>` : ''
-      el.innerHTML = `<b style="color:${_repArena(rep).palette.accent}">${opp}</b> · <span style="color:#c9a84c">${idn.label}</span> <span title="${st.desc}" style="color:#9a9080;cursor:help">${st.icon} ${st.label}</span>${elem}${idn.blurb ? `<span style="display:block;font-size:7px;color:#7a7060;margin-top:1px">${idn.blurb}</span>` : ''}`
+      const elem = idn.element ? ` · <span style="color:var(--blue)">${idn.element} affinity</span>` : ''
+      el.innerHTML = `<b style="color:${_repArena(rep).palette.accent}">${opp}</b> · <span style="color:var(--gold)">${idn.label}</span> <span title="${st.desc}" style="color:var(--text-mid);cursor:help">${st.icon} ${st.label}</span>${elem}${idn.blurb ? `<span style="display:block;font-size:7px;color:var(--text-dim);margin-top:1px">${idn.blurb}</span>` : ''}`
     } else {
-      el.innerHTML = `<b>${sel.name}</b> · <span style="color:#7a7060">opposition</span>${sel.ko ? ' · <span style="color:#8fbc8f">taken out of the fight</span>' : ''}`
+      el.innerHTML = `<b>${sel.name}</b> · <span style="color:var(--text-dim)">opposition</span>${sel.ko ? ' · <span style="color:var(--green)">taken out of the fight</span>' : ''}`
     }
   }
 }
@@ -549,7 +549,7 @@ function _revealBeat(seq, i) {
       koIdx = c.stamina.reduce((best, s, k) => s < c.stamina[best] ? k : best, 0)
       spotIdx = koIdx
       const who = c.members[koIdx]
-      if (who) spotHtml = ` <span class="bv-beat-spot" style="color:#cc5a4a">— ${who.name} ${roleBeatFlavor(who.role, false, i)}${c.stamina[koIdx] < 15 ? ', legs gone' : ''}.</span>`
+      if (who) spotHtml = ` <span class="bv-beat-spot" style="color:var(--red)">— ${who.name} ${roleBeatFlavor(who.role, false, i)}${c.stamina[koIdx] < 15 ? ', legs gone' : ''}.</span>`
     }
     ov.__pitch?.updateStamina(c.stamina)
     _renderTactics(ov)
@@ -561,9 +561,9 @@ function _revealBeat(seq, i) {
   }
   if (ov?.__pitch) ov.__pitch.playBeat(i, b, spotIdx, koIdx)
   const mom = document.getElementById('bv-mom')
-  if (mom) { mom.style.width = b.momentum + '%'; mom.style.background = b.won ? 'linear-gradient(90deg,#3a6a3a,#8fbc8f)' : 'linear-gradient(90deg,#6a3030,#cc5a4a)' }
+  if (mom) { mom.style.width = b.momentum + '%'; mom.style.background = b.won ? 'linear-gradient(90deg,#3a6a3a,var(--green))' : 'linear-gradient(90deg,#6a3030,var(--red))' }
   const beat = document.getElementById('bv-beat-' + i); if (beat) beat.classList.add('bv-on')
-  const mark = document.getElementById('bv-mark-' + i); if (mark) { mark.textContent = b.won ? '✓' : '✕'; mark.style.color = b.won ? '#8fbc8f' : '#cc5a4a' }
+  const mark = document.getElementById('bv-mark-' + i); if (mark) { mark.textContent = b.won ? '✓' : '✕'; mark.style.color = b.won ? 'var(--green)' : 'var(--red)' }
   const line = document.getElementById('bv-line-' + i); if (line) line.innerHTML = b.line + spotHtml
 }
 
@@ -607,7 +607,7 @@ function _revealOutcome(rep) {
     : (league && rep.scoreline)
       ? `<div class="bv-scoreline">${rep.scoreline.home} <b>${rep.scoreline.hs}–${rep.scoreline.as}</b> ${rep.scoreline.away}</div>`
       : (rep.scores || []).length
-        ? `<div class="bv-grades">${rep.scores.map(sc => `<div class="bv-grade"><div class="bv-grade-n">${sc.name}</div><div class="bv-grade-g" style="color:${GRADE_COLOR[sc.grade] || '#888'}">${sc.grade}</div></div>`).join('')}</div>`
+        ? `<div class="bv-grades">${rep.scores.map(sc => `<div class="bv-grade"><div class="bv-grade-n">${sc.name}</div><div class="bv-grade-g" style="color:${GRADE_COLOR[sc.grade] || 'var(--text-dim)'}">${sc.grade}</div></div>`).join('')}</div>`
         : ''
   // Post-match stats sheet from the possession-sim event log (blueprint §6.3).
   const sheet = (ovp?.__evLog?.length) ? statsFrom(ovp.__evLog) : null

@@ -13,12 +13,12 @@ const _CAT = {
   ev:   { label: 'Events',     match: t => t === 'ev' },
 }
 
-const _COLOR = t => t === 'good' ? '#8fbc8f' : t === 'bad' ? '#f66' : t === 'warn' ? '#fa0' : t === 'ev' ? '#87ceeb' : '#7a7060'
+const _COLOR = t => t === 'good' ? 'var(--green)' : t === 'bad' ? 'var(--red)' : t === 'warn' ? 'var(--orange)' : t === 'ev' ? 'var(--blue)' : 'var(--text-dim)'
 
 export function rLo() {
   const el = document.getElementById('logl')
   if (!el) return
-  if (!G.log.length) { el.innerHTML = `<div style="color:#7a7060;font-size:10px">${tr("log.none")}</div>`; return }
+  if (!G.log.length) { el.innerHTML = `<div style="color:var(--text-dim);font-size:10px">${tr("log.none")}</div>`; return }
 
   const f = window._logFilter
   const q = (window._logSearch || '').toLowerCase()
@@ -33,14 +33,14 @@ export function rLo() {
 
   const tabs = Object.entries(_CAT).map(([k, def]) =>
     `<button class="tab${f === k ? ' active' : ''}" style="font-size:8px;padding:4px 9px" onclick="logFilter('${k}')">
-      ${def.label} <span style="color:#555">${counts[k]}</span>
+      ${def.label} <span style="color:var(--text-faint)">${counts[k]}</span>
     </button>`
   ).join('')
 
   const rows = filtered.length === 0
-    ? `<div style="color:#7a7060;font-size:9px;padding:14px 0">${tr("chronicles.noMatch")}</div>`
+    ? `<div style="color:var(--text-dim);font-size:9px;padding:14px 0">${tr("chronicles.noMatch")}</div>`
     : filtered.map(e =>
-        `<div style="padding:6px 0;border-bottom:1px solid #2e2a22;font-size:9px;line-height:1.6;color:${_COLOR(e.t)}"><span style="color:#c9a84c;font-weight:bold;margin-right:6px">Y${e.y}M${e.m}</span>${esc(e.msg)}</div>`
+        `<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:9px;line-height:1.6;color:${_COLOR(e.t)}"><span style="color:var(--gold);font-weight:bold;margin-right:6px">Y${e.y}M${e.m}</span>${esc(e.msg)}</div>`
       ).join('')
 
   el.innerHTML = `
@@ -48,9 +48,9 @@ export function rLo() {
       ${tabs}
       <input type="text" placeholder="Search log…" value="${esc(window._logSearch || '')}"
         oninput="logSearch(this.value)"
-        style="margin-left:auto;background:var(--surface-2,#1a1814);border:1px solid var(--border,#2e2a22);color:#e8e0cc;font-size:8px;padding:4px 8px;width:140px;outline:none">
+        style="margin-left:auto;background:var(--surface-2,var(--surface));border:1px solid var(--border,var(--border));color:var(--text-hi);font-size:8px;padding:4px 8px;width:140px;outline:none">
     </div>
-    <div style="font-size:7px;color:#555;margin-bottom:6px">${filtered.length} entr${filtered.length === 1 ? 'y' : 'ies'}</div>
+    <div style="font-size:7px;color:var(--text-faint);margin-bottom:6px">${filtered.length} entr${filtered.length === 1 ? 'y' : 'ies'}</div>
     ${rows}`
 }
 

@@ -49,11 +49,11 @@ export function showSetup() {
   if (saved && savedName) {
     const banner = document.createElement('div')
     banner.id = 'sp-continue-banner'
-    banner.style.cssText = 'padding:10px 12px;border:1px solid #c9a84c;background:#0d0a04;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px'
+    banner.style.cssText = 'padding:10px 12px;border:1px solid var(--gold);background:var(--sunken);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px'
     banner.innerHTML = `
       <div>
-        <div style="font-size:9px;color:#c9a84c;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Saved Session Found</div>
-        <div style="font-size:11px;color:#e8e0cc">${savedIcon} ${savedName}</div>
+        <div style="font-size:9px;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Saved Session Found</div>
+        <div style="font-size:11px;color:var(--text-hi)">${savedIcon} ${savedName}</div>
       </div>
       <button class="gb" onclick="restoreGame()" style="font-size:9px;white-space:nowrap">Continue ▸</button>
     `
@@ -76,10 +76,10 @@ function _renderScenarioPicker() {
   host.innerHTML = START_SCENARIOS.map(s => `
     <button class="sp-scn${s.id === _selScenario ? ' sel' : ''}" onclick="selScenario('${s.id}',this)"
       style="display:block;width:100%;text-align:left;padding:8px 10px;margin-bottom:5px;cursor:pointer;
-             border:1px solid ${s.id === _selScenario ? '#c9a84c' : '#2e2a22'};
-             background:${s.id === _selScenario ? 'rgba(201,168,76,.08)' : 'transparent'};color:#e8e0cc">
-      <div style="font-size:10px;font-weight:600;color:${s.id === _selScenario ? '#c9a84c' : '#e8e0cc'}">${s.icon} ${s.n}</div>
-      <div style="font-size:8px;color:#7a7060;margin-top:2px;line-height:1.4">${s.desc}</div>
+             border:1px solid ${s.id === _selScenario ? 'var(--gold)' : 'var(--border)'};
+             background:${s.id === _selScenario ? 'rgba(201,168,76,.08)' : 'transparent'};color:var(--text-hi)">
+      <div style="font-size:10px;font-weight:600;color:${s.id === _selScenario ? 'var(--gold)' : 'var(--text-hi)'}">${s.icon} ${s.n}</div>
+      <div style="font-size:8px;color:var(--text-dim);margin-top:2px;line-height:1.4">${s.desc}</div>
     </button>`).join('')
 }
 

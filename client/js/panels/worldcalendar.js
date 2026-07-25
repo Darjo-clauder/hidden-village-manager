@@ -15,22 +15,22 @@ export function rWorldCalendar() {
   el.innerHTML = `
     ${activeEv ? `
       <div style="background:#1a0a00;border:1px solid #5a3000;padding:12px;margin-bottom:14px">
-        <div style="font-size:7px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">⚡ Active World Event</div>
-        <div style="font-size:12px;color:#e8e0cc;margin-bottom:4px">${activeEv.icon} ${activeEv.name}</div>
-        <div style="font-size:8px;color:#7a5030;margin-bottom:10px">${activeEv.desc}</div>
-        <div style="font-size:7px;letter-spacing:1px;color:#5a5040;text-transform:uppercase;margin-bottom:6px">${tr("worldcalendar.chooseResponse")}</div>
+        <div style="font-size:7px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">⚡ Active World Event</div>
+        <div style="font-size:12px;color:var(--text-hi);margin-bottom:4px">${activeEv.icon} ${activeEv.name}</div>
+        <div style="font-size:8px;color:var(--gold-2);margin-bottom:10px">${activeEv.desc}</div>
+        <div style="font-size:7px;letter-spacing:1px;color:var(--text-faint);text-transform:uppercase;margin-bottom:6px">${tr("worldcalendar.chooseResponse")}</div>
         <div style="display:grid;gap:6px">
           ${activeEv.choices.map(c => `
-            <div onclick="resolveWorldEventChoice('${c.id}')" style="cursor:pointer;background:#0d0d0d;border:1px solid #3a2000;padding:8px;display:flex;justify-content:space-between;align-items:center">
+            <div onclick="resolveWorldEventChoice('${c.id}')" style="cursor:pointer;background:var(--bg);border:1px solid #3a2000;padding:8px;display:flex;justify-content:space-between;align-items:center">
               <div>
-                <div style="font-size:9px;color:#e8e0cc">${c.label}</div>
-                <div style="font-size:7px;color:#7a5030;margin-top:2px">${c.desc}</div>
+                <div style="font-size:9px;color:var(--text-hi)">${c.label}</div>
+                <div style="font-size:7px;color:var(--gold-2);margin-top:2px">${c.desc}</div>
               </div>
               <div style="text-align:right;font-size:8px">
-                ${c.ryo !== 0 ? `<div style="color:${c.ryo>0?'#8fbc8f':'#f66'}">${c.ryo>0?'+':''}${c.ryo.toLocaleString()} ryo</div>` : ''}
-                ${c.rep !== 0 ? `<div style="color:${c.rep>0?'#8fbc8f':'#f66'}">${c.rep>0?'+':''}${c.rep} rep</div>` : ''}
-                ${c.morale !== 0 ? `<div style="color:${c.morale>0?'#8fbc8f':'#f66'}">${c.morale>0?'+':''}${c.morale} morale</div>` : ''}
-                ${c.risk > 0 ? `<div style="color:#f66;font-size:7px">${(c.risk*100).toFixed(0)}% risk</div>` : ''}
+                ${c.ryo !== 0 ? `<div style="color:${c.ryo>0?'var(--green)':'var(--red)'}">${c.ryo>0?'+':''}${c.ryo.toLocaleString()} ryo</div>` : ''}
+                ${c.rep !== 0 ? `<div style="color:${c.rep>0?'var(--green)':'var(--red)'}">${c.rep>0?'+':''}${c.rep} rep</div>` : ''}
+                ${c.morale !== 0 ? `<div style="color:${c.morale>0?'var(--green)':'var(--red)'}">${c.morale>0?'+':''}${c.morale} morale</div>` : ''}
+                ${c.risk > 0 ? `<div style="color:var(--red);font-size:7px">${(c.risk*100).toFixed(0)}% risk</div>` : ''}
               </div>
             </div>`).join('')}
         </div>
@@ -39,40 +39,40 @@ export function rWorldCalendar() {
     ${!activeEv && upcoming ? `
       <div style="background:#0a0a00;border:1px solid #3a3000;padding:10px;margin-bottom:14px">
         <div style="font-size:7px;letter-spacing:2px;color:#7a7030;text-transform:uppercase;margin-bottom:4px">${tr("worldcalendar.nextMonth")}</div>
-        <div style="font-size:10px;color:#e8e0cc">${WE_BY_ID[upcoming.eventId]?.icon} ${WE_BY_ID[upcoming.eventId]?.name || upcoming.eventId}</div>
-        <div style="font-size:7px;color:#7a7060;margin-top:3px">${WE_BY_ID[upcoming.eventId]?.desc || ''}</div>
+        <div style="font-size:10px;color:var(--text-hi)">${WE_BY_ID[upcoming.eventId]?.icon} ${WE_BY_ID[upcoming.eventId]?.name || upcoming.eventId}</div>
+        <div style="font-size:7px;color:var(--text-dim);margin-top:3px">${WE_BY_ID[upcoming.eventId]?.desc || ''}</div>
       </div>` : ''}
 
-    <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:8px">${tr("worldcalendar.annualCalendar")}</div>
+    <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">${tr("worldcalendar.annualCalendar")}</div>
     <div style="display:grid;gap:4px;margin-bottom:14px">
       ${WORLD_EVENTS.map(ev => {
         const fired = G.worldCalendar?.[`fired_${G.year}_${ev.id}`]
         const isCurrent = ev.month === G.month
-        const color = isCurrent ? '#c9a84c' : fired ? '#3a4a3a' : '#222'
+        const color = isCurrent ? 'var(--gold)' : fired ? '#3a4a3a' : 'var(--border-dim)'
         return `
           <div style="display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid ${color};background:${isCurrent?'#1a1200':'transparent'}">
-            <span style="font-size:8px;color:#7a7060;min-width:28px">M${ev.month}</span>
+            <span style="font-size:8px;color:var(--text-dim);min-width:28px">M${ev.month}</span>
             <span style="font-size:9px">${ev.icon}</span>
-            <span style="font-size:8px;color:${fired?'#5a6a5a':'#e8e0cc'}">${ev.name}</span>
-            ${fired ? '<span style="font-size:7px;color:#4a6a4a;margin-left:auto">✓ Resolved</span>' : isCurrent ? '<span style="font-size:7px;color:#c9a84c;margin-left:auto">⚡ Now</span>' : ''}
+            <span style="font-size:8px;color:${fired?'#5a6a5a':'var(--text-hi)'}">${ev.name}</span>
+            ${fired ? '<span style="font-size:7px;color:#4a6a4a;margin-left:auto">✓ Resolved</span>' : isCurrent ? '<span style="font-size:7px;color:var(--gold);margin-left:auto">⚡ Now</span>' : ''}
           </div>`
       }).join('')}
     </div>
 
     ${history.length ? `
-      <div style="font-size:7px;letter-spacing:2px;color:#7a7060;text-transform:uppercase;margin-bottom:6px">${tr("worldcalendar.recentHistory")}</div>
+      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">${tr("worldcalendar.recentHistory")}</div>
       <div style="display:grid;gap:4px">
         ${history.map(h => {
           const ev = WE_BY_ID[h.eventId]
           const choice = ev?.choices.find(c => c.id === h.choiceId)
           return `
-            <div style="background:#0d0d0d;border:1px solid #222;padding:6px 8px;display:flex;justify-content:space-between">
+            <div style="background:var(--bg);border:1px solid var(--border-dim);padding:6px 8px;display:flex;justify-content:space-between">
               <div>
-                <span style="font-size:8px;color:#e8e0cc">${ev?.icon || ''} ${ev?.name || h.eventId}</span>
-                <span style="font-size:7px;color:#7a7060;margin-left:6px">Y${h.resolvedYear}</span>
-                <div style="font-size:7px;color:#5a5040;margin-top:1px">→ ${choice?.label || h.choiceId}</div>
+                <span style="font-size:8px;color:var(--text-hi)">${ev?.icon || ''} ${ev?.name || h.eventId}</span>
+                <span style="font-size:7px;color:var(--text-dim);margin-left:6px">Y${h.resolvedYear}</span>
+                <div style="font-size:7px;color:var(--text-faint);margin-top:1px">→ ${choice?.label || h.choiceId}</div>
               </div>
-              <div style="text-align:right;font-size:7px;color:${h.outcome?.success?'#8fbc8f':'#f66'}">${h.outcome?.success?'Success':'Setback'}</div>
+              <div style="text-align:right;font-size:7px;color:${h.outcome?.success?'var(--green)':'var(--red)'}">${h.outcome?.success?'Success':'Setback'}</div>
             </div>`
         }).join('')}
       </div>` : ''}

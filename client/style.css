@@ -100,15 +100,25 @@ body{
 /* ══ TITLE SCREEN ═════════════════════════════════════════════════════════ */
 #st{align-items:center;justify-content:center;background:var(--bg);position:relative;overflow:hidden}
 .tm{font-size:20px;letter-spacing:6px;color:var(--gold);text-align:center;margin-bottom:4px;text-transform:uppercase;font-weight:300}
-.tk{font-size:38px;color:var(--gold);font-family:Georgia,serif;text-align:center;margin-bottom:4px;opacity:.9}
+.tk{
+  font-size:38px;color:var(--gold);font-family:Georgia,serif;
+  text-align:center;margin-bottom:4px;opacity:.9;
+  text-shadow:0 0 28px rgba(201,168,76,.22);
+}
 .ts{font-size:10px;letter-spacing:3px;color:var(--text-dim);text-align:center;margin-bottom:36px;text-transform:uppercase}
+/* Seal-red disc behind the title mark — the one saturated note on the screen */
+#st::before{
+  content:'';position:absolute;width:340px;height:340px;border-radius:50%;
+  background:radial-gradient(circle,rgba(200,67,47,.10) 0%,transparent 68%);
+  pointer-events:none;
+}
 .bstart{
-  background:var(--gold);color:#0b0d14;border:none;
+  background:var(--gold);color:var(--bg);border:none;
   padding:10px 32px;font-family:inherit;font-size:12px;
   letter-spacing:1px;cursor:pointer;font-weight:600;
-  transition:background .15s;
+  transition:background .15s,box-shadow .15s;
 }
-.bstart:hover{background:#dbb85c}
+.bstart:hover{background:var(--gold-hi);box-shadow:0 0 18px rgba(201,168,76,.3)}
 
 /* ══ SETUP & LOBBY SCREENS ═════════════════════════════════════════════════ */
 #sp,#sl{align-items:center;justify-content:center;background:var(--bg)}
@@ -128,6 +138,24 @@ body{
 .sp-ico.sel{border-color:var(--gold);background:var(--gold-bg)}
 .sp-hint{font-size:10px;color:var(--text-dim);margin-top:18px;text-align:center;letter-spacing:.5px}
 
+/* ══ ATMOSPHERE ════════════════════════════════════════════════════════════
+   The character layer. Flat #000 panels are what read as "generic dashboard",
+   so the ground gets a faint paper tooth (two offset repeating gradients at
+   very low alpha) and a vignette that keeps attention centre-screen. Both are
+   pure CSS — no image assets, so nothing to ship or license.               */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    repeating-linear-gradient(90deg,rgba(222,211,189,.014) 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(0deg,rgba(222,211,189,.010) 0 1px,transparent 1px 4px);
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 50% 38%,transparent 52%,rgba(0,0,0,.42) 100%);
+}
+.screen{position:relative;z-index:1}
+@media (prefers-reduced-motion:reduce){body::before{display:none}}
+
 /* ══ GAME SCREEN LAYOUT ════════════════════════════════════════════════════ */
 #sg{flex-direction:column}
 .sg-body{flex:1;display:flex;overflow:hidden;min-height:0}
@@ -135,8 +163,11 @@ body{
 /* ══ TOP BAR ═══════════════════════════════════════════════════════════════ */
 .topbar{
   height:var(--topbar-h);
-  background:var(--surface);
+  /* Lifted off the body by a gradient + a gold hairline, so the chrome reads
+     as a lacquered band rather than another flat rectangle. */
+  background:linear-gradient(var(--surface-2),var(--surface));
   border-bottom:1px solid var(--border);
+  box-shadow:0 1px 0 rgba(201,168,76,.10),0 2px 12px rgba(0,0,0,.5);
   display:flex;align-items:stretch;
   flex-shrink:0;
   position:relative;
@@ -178,7 +209,7 @@ body{
 .tb-morale-fill.warn{background:var(--orange)}
 .tb-morale-fill.low{background:var(--red)}
 .ab{
-  background:var(--accent);color:#0a0c10;border:none;
+  background:var(--accent);color:var(--bg);border:none;
   padding:7px 16px;font-family:inherit;
   font-size:11px;cursor:pointer;
   font-weight:600;flex-shrink:0;
@@ -187,14 +218,14 @@ body{
 }
 .ab:hover{filter:brightness(1.15)}
 /* ── ContinueButton states (FM24 spec) ─────────────────────────────────── */
-.ab.ct-ready{background:var(--accent);color:#0a0c10}
-.ab.ct-pending{background:var(--orange,#f0a030);color:#0a0c10;box-shadow:0 0 0 1px rgba(240,160,48,.4)}
+.ab.ct-ready{background:var(--accent);color:var(--bg)}
+.ab.ct-pending{background:var(--orange,#f0a030);color:var(--bg);box-shadow:0 0 0 1px rgba(240,160,48,.4)}
 .ab.ct-blocked{background:transparent;color:var(--red,#f0605a);border:1px solid var(--red,#f0605a);cursor:not-allowed}
 .ab.ct-blocked:hover{filter:none}
 .ab .ct-badge{
   display:inline-flex;align-items:center;justify-content:center;
   min-width:16px;height:16px;padding:0 4px;border-radius:8px;
-  background:rgba(10,12,16,.35);color:#0a0c10;
+  background:rgba(10,9,8,.35);color:var(--bg);
   font-size:9px;font-weight:700;font-family:var(--font-num,'Courier New',monospace);
 }
 @media (prefers-reduced-motion:reduce){.ab{transition:none}}
@@ -209,8 +240,8 @@ body{
 .ctx-item:hover{background:var(--accent-bg,rgba(201,168,76,.1));color:var(--accent,#c9a84c)}
 .ctx-item.ctx-danger{color:var(--red,#f0605a)}
 .ctx-item.ctx-danger:hover{background:rgba(240,96,90,.12);color:var(--red,#f0605a)}
-.ctx-item.ctx-disabled{color:#444;cursor:default}
-.ctx-item.ctx-disabled:hover{background:transparent;color:#444}
+.ctx-item.ctx-disabled{color:var(--text-faint);cursor:default}
+.ctx-item.ctx-disabled:hover{background:transparent;color:var(--text-faint)}
 .ctx-sep{height:1px;background:var(--border,rgba(110,100,80,.22));margin:4px 2px}
 /* ── Table column manager ──────────────────────────────────────────────── */
 .tbl-colbtn{font-size:8px;color:var(--text-dim,#7a7060);background:transparent;border:1px solid var(--border,#2e2a22);padding:2px 7px;cursor:pointer;border-radius:2px}
@@ -259,7 +290,11 @@ body{
   border-right:1px solid var(--border);
   border-top:2px solid var(--accent);
   display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;
-  background-image:linear-gradient(180deg, var(--accent-sb) 0%, transparent 120px);
+  /* Ink wash: light at the top where the accent bleeds in, settling to black */
+  background-image:
+    linear-gradient(180deg, var(--accent-sb) 0%, transparent 140px),
+    linear-gradient(180deg, var(--surface-2) 0%, var(--surface) 40%, var(--bg) 100%);
+  box-shadow:inset -12px 0 20px -14px rgba(0,0,0,.8);
 }
 .sbl{
   padding:10px 12px;border-bottom:1px solid var(--border);
@@ -355,24 +390,70 @@ body{
   100%{transform:translateX(-100%) translateY(-50%)}
 }
 
-/* ══ PANEL HEADERS ════════════════════════════════════════════════════════ */
+/* ══ PANEL HEADERS ════════════════════════════════════════════════════════
+   Sticky so the panel always names itself while you scroll a long roster.
+   The brush-stroke rule under the title is the one bit of sumi-e grammar
+   carried through every screen: a gold hairline that fades out like an
+   ink stroke lifting off the page.                                        */
 .pt{
-  font-size:13px;color:var(--text-hi);font-weight:600;
-  margin-bottom:14px;
-  padding-bottom:8px;border-bottom:1px solid var(--border);
-  letter-spacing:0;
+  position:sticky;top:0;z-index:5;
+  font-size:var(--fs-lead);color:var(--text-hi);font-weight:600;
+  margin:0 0 var(--sp-4);padding:var(--sp-2) 0;
+  letter-spacing:.02em;
+  background:linear-gradient(var(--bg) 72%,transparent);
+  border-bottom:none;
+}
+.pt::after{
+  content:'';display:block;height:1px;margin-top:var(--sp-2);
+  background:linear-gradient(90deg,var(--gold) 0%,var(--gold-2) 18%,var(--border) 52%,transparent 100%);
+  opacity:.7;
+}
+
+/* Section label — the small caps rubric above a block of content */
+.sect{
+  font-size:var(--fs-micro);letter-spacing:var(--ls-caps);
+  color:var(--text-dim);text-transform:uppercase;
+  margin-bottom:var(--sp-2);
 }
 
 /* ══ CARDS ════════════════════════════════════════════════════════════════ */
 .card{
   background:var(--surface);border:1px solid var(--border);
-  padding:10px 12px;margin-bottom:6px;cursor:pointer;
-  transition:border-color .12s;
+  padding:var(--sp-3);margin-bottom:var(--sp-2);cursor:pointer;
+  transition:border-color .12s,background .12s;
+  position:relative;
 }
-.card:hover{border-color:rgba(201,168,76,.4)}
-.card-row{display:flex;align-items:center;gap:10px;margin-bottom:4px}
-.card-name{font-size:12px;color:var(--text-hi);font-weight:600}
-.card-sub{font-size:10px;color:var(--text-dim)}
+.card:hover{border-color:var(--accent-border);background:var(--surface-2)}
+.card-row{display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-1)}
+.card-name{font-size:var(--fs-body);color:var(--text-hi);font-weight:600}
+.card-sub{font-size:var(--fs-small);color:var(--text-dim)}
+
+/* Panel container — one padding rhythm for every panel body */
+.panel-body{padding-bottom:var(--sp-5)}
+
+/* Data density: tighter rows for long tables (roster, standings, market) */
+.tbl-dense td,.tbl-dense th{padding:3px var(--sp-2);font-size:var(--fs-small)}
+.tbl-dense tbody tr{border-bottom:1px solid var(--border-dim)}
+.tbl-dense tbody tr:hover{background:var(--surface-2)}
+.tbl-dense thead th{
+  position:sticky;top:0;background:var(--surface);z-index:2;
+  font-size:var(--fs-micro);letter-spacing:var(--ls-caps);text-transform:uppercase;
+  color:var(--text-dim);font-weight:500;
+}
+
+/* Stat readout — big number over a caps label, used across dashboards */
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat-v{font-size:var(--fs-head);font-weight:700;color:var(--text-hi);line-height:1.1}
+.stat-l{font-size:var(--fs-micro);letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--text-dim)}
+
+/* Chip — inline tag for bands, roles, statuses */
+.chip{
+  display:inline-block;font-size:var(--fs-micro);line-height:1.6;
+  padding:0 6px;border:1px solid currentColor;border-radius:2px;
+  letter-spacing:.04em;white-space:nowrap;
+}
+.chip-solid{border-color:transparent;background:currentColor}
+.chip-solid > span{color:var(--bg)}
 
 /* ── Dashboard cards ── */
 .dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:14px}
@@ -484,7 +565,7 @@ body{
 .gb-b{border-color:rgba(74,136,192,.4);color:var(--blue)}.gb-b:hover{background:var(--blue-bg);border-color:var(--blue)}
 .gb-o{border-color:rgba(212,96,48,.4);color:var(--orange)}.gb-o:hover{background:var(--orange-bg);border-color:var(--orange)}
 /* Primary action button variant */
-.gb-gold{background:var(--accent);border-color:var(--accent);color:#0a0c10;font-weight:600}
+.gb-gold{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:600}
 .gb-gold:hover{filter:brightness(1.15)}
 
 /* ── Tabs ── */

@@ -40,28 +40,28 @@ function _prestige() {
   const repStars = '★'.repeat(rep) + '☆'.repeat(5 - rep)
   const warConseq = G.warConsequences
   return `<div>
-    ${warConseq ? `<div style="border:1px solid #f66;background:#0d0404;padding:8px 10px;margin-bottom:10px;font-size:8px;color:#f66">⚠ War defeat consequences active — prestige penalised for ${warConseq.prestigePenaltyMonths} more months. Academy intake quality reduced for ${warConseq.academyDebuffYears} more year(s).</div>` : ''}
+    ${warConseq ? `<div style="border:1px solid var(--red);background:#0d0404;padding:8px 10px;margin-bottom:10px;font-size:8px;color:var(--red)">⚠ War defeat consequences active — prestige penalised for ${warConseq.prestigePenaltyMonths} more months. Academy intake quality reduced for ${warConseq.academyDebuffYears} more year(s).</div>` : ''}
     <div class="ke-card" style="margin-bottom:10px">
-      <div style="font-size:10px;color:#7a7060;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">${tr("legacy.villagePrestige")}</div>
+      <div style="font-size:10px;color:var(--text-dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">${tr("legacy.villagePrestige")}</div>
       <div style="font-size:20px;font-weight:bold;color:${tier.color};margin-bottom:6px">${tier.n}</div>
-      <div style="font-size:9px;color:#7a7060;margin-bottom:8px">Legend Score: ${legend} ${nextTier ? `/ ${nextTier.min} for Tier ${nextTier.id}` : '(Maximum)'}</div>
+      <div style="font-size:9px;color:var(--text-dim);margin-bottom:8px">Legend Score: ${legend} ${nextTier ? `/ ${nextTier.min} for Tier ${nextTier.id}` : '(Maximum)'}</div>
       <div class="bar" style="margin-bottom:8px"><div class="fill" style="width:${nextTier ? Math.min(100, Math.round((legend / nextTier.min) * 100)) : 100}%;background:${tier.color}"></div></div>
-      <div style="font-size:9px;color:#7a7060">
+      <div style="font-size:9px;color:var(--text-dim)">
         Scout Slots: ${tier.scoutSlots} · Staff Tier: ${tier.staffTier} · Exam Host: ${tier.examHostEligible ? '✓ Eligible' : '✗ Not yet'}
       </div>
     </div>
-    ${G.worldReputationText ? `<div style="padding:8px 10px;border:1px solid #2e2a22;background:#0a0a0a;margin-bottom:10px;font-size:9px;color:#7a7060;font-style:italic">"${G.worldReputationText}"</div>` : ''}
+    ${G.worldReputationText ? `<div style="padding:8px 10px;border:1px solid var(--border);background:var(--bg);margin-bottom:10px;font-size:9px;color:var(--text-dim);font-style:italic">"${G.worldReputationText}"</div>` : ''}
     <div class="ke-card">
-      <div style="font-size:10px;color:#7a7060;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">${tr("legacy.kageReputation")}</div>
-      <div style="font-size:18px;color:#c9a84c;margin-bottom:6px">${repStars}</div>
-      <div style="font-size:9px;color:#7a7060;margin-bottom:4px">${_repDesc(rep)}</div>
-      <div style="font-size:9px;color:#555">Grows with reputation score, exam wins, diplomacy, and shinobi development.</div>
+      <div style="font-size:10px;color:var(--text-dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">${tr("legacy.kageReputation")}</div>
+      <div style="font-size:18px;color:var(--gold);margin-bottom:6px">${repStars}</div>
+      <div style="font-size:9px;color:var(--text-dim);margin-bottom:4px">${_repDesc(rep)}</div>
+      <div style="font-size:9px;color:var(--text-faint)">Grows with reputation score, exam wins, diplomacy, and shinobi development.</div>
     </div>
-    ${PRESTIGE_TIERS.map(t => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1a1a1a">
+    ${PRESTIGE_TIERS.map(t => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--surface)">
       <span style="font-size:12px;color:${t.color};width:20px;font-weight:bold">${t.id}</span>
-      <span style="font-size:9px;color:#7a7060;flex:1">${t.n.split('— ')[1] || t.n}</span>
-      <span style="font-size:9px;color:#444">≥${t.min} legend</span>
-      ${G.prestigeTier === t.id ? '<span style="font-size:8px;color:#c9a84c">← current</span>' : ''}
+      <span style="font-size:9px;color:var(--text-dim);flex:1">${t.n.split('— ')[1] || t.n}</span>
+      <span style="font-size:9px;color:var(--border-hi)">≥${t.min} legend</span>
+      ${G.prestigeTier === t.id ? '<span style="font-size:8px;color:var(--gold)">← current</span>' : ''}
     </div>`).join('')}
   </div>`
 }
@@ -74,20 +74,20 @@ function _repDesc(rep) {
 function _kageRelations() {
   const kr = G.kageRelations || {}
   const entries = Object.values(kr)
-  if (!entries.length) return '<div style="color:#555;font-size:11px;padding:20px 0">No kage relations established yet. Relations develop as you interact with other villages.</div>'
-  const bar = v => `<div class="bar" style="height:4px"><div class="fill" style="width:${v}%;background:${v >= 60 ? '#8fbc8f' : v >= 40 ? '#c9a84c' : '#f66'}"></div></div>`
+  if (!entries.length) return '<div style="color:var(--text-faint);font-size:11px;padding:20px 0">No kage relations established yet. Relations develop as you interact with other villages.</div>'
+  const bar = v => `<div class="bar" style="height:4px"><div class="fill" style="width:${v}%;background:${v >= 60 ? 'var(--green)' : v >= 40 ? 'var(--gold)' : 'var(--red)'}"></div></div>`
   const desc = v => v >= 70 ? 'Warm relationship — negotiations go smoothly.' : v >= 50 ? 'Neutral standing — no strong ties either way.' : v >= 30 ? 'Tense — past grievances color every exchange.' : 'Hostile — dialogue is strained and suspect.'
   return `<div>
-    <div style="font-size:9px;color:#7a7060;margin-bottom:10px">Personal relationships with rival Warden — distinct from village-level diplomacy. Shaped by summit interactions, war outcomes, and prestige.</div>
+    <div style="font-size:9px;color:var(--text-dim);margin-bottom:10px">Personal relationships with rival Warden — distinct from village-level diplomacy. Shaped by summit interactions, war outcomes, and prestige.</div>
     <div style="display:grid;gap:8px">
       ${entries.map(k => `<div class="ke-card">
         <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-          <span style="font-size:11px;color:#e8e0cc">${k.villageName}</span>
-          <span style="font-size:10px;color:${k.rep >= 60 ? '#8fbc8f' : k.rep >= 40 ? '#c9a84c' : '#f66'};font-weight:bold">${k.rep}/100</span>
+          <span style="font-size:11px;color:var(--text-hi)">${k.villageName}</span>
+          <span style="font-size:10px;color:${k.rep >= 60 ? 'var(--green)' : k.rep >= 40 ? 'var(--gold)' : 'var(--red)'};font-weight:bold">${k.rep}/100</span>
         </div>
         ${bar(k.rep)}
-        <div style="font-size:8px;color:#7a7060;margin-top:5px">${desc(k.rep)}</div>
-        ${k.lastEvent ? `<div style="font-size:7px;color:#444;margin-top:3px">Last: ${k.lastEvent}</div>` : ''}
+        <div style="font-size:8px;color:var(--text-dim);margin-top:5px">${desc(k.rep)}</div>
+        ${k.lastEvent ? `<div style="font-size:7px;color:var(--border-hi);margin-top:3px">Last: ${k.lastEvent}</div>` : ''}
       </div>`).join('')}
     </div>
   </div>`
@@ -98,14 +98,14 @@ function _hall() {
   const hall = G.hallOfLegends || []
   const bonus = Math.min(hall.length * 200, 2000)
   return `<div>
-    <div style="font-size:9px;color:#7a7060;margin-bottom:8px">Shinobi who served 10+ years, earned 100+ missions, and reached A-rank are enshrined here. Each legend provides a passive monthly bonus.</div>
-    <div style="font-size:9px;color:#c9a84c;margin-bottom:12px">Current passive bonus: +${fmt(bonus)} ryo/month (${hall.length} enshrined)</div>
-    <div style="font-size:9px;color:#7a7060;margin-bottom:8px">Eligibility: 120+ months served · 100+ mission wins · A-rank (ri≥3)</div>
-    ${hall.length === 0 ? '<div style="color:#444;font-size:11px;padding:16px 0">No legends enshrined yet. Long-serving A-rank shinobi are automatically enshrined upon retirement.</div>' :
+    <div style="font-size:9px;color:var(--text-dim);margin-bottom:8px">Shinobi who served 10+ years, earned 100+ missions, and reached A-rank are enshrined here. Each legend provides a passive monthly bonus.</div>
+    <div style="font-size:9px;color:var(--gold);margin-bottom:12px">Current passive bonus: +${fmt(bonus)} ryo/month (${hall.length} enshrined)</div>
+    <div style="font-size:9px;color:var(--text-dim);margin-bottom:8px">Eligibility: 120+ months served · 100+ mission wins · A-rank (ri≥3)</div>
+    ${hall.length === 0 ? '<div style="color:var(--border-hi);font-size:11px;padding:16px 0">No legends enshrined yet. Long-serving A-rank shinobi are automatically enshrined upon retirement.</div>' :
       `<div style="display:grid;gap:8px">${hall.map(l => `
         <div class="ke-card">
-          <div style="font-size:11px;color:#c9a84c;margin-bottom:4px">🏛 ${l.name}</div>
-          <div style="font-size:9px;color:#7a7060">${['Initiate','Adept','Veteran','Special Veteran','Legend'][l.ri] || 'Unknown'} · ${l.months} months served · ${l.wins} wins · ${l.winsS} S-rank</div>
+          <div style="font-size:11px;color:var(--gold);margin-bottom:4px">🏛 ${l.name}</div>
+          <div style="font-size:9px;color:var(--text-dim)">${['Initiate','Adept','Veteran','Special Veteran','Legend'][l.ri] || 'Unknown'} · ${l.months} months served · ${l.wins} wins · ${l.winsS} S-rank</div>
         </div>`).join('')}
       </div>`}
     ${_hallOfFame()}
@@ -118,17 +118,17 @@ function _hall() {
 function _hallOfFame() {
   const hof = (G.hallOfFame || []).slice().sort((a, b) => (b.year - a.year) || (b.score - a.score))
   if (!hof.length) return ''
-  return `<div style="margin-top:20px;border-top:1px solid #2a2520;padding-top:12px">
-    <div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">🏆 Hall of Fame — ${hof.length} inducted</div>
-    <div style="font-size:8px;color:#7a7060;margin-bottom:10px">Exceptional careers, inducted on retirement or in death. Missions are the spine; S-ranks, tournament titles, and Youth Cup pedigree add to the legend.</div>
+  return `<div style="margin-top:20px;border-top:1px solid var(--surface-3);padding-top:12px">
+    <div style="font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">🏆 Hall of Fame — ${hof.length} inducted</div>
+    <div style="font-size:8px;color:var(--text-dim);margin-bottom:10px">Exceptional careers, inducted on retirement or in death. Missions are the spine; S-ranks, tournament titles, and Youth Cup pedigree add to the legend.</div>
     <div style="display:grid;gap:6px">${hof.map(e => `
-      <div style="border:1px solid #2e2a22;background:#0a0a0a;padding:7px 9px">
+      <div style="border:1px solid var(--border);background:var(--bg);padding:7px 9px">
         <div style="display:flex;align-items:center;gap:6px">
           <span style="font-size:11px">${e.how === 'fallen' ? '🕊' : '🏛'}</span>
-          <span style="font-size:10px;color:#e8e0cc;font-weight:bold;flex:1">${e.name}</span>
-          <span style="font-size:7px;color:#555">${RANKS[e.rankIndex] || ''} · Y${e.year}${e.how === 'fallen' ? ' · fell in service' : ''}</span>
+          <span style="font-size:10px;color:var(--text-hi);font-weight:bold;flex:1">${e.name}</span>
+          <span style="font-size:7px;color:var(--text-faint)">${RANKS[e.rankIndex] || ''} · Y${e.year}${e.how === 'fallen' ? ' · fell in service' : ''}</span>
         </div>
-        <div style="font-size:8px;color:#8a7d5c;margin-top:2px">${e.reason}</div>
+        <div style="font-size:8px;color:var(--text-mid);margin-top:2px">${e.reason}</div>
       </div>`).join('')}
     </div>
   </div>`
@@ -140,7 +140,7 @@ function _dynasty() {
   const year = G.year || 1
   const progress = dynastyProgress(year)
   const { grade, score, breakdown } = computeDynastyGrade(G)
-  const gradeColor = { S: '#c9a84c', A: '#87ceeb', B: '#8fbc8f', C: '#fa0', D: '#888' }[grade] || '#888'
+  const gradeColor = { S: 'var(--gold)', A: 'var(--blue)', B: 'var(--green)', C: 'var(--orange)', D: 'var(--text-dim)' }[grade] || 'var(--text-dim)'
   const bonuses = inheritedBonuses(grade)
   const canHandoff = year >= DYNASTY_YEARS && !!G.successorId
   const rows = [
@@ -181,15 +181,15 @@ function _dynasty() {
       }
     </div>
 
-    <div style="font-size:10px;color:#c9a84c;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Dynasty Records — ${G.vName}</div>
+    <div style="font-size:10px;color:var(--gold);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Dynasty Records — ${G.vName}</div>
     <div style="display:grid;gap:4px;margin-bottom:14px">
-      ${rows.map(r => `<div style="display:flex;justify-content:space-between;padding:5px 8px;background:#0a0a0a;border-radius:3px">
-        <span style="font-size:9px;color:#7a7060">${r.label}</span>
-        <span style="font-size:10px;color:#e8e0cc;font-weight:bold">${r.value}</span>
+      ${rows.map(r => `<div style="display:flex;justify-content:space-between;padding:5px 8px;background:var(--bg);border-radius:3px">
+        <span style="font-size:9px;color:var(--text-dim)">${r.label}</span>
+        <span style="font-size:10px;color:var(--text-hi);font-weight:bold">${r.value}</span>
       </div>`).join('')}
     </div>
-    ${upsets.length ? `<div style="font-size:9px;color:#f0a030;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">${tr("legacy.recordedUpsets")}</div>
-    ${upsets.map(u => `<div style="font-size:8px;color:#7a7060;padding:4px 8px;background:#0a0a0a;margin-bottom:3px;border-left:2px solid #f0a030">Year ${u.year}: ${u.desc}</div>`).join('')}` : ''}
+    ${upsets.length ? `<div style="font-size:9px;color:var(--orange);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">${tr("legacy.recordedUpsets")}</div>
+    ${upsets.map(u => `<div style="font-size:8px;color:var(--text-dim);padding:4px 8px;background:var(--bg);margin-bottom:3px;border-left:2px solid var(--orange)">Year ${u.year}: ${u.desc}</div>`).join('')}` : ''}
   </div>`
 }
 
@@ -211,34 +211,34 @@ function _successor() {
   const cur = curId ? (curType === 'shinobi' ? G.shinobi.find(x => x.id === curId) : G.staff?.find(x => x.id === curId)) : null
   const continuity = G.dynastyContinuityScore || 0
   return `<div>
-    <div style="font-size:9px;color:#7a7060;margin-bottom:10px">Designate a shinobi or staff member to carry your dynasty forward. They develop improved succession traits and contribute to dynasty continuity over time.</div>
-    ${cur ? `<div style="border:1px solid #8fbc8f;background:#040d06;padding:10px;margin-bottom:12px">
-      <div style="font-size:9px;color:#8fbc8f;font-weight:bold;margin-bottom:2px">${tr("legacy.currentSuccessor")}</div>
-      <div style="font-size:11px;color:#e8e0cc">${sn(cur)}</div>
-      <div style="font-size:8px;color:#7a7060;margin-top:3px">Continuity Score: ${continuity} · ${curType === 'shinobi' ? 'Shinobi' : 'Staff'}</div>
-      <button class="gb" onclick="designateSuccessor(null,null)" style="margin-top:8px;font-size:8px;border-color:#555;color:#555">${tr("legacy.clearDesignation")}</button>
-    </div>` : `<div style="font-size:9px;color:#555;margin-bottom:12px;padding:8px;background:#0a0a0a">No successor designated. Continuity score: ${continuity}</div>`}
-    <div style="font-size:9px;color:#c9a84c;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">${tr("legacy.designateFromShinobi")}</div>
+    <div style="font-size:9px;color:var(--text-dim);margin-bottom:10px">Designate a shinobi or staff member to carry your dynasty forward. They develop improved succession traits and contribute to dynasty continuity over time.</div>
+    ${cur ? `<div style="border:1px solid var(--green);background:#040d06;padding:10px;margin-bottom:12px">
+      <div style="font-size:9px;color:var(--green);font-weight:bold;margin-bottom:2px">${tr("legacy.currentSuccessor")}</div>
+      <div style="font-size:11px;color:var(--text-hi)">${sn(cur)}</div>
+      <div style="font-size:8px;color:var(--text-dim);margin-top:3px">Continuity Score: ${continuity} · ${curType === 'shinobi' ? 'Shinobi' : 'Staff'}</div>
+      <button class="gb" onclick="designateSuccessor(null,null)" style="margin-top:8px;font-size:8px;border-color:var(--text-faint);color:var(--text-faint)">${tr("legacy.clearDesignation")}</button>
+    </div>` : `<div style="font-size:9px;color:var(--text-faint);margin-bottom:12px;padding:8px;background:var(--bg)">No successor designated. Continuity score: ${continuity}</div>`}
+    <div style="font-size:9px;color:var(--gold);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">${tr("legacy.designateFromShinobi")}</div>
     <div style="display:grid;gap:4px;margin-bottom:12px">
       ${(G.shinobi || []).filter(s => s.ri >= 2 && s.status !== 'retired').slice(0, 8).map(s => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:#0a0a0a;border-radius:3px;${curId === s.id ? 'border:1px solid #8fbc8f' : ''}">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--bg);border-radius:3px;${curId === s.id ? 'border:1px solid var(--green)' : ''}">
           <div>
-            <span style="font-size:10px;color:#e8e0cc">${sn(s)}</span>
-            <span style="font-size:8px;color:#7a7060;margin-left:6px">${RANKS[s.ri]} · Age ${s.age}</span>
+            <span style="font-size:10px;color:var(--text-hi)">${sn(s)}</span>
+            <span style="font-size:8px;color:var(--text-dim);margin-left:6px">${RANKS[s.ri]} · Age ${s.age}</span>
           </div>
-          ${curId !== s.id ? `<button class="gb" onclick="designateSuccessor('${s.id}','shinobi')" style="font-size:8px">${tr("legacy.designate")}</button>` : '<span style="font-size:8px;color:#8fbc8f">★ Active</span>'}
-        </div>`).join('') || '<div style="color:#555;font-size:9px">${tr("legacy.noEligibleJonin")}</div>'}
+          ${curId !== s.id ? `<button class="gb" onclick="designateSuccessor('${s.id}','shinobi')" style="font-size:8px">${tr("legacy.designate")}</button>` : '<span style="font-size:8px;color:var(--green)">★ Active</span>'}
+        </div>`).join('') || '<div style="color:var(--text-faint);font-size:9px">${tr("legacy.noEligibleJonin")}</div>'}
     </div>
-    <div style="font-size:9px;color:#c9a84c;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">${tr("legacy.designateFromStaff")}</div>
+    <div style="font-size:9px;color:var(--gold);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">${tr("legacy.designateFromStaff")}</div>
     <div style="display:grid;gap:4px">
       ${(G.staff || []).filter(s => s.role !== 'doctor').slice(0, 5).map(s => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:#0a0a0a;border-radius:3px;${curId === s.id ? 'border:1px solid #8fbc8f' : ''}">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:var(--bg);border-radius:3px;${curId === s.id ? 'border:1px solid var(--green)' : ''}">
           <div>
-            <span style="font-size:10px;color:#e8e0cc">${s.fn} ${s.ln}</span>
-            <span style="font-size:8px;color:#7a7060;margin-left:6px">${s.role}</span>
+            <span style="font-size:10px;color:var(--text-hi)">${s.fn} ${s.ln}</span>
+            <span style="font-size:8px;color:var(--text-dim);margin-left:6px">${s.role}</span>
           </div>
-          ${curId !== s.id ? `<button class="gb" onclick="designateSuccessor('${s.id}','staff')" style="font-size:8px">${tr("legacy.designate")}</button>` : '<span style="font-size:8px;color:#8fbc8f">★ Active</span>'}
-        </div>`).join('') || '<div style="color:#555;font-size:9px">${tr("legacy.noStaff")}</div>'}
+          ${curId !== s.id ? `<button class="gb" onclick="designateSuccessor('${s.id}','staff')" style="font-size:8px">${tr("legacy.designate")}</button>` : '<span style="font-size:8px;color:var(--green)">★ Active</span>'}
+        </div>`).join('') || '<div style="color:var(--text-faint);font-size:9px">${tr("legacy.noStaff")}</div>'}
     </div>
   </div>`
 }
@@ -249,9 +249,9 @@ function _legacyReport() {
   // Pending legacy decision
   const dec = G.legacyDecisionPending
   if (dec) {
-    html += `<div style="border:1px solid #c9a84c;background:#0d0a04;padding:10px;margin-bottom:14px">
-      <div style="font-size:9px;color:#c9a84c;font-weight:bold;margin-bottom:4px">${dec.icon} Legacy Moment: ${dec.n}</div>
-      <div style="font-size:8px;color:#7a7060;margin-bottom:8px">${dec.desc}</div>
+    html += `<div style="border:1px solid var(--gold);background:var(--sunken);padding:10px;margin-bottom:14px">
+      <div style="font-size:9px;color:var(--gold);font-weight:bold;margin-bottom:4px">${dec.icon} Legacy Moment: ${dec.n}</div>
+      <div style="font-size:8px;color:var(--text-dim);margin-bottom:8px">${dec.desc}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${dec.choices.map(ch => `<button class="gb" onclick="resolveLegacyDecision('${dec.id}','${ch.id}')" style="font-size:8px">${ch.n}</button>`).join('')}
       </div>
@@ -259,15 +259,15 @@ function _legacyReport() {
   }
   // Legacy decision history
   if (G.legacyDecisionHistory?.length) {
-    html += `<div style="font-size:9px;color:#c9a84c;margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">${tr("legacy.pastDecisions")}</div>`
-    html += G.legacyDecisionHistory.slice().reverse().map(d => `<div style="font-size:8px;color:#7a7060;padding:5px 8px;background:#0a0a0a;margin-bottom:4px;border-left:2px solid #c9a84c">Year ${d.year}: ${d.decisionName} → ${d.choice}</div>`).join('')
+    html += `<div style="font-size:9px;color:var(--gold);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">${tr("legacy.pastDecisions")}</div>`
+    html += G.legacyDecisionHistory.slice().reverse().map(d => `<div style="font-size:8px;color:var(--text-dim);padding:5px 8px;background:var(--bg);margin-bottom:4px;border-left:2px solid var(--gold)">Year ${d.year}: ${d.decisionName} → ${d.choice}</div>`).join('')
     html += '<div style="margin-bottom:12px"></div>'
   }
   // Standard legacy report
   const gs = G.generationalSummary
   if (!gs) {
     const yearsLeft = 10 - (G.year - 1) % 10
-    return html + `<div style="color:#555;font-size:11px;padding:20px 0">Generational legacy report generates at year 10 (and every 10 years after). ${yearsLeft} year${yearsLeft !== 1 ? 's' : ''} remaining until first report.</div>`
+    return html + `<div style="color:var(--text-faint);font-size:11px;padding:20px 0">Generational legacy report generates at year 10 (and every 10 years after). ${yearsLeft} year${yearsLeft !== 1 ? 's' : ''} remaining until first report.</div>`
   }
   const cats = [
     { n: 'Development', score: gs.devScore, desc: 'Academy, hospital, training infrastructure.' },
@@ -275,21 +275,21 @@ function _legacyReport() {
     { n: 'Military', score: gs.milScore, desc: 'Exam wins, S-rank missions, top-tier shinobi.' },
     { n: 'Legacy', score: gs.legScore, desc: 'Hall of legends, legend score, chronicles.' },
   ]
-  const gradeColor = gs.grade === 'S' ? '#f66' : gs.grade === 'A' ? '#f0a030' : gs.grade === 'B' ? '#c9a84c' : gs.grade === 'C' ? '#8fbc8f' : '#555'
+  const gradeColor = gs.grade === 'S' ? 'var(--red)' : gs.grade === 'A' ? 'var(--orange)' : gs.grade === 'B' ? 'var(--gold)' : gs.grade === 'C' ? 'var(--green)' : 'var(--text-faint)'
   return html + `<div>
-    <div style="text-align:center;padding:16px 0;margin-bottom:12px;background:#0a0a0a;border:1px solid #2e2a22;border-radius:4px">
-      <div style="font-size:10px;color:#7a7060;margin-bottom:6px;text-transform:uppercase;letter-spacing:2px">Year ${gs.year} Legacy Grade</div>
+    <div style="text-align:center;padding:16px 0;margin-bottom:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px">
+      <div style="font-size:10px;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:2px">Year ${gs.year} Legacy Grade</div>
       <div style="font-size:48px;font-weight:bold;color:${gradeColor}">${gs.grade}</div>
-      <div style="font-size:11px;color:#7a7060">${gs.overall}/100</div>
+      <div style="font-size:11px;color:var(--text-dim)">${gs.overall}/100</div>
     </div>
     <div style="display:grid;gap:6px">
       ${cats.map(c => `<div class="ke-card">
         <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-          <span style="font-size:10px;color:#e8e0cc">${c.n}</span>
-          <span style="font-size:10px;color:#c9a84c;font-weight:bold">${c.score}/100</span>
+          <span style="font-size:10px;color:var(--text-hi)">${c.n}</span>
+          <span style="font-size:10px;color:var(--gold);font-weight:bold">${c.score}/100</span>
         </div>
         <div class="bar" style="margin-bottom:4px"><div class="fill" style="width:${c.score}%"></div></div>
-        <div style="font-size:8px;color:#555">${c.desc}</div>
+        <div style="font-size:8px;color:var(--text-faint)">${c.desc}</div>
       </div>`).join('')}
     </div>
   </div>`
@@ -352,23 +352,23 @@ function _records() {
   const years = Object.keys(stats).map(Number).sort((a, b) => b - a)
 
   if (years.length === 0) {
-    return `<div style="color:#7a7060;font-size:9px;padding:12px 0">No seasonal records yet. Records populate at the end of each year (December).</div>`
+    return `<div style="color:var(--text-dim);font-size:9px;padding:12px 0">No seasonal records yet. Records populate at the end of each year (December).</div>`
   }
 
   const draftHtml = G.draftOrder?.length
     ? `<div class="ke-card" style="margin-bottom:14px">
-        <div style="font-size:9px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">Draft Order — Year ${G.year}</div>
-        <div style="font-size:8px;color:#7a7060;margin-bottom:6px">Academy intake priority seeded by inverse standings. Your pick: <span style="color:#e8e0cc;font-weight:bold">#${G._draftPlayerPick || '?'}</span></div>
+        <div style="font-size:9px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:8px">Draft Order — Year ${G.year}</div>
+        <div style="font-size:8px;color:var(--text-dim);margin-bottom:6px">Academy intake priority seeded by inverse standings. Your pick: <span style="color:var(--text-hi);font-weight:bold">#${G._draftPlayerPick || '?'}</span></div>
         ${G.draftOrder.map((n, i) => {
           const isYou = n === G.vName
-          return `<div style="display:flex;gap:8px;align-items:center;padding:3px 0;border-bottom:1px solid #111">
-            <span style="font-size:10px;color:${isYou?'#c9a84c':'#444'};width:20px">#${i+1}</span>
-            <span style="font-size:9px;color:${isYou?'#e8e0cc':'#7a7060'}">${n}${isYou?' (you)':''}</span>
+          return `<div style="display:flex;gap:8px;align-items:center;padding:3px 0;border-bottom:1px solid var(--sunken)">
+            <span style="font-size:10px;color:${isYou?'var(--gold)':'var(--border-hi)'};width:20px">#${i+1}</span>
+            <span style="font-size:9px;color:${isYou?'var(--text-hi)':'var(--text-dim)'}">${n}${isYou?' (you)':''}</span>
           </div>`
         }).join('')}
         ${G.ryo >= 8000
           ? `<button class="gb gb-b" style="margin-top:8px;font-size:8px" onclick="sellDraftPick()">Sell pick #${G._draftPlayerPick} to rival (8k ryo)</button>`
-          : `<div style="font-size:8px;color:#555;margin-top:6px">Need 8k ryo to trade pick</div>`}
+          : `<div style="font-size:8px;color:var(--text-faint);margin-top:6px">Need 8k ryo to trade pick</div>`}
       </div>`
     : ''
 
@@ -378,12 +378,12 @@ function _records() {
     const ll = leagueLeaders(snap)
 
     const awardRows = Object.values(aw).filter(Boolean).map(a =>
-      `<div style="font-size:8px;padding:2px 0;border-bottom:1px solid #111"><span style="color:#c9a84c">${a.label}:</span> <span style="color:#e8e0cc">${a.name}</span> — <span style="color:#7a7060">${a.reason}</span></div>`
-    ).join('') || `<div style="font-size:8px;color:#555">${tr("legacy.noAwards")}</div>`
+      `<div style="font-size:8px;padding:2px 0;border-bottom:1px solid var(--sunken)"><span style="color:var(--gold)">${a.label}:</span> <span style="color:var(--text-hi)">${a.name}</span> — <span style="color:var(--text-dim)">${a.reason}</span></div>`
+    ).join('') || `<div style="font-size:8px;color:var(--text-faint)">${tr("legacy.noAwards")}</div>`
 
     const standHtml = snap.standings.slice(0, 5).map((r, i) => {
       const isYou = r.name === G.vName
-      return `<tr style="${isYou?'color:#c9a84c;font-weight:bold':'color:#7a7060'}">
+      return `<tr style="${isYou?'color:var(--gold);font-weight:bold':'color:var(--text-dim)'}">
         <td style="padding:2px 5px">${i+1}</td><td>${r.name}${isYou?' ★':''}</td>
         <td style="text-align:right;padding:2px 5px">${r.pts||0}pts</td>
         <td style="text-align:right;padding:2px 5px">${r.w||0}W/${r.l||0}L</td>
@@ -391,18 +391,18 @@ function _records() {
     }).join('')
 
     const leaderHtml = ll.topWins.slice(0, 3).map((p, i) =>
-      `<div style="font-size:8px;color:#7a7060;padding:1px 0">${i+1}. ${p.name} — ${p.winsThisSeason} wins</div>`
+      `<div style="font-size:8px;color:var(--text-dim);padding:1px 0">${i+1}. ${p.name} — ${p.winsThisSeason} wins</div>`
     ).join('')
 
     return `<div class="ke-card" style="margin-bottom:10px">
-      <div style="font-size:10px;color:#c9a84c;font-weight:bold;margin-bottom:8px">Year ${yr} · Prestige ${snap.prestige} · Standing #${snap.playerStanding}</div>
-      <div style="font-size:9px;color:#7a7060;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">${tr("legacy.standings")}</div>
+      <div style="font-size:10px;color:var(--gold);font-weight:bold;margin-bottom:8px">Year ${yr} · Prestige ${snap.prestige} · Standing #${snap.playerStanding}</div>
+      <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">${tr("legacy.standings")}</div>
       <table style="width:100%;border-collapse:collapse;font-size:9px;margin-bottom:10px">
         <tbody>${standHtml}</tbody>
       </table>
-      <div style="font-size:9px;color:#7a7060;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">${tr("legacy.winLeaders")}</div>
-      <div style="margin-bottom:10px">${leaderHtml || '<div style="font-size:8px;color:#555">${tr("legacy.noData")}</div>'}</div>
-      <div style="font-size:9px;color:#7a7060;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">${tr("legacy.awards")}</div>
+      <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">${tr("legacy.winLeaders")}</div>
+      <div style="margin-bottom:10px">${leaderHtml || '<div style="font-size:8px;color:var(--text-faint)">${tr("legacy.noData")}</div>'}</div>
+      <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">${tr("legacy.awards")}</div>
       <div>${awardRows}</div>
     </div>`
   }).join('')

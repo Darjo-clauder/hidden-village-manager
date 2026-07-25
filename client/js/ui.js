@@ -178,8 +178,13 @@ function _set(id, val) {
 
 // ── Nation theme applicator ──────────────────────────────────────────────────
 // Converts a nation accent hex to rgba for use as tinted backgrounds.
+// Returns null for anything that isn't a real hex — callers then leave the
+// stylesheet's own token in place instead of writing an invalid rgba(NaN,…),
+// which would poison every declaration that references the token.
+const DEFAULT_ACCENT_HEX = '#c9a84c'   // matches --gold in style.css
 function _hexAlpha(hex, a) {
-  const h = hex.replace('#', '')
+  const h = String(hex || '').trim().replace('#', '')
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return null
   const r = parseInt(h.slice(0,2), 16)
   const g = parseInt(h.slice(2,4), 16)
   const b = parseInt(h.slice(4,6), 16)
@@ -188,12 +193,15 @@ function _hexAlpha(hex, a) {
 
 function _applyNationTheme(nationId) {
   const ident   = nationIdentity(nationId || '')
-  const accent  = nationId ? ident.accent : '#c9a84c'   // default gold
+  // No nation picked → fall back to the literal gold hex, not the string
+  // "var(--gold)", so the derived tints below are computable.
+  const accent  = (nationId && ident.accent) || DEFAULT_ACCENT_HEX
   const root    = document.documentElement
+  const setTint = (name, value) => { if (value) root.style.setProperty(name, value) }
   root.style.setProperty('--accent',        accent)
-  root.style.setProperty('--accent-bg',     _hexAlpha(accent, 0.08))
-  root.style.setProperty('--accent-border', _hexAlpha(accent, 0.30))
-  root.style.setProperty('--accent-sb',     _hexAlpha(accent, 0.04))  // sidebar tint
+  setTint('--accent-bg',     _hexAlpha(accent, 0.08))
+  setTint('--accent-border', _hexAlpha(accent, 0.30))
+  setTint('--accent-sb',     _hexAlpha(accent, 0.04))  // sidebar tint
   // Village name + icon in sidebar
   const vn = document.getElementById('sb-vname'); if (vn) vn.style.color = accent
   const ic = document.getElementById('sb-icon');  if (ic) ic.style.color = accent

@@ -220,12 +220,12 @@ export function gradeShinobi(s) {
   if ((s.lossStreak || 0) >= 3) score -= 8
   score -= (s.fatigue || 0) * 0.25
   if (s.declineMod) score += s.declineMod * 25
-  if (score >= 82) return { label: 'S', color: '#c9a84c' }
-  if (score >= 66) return { label: 'A', color: '#8fbc8f' }
-  if (score >= 50) return { label: 'B', color: '#87ceeb' }
-  if (score >= 34) return { label: 'C', color: '#b0a88a' }
-  if (score >= 18) return { label: 'D', color: '#fa0' }
-  return { label: 'F', color: '#f44' }
+  if (score >= 82) return { label: 'S', color: 'var(--gold)' }
+  if (score >= 66) return { label: 'A', color: 'var(--green)' }
+  if (score >= 50) return { label: 'B', color: 'var(--blue)' }
+  if (score >= 34) return { label: 'C', color: 'var(--text)' }
+  if (score >= 18) return { label: 'D', color: 'var(--orange)' }
+  return { label: 'F', color: 'var(--red)' }
 }
 
 // ── Finance helpers ────────────────────────────────────────────────────────────

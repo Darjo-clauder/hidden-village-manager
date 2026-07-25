@@ -18,16 +18,16 @@ export function saveGameSlot(n) {
 
 function _saveSlotsCard() {
   const slots = listSlots()
-  return `<div style="background:var(--surface,#1a1814);border:1px solid var(--border);padding:10px 12px;margin-bottom:12px">
+  return `<div style="background:var(--surface,var(--surface));border:1px solid var(--border);padding:10px 12px;margin-bottom:12px">
     <div style="font-size:8px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">💾 Save Slots</div>
     ${slots.map(s => {
       const m = s.meta
       const when = m ? new Date(m.savedAt).toLocaleDateString() : null
       return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
         <span style="font-size:9px;color:var(--text-dim);width:14px">${s.n}</span>
-        <span style="flex:1;font-size:8px;color:${m ? '#e8e0cc' : '#555'}">${m ? `${m.vIcon || ''} ${m.vName} — Y${m.year} · ${m.prestige || 'D'}-tier · ${when}` : 'Empty slot'}</span>
+        <span style="flex:1;font-size:8px;color:${m ? 'var(--text-hi)' : 'var(--text-faint)'}">${m ? `${m.vIcon || ''} ${m.vName} — Y${m.year} · ${m.prestige || 'D'}-tier · ${when}` : 'Empty slot'}</span>
         <button class="gb" style="font-size:7px;padding:2px 7px" onclick="saveGameSlot(${s.n})">Save</button>
-        ${m ? `<button class="gb" style="font-size:7px;padding:2px 7px;border-color:#8fbc8f;color:#8fbc8f" onclick="if(confirm('Load slot ${s.n}? Unsaved progress is lost.'))restoreSlot(${s.n})">Load</button>` : ''}
+        ${m ? `<button class="gb" style="font-size:7px;padding:2px 7px;border-color:var(--green);color:var(--green)" onclick="if(confirm('Load slot ${s.n}? Unsaved progress is lost.'))restoreSlot(${s.n})">Load</button>` : ''}
       </div>`
     }).join('')}
   </div>`
@@ -39,11 +39,11 @@ function _populaceStrip() {
   if (sup == null) return ''
   const tier = supportTier(sup)
   const mult = revenueMult(sup)
-  return `<div title="Civilian support shifts gate revenue and can spark festivals or unrest" style="display:flex;align-items:center;gap:10px;background:var(--surface,#1a1814);border:1px solid var(--border);padding:7px 12px;margin-bottom:12px">
+  return `<div title="Civilian support shifts gate revenue and can spark festivals or unrest" style="display:flex;align-items:center;gap:10px;background:var(--surface,var(--surface));border:1px solid var(--border);padding:7px 12px;margin-bottom:12px">
     <span style="font-size:11px">🎏</span>
     <span style="font-size:9px;color:${tier.color};font-weight:bold">Populace: ${tier.label}</span>
-    <div style="flex:1;max-width:160px;background:#0d0d0d;height:5px;border-radius:3px;overflow:hidden"><div style="height:5px;width:${Math.round(sup)}%;background:${tier.color}"></div></div>
-    <span style="font-size:8px;color:#7a7060;margin-left:auto">Gate revenue ${mult > 1 ? '+' : ''}${Math.round((mult - 1) * 100)}%</span>
+    <div style="flex:1;max-width:160px;background:var(--bg);height:5px;border-radius:3px;overflow:hidden"><div style="height:5px;width:${Math.round(sup)}%;background:${tier.color}"></div></div>
+    <span style="font-size:8px;color:var(--text-dim);margin-left:auto">Gate revenue ${mult > 1 ? '+' : ''}${Math.round((mult - 1) * 100)}%</span>
   </div>`
 }
 
@@ -54,12 +54,12 @@ function _kageStrip() {
   const xpNext = xpForLevel(k.level)
   const xpPct = Math.min(100, Math.round((k.xp / xpNext) * 100))
   const path = k.path ? PATH_BY_ID[k.path] : null
-  return `<div onclick="sp('kagedev')" title="Open Warden Path" style="display:flex;align-items:center;gap:10px;background:var(--surface,#1a1814);border:1px solid var(--border);padding:7px 12px;margin-bottom:12px;cursor:pointer">
+  return `<div onclick="sp('kagedev')" title="Open Warden Path" style="display:flex;align-items:center;gap:10px;background:var(--surface,var(--surface));border:1px solid var(--border);padding:7px 12px;margin-bottom:12px;cursor:pointer">
     <span style="font-size:11px;color:var(--accent);font-weight:bold">${G.kName || 'Warden'}</span>
-    <span style="font-size:8px;color:#7a7060">Lvl ${k.level}${path ? ` · ${path.icon} ${path.n}` : ' · no path chosen'}</span>
-    <div style="flex:1;max-width:160px;background:#0d0d0d;height:5px;border-radius:3px;overflow:hidden"><div style="height:5px;width:${xpPct}%;background:var(--accent)"></div></div>
-    <span style="font-size:7px;color:#555;font-family:var(--font-num,'Courier New',monospace)">${k.xp}/${xpNext} XP</span>
-    ${k.points > 0 ? `<span style="font-size:8px;color:#8fbc8f;margin-left:auto">● ${k.points} point${k.points !== 1 ? 's' : ''} to spend ▸</span>` : '<span style="font-size:8px;color:#3a3630;margin-left:auto">Warden Path ▸</span>'}
+    <span style="font-size:8px;color:var(--text-dim)">Lvl ${k.level}${path ? ` · ${path.icon} ${path.n}` : ' · no path chosen'}</span>
+    <div style="flex:1;max-width:160px;background:var(--bg);height:5px;border-radius:3px;overflow:hidden"><div style="height:5px;width:${xpPct}%;background:var(--accent)"></div></div>
+    <span style="font-size:7px;color:var(--text-faint);font-family:var(--font-num,'Courier New',monospace)">${k.xp}/${xpNext} XP</span>
+    ${k.points > 0 ? `<span style="font-size:8px;color:var(--green);margin-left:auto">● ${k.points} point${k.points !== 1 ? 's' : ''} to spend ▸</span>` : '<span style="font-size:8px;color:var(--border-hi);margin-left:auto">Warden Path ▸</span>'}
   </div>`
 }
 
@@ -187,12 +187,12 @@ export function rDash() {
 
     <!-- Tactics quick-bar -->
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-      <span style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-right:2px">${t('dash.stance')}</span>
-      ${[['aggressive','⚔','#c9a84c','suc +8% kia +4%'],['balanced','⚖','#8fbc8f','default'],['defensive','🛡','#87ceeb','suc −6% kia −3%']].map(([id,icon,col,hint]) =>
-        `<button onclick="setMissionPrep('${id}')" style="font-size:8px;padding:3px 10px;cursor:pointer;border:1px solid ${G.missionPrep===id ? col : '#3a3630'};background:${G.missionPrep===id ? col+'22' : 'transparent'};color:${G.missionPrep===id ? col : '#7a7060'}">${icon} ${id.charAt(0).toUpperCase()+id.slice(1)}<span style="font-size:7px;color:#555;margin-left:4px">${hint}</span></button>`
+      <span style="font-size:7px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-right:2px">${t('dash.stance')}</span>
+      ${[['aggressive','⚔','var(--gold)','suc +8% kia +4%'],['balanced','⚖','var(--green)','default'],['defensive','🛡','var(--blue)','suc −6% kia −3%']].map(([id,icon,col,hint]) =>
+        `<button onclick="setMissionPrep('${id}')" style="font-size:8px;padding:3px 10px;cursor:pointer;border:1px solid ${G.missionPrep===id ? col : 'var(--border-hi)'};background:${G.missionPrep===id ? col+'22' : 'transparent'};color:${G.missionPrep===id ? col : 'var(--text-dim)'}">${icon} ${id.charAt(0).toUpperCase()+id.slice(1)}<span style="font-size:7px;color:var(--text-faint);margin-left:4px">${hint}</span></button>`
       ).join('')}
-      ${G.citizenMorale !== undefined ? `<span style="font-size:8px;color:#7a7060;margin-left:8px">Citizens <b style="color:${G.citizenMorale>=70?'#8fbc8f':G.citizenMorale>=40?'#fa0':'#f66'}">${G.citizenMorale}%</b></span>` : ''}
-      ${G.isOffSeason ? `<span style="font-size:8px;color:#c9a84c;margin-left:8px">⛄ Off-season</span>` : ''}
+      ${G.citizenMorale !== undefined ? `<span style="font-size:8px;color:var(--text-dim);margin-left:8px">Citizens <b style="color:${G.citizenMorale>=70?'var(--green)':G.citizenMorale>=40?'var(--orange)':'var(--red)'}">${G.citizenMorale}%</b></span>` : ''}
+      ${G.isOffSeason ? `<span style="font-size:8px;color:var(--gold);margin-left:8px">⛄ Off-season</span>` : ''}
     </div>
 
     <!-- Health snapshot -->
@@ -247,7 +247,7 @@ export function rDash() {
 
       <div class="dash-card">
         <div class="dash-card-title">${t('card.social')}</div>
-        <div class="dash-stat" style="color:${(G.citizenMorale||60)>=70?'var(--green)':(G.citizenMorale||60)>=40?'var(--gold)':'var(--red)'}">${G.citizenMorale || 60}<span style="font-size:9px;color:#555">%</span></div>
+        <div class="dash-stat" style="color:${(G.citizenMorale||60)>=70?'var(--green)':(G.citizenMorale||60)>=40?'var(--gold)':'var(--red)'}">${G.citizenMorale || 60}<span style="font-size:9px;color:var(--text-faint)">%</span></div>
         <div class="dash-stat-sub">Citizens · Rev ×${((G._citizenRevMult||1)).toFixed(2)}</div>
         <div class="dash-stat-sub" style="margin-top:3px">Alumni: ${(G.alumni||[]).length} · Sponsor: ${G.sponsorship ? G.sponsorship.n.slice(0,12) : 'none'}</div>
       </div>
@@ -307,10 +307,10 @@ export function rDash() {
 
     <!-- First-run onboarding guide -->
     ${(!G._onboardingDismissed && G.year === 1 && G.month <= 4) ? `
-    <div style="background:#0a1208;border:1px solid #2a4020;padding:14px">
+    <div style="background:#0a1208;border:1px solid var(--green-bg);padding:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-size:7px;letter-spacing:2px;color:#8fbc8f;text-transform:uppercase">Getting Started</div>
-        <button onclick="dismissOnboarding()" style="font-size:7px;padding:2px 8px;background:transparent;color:#5a7050;border:1px solid #2a4020;cursor:pointer">Dismiss</button>
+        <div style="font-size:7px;letter-spacing:2px;color:var(--green);text-transform:uppercase">Getting Started</div>
+        <button onclick="dismissOnboarding()" style="font-size:7px;padding:2px 8px;background:transparent;color:#5a7050;border:1px solid var(--green-bg);cursor:pointer">Dismiss</button>
       </div>
       <div style="font-size:9px;color:#7a9070;margin-bottom:10px">Your village is young. Here are the key actions for your first few months:</div>
       <div style="display:grid;gap:6px">
@@ -323,12 +323,12 @@ export function rDash() {
           { done: (G.lifetimeMissions||0) >= 3, label: 'Mind your runway — you start at a deficit', tab: 'finances', hint: 'A young village spends more than its tax base earns. Run missions for ryo (or release a scout in Staff) before the treasury runs dry.' },
         ].map(item => `
           <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #1a2818">
-            <div style="font-size:10px;color:${item.done?'#8fbc8f':'#3a5030'};min-width:14px;margin-top:1px">${item.done?'✓':'○'}</div>
+            <div style="font-size:10px;color:${item.done?'var(--green)':'#3a5030'};min-width:14px;margin-top:1px">${item.done?'✓':'○'}</div>
             <div style="flex:1">
               <div style="font-size:9px;color:${item.done?'#5a7050':'#c9c0a8'};text-decoration:${item.done?'line-through':'none'}">${item.label}</div>
               ${!item.done ? `<div style="font-size:7px;color:#4a5a40;margin-top:2px">${item.hint}</div>` : ''}
             </div>
-            ${!item.done ? `<button onclick="sp('${item.tab}')" style="font-size:7px;padding:2px 6px;background:#0d1a0a;color:#8fbc8f;border:1px solid #2a4020;cursor:pointer;white-space:nowrap">Open ▸</button>` : ''}
+            ${!item.done ? `<button onclick="sp('${item.tab}')" style="font-size:7px;padding:2px 6px;background:#0d1a0a;color:var(--green);border:1px solid var(--green-bg);cursor:pointer;white-space:nowrap">Open ▸</button>` : ''}
           </div>`).join('')}
       </div>
     </div>` : ''}

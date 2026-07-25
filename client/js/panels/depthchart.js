@@ -57,11 +57,11 @@ export function rDep() {
     <div class="pt">${tr("nav.depth")}</div>
 
     ${(criticalGaps + warnGaps > 0) ? `
-    <div style="margin-bottom:12px;padding:9px 12px;background:${criticalGaps > 0 ? '#1a0505' : '#1a1305'};border:1px solid ${criticalGaps > 0 ? '#8b1a1a' : '#5a4800'}">
-      <div style="font-size:9px;color:${criticalGaps > 0 ? '#f66' : '#f0a030'};margin-bottom:4px">${criticalGaps > 0 ? '⚠ Critical gaps detected' : '⚠ Depth gaps detected'}</div>
-      ${gaps.map(g => `<div style="font-size:8px;color:${g.severity === 'critical' ? '#f99' : g.severity === 'emergency' ? '#f66' : '#f0a030'};margin-top:2px">
+    <div style="margin-bottom:12px;padding:9px 12px;background:${criticalGaps > 0 ? 'var(--red-bg)' : '#1a1305'};border:1px solid ${criticalGaps > 0 ? 'var(--red)' : '#5a4800'}">
+      <div style="font-size:9px;color:${criticalGaps > 0 ? 'var(--red)' : 'var(--orange)'};margin-bottom:4px">${criticalGaps > 0 ? '⚠ Critical gaps detected' : '⚠ Depth gaps detected'}</div>
+      ${gaps.map(g => `<div style="font-size:8px;color:${g.severity === 'critical' ? 'var(--red-soft)' : g.severity === 'emergency' ? 'var(--red)' : 'var(--orange)'};margin-top:2px">
         ${g.squadName} — ${g.roleName}: ${g.reason}
-        ${g.nearGradIds?.length ? `<button onclick="emergencyCallUp('${g.nearGradIds[0]}')" style="margin-left:8px;background:#1a2e1a;border:1px solid #4a7a4a;color:#8fbc8f;font-size:7px;padding:1px 5px;cursor:pointer">Call Up ►</button>` : ''}
+        ${g.nearGradIds?.length ? `<button onclick="emergencyCallUp('${g.nearGradIds[0]}')" style="margin-left:8px;background:var(--green-bg);border:1px solid var(--green-hi);color:var(--green);font-size:7px;padding:1px 5px;cursor:pointer">Call Up ►</button>` : ''}
       </div>`).join('')}
     </div>` : ''}
 
@@ -129,7 +129,7 @@ function _squadDepthTable(sq) {
           const gap = (G.depthGaps || []).find(g => g.squadId === sq.id && g.roleId === role.id)
           const activeId = resolveActiveShinobi(sq.id, role.id)
           const promotionRule = slot.promotionRule || 'auto'
-          const ruleColor = { auto:'#87ceeb', seniority:'#c9a84c', power:'#f0a030', manual:'#888' }[promotionRule]
+          const ruleColor = { auto:'var(--blue)', seniority:'var(--gold)', power:'var(--orange)', manual:'var(--text-dim)' }[promotionRule]
           return `
             <div style="border:1px solid ${gap?.severity === 'critical' ? 'var(--red)' : gap?.severity === 'warn' ? 'var(--orange)' : 'var(--border)'};padding:7px;min-height:120px">
               <div style="font-size:8px;color:${role.color};font-weight:bold;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center">

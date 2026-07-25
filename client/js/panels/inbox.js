@@ -359,10 +359,10 @@ function buildItems() {
         : `resolvePressConference('${tone.id}')`,
     }))
     const calloutNote = availTones.some(t => t.id === 'callout') && calloutVillage
-      ? `<div style="font-size:7px;color:#f0a030;margin-top:4px">Callout target: <b>${calloutVillage}</b></div>`
+      ? `<div style="font-size:7px;color:var(--orange);margin-top:4px">Callout target: <b>${calloutVillage}</b></div>`
       : ''
     const followUpHtml = p.followUp
-      ? `<div style="margin-top:8px;font-size:8px;color:#7a7060;border-left:2px solid #3a3630;padding-left:8px;font-style:italic">Follow-up: "${p.followUp}"</div>`
+      ? `<div style="margin-top:8px;font-size:8px;color:var(--text-dim);border-left:2px solid var(--border-hi);padding-left:8px;font-style:italic">Follow-up: "${p.followUp}"</div>`
       : ''
     items.push({
       id:       'press_' + p.id,
@@ -374,8 +374,8 @@ function buildItems() {
                   const jr = JOURNALIST_BY_ID[p.journalistId]
                   const rel = getJournalistRel(G.journalistRel, p.journalistId)
                   const tier = journalistTier(rel)
-                  const byline = jr ? `<div style="font-size:7px;color:#7a7060;margin-bottom:4px">📰 <b style="color:#e8e0cc">${jr.name}</b> · ${jr.outlet} <span style="color:${tier.color}">(${tier.label})</span> — ${jr.frame}:</div>` : ''
-                  return byline + (p.intro ? `<span style="color:#7a7060">${p.intro}</span><br><br>` : '') +
+                  const byline = jr ? `<div style="font-size:7px;color:var(--text-dim);margin-bottom:4px">📰 <b style="color:var(--text-hi)">${jr.name}</b> · ${jr.outlet} <span style="color:${tier.color}">(${tier.label})</span> — ${jr.frame}:</div>` : ''
+                  return byline + (p.intro ? `<span style="color:var(--text-dim)">${p.intro}</span><br><br>` : '') +
                     `<em>"${p.question}"</em>${followUpHtml}${calloutNote}<br>Choose your response:`
                 })(),
       actions:  pressActions,
@@ -395,48 +395,48 @@ function buildItems() {
     // ── Mission complication ────────────────────────────────────────────
     if (n.type === 'complication') {
       const opts = (n.options || []).map(o => ({ label: o.label + (o.riskMod ? (o.riskMod > 0 ? ' ⚠' : ' ✓') : ''), fn: `resolveComplication('${n.id}','${o.id}')` }))
-      items.push({ id: 'comp_' + n.id, priority: 'urgent', cat: 'Missions', icon: '⚔', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: opts, archived: false })
+      items.push({ id: 'comp_' + n.id, priority: 'urgent', cat: 'Missions', icon: '⚔', title: n.title, desc: `<span style="color:var(--text-mid);font-style:italic">${n.body}</span><br><span style="font-size:7px;color:var(--text-faint)">Y${n.year}·M${n.month}</span>`, actions: opts, archived: false })
       return
     }
     // ── Rival prospect bid ──────────────────────────────────────────────
     if (n.type === 'rival_bid') {
-      items.push({ id: 'rvb_' + n.id, priority: 'urgent', cat: 'Academy', icon: '🏹', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'Block their approach', fn: `resolveRivalOffer('${n.id}',false)` }, { label: 'Let them sign', fn: `resolveRivalOffer('${n.id}',true)` }], archived: false })
+      items.push({ id: 'rvb_' + n.id, priority: 'urgent', cat: 'Academy', icon: '🏹', title: n.title, desc: `<span style="color:var(--text-mid);font-style:italic">${n.body}</span><br><span style="font-size:7px;color:var(--text-faint)">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'Block their approach', fn: `resolveRivalOffer('${n.id}',false)` }, { label: 'Let them sign', fn: `resolveRivalOffer('${n.id}',true)` }], archived: false })
       return
     }
     // ── Trade offer ────────────────────────────────────────────────────
     if (n.type === 'trade_offer') {
-      items.push({ id: 'trd_' + n.id, priority: 'standard', cat: 'Transfers', icon: '📜', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: [{ label: '✓ Accept trade', fn: `resolveRivalOffer('${n.id}',true)` }, { label: '✗ Decline', fn: `resolveRivalOffer('${n.id}',false)` }], archived: false })
+      items.push({ id: 'trd_' + n.id, priority: 'standard', cat: 'Transfers', icon: '📜', title: n.title, desc: `<span style="color:var(--text-mid);font-style:italic">${n.body}</span><br><span style="font-size:7px;color:var(--text-faint)">Y${n.year}·M${n.month}</span>`, actions: [{ label: '✓ Accept trade', fn: `resolveRivalOffer('${n.id}',true)` }, { label: '✗ Decline', fn: `resolveRivalOffer('${n.id}',false)` }], archived: false })
       return
     }
     // ── Alumni message ──────────────────────────────────────────────────
     if (n.type === 'alumni') {
-      items.push({ id: 'al_' + n.id, priority: 'info', cat: 'People', icon: '🎖', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'Dismiss', fn: `dismissNarrative('${n.id}')` }], archived: false })
+      items.push({ id: 'al_' + n.id, priority: 'info', cat: 'People', icon: '🎖', title: n.title, desc: `<span style="color:var(--text-mid);font-style:italic">${n.body}</span><br><span style="font-size:7px;color:var(--text-faint)">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'Dismiss', fn: `dismissNarrative('${n.id}')` }], archived: false })
       return
     }
     // ── Civic event ─────────────────────────────────────────────────────
     if (n.type === 'civic') {
-      items.push({ id: 'cv_' + n.id, priority: 'standard', cat: 'Village', icon: '🏘', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'Dismiss', fn: `dismissNarrative('${n.id}')` }], archived: false })
+      items.push({ id: 'cv_' + n.id, priority: 'standard', cat: 'Village', icon: '🏘', title: n.title, desc: `<span style="color:var(--text-mid);font-style:italic">${n.body}</span><br><span style="font-size:7px;color:var(--text-faint)">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'Dismiss', fn: `dismissNarrative('${n.id}')` }], archived: false })
       return
     }
     // ── Sponsor offer ───────────────────────────────────────────────────
     if (n.type === 'sponsor_offer') {
-      items.push({ id: 'sp_' + n.id, priority: 'standard', cat: 'Finances', icon: '💰', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'View in Finances →', fn: `sp('economy')` }, { label: 'Dismiss', fn: `dismissNarrative('${n.id}')` }], archived: false })
+      items.push({ id: 'sp_' + n.id, priority: 'standard', cat: 'Finances', icon: '💰', title: n.title, desc: `<span style="color:var(--text-mid);font-style:italic">${n.body}</span><br><span style="font-size:7px;color:var(--text-faint)">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'View in Finances →', fn: `sp('economy')` }, { label: 'Dismiss', fn: `dismissNarrative('${n.id}')` }], archived: false })
       return
     }
     // ── Rumor mill ─────────────────────────────────────────────────────
     if (n.type === 'rumor') {
-      items.push({ id: 'rm_' + n.id, priority: 'info', cat: 'Intel', icon: '🕵', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'Dismiss', fn: `dismissNarrative('${n.id}')` }], archived: false })
+      items.push({ id: 'rm_' + n.id, priority: 'info', cat: 'Intel', icon: '🕵', title: n.title, desc: `<span style="color:var(--text-mid);font-style:italic">${n.body}</span><br><span style="font-size:7px;color:var(--text-faint)">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'Dismiss', fn: `dismissNarrative('${n.id}')` }], archived: false })
       return
     }
     // ── Intel report / training camp ───────────────────────────────────
     if (n.type === 'intel_report') {
-      items.push({ id: 'ir_' + n.id, priority: 'standard', cat: 'Intel', icon: '📊', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'View Roster', fn: `sp('roster')` }, { label: 'Dismiss', fn: `dismissNarrative('${n.id}')` }], archived: false })
+      items.push({ id: 'ir_' + n.id, priority: 'standard', cat: 'Intel', icon: '📊', title: n.title, desc: `<span style="color:var(--text-mid);font-style:italic">${n.body}</span><br><span style="font-size:7px;color:var(--text-faint)">Y${n.year}·M${n.month}</span>`, actions: [{ label: 'View Roster', fn: `sp('roster')` }, { label: 'Dismiss', fn: `dismissNarrative('${n.id}')` }], archived: false })
       return
     }
     // ── Monthly quick decision ──────────────────────────────────────────
     if (n.type === 'quick_decision') {
       const opts = (n.options || []).map(o => ({ label: o.label, fn: `resolveQuickDecision('${n.eventId}','${o.id}')` }))
-      items.push({ id: 'qd_' + n.id, priority: 'urgent', cat: 'Village', icon: '⚡', title: n.title, desc: `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`, actions: opts, archived: false })
+      items.push({ id: 'qd_' + n.id, priority: 'urgent', cat: 'Village', icon: '⚡', title: n.title, desc: `<span style="color:var(--text-mid);font-style:italic">${n.body}</span><br><span style="font-size:7px;color:var(--text-faint)">Y${n.year}·M${n.month}</span>`, actions: opts, archived: false })
       return
     }
     const icon = TAG_ICONS[n.tag] ?? TAG_ICONS.default
@@ -450,7 +450,7 @@ function buildItems() {
       cat,
       icon,
       title:    n.title,
-      desc:     `<span style="color:#aaa;font-style:italic">${n.body}</span><br><span style="font-size:7px;color:#555">Y${n.year}·M${n.month}</span>`,
+      desc:     `<span style="color:var(--text-mid);font-style:italic">${n.body}</span><br><span style="font-size:7px;color:var(--text-faint)">Y${n.year}·M${n.month}</span>`,
       actions,
       archived: false,
     })
@@ -512,7 +512,7 @@ export function rInbox() {
           ${c === 'all' ? tr('inbox.filter.all', { n: filtered.length }) : c}
         </button>
       `).join('')}
-      ${infoToDismiss > 0 ? `<button onclick="dismissAllInfo()" style="margin-left:auto;font-size:7px;padding:3px 8px;border:1px solid #3a3630;color:#7a7060;background:transparent;cursor:pointer">${tr('inbox.dismissInfo', { n: infoToDismiss })}</button>` : ''}
+      ${infoToDismiss > 0 ? `<button onclick="dismissAllInfo()" style="margin-left:auto;font-size:7px;padding:3px 8px;border:1px solid var(--border-hi);color:var(--text-dim);background:transparent;cursor:pointer">${tr('inbox.dismissInfo', { n: infoToDismiss })}</button>` : ''}
     </div>
 
     ${urgentCount > 0 ? `
@@ -548,10 +548,10 @@ export function rInbox() {
 // ── Thread state metadata ─────────────────────────────────────────────────────
 // Colors are static; labels resolve through the string table at render time (see usage).
 const THREAD_STATE_META = {
-  open:       { labelKey: 'thread.state.open',       color: '#87ceeb' },
-  escalating: { labelKey: 'thread.state.escalating', color: '#f0a030' },
-  resolved:   { labelKey: 'thread.state.resolved',   color: '#8fbc8f' },
-  tragedy:    { labelKey: 'thread.state.tragedy',    color: '#f66' },
+  open:       { labelKey: 'thread.state.open',       color: 'var(--blue)' },
+  escalating: { labelKey: 'thread.state.escalating', color: 'var(--orange)' },
+  resolved:   { labelKey: 'thread.state.resolved',   color: 'var(--green)' },
+  tragedy:    { labelKey: 'thread.state.tragedy',    color: 'var(--red)' },
 }
 const THREAD_TYPE_ICONS = {
   grudge: '⚡', bond: '🤝', rivalry: '⚔', redemption: '✨',
@@ -575,27 +575,27 @@ function renderThreadsPanel(threads) {
 
     const eventLines = expanded
       ? linkedBlurbs.map(n => `
-          <div style="padding:5px 8px;border-left:2px solid #2a2a2a;margin-bottom:4px">
-            <div style="font-size:8px;color:#b0a88a">${n.title}</div>
-            <div style="font-size:8px;color:#7a7060;margin-top:2px">${n.body}</div>
-            <div style="font-size:7px;color:#3a3630;margin-top:1px">Y${n.year}·M${n.month}</div>
+          <div style="padding:5px 8px;border-left:2px solid var(--surface-3);margin-bottom:4px">
+            <div style="font-size:8px;color:var(--text)">${n.title}</div>
+            <div style="font-size:8px;color:var(--text-dim);margin-top:2px">${n.body}</div>
+            <div style="font-size:7px;color:var(--border-hi);margin-top:1px">Y${n.year}·M${n.month}</div>
           </div>`).join('')
       : ''
 
-    return `<div style="border:1px solid #2a2a2a;border-left:3px solid ${meta.color};padding:10px 12px;margin-bottom:8px;background:#111">
+    return `<div style="border:1px solid var(--surface-3);border-left:3px solid ${meta.color};padding:10px 12px;margin-bottom:8px;background:var(--sunken)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
         <div style="display:flex;align-items:center;gap:6px">
           <span style="font-size:13px">${icon}</span>
-          <span style="font-size:9px;color:#e8e0cc;font-weight:bold">${t.title}</span>
+          <span style="font-size:9px;color:var(--text-hi);font-weight:bold">${t.title}</span>
         </div>
         <span style="font-size:7px;color:${meta.color};text-transform:uppercase;letter-spacing:1px;padding:2px 6px;border:1px solid ${meta.color}44">${tr(meta.labelKey)}</span>
       </div>
-      <div style="display:flex;gap:12px;font-size:8px;color:#7a7060;margin-bottom:6px">
+      <div style="display:flex;gap:12px;font-size:8px;color:var(--text-dim);margin-bottom:6px">
         <span>${t.events.length} event${t.events.length !== 1 ? 's' : ''}</span>
         <span>Since Y${t.openedYear}·M${t.openedMonth}</span>
         <span style="text-transform:capitalize">${t.type.replace('_', ' ')}</span>
       </div>
-      ${latestBlurb && !expanded ? `<div style="font-size:8px;color:#7a7060;font-style:italic;margin-bottom:6px">${latestBlurb.body}</div>` : ''}
+      ${latestBlurb && !expanded ? `<div style="font-size:8px;color:var(--text-dim);font-style:italic;margin-bottom:6px">${latestBlurb.body}</div>` : ''}
       ${expanded ? eventLines : ''}
       ${linkedBlurbs.length > 1 ? `
         <button class="gb" style="font-size:7px;padding:2px 8px;margin-top:4px" onclick="toggleThread('${t.id}')">

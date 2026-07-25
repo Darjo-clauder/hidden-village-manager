@@ -56,22 +56,22 @@ function _prestigeProjectsHtml() {
     const prog = build ? buildProgress(build) : 0
     const startable = canStartProject(p.id, G.ryo, completed, builds.map(b => b.id))
     const status = done
-      ? `<span style="color:#8fbc8f;font-size:8px">✓ Complete</span>`
+      ? `<span style="color:var(--green);font-size:8px">✓ Complete</span>`
       : build
-        ? `<span style="font-size:8px;color:#c9a84c">Building ${Math.round(prog * 100)}%</span>`
+        ? `<span style="font-size:8px;color:var(--gold)">Building ${Math.round(prog * 100)}%</span>`
         : `<button class="gb" onclick="startPrestigeProject('${p.id}')" ${startable ? '' : 'disabled'} style="font-size:8px">Commission · ${fmt(p.cost)}</button>`
-    return `<div style="border:1px solid ${done ? '#3a5a3a' : '#2e2a22'};background:#0a0a0a;padding:8px 10px;margin-bottom:6px">
+    return `<div style="border:1px solid ${done ? '#3a5a3a' : 'var(--border)'};background:var(--bg);padding:8px 10px;margin-bottom:6px">
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:16px">${p.icon}</span>
-        <div style="flex:1"><div style="font-size:10px;color:#e8e0cc">${p.name}</div><div style="font-size:7px;color:#7a7060">${p.desc} · ${Math.round(p.buildMonths / 12 * 10) / 10}yr build</div></div>
+        <div style="flex:1"><div style="font-size:10px;color:var(--text-hi)">${p.name}</div><div style="font-size:7px;color:var(--text-dim)">${p.desc} · ${Math.round(p.buildMonths / 12 * 10) / 10}yr build</div></div>
         ${status}
       </div>
-      ${build ? `<div style="height:3px;background:#111;margin-top:6px;border-radius:2px;overflow:hidden"><div style="width:${prog * 100}%;height:100%;background:#c9a84c"></div></div>` : ''}
+      ${build ? `<div style="height:3px;background:var(--sunken);margin-top:6px;border-radius:2px;overflow:hidden"><div style="width:${prog * 100}%;height:100%;background:var(--gold)"></div></div>` : ''}
     </div>`
   }).join('')
   return `<div style="margin-top:16px">
-    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:6px">🗿 Prestige Projects</div>
-    <div style="font-size:7px;color:#7a7060;margin-bottom:8px">Multi-year monuments. A heavy ryo cost buys lasting prestige — legend, morale, defense — not more money. The dynasty's mark on the world.</div>
+    <div style="font-size:8px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">🗿 Prestige Projects</div>
+    <div style="font-size:7px;color:var(--text-dim);margin-bottom:8px">Multi-year monuments. A heavy ryo cost buys lasting prestige — legend, morale, defense — not more money. The dynasty's mark on the world.</div>
     ${rows}
     ${_festivalHtml()}
   </div>`
@@ -84,10 +84,10 @@ function _festivalHtml() {
   const cost = festivalCost(held)
   const rw = festivalReward()
   const canHold = (G.ryo || 0) >= cost
-  return `<div style="border:1px solid #2e2a22;background:#0a0a0a;padding:8px 10px;margin-top:10px">
+  return `<div style="border:1px solid var(--border);background:var(--bg);padding:8px 10px;margin-top:10px">
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:16px">🎆</span>
-      <div style="flex:1"><div style="font-size:10px;color:#e8e0cc">Grand Festival</div><div style="font-size:7px;color:#7a7060">A lavish village-wide festival — +${rw.legend} legend, +${rw.morale} morale now. ${held ? `Held ${held}× · each costs more.` : 'Repeatable; cost rises each time.'}</div></div>
+      <div style="flex:1"><div style="font-size:10px;color:var(--text-hi)">Grand Festival</div><div style="font-size:7px;color:var(--text-dim)">A lavish village-wide festival — +${rw.legend} legend, +${rw.morale} morale now. ${held ? `Held ${held}× · each costs more.` : 'Repeatable; cost rises each time.'}</div></div>
       <button class="gb" onclick="holdFestival()" ${canHold ? '' : 'disabled'} style="font-size:8px">Hold · ${fmt(cost)}</button>
     </div>
   </div>`
@@ -130,25 +130,25 @@ export function rUp() {
 
   const def = _defenseRating()
   const maint = _monthlyMaintenance()
-  const defColor = def.total >= 50 ? '#8fbc8f' : def.total >= 25 ? '#c9a84c' : def.total > 0 ? '#fa0' : '#f66'
+  const defColor = def.total >= 50 ? 'var(--green)' : def.total >= 25 ? 'var(--gold)' : def.total > 0 ? 'var(--orange)' : 'var(--red)'
   const summaryHtml = `
-    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:10px 13px;background:var(--surface,#1a1814);border:1px solid var(--border,#2e2a22)">
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:10px 13px;background:var(--surface,var(--surface));border:1px solid var(--border,var(--border))">
       <div>
-        <div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px">${t("upgrades.defenseRating")}</div>
+        <div style="font-size:7px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("upgrades.defenseRating")}</div>
         <div style="font-size:16px;color:${defColor};font-family:'Courier New',monospace">${def.total}</div>
-        <div style="font-size:7px;color:#7a7060;margin-top:2px">Walls +${def.wall} · Seals +${def.seal}${def.temp ? ` · Temp +${def.temp}` : ''}${def.doc ? ` · Doctrine ${def.doc > 0 ? '+' : ''}${def.doc}` : ''}${def.proj ? ` · Monuments +${def.proj}` : ''}</div>
+        <div style="font-size:7px;color:var(--text-dim);margin-top:2px">Walls +${def.wall} · Seals +${def.seal}${def.temp ? ` · Temp +${def.temp}` : ''}${def.doc ? ` · Doctrine ${def.doc > 0 ? '+' : ''}${def.doc}` : ''}${def.proj ? ` · Monuments +${def.proj}` : ''}</div>
       </div>
       <div>
-        <div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px">${t("upgrades.upkeep")}</div>
-        <div style="font-size:16px;color:#f66;font-family:'Courier New',monospace">-${fmt(maint)}</div>
-        <div style="font-size:7px;color:#7a7060;margin-top:2px">${t("upgrades.maintNote")}</div>
+        <div style="font-size:7px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("upgrades.upkeep")}</div>
+        <div style="font-size:16px;color:var(--red);font-family:'Courier New',monospace">-${fmt(maint)}</div>
+        <div style="font-size:7px;color:var(--text-dim);margin-top:2px">${t("upgrades.maintNote")}</div>
       </div>
       <div>
-        <div style="font-size:7px;color:#555;text-transform:uppercase;letter-spacing:1px">${t("upgrades.districts")}</div>
-        <div style="font-size:16px;color:#87ceeb;font-family:'Courier New',monospace">${builtCount}</div>
-        <div style="font-size:7px;color:#7a7060;margin-top:2px">${building ? `⚒ ${building.id} (${building.buildMonthsLeft}mo)` : 'None under construction'}</div>
+        <div style="font-size:7px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("upgrades.districts")}</div>
+        <div style="font-size:16px;color:var(--blue);font-family:'Courier New',monospace">${builtCount}</div>
+        <div style="font-size:7px;color:var(--text-dim);margin-top:2px">${building ? `⚒ ${building.id} (${building.buildMonthsLeft}mo)` : 'None under construction'}</div>
       </div>
-      <div style="margin-left:auto;align-self:center;max-width:200px;font-size:7px;color:#7a7060;text-align:right">
+      <div style="margin-left:auto;align-self:center;max-width:200px;font-size:7px;color:var(--text-dim);text-align:right">
         Defense reduces raid losses. Every building level adds monthly upkeep — weigh the payoff against your net income.
       </div>
     </div>`
@@ -193,8 +193,8 @@ export function rUp() {
     UPGRADES_DEF.map(u => {
       const lv = G.upgrades[u.id] || 0, maxed = lv >= u.levels.length - 1
       const upkeep = (BUILDING_MAINTENANCE[u.id] || 400) * lv
-      const upkeepTag = lv > 0 ? `<span style="font-size:7px;color:#f66;float:right">-${fmt(upkeep)}/mo</span>` : ''
-      return `<div class="card"><div style="font-size:11px;color:#e8e0cc;font-weight:bold;margin-bottom:2px">${u.n}${upkeepTag}</div><div class="upg-lv">Level ${lv}/${u.levels.length - 1}: ${u.levels[lv]}</div>${maxed ? '<div style="font-size:8px;color:#8fbc8f">✓ Fully Upgraded</div>' : `<div style="font-size:8px;color:#7a7060;margin-bottom:5px">Next: ${u.levels[lv + 1]} — ${fmt(u.cost[lv + 1])} ryo · +${fmt(BUILDING_MAINTENANCE[u.id] || 400)}/mo upkeep</div><button class="gb gb-g" onclick="buyUp('${u.id}')" ${G.ryo < u.cost[lv + 1] ? 'disabled' : ''}>Upgrade ► ${fmt(u.cost[lv + 1])} ryo</button>`}</div>`
+      const upkeepTag = lv > 0 ? `<span style="font-size:7px;color:var(--red);float:right">-${fmt(upkeep)}/mo</span>` : ''
+      return `<div class="card"><div style="font-size:11px;color:var(--text-hi);font-weight:bold;margin-bottom:2px">${u.n}${upkeepTag}</div><div class="upg-lv">Level ${lv}/${u.levels.length - 1}: ${u.levels[lv]}</div>${maxed ? '<div style="font-size:8px;color:var(--green)">✓ Fully Upgraded</div>' : `<div style="font-size:8px;color:var(--text-dim);margin-bottom:5px">Next: ${u.levels[lv + 1]} — ${fmt(u.cost[lv + 1])} ryo · +${fmt(BUILDING_MAINTENANCE[u.id] || 400)}/mo upkeep</div><button class="gb gb-g" onclick="buyUp('${u.id}')" ${G.ryo < u.cost[lv + 1] ? 'disabled' : ''}>Upgrade ► ${fmt(u.cost[lv + 1])} ryo</button>`}</div>`
     }).join('') + districtHtml + _prestigeProjectsHtml()
 }
 

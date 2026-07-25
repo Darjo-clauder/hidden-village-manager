@@ -139,7 +139,7 @@ export function initSocket(name, kageName, icon, serverUrl = '') {
     setRelLocal(fromId, 'war')
     aL(t('toast.socket.warDeclared', { icon: fromIcon, name: fromName }), 'bad')
     showDip('⚠ War Declaration',
-      esc(fromIcon) + ' <b style="color:#e8e0cc">' + esc(fromName) + '</b> has declared war on your village! Expect raids.',
+      esc(fromIcon) + ' <b style="color:var(--text-hi)">' + esc(fromName) + '</b> has declared war on your village! Expect raids.',
       null, null)
     rWo()
   })
@@ -149,7 +149,7 @@ export function initSocket(name, kageName, icon, serverUrl = '') {
     aL(t('toast.socket.allianceProposesAL', { icon: fromIcon, name: fromName }), 'ev')
     ntf(t('toast.socket.allianceProposal', { name: fromName }))
     showDip('Alliance Proposal',
-      esc(fromIcon) + ' <b style="color:#e8e0cc">' + esc(fromName) + '</b> proposes a military alliance.',
+      esc(fromIcon) + ' <b style="color:var(--text-hi)">' + esc(fromName) + '</b> proposes a military alliance.',
       () => respondAlliance(fromId, true), () => respondAlliance(fromId, false))
     rWo()
   })
@@ -210,7 +210,7 @@ export function initSocket(name, kageName, icon, serverUrl = '') {
         res.won ? 'Raid Repelled!' : '⚠ Village Raided!',
         res.won
           ? esc(res.fromIcon) + ' <b>' + esc(res.fromName) + '</b> attacked but was repelled. (Roll: ' + res.defRoll + ' vs ' + res.atkRoll + ')'
-          : esc(res.fromIcon) + ' <b>' + esc(res.fromName) + '</b> raided your village and stole <b style="color:#f66">' + fmt(res.ryoStolen) + ' ryo</b>. (Roll: ' + res.atkRoll + ' vs ' + res.defRoll + ')',
+          : esc(res.fromIcon) + ' <b>' + esc(res.fromName) + '</b> raided your village and stole <b style="color:var(--red)">' + fmt(res.ryoStolen) + ' ryo</b>. (Roll: ' + res.atkRoll + ' vs ' + res.defRoll + ')',
         null, null
       )
     }
@@ -337,18 +337,18 @@ function _renderServerBrowser(list) {
   if (!el) return
 
   if (!list.length) {
-    el.innerHTML = '<div style="color:#7a7060;font-size:9px;padding:10px">No public rooms found.</div>'
+    el.innerHTML = '<div style="color:var(--text-dim);font-size:9px;padding:10px">No public rooms found.</div>'
     return
   }
 
   el.innerHTML = list.map(r => `
-    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1a150a">
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--gold-bg)">
       <span style="font-size:18px">${esc(r.hostIcon)}</span>
       <div style="flex:1;min-width:0">
-        <div style="font-size:10px;color:#e8e0cc">${esc(r.hostName)}</div>
-        <div style="font-size:8px;color:#7a7060">${esc(r.playerCount)}/${esc(r.maxPlayers)} players · Turn ${esc(r.turnNumber)} · Auto-ready: ${esc(r.autoReadyTimeout)}m</div>
+        <div style="font-size:10px;color:var(--text-hi)">${esc(r.hostName)}</div>
+        <div style="font-size:8px;color:var(--text-dim)">${esc(r.playerCount)}/${esc(r.maxPlayers)} players · Turn ${esc(r.turnNumber)} · Auto-ready: ${esc(r.autoReadyTimeout)}m</div>
       </div>
-      <div style="font-size:8px;color:#c9a84c;font-family:monospace">${esc(r.code)}</div>
+      <div style="font-size:8px;color:var(--gold);font-family:monospace">${esc(r.code)}</div>
       <button class="gb" style="font-size:9px" onclick="joinRoomByCode('${r.code}')">Join ▸</button>
     </div>
   `).join('')
@@ -361,13 +361,13 @@ function _showTurnResolution(turnNumber, worldEvents) {
   if (!ov) return
 
   const evHtml = (worldEvents || []).map(e =>
-    `<div style="padding:4px 0;border-bottom:1px solid #1a150a;font-size:9px;color:#e8e0cc">${esc(e.text)}</div>`
-  ).join('') || '<div style="font-size:9px;color:#7a7060">No world events this turn.</div>'
+    `<div style="padding:4px 0;border-bottom:1px solid var(--gold-bg);font-size:9px;color:var(--text-hi)">${esc(e.text)}</div>`
+  ).join('') || '<div style="font-size:9px;color:var(--text-dim)">No world events this turn.</div>'
 
   const body = ov.querySelector('#ov-tr-body')
   if (body) body.innerHTML = `
-    <div style="font-size:10px;color:#c9a84c;margin-bottom:8px">Turn ${turnNumber - 1} Complete</div>
-    <div style="font-size:9px;color:#7a7060;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">World Events</div>
+    <div style="font-size:10px;color:var(--gold);margin-bottom:8px">Turn ${turnNumber - 1} Complete</div>
+    <div style="font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">World Events</div>
     ${evHtml}
   `
   ov.classList.add('open')

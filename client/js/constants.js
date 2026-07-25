@@ -245,11 +245,11 @@ export const WORLD_CHOICE_EVENTS=[
 
 // ── Injury system ─────────────────────────────────────────────────────────────
 export const INJURY_TYPES = [
-  { id:'muscle',   n:'Muscle Strain',        minMo:1, maxMo:1, statLoss:false, trauma:false, color:'#fa0',  desc:'Strained muscle tissue. Short rest required.' },
-  { id:'chakra',   n:'Chakra Exhaustion',    minMo:1, maxMo:2, statLoss:false, trauma:false, color:'#87ceeb', desc:'Overloaded chakra pathways. Jutsu impossible until healed.' },
-  { id:'bone',     n:'Bone Fracture',        minMo:2, maxMo:3, statLoss:false, trauma:false, color:'#f99',  desc:'Clean fracture requiring full rest and immobilisation.' },
-  { id:'severe',   n:'Severe Wound',         minMo:3, maxMo:6, statLoss:true,  trauma:false, color:'#f44',  desc:'Life-threatening injuries. Risk of permanent stat loss on return.' },
-  { id:'trauma',   n:'Psychological Trauma', minMo:2, maxMo:6, statLoss:false, trauma:true,  color:'#cc7fb8', desc:'The mind carries wounds the body cannot show.' },
+  { id:'muscle',   n:'Muscle Strain',        minMo:1, maxMo:1, statLoss:false, trauma:false, color:'var(--orange)',  desc:'Strained muscle tissue. Short rest required.' },
+  { id:'chakra',   n:'Chakra Exhaustion',    minMo:1, maxMo:2, statLoss:false, trauma:false, color:'var(--blue)', desc:'Overloaded chakra pathways. Jutsu impossible until healed.' },
+  { id:'bone',     n:'Bone Fracture',        minMo:2, maxMo:3, statLoss:false, trauma:false, color:'var(--red-soft)',  desc:'Clean fracture requiring full rest and immobilisation.' },
+  { id:'severe',   n:'Severe Wound',         minMo:3, maxMo:6, statLoss:true,  trauma:false, color:'var(--red)',  desc:'Life-threatening injuries. Risk of permanent stat loss on return.' },
+  { id:'trauma',   n:'Psychological Trauma', minMo:2, maxMo:6, statLoss:false, trauma:true,  color:'var(--purple)', desc:'The mind carries wounds the body cannot show.' },
 ]
 // Base injury chance by mission rank (even on success)
 export const RANK_INJ_CHANCE = { D:0.02, C:0.05, B:0.10, A:0.18, S:0.28 }
@@ -280,11 +280,11 @@ export const STAFF_ROLES = [
 
 // ── Finance system ─────────────────────────────────────────────────────────────
 export const FINANCE_TIERS = [
-  { n:'Thriving',    minNet: 5000,    color:'#c9a84c', morale: 5,  desc:'Treasury overflows. Morale soars, trade flourishes.' },
-  { n:'Stable',      minNet: 0,       color:'#8fbc8f', morale: 0,  desc:'Income meets expenditure. Village operates normally.' },
-  { n:'Strained',    minNet: -5000,   color:'#f0a030', morale:-3,  desc:'Spending outpaces income. Staff grow restless.' },
-  { n:'Crisis',      minNet: -15000,  color:'#f99',    morale:-8,  desc:'Deficit spiraling. Trade routes threatened, staff may leave.' },
-  { n:'Bankruptcy',  minNet: -Infinity, color:'#f66',  morale:-15, desc:'Treasury collapsed. Shinobi deserting. Village on the brink.' },
+  { n:'Thriving',    minNet: 5000,    color:'var(--gold)', morale: 5,  desc:'Treasury overflows. Morale soars, trade flourishes.' },
+  { n:'Stable',      minNet: 0,       color:'var(--green)', morale: 0,  desc:'Income meets expenditure. Village operates normally.' },
+  { n:'Strained',    minNet: -5000,   color:'var(--orange)', morale:-3,  desc:'Spending outpaces income. Staff grow restless.' },
+  { n:'Crisis',      minNet: -15000,  color:'var(--red-soft)',    morale:-8,  desc:'Deficit spiraling. Trade routes threatened, staff may leave.' },
+  { n:'Bankruptcy',  minNet: -Infinity, color:'var(--red)',  morale:-15, desc:'Treasury collapsed. Shinobi deserting. Village on the brink.' },
 ]
 export const FINANCIAL_EVENTS = [
   { id:'daimyo_withdraw', n:'Daimyo Withdrawal',   desc:'The daimyo has withdrawn his monthly stipend without warning.', ryo:-15000, rep:-5,  morale:-3 },
@@ -327,11 +327,11 @@ export const REGION_EVENTS = [
 
 // ── Squad role system ─────────────────────────────────────────────────────────
 export const SQUAD_ROLES = [
-  { id:'vanguard', n:'Vanguard',  icon:'⚔',  color:'#f66',       primaryStat:'taijutsu', secondaryStat:'speed',        missionBonus:0.04, desc:'Lead attacker. Boosts physical assault missions.' },
+  { id:'vanguard', n:'Vanguard',  icon:'⚔',  color:'var(--red)',       primaryStat:'taijutsu', secondaryStat:'speed',        missionBonus:0.04, desc:'Lead attacker. Boosts physical assault missions.' },
   { id:'support',  n:'Support',   icon:'🛡',  color:'#4a88c0',    primaryStat:'ninjutsu', secondaryStat:'chakra',       missionBonus:0.04, desc:'Mission anchor. Boosts jutsu-heavy and escort ops.' },
-  { id:'intel',    n:'Intel',     icon:'🌑',  color:'#9cf',       primaryStat:'stealth',  secondaryStat:'intelligence', riskReduction:0.04, desc:'Reduces mission risk. Strong on recon and infiltration.' },
-  { id:'medical',  n:'Medical',   icon:'💊',  color:'#8fbc8f',    primaryStat:'chakra',   secondaryStat:'intelligence', injReduction:0.5,  desc:'Reduces injury rate and duration on mission.' },
-  { id:'flex',     n:'Flex',      icon:'⚖',  color:'#c9a84c',    primaryStat:null,       secondaryStat:null,           desc:'No role bonus. Contributes raw power only.' },
+  { id:'intel',    n:'Intel',     icon:'🌑',  color:'var(--blue-hi)',       primaryStat:'stealth',  secondaryStat:'intelligence', riskReduction:0.04, desc:'Reduces mission risk. Strong on recon and infiltration.' },
+  { id:'medical',  n:'Medical',   icon:'💊',  color:'var(--green)',    primaryStat:'chakra',   secondaryStat:'intelligence', injReduction:0.5,  desc:'Reduces injury rate and duration on mission.' },
+  { id:'flex',     n:'Flex',      icon:'⚖',  color:'var(--gold)',    primaryStat:null,       secondaryStat:null,           desc:'No role bonus. Contributes raw power only.' },
 ]
 
 // ── Hidden development curve archetypes (youth academy) ──────────────────────
@@ -436,19 +436,19 @@ export const TRANSFER_WINDOWS = [
 
 // ── Transfer market categories ─────────────────────────────────────────────────
 export const TRANSFER_CATS = [
-  { id:'free_agent',        n:'Free Agent',         icon:'🌐', color:'#8fbc8f', loyaltyBonus:0,   dipRisk:0,  desc:'Unaffiliated — no fee negotiation required.' },
-  { id:'village_listed',    n:'Village Transfer',   icon:'🏯', color:'#c9a84c', loyaltyBonus:-3,  dipRisk:0,  desc:'Listed by their village — negotiation required.' },
-  { id:'missing_nin',       n:'Missing-Nin',        icon:'💀', color:'#f66',    loyaltyBonus:-10, dipRisk:15, desc:'High stats, low loyalty, diplomatic risk.' },
-  { id:'retired_return',    n:'Retired Return',     icon:'🎌', color:'#87ceeb', loyaltyBonus:8,   dipRisk:0,  desc:'Known quantity — high loyalty, lower ceiling.' },
-  { id:'foreign_specialist',n:'Foreign Specialist', icon:'⭐', color:'#cc7fb8', loyaltyBonus:-2,  dipRisk:5,  desc:'Unique stat profiles not seen domestically.' },
+  { id:'free_agent',        n:'Free Agent',         icon:'🌐', color:'var(--green)', loyaltyBonus:0,   dipRisk:0,  desc:'Unaffiliated — no fee negotiation required.' },
+  { id:'village_listed',    n:'Village Transfer',   icon:'🏯', color:'var(--gold)', loyaltyBonus:-3,  dipRisk:0,  desc:'Listed by their village — negotiation required.' },
+  { id:'missing_nin',       n:'Missing-Nin',        icon:'💀', color:'var(--red)',    loyaltyBonus:-10, dipRisk:15, desc:'High stats, low loyalty, diplomatic risk.' },
+  { id:'retired_return',    n:'Retired Return',     icon:'🎌', color:'var(--blue)', loyaltyBonus:8,   dipRisk:0,  desc:'Known quantity — high loyalty, lower ceiling.' },
+  { id:'foreign_specialist',n:'Foreign Specialist', icon:'⭐', color:'var(--purple)', loyaltyBonus:-2,  dipRisk:5,  desc:'Unique stat profiles not seen domestically.' },
 ]
 
 // ── Bingo Book presence tiers ─────────────────────────────────────────────────
 export const BINGO_TIERS = [
-  { presence:0, n:'Unknown',   icon:'◯', assasRisk:0,    prestigeBonus:0,  color:'#555' },
-  { presence:1, n:'Listed',    icon:'●', assasRisk:0.03, prestigeBonus:2,  color:'#c9a84c' },
-  { presence:2, n:'Featured',  icon:'◉', assasRisk:0.06, prestigeBonus:5,  color:'#f0a030' },
-  { presence:3, n:'Legendary', icon:'★', assasRisk:0.10, prestigeBonus:10, color:'#f66' },
+  { presence:0, n:'Unknown',   icon:'◯', assasRisk:0,    prestigeBonus:0,  color:'var(--text-faint)' },
+  { presence:1, n:'Listed',    icon:'●', assasRisk:0.03, prestigeBonus:2,  color:'var(--gold)' },
+  { presence:2, n:'Featured',  icon:'◉', assasRisk:0.06, prestigeBonus:5,  color:'var(--orange)' },
+  { presence:3, n:'Legendary', icon:'★', assasRisk:0.10, prestigeBonus:10, color:'var(--red)' },
 ]
 
 // ── Transfer agents (intermediaries for A-rank+ shinobi) ─────────────────────
@@ -556,11 +556,11 @@ export const RUMOR_TEMPLATES = [
 
 // ── Village prestige tiers (D→S by legend score) ─────────────────────────────
 export const PRESTIGE_TIERS = [
-  { id:'D', min:0,   n:'D — Village Unknown',   color:'#777',    staffTier:0, scoutSlots:1, examHostEligible:false },
-  { id:'C', min:50,  n:'C — Rising Village',    color:'#8fbc8f', staffTier:1, scoutSlots:2, examHostEligible:true  },
-  { id:'B', min:150, n:'B — Established Power', color:'#c9a84c', staffTier:2, scoutSlots:3, examHostEligible:true  },
-  { id:'A', min:300, n:'A — Regional Power',    color:'#f0a030', staffTier:3, scoutSlots:5, examHostEligible:true  },
-  { id:'S', min:500, n:'S — Legendary Village', color:'#f66',    staffTier:4, scoutSlots:5, examHostEligible:true  },
+  { id:'D', min:0,   n:'D — Village Unknown',   color:'var(--text-dim)',    staffTier:0, scoutSlots:1, examHostEligible:false },
+  { id:'C', min:50,  n:'C — Rising Village',    color:'var(--green)', staffTier:1, scoutSlots:2, examHostEligible:true  },
+  { id:'B', min:150, n:'B — Established Power', color:'var(--gold)', staffTier:2, scoutSlots:3, examHostEligible:true  },
+  { id:'A', min:300, n:'A — Regional Power',    color:'var(--orange)', staffTier:3, scoutSlots:5, examHostEligible:true  },
+  { id:'S', min:500, n:'S — Legendary Village', color:'var(--red)',    staffTier:4, scoutSlots:5, examHostEligible:true  },
 ]
 
 // ── Shadow operation types ──────────────────────────────────────────────────────
