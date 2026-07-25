@@ -11,41 +11,83 @@
 html,body{height:100%;overflow:hidden}
 body{
   font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
-  background:#0b0d14;
-  color:#c8c0b0;
-  font-size:12px;
+  background:var(--bg);
+  color:var(--text);
+  font-size:var(--fs-body);
   line-height:1.45;
 }
 
-/* ── Design tokens ───────────────────────────────────────────────────────── */
+/* ── Design tokens — "ink & parchment" ───────────────────────────────────────
+   Grounds are warm ink-black (never blue-grey); text is parchment/bone; the
+   accent pair is gold leaf for value and seal vermilion for urgency. Every
+   panel colour resolves to a token here — no raw hex in panel code — so the
+   whole game can be re-themed from this block alone.                        */
 :root{
-  --bg:        #0b0d14;
-  --surface:   #111318;
-  --surface-2: #161820;
-  --surface-3: #1c1f2a;
-  --border:    #222633;
-  --border-dim:#1a1d28;
-  --text:      #c8c0b0;
-  --text-dim:  #5a6278;
-  --text-mid:  #8890a8;
-  --text-hi:   #e6e0d4;
+  /* Grounds — warm blacks, each step a lifted layer of ink */
+  --bg:        #0a0908;
+  --surface:   #12100e;
+  --surface-2: #191613;
+  --surface-3: #211d19;
+  --sunken:    #070605;
+  --border:    #2a2521;
+  --border-dim:#1c1917;
+  --border-hi: #3a332c;
+
+  /* Ink on parchment — warm, never grey */
+  --text:      #c4b9a3;
+  --text-hi:   #ded3bd;
+  --text-mid:  #9a9080;
+  --text-dim:  #7a7060;
+  --text-faint:#544c42;
+
+  /* Gold leaf — value, currency, headings */
   --gold:      #c9a84c;
   --gold-2:    #a88030;
+  --gold-hi:   #e8d5a3;
   --gold-bg:   rgba(201,168,76,.08);
+
+  /* Seal vermilion — urgency, danger, the "hot" accent */
+  --seal:      #c8432f;
+  --seal-hi:   #e35d45;
+  --seal-bg:   rgba(200,67,47,.10);
+
   /* Nation accent — overridden per-nation by JS, defaults to gold */
   --accent:        #c9a84c;
   --accent-bg:     rgba(201,168,76,.08);
   --accent-border: rgba(201,168,76,.30);
   --accent-sb:     rgba(201,168,76,.04);
-  --orange:    #d46030;
-  --orange-bg: rgba(212,96,48,.10);
-  --green:     #5aaa68;
-  --green-bg:  rgba(90,170,104,.10);
-  --red:       #c84848;
-  --red-bg:    rgba(200,72,72,.10);
-  --blue:      #4a88c0;
-  --blue-bg:   rgba(74,136,192,.10);
-  --purple:    #9870c0;
+
+  /* Semantic status — muted to sit on ink, not glow off it */
+  --green:     #7d9c62;
+  --green-hi:  #9cb87e;
+  --green-bg:  rgba(125,156,98,.10);
+  --red:       #c8432f;
+  --red-soft:  #d97b68;
+  --red-bg:    rgba(200,67,47,.10);
+  --orange:    #d4883a;
+  --orange-hi: #e8a55c;
+  --orange-bg: rgba(212,136,58,.10);
+  --blue:      #6b93b0;
+  --blue-hi:   #8fb4cd;
+  --blue-bg:   rgba(107,147,176,.10);
+  --purple:    #a2789e;
+
+  /* Type scale — replaces ad-hoc 6-22px sizing */
+  --fs-micro:  9px;
+  --fs-small:  10px;
+  --fs-body:   12px;
+  --fs-lead:   14px;
+  --fs-head:   18px;
+  --fs-display:24px;
+  --ls-caps:   .14em;
+
+  /* Spacing rhythm */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+
   --sidebar-w: 188px;
   --topbar-h:  44px;
   --ticker-h:  20px;
