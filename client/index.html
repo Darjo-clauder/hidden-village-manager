@@ -11,8 +11,8 @@
     <div class="tk">忍の里</div>
     <div class="ts">Shinobi Management Simulation — Multiplayer</div>
     <button class="bstart" onclick="showLobby()">Play Online ↗</button>
-    <button class="bstart" style="margin-top:8px;background:transparent;border:1px solid var(--border);color:var(--text-dim);font-size:10px" onclick="showSetup()">Solo / New Village</button>
-    <div style="margin-top:16px;font-size:7px;color:var(--border);letter-spacing:4px">BEASTS · ECONOMY · DIPLOMACY · ONLINE</div>
+    <button class="bstart" style="margin-top:8px;background:transparent;border:1px solid var(--border);color:var(--text-dim);font-size:var(--fs-body)" onclick="showSetup()">Solo / New Village</button>
+    <div style="margin-top:16px;font-size:var(--fs-micro);color:var(--border);letter-spacing:4px">BEASTS · ECONOMY · DIPLOMACY · ONLINE</div>
   </div>
 </div>
 
@@ -23,52 +23,52 @@
     <div class="ts" style="margin-bottom:20px">Create or join a room to play</div>
 
     <div style="border:1px solid var(--border);padding:14px;margin-bottom:10px">
-      <div style="font-size:8px;color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Server</div>
-      <input id="sl-server-url" class="sp-input" placeholder="Leave blank for the default server" style="width:100%;font-size:9px" spellcheck="false" autocomplete="off">
-      <div style="font-size:8px;color:var(--text-dim);margin-top:5px">Blank uses the built-in host. Enter an address (e.g. http://192.168.1.5:3000) to join a friend's or self-hosted server.</div>
+      <div style="font-size:var(--fs-small);color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Server</div>
+      <input id="sl-server-url" class="sp-input" placeholder="Leave blank for the default server" style="width:100%;font-size:var(--fs-body)" spellcheck="false" autocomplete="off">
+      <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:5px">Blank uses the built-in host. Enter an address (e.g. http://192.168.1.5:3000) to join a friend's or self-hosted server.</div>
     </div>
 
     <div style="border:1px solid var(--border);padding:14px;margin-bottom:10px">
-      <div style="font-size:8px;color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Create Room</div>
+      <div style="font-size:var(--fs-small);color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Create Room</div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px">
-        <label style="display:flex;align-items:center;gap:5px;font-size:9px;color:var(--text)">
+        <label style="display:flex;align-items:center;gap:5px;font-size:var(--fs-body);color:var(--text)">
           <input type="checkbox" id="sl-create-private" checked> Private
         </label>
         <div style="display:flex;align-items:center;gap:5px">
-          <span style="font-size:8px;color:var(--text-dim)">Max players:</span>
-          <select id="sl-create-max" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:9px;padding:3px 5px">
+          <span style="font-size:var(--fs-small);color:var(--text-dim)">Max players:</span>
+          <select id="sl-create-max" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:var(--fs-body);padding:3px 5px">
             <option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
           </select>
         </div>
         <div style="display:flex;align-items:center;gap:5px">
-          <span style="font-size:8px;color:var(--text-dim)">Auto-ready:</span>
-          <select id="sl-create-timeout" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:9px;padding:3px 5px">
+          <span style="font-size:var(--fs-small);color:var(--text-dim)">Auto-ready:</span>
+          <select id="sl-create-timeout" style="background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:var(--fs-body);padding:3px 5px">
             <option value="5">5 min</option><option value="10">10 min</option><option value="15" selected>15 min</option><option value="30">30 min</option>
           </select>
         </div>
       </div>
-      <button class="bstart" style="width:100%;font-size:10px" onclick="createRoomFlow()">Create Room ↗</button>
+      <button class="bstart" style="width:100%;font-size:var(--fs-body)" onclick="createRoomFlow()">Create Room ↗</button>
     </div>
 
     <div style="border:1px solid var(--border);padding:14px;margin-bottom:10px">
-      <div style="font-size:8px;color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Join by Code</div>
+      <div style="font-size:var(--fs-small);color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Join by Code</div>
       <div style="display:flex;gap:7px">
         <input id="sl-join-code" class="sp-input" placeholder="LEAF42" maxlength="6" style="flex:1;text-transform:uppercase;font-family:monospace;letter-spacing:5px">
         <button class="gb" style="margin-top:0" onclick="joinRoomFlow()">Join ▸</button>
       </div>
-      <div id="lob-join-error" style="font-size:8px;color:var(--red);margin-top:5px"></div>
+      <div id="lob-join-error" style="font-size:var(--fs-small);color:var(--red);margin-top:5px"></div>
     </div>
 
     <div style="border:1px solid var(--border);padding:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-size:8px;color:var(--gold);text-transform:uppercase;letter-spacing:2px">Public Rooms</div>
-        <button class="gb" style="font-size:7px;margin-top:0;padding:3px 8px" onclick="browseRooms()">Refresh ↺</button>
+        <div style="font-size:var(--fs-small);color:var(--gold);text-transform:uppercase;letter-spacing:2px">Public Rooms</div>
+        <button class="gb" style="font-size:var(--fs-micro);margin-top:0;padding:3px 8px" onclick="browseRooms()">Refresh ↺</button>
       </div>
-      <div id="sl-browser-list"><div style="color:var(--text-dim);font-size:9px">Click Refresh to load public rooms.</div></div>
+      <div id="sl-browser-list"><div style="color:var(--text-dim);font-size:var(--fs-body)">Click Refresh to load public rooms.</div></div>
     </div>
 
     <div style="margin-top:12px;text-align:center">
-      <button style="background:none;border:none;color:var(--text-dim);font-size:8px;cursor:pointer;letter-spacing:1px;font-family:'Courier New',monospace" onclick="showSetup()">New village (solo) ▸</button>
+      <button style="background:none;border:none;color:var(--text-dim);font-size:var(--fs-small);cursor:pointer;letter-spacing:1px;font-family:'Courier New',monospace" onclick="showSetup()">New village (solo) ▸</button>
     </div>
   </div>
 </div>
@@ -142,10 +142,10 @@
       <div class="tb-morale" title="Village Morale">
         <span class="tb-morale-label">Morale</span>
         <div class="tb-morale-bar"><div class="tb-morale-fill" id="tb-morale-fill" style="width:75%"></div></div>
-        <span style="font-size:9px;color:var(--text-dim)" id="tb-morale-val">75</span>
+        <span style="font-size:var(--fs-body);color:var(--text-dim)" id="tb-morale-val">75</span>
       </div>
       <div class="tb-morale" style="gap:5px" id="tb-ready-status" title="Room ready status" style="display:none">
-        <span style="font-size:8px;color:var(--text-dim)" id="tb-ready-txt"></span>
+        <span style="font-size:var(--fs-small);color:var(--text-dim)" id="tb-ready-txt"></span>
       </div>
       <button class="ab ct-ready" onclick="continueTurn()" id="btn-end-turn">End Turn ▸</button>
     </div>
@@ -164,7 +164,7 @@
       <nav class="sb-nav">
 
         <!-- INBOX (special — always expanded, top of nav) -->
-        <button class="nb" onclick="sp('inbox')" id="nv-inbox" style="padding:8px 10px 8px 14px;font-size:9px;border-bottom:1px solid var(--border-dim);margin-bottom:4px">
+        <button class="nb" onclick="sp('inbox')" id="nv-inbox" style="padding:8px 10px 8px 14px;font-size:var(--fs-body);border-bottom:1px solid var(--border-dim);margin-bottom:4px">
           <span data-i18n="nav.inbox">📬 Inbox</span>
           <span class="nb-badge" id="inbox-badge" style="display:none">0</span>
         </button>
@@ -348,13 +348,13 @@
         <div id="p-missions" style="display:none">
           <div class="pt" data-i18n="panel.missions">Missions</div>
           <div id="wce-banner" style="display:none;background:var(--blue-bg);border:1px solid var(--blue);padding:9px 11px;margin-bottom:12px;cursor:pointer" onclick="openWorldChoice()">
-            <div style="font-size:8px;color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px">⚡ World Event — Response Required</div>
-            <div style="font-size:9px;color:var(--text)" id="wce-banner-name"></div>
-            <div style="font-size:8px;color:var(--text-dim);margin-top:2px">Click to respond ▸</div>
+            <div style="font-size:var(--fs-small);color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px">⚡ World Event — Response Required</div>
+            <div style="font-size:var(--fs-body);color:var(--text)" id="wce-banner-name"></div>
+            <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">Click to respond ▸</div>
           </div>
           <div class="rb" id="rdb">
-            <div style="font-size:9px;color:var(--red);letter-spacing:2px;font-weight:bold;margin-bottom:3px;text-transform:uppercase">⚠ Incoming Threat</div>
-            <div id="rdd" style="font-size:9px;color:var(--orange)"></div>
+            <div style="font-size:var(--fs-body);color:var(--red);letter-spacing:2px;font-weight:bold;margin-bottom:3px;text-transform:uppercase">⚠ Incoming Threat</div>
+            <div id="rdd" style="font-size:var(--fs-body);color:var(--orange)"></div>
           </div>
           <div id="ms-report"></div>
           <div id="ms-prep"></div>
@@ -388,8 +388,8 @@
         <div id="p-academy" style="display:none">
           <div class="pt" data-i18n="academy.title">Academy Prospects</div>
           <div style="display:flex;gap:6px;margin-bottom:12px">
-            <button class="tab active" id="ac-tab-prospects" onclick="acTab('prospects')" style="padding:5px 10px;font-size:8px" data-i18n="academy.tab.prospects">Prospects</button>
-            <button class="tab" id="ac-tab-pipeline" onclick="acTab('pipeline')" style="padding:5px 10px;font-size:8px" data-i18n="academy.tab.pipeline">Mentor Pipeline</button>
+            <button class="tab active" id="ac-tab-prospects" onclick="acTab('prospects')" style="padding:5px 10px;font-size:var(--fs-small)" data-i18n="academy.tab.prospects">Prospects</button>
+            <button class="tab" id="ac-tab-pipeline" onclick="acTab('pipeline')" style="padding:5px 10px;font-size:var(--fs-small)" data-i18n="academy.tab.pipeline">Mentor Pipeline</button>
           </div>
           <div id="acl"></div>
           <div id="ac-pipeline" style="display:none"></div>
@@ -430,56 +430,56 @@
         <!-- chronicles -->
         <div id="p-chronicles" style="display:none">
           <div class="pt" data-i18n="panel.chronicles">Village Chronicles</div>
-          <div style="font-size:9px;color:var(--text-dim);margin-bottom:12px">Major moments in your village's history, recorded automatically.</div>
+          <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:12px">Major moments in your village's history, recorded automatically.</div>
           <div id="chl"></div>
         </div>
 
         <!-- memorial wall -->
         <div id="p-memorial" style="display:none">
           <div class="pt" data-i18n="panel.memorial">Memorial Wall</div>
-          <div style="font-size:9px;color:var(--text-dim);margin-bottom:12px">Those who gave their lives in service of the village.</div>
+          <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:12px">Those who gave their lives in service of the village.</div>
           <div id="meml"></div>
         </div>
 
         <!-- finances -->
         <div id="p-finances" style="display:none">
           <div class="pt" data-i18n="panel.finances">Village Finances</div>
-          <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Monthly income vs expenditure breakdown. Advance month to update.</div>
+          <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:14px">Monthly income vs expenditure breakdown. Advance month to update.</div>
           <div id="fil"></div>
         </div>
 
         <!-- staff -->
         <div id="p-staff" style="display:none">
           <div class="pt" data-i18n="panel.staff">Staff Management</div>
-          <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Staff provide passive bonuses. Salaries are deducted monthly.</div>
+          <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:14px">Staff provide passive bonuses. Salaries are deducted monthly.</div>
           <div id="stfl"></div>
         </div>
 
         <!-- scouting network -->
         <div id="p-scouting" style="display:none">
           <div class="pt" data-i18n="panel.scouting">Scouting Network</div>
-          <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Deploy Scout Veteran to regions to surface prospects and gather intel.</div>
+          <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:14px">Deploy Scout Veteran to regions to surface prospects and gather intel.</div>
           <div id="scol"></div>
         </div>
 
         <!-- youth academy -->
         <div id="p-youthacademy" style="display:none">
           <div class="pt" data-i18n="panel.youthAcademy">Youth Academy</div>
-          <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Annual April intake. Set development tracks and intensity for each student.</div>
+          <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:14px">Annual April intake. Set development tracks and intensity for each student.</div>
           <div id="yal"></div>
         </div>
 
         <!-- people management / meetings -->
         <div id="p-meetings" style="display:none">
           <div class="pt" data-i18n="panel.people">People Management</div>
-          <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">One-on-one meetings, dressing room harmony, and individual morale.</div>
+          <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:14px">One-on-one meetings, dressing room harmony, and individual morale.</div>
           <div id="meetl"></div>
         </div>
 
         <!-- transfer market -->
         <div id="p-transfers" style="display:none">
           <div class="pt" data-i18n="panel.transfers">Transfer Market &amp; Bingo Book</div>
-          <div style="font-size:9px;color:var(--text-dim);margin-bottom:14px">Sign free agents, negotiate village transfers, manage loans and sell pressure.</div>
+          <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:14px">Sign free agents, negotiate village transfers, manage loans and sell pressure.</div>
           <div id="trl"></div>
         </div>
 
@@ -533,7 +533,7 @@
 <div class="ov" id="ov-assign">
   <div class="mo">
     <div class="mot" id="ma-t">Assign</div>
-    <div style="font-size:9px;color:var(--text-dim);margin-bottom:10px" id="ma-d"></div>
+    <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:10px" id="ma-d"></div>
     <div id="ma-l"></div>
     <div class="mbc"><button class="bc" onclick="cm('assign')">Cancel</button></div>
   </div>
@@ -550,13 +550,13 @@
 <div class="ov" id="ov-csquad">
   <div class="mo">
     <div class="mot">Form Squad</div>
-    <div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px">Leader (Veteran+)</div>
+    <div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px">Leader (Veteran+)</div>
     <div id="cs-l"></div>
-    <div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin:9px 0 6px">Members (pick 2)</div>
+    <div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin:9px 0 6px">Members (pick 2)</div>
     <div id="cs-m"></div>
     <div id="cs-synergy" style="margin:8px 0;min-height:24px"></div>
-    <div style="margin-top:9px;font-size:9px;color:var(--text-dim)">
-      Name: <input id="sqni" style="background:var(--surface-2);border:1px solid var(--border);color:var(--text-hi);padding:3px 8px;font-family:'Courier New',monospace;font-size:9px;width:160px;margin-left:6px" placeholder="Squad 7">
+    <div style="margin-top:9px;font-size:var(--fs-body);color:var(--text-dim)">
+      Name: <input id="sqni" style="background:var(--surface-2);border:1px solid var(--border);color:var(--text-hi);padding:3px 8px;font-family:'Courier New',monospace;font-size:var(--fs-body);width:160px;margin-left:6px" placeholder="Squad 7">
     </div>
     <div class="mbc">
       <button class="bc" onclick="cm('csquad')">Cancel</button>
@@ -576,8 +576,8 @@
 <div class="ov" id="ov-sensei">
   <div class="mo">
     <div class="mot">Assign Sensei</div>
-    <div style="font-size:9px;color:var(--text-dim);margin-bottom:8px">Prospect: <span id="sensei-prospect-name" style="color:var(--purple)"></span></div>
-    <div style="font-size:8px;color:var(--text-dim);margin-bottom:12px">A Veteran+ sensei accelerates this prospect's stat growth each month. The sensei remains available for missions.</div>
+    <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:8px">Prospect: <span id="sensei-prospect-name" style="color:var(--purple)"></span></div>
+    <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:12px">A Veteran+ sensei accelerates this prospect's stat growth each month. The sensei remains available for missions.</div>
     <div id="sensei-list"></div>
     <div class="mbc"><button class="bc" onclick="cm('sensei')">Cancel</button></div>
   </div>
@@ -586,7 +586,7 @@
 <div class="ov" id="ov-worldchoice">
   <div class="mo">
     <div class="mot" id="wce-title">World Event</div>
-    <div style="font-size:9px;color:var(--blue);margin-bottom:10px" id="wce-desc"></div>
+    <div style="font-size:var(--fs-body);color:var(--blue);margin-bottom:10px" id="wce-desc"></div>
     <div id="wce-choices"></div>
     <div class="mbc"><button class="bc" onclick="cm('worldchoice')">Dismiss</button></div>
   </div>
@@ -595,8 +595,8 @@
 <div class="ov" id="ov-scout">
   <div class="mo">
     <div class="mot">Select Scout</div>
-    <div style="font-size:9px;color:var(--text-dim);margin-bottom:8px">Prospect: <span id="scout-prospect-name" style="color:var(--purple)"></span></div>
-    <div style="font-size:8px;color:var(--text-dim);margin-bottom:12px">Assign a Veteran+ shinobi to spend 1 month verifying this prospect's potential — 3,000 ryo.</div>
+    <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:8px">Prospect: <span id="scout-prospect-name" style="color:var(--purple)"></span></div>
+    <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:12px">Assign a Veteran+ shinobi to spend 1 month verifying this prospect's potential — 3,000 ryo.</div>
     <div id="scout-list"></div>
     <div class="mbc"><button class="bc" onclick="cm('scout')">Cancel</button></div>
   </div>
@@ -625,7 +625,7 @@
 <div class="ov" id="ov-staffhire">
   <div class="mo">
     <div class="mot" id="sh-title">Hire Staff</div>
-    <div style="font-size:9px;color:var(--text-dim);margin-bottom:10px" id="sh-desc"></div>
+    <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:10px" id="sh-desc"></div>
     <div id="sh-candidates"></div>
     <div class="mbc"><button class="bc" onclick="cm('staffhire')">Cancel</button></div>
   </div>
@@ -634,7 +634,7 @@
 <div class="ov" id="ov-retiretostaff">
   <div class="mo">
     <div class="mot" id="rts-title">Retire to Staff</div>
-    <div style="font-size:9px;color:var(--text-dim);margin-bottom:10px">Select a staff role for this shinobi. Their career stats will determine their initial rating.</div>
+    <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:10px">Select a staff role for this shinobi. Their career stats will determine their initial rating.</div>
     <div id="rts-roles"></div>
     <div class="mbc"><button class="bc" onclick="cm('retiretostaff')">Cancel</button></div>
   </div>
@@ -643,12 +643,12 @@
 <div class="ov" id="ov-negotiate">
   <div class="mo">
     <div class="mot" id="neg-title">Negotiation</div>
-    <div style="font-size:9px;color:var(--text-dim);margin-bottom:10px">Submit an offer to the shinobi's village. Asking price: <strong id="neg-asking" style="color:var(--gold)"></strong> ryo.</div>
+    <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:10px">Submit an offer to the shinobi's village. Asking price: <strong id="neg-asking" style="color:var(--gold)"></strong> ryo.</div>
     <div style="margin-bottom:10px">
-      <label style="font-size:9px;color:var(--text-dim)">Your offer (ryo):</label><br>
-      <input id="neg-offer" type="number" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:6px 9px;width:100%;margin-top:5px;font-size:11px;font-family:'Courier New',monospace">
+      <label style="font-size:var(--fs-body);color:var(--text-dim)">Your offer (ryo):</label><br>
+      <input id="neg-offer" type="number" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:6px 9px;width:100%;margin-top:5px;font-size:var(--fs-lead);font-family:'Courier New',monospace">
     </div>
-    <div id="neg-result" style="font-size:10px;margin-bottom:10px;min-height:16px"></div>
+    <div id="neg-result" style="font-size:var(--fs-body);margin-bottom:10px;min-height:16px"></div>
     <div class="mbc">
       <button class="bc" onclick="submitOffer()">Submit Offer</button>
       <button class="bc" id="neg-confirm" style="display:none" onclick="negConfirm()">Proceed to Personal Terms ▸</button>
@@ -660,18 +660,18 @@
 <div class="ov" id="ov-personalterms">
   <div class="mo">
     <div class="mot" id="pt-title">Personal Terms</div>
-    <div style="font-size:9px;color:var(--text-dim);margin-bottom:4px">Transfer fee agreed: <strong id="pt-fee" style="color:var(--gold)"></strong></div>
-    <div style="font-size:9px;color:var(--text-dim);margin-bottom:12px" id="pt-rank-info"></div>
+    <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:4px">Transfer fee agreed: <strong id="pt-fee" style="color:var(--gold)"></strong></div>
+    <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:12px" id="pt-rank-info"></div>
     <div style="margin-bottom:10px">
-      <label style="font-size:9px;color:var(--text);display:flex;align-items:center;gap:8px">
+      <label style="font-size:var(--fs-body);color:var(--text);display:flex;align-items:center;gap:8px">
         <input id="pt-role-guar" type="checkbox" style="width:14px;height:14px">
         Mission role guarantee (promise regular deployment)
       </label>
-      <div style="font-size:8px;color:var(--text-dim);margin-top:3px;margin-left:22px">Boosts arrival commitment +10. Breach costs commitment each month unused.</div>
+      <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:3px;margin-left:22px">Boosts arrival commitment +10. Breach costs commitment each month unused.</div>
     </div>
     <div style="margin-bottom:10px">
-      <label style="font-size:9px;color:var(--text-dim)">Rank timeline expectation:</label>
-      <select id="pt-rank-tl" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:5px 9px;width:100%;margin-top:5px;font-size:10px;font-family:'Courier New',monospace">
+      <label style="font-size:var(--fs-body);color:var(--text-dim)">Rank timeline expectation:</label>
+      <select id="pt-rank-tl" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:5px 9px;width:100%;margin-top:5px;font-size:var(--fs-body);font-family:'Courier New',monospace">
         <option value="0">No promise</option>
         <option value="3">Promote within 3 months</option>
         <option value="6">Promote within 6 months</option>
@@ -679,8 +679,8 @@
       </select>
     </div>
     <div style="margin-bottom:10px">
-      <label style="font-size:9px;color:var(--text-dim)">Signing bonus:</label>
-      <select id="pt-sig-bonus" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:5px 9px;width:100%;margin-top:5px;font-size:10px;font-family:'Courier New',monospace">
+      <label style="font-size:var(--fs-body);color:var(--text-dim)">Signing bonus:</label>
+      <select id="pt-sig-bonus" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:5px 9px;width:100%;margin-top:5px;font-size:var(--fs-body);font-family:'Courier New',monospace">
         <option value="0">None</option>
         <option value="1000">1,000 ryo</option>
         <option value="3000">3,000 ryo</option>
@@ -688,13 +688,13 @@
       </select>
     </div>
     <div style="margin-bottom:10px">
-      <label style="font-size:9px;color:var(--text-dim)">Sign as loan (temporary):</label>
-      <select id="pt-loan-dur" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:5px 9px;width:100%;margin-top:5px;font-size:10px;font-family:'Courier New',monospace">
+      <label style="font-size:var(--fs-body);color:var(--text-dim)">Sign as loan (temporary):</label>
+      <select id="pt-loan-dur" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:5px 9px;width:100%;margin-top:5px;font-size:var(--fs-body);font-family:'Courier New',monospace">
         <option value="0">Permanent signing</option>
         <option value="3">Loan — 3 months</option>
         <option value="6">Loan — 6 months</option>
       </select>
-      <div style="font-size:8px;color:var(--text-dim);margin-top:3px">Loan players cannot enter the Adept Exam.</div>
+      <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:3px">Loan players cannot enter the Adept Exam.</div>
     </div>
     <div class="mbc">
       <button class="bc" onclick="confirmTransfer()">Confirm &amp; Sign ▸</button>

@@ -470,7 +470,7 @@ function _showInspect(rep, sel) {
       const idn = identityFor(opp)
       const st = MATCH_STYLES[idn.style] || MATCH_STYLES.balanced
       const elem = idn.element ? ` · <span style="color:var(--blue)">${idn.element} affinity</span>` : ''
-      el.innerHTML = `<b style="color:${_repArena(rep).palette.accent}">${opp}</b> · <span style="color:var(--gold)">${idn.label}</span> <span title="${st.desc}" style="color:var(--text-mid);cursor:help">${st.icon} ${st.label}</span>${elem}${idn.blurb ? `<span style="display:block;font-size:7px;color:var(--text-dim);margin-top:1px">${idn.blurb}</span>` : ''}`
+      el.innerHTML = `<b style="color:${_repArena(rep).palette.accent}">${opp}</b> · <span style="color:var(--gold)">${idn.label}</span> <span title="${st.desc}" style="color:var(--text-mid);cursor:help">${st.icon} ${st.label}</span>${elem}${idn.blurb ? `<span style="display:block;font-size:var(--fs-micro);color:var(--text-dim);margin-top:1px">${idn.blurb}</span>` : ''}`
     } else {
       el.innerHTML = `<b>${sel.name}</b> · <span style="color:var(--text-dim)">opposition</span>${sel.ko ? ' · <span style="color:var(--green)">taken out of the fight</span>' : ''}`
     }

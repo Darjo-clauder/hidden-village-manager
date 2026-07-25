@@ -137,7 +137,7 @@ function renderMarket(tm, judgeLevel) {
   const sort = tblSort('transfers', _TR_DEFAULT)
   const sdef = _TR_SORTS.find(s => s.key === sort.key) || _TR_SORTS[0]
   const sorted = [...pool].sort((a, b) => (sdef.val(a) - sdef.val(b)) * (sort.dir === 'asc' ? 1 : -1))
-  const sortBar = `<div style="display:flex;gap:5px;align-items:center;margin-bottom:10px;font-size:8px;color:var(--text-faint)">
+  const sortBar = `<div style="display:flex;gap:5px;align-items:center;margin-bottom:10px;font-size:var(--fs-small);color:var(--text-faint)">
     <span style="text-transform:uppercase;letter-spacing:1px">${t("transfers.sort")}</span>
     ${_TR_SORTS.map(s => { const a = sort.key === s.key; return `<button class="tbl-colbtn"${a ? ' style="color:var(--accent);border-color:var(--accent-border)"' : ''} onclick="trSort('${s.key}')">${s.label}${a ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}</button>` }).join('')}
     <span style="margin-left:auto;color:var(--border-hi)">right-click a card for actions</span>

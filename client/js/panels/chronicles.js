@@ -20,7 +20,7 @@ export function rCh() {
   if (!el) return
 
   if (!G.chronicles?.length) {
-    el.innerHTML = `<div style="color:var(--text-dim);font-size:10px;padding:16px 0">${tr("chronicles.noEntries")}</div>`
+    el.innerHTML = `<div style="color:var(--text-dim);font-size:var(--fs-body);padding:16px 0">${tr("chronicles.noEntries")}</div>`
     return
   }
 
@@ -35,17 +35,17 @@ export function rCh() {
     <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
       ${types.map(t => {
         const meta = TYPE_META[t] || TYPE_META.event
-        return `<button class="tab${_filterType === t ? ' active' : ''}" style="font-size:7px;padding:4px 9px" onclick="chrFilter('${t}')">
+        return `<button class="tab${_filterType === t ? ' active' : ''}" style="font-size:var(--fs-micro);padding:4px 9px" onclick="chrFilter('${t}')">
           ${t === 'all' ? tr("chronicles.all") : (meta.icon + ' ' + meta.label)}
         </button>`
       }).join('')}
       <input type="text" placeholder="${tr("chronicles.search")}" value="${_searchText}"
         oninput="chrSearch(this.value)"
-        style="margin-left:auto;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:8px;padding:4px 8px;width:130px;outline:none">
+        style="margin-left:auto;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:var(--fs-small);padding:4px 8px;width:130px;outline:none">
     </div>
 
     <!-- Entries -->
-    ${filtered.length === 0 ? `<div style="color:var(--text-dim);font-size:9px">${tr("chronicles.noMatch")}</div>` : ''}
+    ${filtered.length === 0 ? `<div style="color:var(--text-dim);font-size:var(--fs-body)">${tr("chronicles.noMatch")}</div>` : ''}
     ${filtered.map(e => {
       const meta = TYPE_META[e.type || 'event'] || TYPE_META.event
       const monthName = MONTHS[(e.month ?? 1) - 1]?.n || 'M' + e.month
@@ -54,15 +54,15 @@ export function rCh() {
       return `
         <div style="padding:11px 12px;margin-bottom:6px;background:${meta.bg};border:1px solid var(--border-dim);border-left:3px solid ${meta.color}">
           <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
-            <span style="font-size:10px;color:${meta.color}">${meta.icon}</span>
-            <span style="font-size:10px;color:var(--text-hi);font-weight:bold">${e.title}</span>
-            <span style="font-size:7px;color:var(--text-dim);margin-left:auto;white-space:nowrap">Y${e.year} · ${monthName}</span>
+            <span style="font-size:var(--fs-body);color:${meta.color}">${meta.icon}</span>
+            <span style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold">${e.title}</span>
+            <span style="font-size:var(--fs-micro);color:var(--text-dim);margin-left:auto;white-space:nowrap">Y${e.year} · ${monthName}</span>
           </div>
-          <div style="font-size:8px;color:var(--text);line-height:1.7;padding-left:17px${isLore ? ';font-style:italic' : ''}">
+          <div style="font-size:var(--fs-small);color:var(--text);line-height:1.7;padding-left:17px${isLore ? ';font-style:italic' : ''}">
             ${isLore ? `"${e.body}"` : e.body}
           </div>
           ${e.narrative ? `
-            <div style="margin-top:8px;padding:8px 12px;background:var(--surface);border-left:2px solid var(--border);font-size:8px;color:var(--text-dim);line-height:1.7;font-style:italic">
+            <div style="margin-top:8px;padding:8px 12px;background:var(--surface);border-left:2px solid var(--border);font-size:var(--fs-small);color:var(--text-dim);line-height:1.7;font-style:italic">
               ${e.narrative}
             </div>
           ` : ''}

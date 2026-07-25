@@ -34,7 +34,7 @@ function _stars(val, max = 100) {
 function _starsHtml(val, max = 100) {
   const count = Math.max(0, Math.min(5, Math.ceil((val / max) * 5)))
   const col = count >= 4 ? 'var(--gold)' : count >= 3 ? 'var(--green)' : count >= 2 ? 'var(--text-dim)' : 'var(--border-hi)'
-  return `<span style="color:${col};letter-spacing:-1px;font-size:10px">${'★'.repeat(count)}${'☆'.repeat(5-count)}</span>`
+  return `<span style="color:${col};letter-spacing:-1px;font-size:var(--fs-body)">${'★'.repeat(count)}${'☆'.repeat(5-count)}</span>`
 }
 
 // ── Route E: Clan Concentration ──────────────────────────────────────────────
@@ -50,11 +50,11 @@ function _clanBar() {
              : null
   return `<div style="background:var(--sunken);border:1px solid var(--accent-border);padding:8px 10px;margin-bottom:10px">
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:${tier?'4px':'0'}">
-      <span style="font-size:7px;letter-spacing:1px;color:var(--text-faint);text-transform:uppercase">${tr('roster.clanComposition')}</span>
-      ${ranked.slice(0, 5).map(([n, c]) => `<span style="font-size:8px;color:var(--text-mid)">${n} <b style="color:var(--text-hi)">${c}</b></span>`).join('<span style="color:var(--border);font-size:8px"> · </span>')}
-      ${ranked.length > 5 ? `<span style="font-size:8px;color:var(--border-hi)">+${ranked.length - 5} more</span>` : ''}
+      <span style="font-size:var(--fs-micro);letter-spacing:1px;color:var(--text-faint);text-transform:uppercase">${tr('roster.clanComposition')}</span>
+      ${ranked.slice(0, 5).map(([n, c]) => `<span style="font-size:var(--fs-small);color:var(--text-mid)">${n} <b style="color:var(--text-hi)">${c}</b></span>`).join('<span style="color:var(--border);font-size:var(--fs-small)"> · </span>')}
+      ${ranked.length > 5 ? `<span style="font-size:var(--fs-small);color:var(--border-hi)">+${ranked.length - 5} more</span>` : ''}
     </div>
-    ${tier ? `<div style="font-size:8px;color:${tier.col}">▲ ${topClan} at <b>${tier.label}</b> threshold (${topCount} members) — monthly passive bonus active</div>` : ''}
+    ${tier ? `<div style="font-size:var(--fs-small);color:${tier.col}">▲ ${topClan} at <b>${tier.label}</b> threshold (${topCount} members) — monthly passive bonus active</div>` : ''}
   </div>`
 }
 
@@ -68,15 +68,15 @@ const _DEV_PATHS = [
 function _devPathSelector(s) {
   const cur = s.devPath || null
   return `<div style="margin-top:8px">
-    <div style="font-size:7px;letter-spacing:1px;color:var(--text-faint);text-transform:uppercase;margin-bottom:5px">${tr('roster.developmentPath')}</div>
+    <div style="font-size:var(--fs-micro);letter-spacing:1px;color:var(--text-faint);text-transform:uppercase;margin-bottom:5px">${tr('roster.developmentPath')}</div>
     <div style="display:grid;gap:3px">
       ${_DEV_PATHS.map(p => `<div onclick="setDevPath('${s.id}','${p.id}')" style="padding:5px 8px;border:1px solid ${cur===p.id?'var(--accent)':'var(--surface-3)'};background:${cur===p.id?'var(--accent-bg)':'transparent'};cursor:pointer;display:flex;align-items:center;gap:8px">
-        <span style="font-size:11px">${p.icon}</span>
+        <span style="font-size:var(--fs-lead)">${p.icon}</span>
         <div style="flex:1">
-          <div style="font-size:8px;color:${cur===p.id?'var(--accent)':'#a09080'};font-weight:${cur===p.id?'bold':'normal'}">${p.label}</div>
-          <div style="font-size:7px;color:var(--border-hi)">${p.desc}</div>
+          <div style="font-size:var(--fs-small);color:${cur===p.id?'var(--accent)':'#a09080'};font-weight:${cur===p.id?'bold':'normal'}">${p.label}</div>
+          <div style="font-size:var(--fs-micro);color:var(--border-hi)">${p.desc}</div>
         </div>
-        ${cur===p.id?`<span style="font-size:9px;color:var(--accent)">✓</span>`:''}
+        ${cur===p.id?`<span style="font-size:var(--fs-body);color:var(--accent)">✓</span>`:''}
       </div>`).join('')}
     </div>
   </div>`
@@ -93,7 +93,7 @@ function _potential(s) {
 
 export function rRo() {
   const el = document.getElementById('rl')
-  if (!G.shinobi.length) { el.innerHTML = `<div style="color:var(--text-dim);font-size:10px;padding:12px">${tr('roster.none')}</div>`; return }
+  if (!G.shinobi.length) { el.innerHTML = `<div style="color:var(--text-dim);font-size:var(--fs-body);padding:12px">${tr('roster.none')}</div>`; return }
 
   // Sort: by rank desc, then power desc
   const sorted = [...G.shinobi].sort((a, b) => (b.ri - a.ri) || (sPow(b) - sPow(a)))
@@ -102,7 +102,7 @@ export function rRo() {
   const active = sorted.filter(s => s.status === 'mission' || s.status === 'exam' || s.status === 'injured')
 
   const assignedHtml = active.length === 0
-    ? `<div style="font-size:8px;color:var(--text-faint);padding:10px 0">${tr('roster.noAssignments')}</div>`
+    ? `<div style="font-size:var(--fs-small);color:var(--text-faint);padding:10px 0">${tr('roster.noAssignments')}</div>`
     : active.map(s => {
         const sq = G.squads.find(q => q.members.includes(s.id))
         const mission = s.missId ? (G.missions || []).find(m => m.id === s.missId) : null
@@ -134,15 +134,15 @@ export function rRo() {
 
         return `<div style="background:var(--surface);border:1px solid var(--border);padding:10px 12px;margin-bottom:8px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-            <span style="font-size:8px;font-weight:bold;color:${rankCol};background:${rankCol}22;padding:1px 5px;border:1px solid ${rankCol}44">${rankLabel.slice(0,3).toUpperCase()}</span>
-            <span style="font-size:10px;color:var(--text-hi);font-weight:bold;cursor:pointer" onclick="oDos('${s.id}')">${sn(s)}</span>
-            ${s.jk ? `<span style="font-size:7px;color:var(--gold)">[JK]</span>` : ''}
-            <span style="font-size:8px;color:var(--text-faint);margin-left:auto">${label}</span>
+            <span style="font-size:var(--fs-small);font-weight:bold;color:${rankCol};background:${rankCol}22;padding:1px 5px;border:1px solid ${rankCol}44">${rankLabel.slice(0,3).toUpperCase()}</span>
+            <span style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold;cursor:pointer" onclick="oDos('${s.id}')">${sn(s)}</span>
+            ${s.jk ? `<span style="font-size:var(--fs-micro);color:var(--gold)">[JK]</span>` : ''}
+            <span style="font-size:var(--fs-small);color:var(--text-faint);margin-left:auto">${label}</span>
           </div>
           <div style="background:var(--sunken);border-radius:2px;height:4px;margin-bottom:4px">
             <div style="height:4px;border-radius:2px;background:${barColor};width:${progress}%;transition:width .3s"></div>
           </div>
-          <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--text-faint)">
+          <div style="display:flex;justify-content:space-between;font-size:var(--fs-micro);color:var(--text-faint)">
             <span>${detail}</span>
             <span style="color:var(--text-dim)">${progress}% complete</span>
           </div>
@@ -150,28 +150,28 @@ export function rRo() {
       }).join('')
 
   // ── Main roster table — sortable headers + customizable columns (P1 kit) ──
-  const _statusCell = s => s.status === 'available' ? `<span style="color:var(--green);font-size:8px" title="Available">●</span>`
-    : s.status === 'mission' ? `<span style="color:var(--gold);font-size:8px" title="On mission">▶</span>`
-    : s.status === 'injured' ? `<span style="color:var(--red);font-size:8px" title="Injured ${s.injDays}m">✕</span>`
-    : `<span style="color:var(--blue);font-size:8px" title="Exam">⚑</span>`
+  const _statusCell = s => s.status === 'available' ? `<span style="color:var(--green);font-size:var(--fs-small)" title="Available">●</span>`
+    : s.status === 'mission' ? `<span style="color:var(--gold);font-size:var(--fs-small)" title="On mission">▶</span>`
+    : s.status === 'injured' ? `<span style="color:var(--red);font-size:var(--fs-small)" title="Injured ${s.injDays}m">✕</span>`
+    : `<span style="color:var(--blue);font-size:var(--fs-small)" title="Exam">⚑</span>`
   const _nameCell = s => {
-    const nt = s.noTrade ? `<span style="font-size:6px;color:var(--red-soft);border:1px solid var(--red);padding:0 3px;margin-left:3px">NT</span>` : ''
-    const tw = s.twoWay  ? `<span style="font-size:6px;color:var(--blue);border:1px solid #468;padding:0 3px;margin-left:2px">2W</span>` : ''
-    const peak = s.peakAge && Math.abs((s.age||0) - s.peakAge) <= 1 ? `<span style="font-size:6px;color:var(--gold);border:1px solid #c9a84c66;padding:0 3px;margin-left:3px" title="Peak years">★</span>`
-      : s.peakAge && (s.age||0) > s.peakAge + 3 ? `<span style="font-size:6px;color:var(--red);border:1px solid #f6644;padding:0 3px;margin-left:3px" title="Past peak">↘</span>` : ''
-    return `<div style="font-size:9px;color:var(--text-hi);font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">${sn(s)}${s.jk ? '<span style="font-size:7px;color:var(--gold)"> ⚡</span>' : ''}${nt}${tw}${peak}</div><div style="font-size:7px;color:var(--text-faint)">${s.clan || s.spec || '—'}</div>`
+    const nt = s.noTrade ? `<span style="font-size:var(--fs-micro);color:var(--red-soft);border:1px solid var(--red);padding:0 3px;margin-left:3px">NT</span>` : ''
+    const tw = s.twoWay  ? `<span style="font-size:var(--fs-micro);color:var(--blue);border:1px solid #468;padding:0 3px;margin-left:2px">2W</span>` : ''
+    const peak = s.peakAge && Math.abs((s.age||0) - s.peakAge) <= 1 ? `<span style="font-size:var(--fs-micro);color:var(--gold);border:1px solid #c9a84c66;padding:0 3px;margin-left:3px" title="Peak years">★</span>`
+      : s.peakAge && (s.age||0) > s.peakAge + 3 ? `<span style="font-size:var(--fs-micro);color:var(--red);border:1px solid #f6644;padding:0 3px;margin-left:3px" title="Past peak">↘</span>` : ''
+    return `<div style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">${sn(s)}${s.jk ? '<span style="font-size:var(--fs-micro);color:var(--gold)"> ⚡</span>' : ''}${nt}${tw}${peak}</div><div style="font-size:var(--fs-micro);color:var(--text-faint)">${s.clan || s.spec || '—'}</div>`
   }
   const COLS = [
     { key: 'rank', label: 'Rank', align: 'left', hideable: false, sortVal: s => s.ri,
-      render: s => `<span style="font-size:8px;font-weight:bold;color:${_rankColor(s.ri)};background:${_rankColor(s.ri)}22;padding:1px 5px;border:1px solid ${_rankColor(s.ri)}44">${RANKS[s.ri].slice(0,3).toUpperCase()}</span>` },
+      render: s => `<span style="font-size:var(--fs-small);font-weight:bold;color:${_rankColor(s.ri)};background:${_rankColor(s.ri)}22;padding:1px 5px;border:1px solid ${_rankColor(s.ri)}44">${RANKS[s.ri].slice(0,3).toUpperCase()}</span>` },
     { key: 'name', label: 'Name', align: 'left', hideable: false, sortVal: s => sn(s), render: _nameCell },
-    { key: 'age', label: 'Age', align: 'center', sortVal: s => s.age || 0, render: s => `<span style="font-size:8px;color:var(--text-dim)">${s.age}</span>` },
+    { key: 'age', label: 'Age', align: 'center', sortVal: s => s.age || 0, render: s => `<span style="font-size:var(--fs-small);color:var(--text-dim)">${s.age}</span>` },
     { key: 'power', label: 'Ability', align: 'center', sortVal: s => sPow(s), render: s => _starsHtml(sPow(s)) },
     { key: 'potential', label: 'Potential', align: 'center', sortVal: s => _potential(s), render: s => _starsHtml(_potential(s)) },
     { key: 'status', label: 'Sts', align: 'center', sortVal: s => s.status, render: _statusCell },
     { key: 'grade', label: 'Grd', align: 'center', sortVal: s => _GRADE_ORDER[gradeShinobi(s).label] ?? 0,
-      render: s => { const g = gradeShinobi(s); return `<span style="font-size:9px;font-weight:bold;color:${g.color};background:${g.color}22;padding:1px 5px;border:1px solid ${g.color}44">${g.label}</span>` } },
-    { key: 'salary', label: 'Salary', align: 'right', sortVal: s => s.salary || 0, render: s => `<span style="font-size:8px;color:var(--text-faint)">${fmt(s.salary)}</span>` },
+      render: s => { const g = gradeShinobi(s); return `<span style="font-size:var(--fs-body);font-weight:bold;color:${g.color};background:${g.color}22;padding:1px 5px;border:1px solid ${g.color}44">${g.label}</span>` } },
+    { key: 'salary', label: 'Salary', align: 'right', sortVal: s => s.salary || 0, render: s => `<span style="font-size:var(--fs-small);color:var(--text-faint)">${fmt(s.salary)}</span>` },
   ]
   const _sort = tblSort('roster', _ROSTER_DEFAULT_SORT)
   const _hidden = new Set(tblHidden('roster'))
@@ -194,8 +194,8 @@ export function rRo() {
       <div>
         ${_clanBar()}
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;position:relative">
-          <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase">${tr('roster.header', { n: G.shinobi.length })}</div>
-          <div style="margin-left:auto;display:flex;gap:10px;align-items:center;font-size:8px;color:var(--text-faint)">
+          <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase">${tr('roster.header', { n: G.shinobi.length })}</div>
+          <div style="margin-left:auto;display:flex;gap:10px;align-items:center;font-size:var(--fs-small);color:var(--text-faint)">
             <span><span style="color:var(--green)">●</span> Avail</span>
             <span><span style="color:var(--gold)">▶</span> Mission</span>
             <span><span style="color:var(--red)">✕</span> Injured</span>
@@ -204,7 +204,7 @@ export function rRo() {
             ${tblColumnManagerHtml('roster', COLS, 'rosterToggleCol')}
           </div>
         </div>
-        <div style="font-size:7px;color:var(--border-hi);margin-bottom:4px">Click a column to sort · right-click a shinobi for actions</div>
+        <div style="font-size:var(--fs-micro);color:var(--border-hi);margin-bottom:4px">Click a column to sort · right-click a shinobi for actions</div>
         <table style="width:100%;border-collapse:collapse">
           <thead>
             <tr style="background:#0a0908;border-bottom:1px solid var(--border)">${tblHeaderHtml(_visCols, _sort, 'rosterSortBy')}</tr>
@@ -215,7 +215,7 @@ export function rRo() {
 
       <!-- Right: active assignments + selected dossier -->
       <div>
-        <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">
+        <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">
           Active Assignments <span style="color:var(--border-hi)">— ${active.length}/${G.shinobi.length}</span>
         </div>
         ${assignedHtml}
@@ -291,18 +291,18 @@ function _renderRosDetail(id) {
   el.innerHTML = `
     <div style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-top:10px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-        <span style="font-size:9px;font-weight:bold;color:${rankCol};background:${rankCol}22;padding:2px 7px;border:1px solid ${rankCol}44">${RANKS[s.ri]}</span>
+        <span style="font-size:var(--fs-body);font-weight:bold;color:${rankCol};background:${rankCol}22;padding:2px 7px;border:1px solid ${rankCol}44">${RANKS[s.ri]}</span>
         <div>
-          <div style="font-size:11px;color:var(--text-hi);font-weight:bold">${sn(s)}</div>
-          <div style="font-size:8px;color:var(--text-faint)">${s.clan || s.spec || ''} · Age ${s.age}</div>
+          <div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold">${sn(s)}</div>
+          <div style="font-size:var(--fs-small);color:var(--text-faint)">${s.clan || s.spec || ''} · Age ${s.age}</div>
         </div>
-        <button class="gb" style="margin-left:auto;font-size:7px;padding:2px 8px" onclick="oDos('${s.id}')">${tr('roster.fullDossier')}</button>
+        <button class="gb" style="margin-left:auto;font-size:var(--fs-micro);padding:2px 8px" onclick="oDos('${s.id}')">${tr('roster.fullDossier')}</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
         ${['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed'].map(k => {
           const v = s.stats?.[k] || 0
           return `<div>
-            <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--text-faint);margin-bottom:2px">
+            <div style="display:flex;justify-content:space-between;font-size:var(--fs-micro);color:var(--text-faint);margin-bottom:2px">
               <span>${k.slice(0,5)}</span><span>${v}</span>
             </div>
             <div style="background:var(--sunken);height:3px;border-radius:1px">
@@ -311,12 +311,12 @@ function _renderRosDetail(id) {
           </div>`
         }).join('')}
       </div>
-      <div style="display:flex;gap:8px;font-size:8px;margin-bottom:10px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;font-size:var(--fs-small);margin-bottom:10px;flex-wrap:wrap">
         <span style="color:var(--text-dim)">Pwr <b style="color:var(--text-hi)">${pw}</b></span>
         <span style="color:var(--text-dim)">Salary <b style="color:var(--red)">${fmt(s.salary)}</b></span>
         <span style="color:var(--text-dim)">Wins <b style="color:var(--text-hi)">${s.wins||0}</b></span>
         ${(() => { const total = (s.wins||0) + (s.losses||0); const pct = total > 0 ? Math.round((s.wins||0)/total*100) : null; return pct !== null ? `<span style="color:var(--text-dim)">Win% <b style="color:${pct>=70?'var(--green)':pct>=50?'var(--text-hi)':'var(--red-soft)'}">${pct}%</b></span>` : '' })()}
-        ${(s.winsS||0) > 0 ? `<span style="font-size:7px;color:var(--gold)">★ ${s.winsS} S-rank</span>` : ''}
+        ${(s.winsS||0) > 0 ? `<span style="font-size:var(--fs-micro);color:var(--gold)">★ ${s.winsS} S-rank</span>` : ''}
         ${sq ? `<span style="color:var(--text-dim)">Squad <b style="color:var(--blue)">${sq.n}</b></span>` : ''}
       </div>
       ${(() => {
@@ -324,25 +324,25 @@ function _renderRosDetail(id) {
         const trajectory = age < 22 ? 'Ascending' : age < 27 ? 'Prime' : age < 31 ? 'Late Career' : 'Declining'
         const trajCol = age < 22 ? 'var(--blue)' : age < 27 ? 'var(--green)' : age < 31 ? 'var(--orange)' : 'var(--red)'
         const peakCeil = Math.round((s.potential || 50) * 0.92)
-        return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-top:1px solid var(--surface);margin-top:5px;font-size:8px">
+        return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-top:1px solid var(--surface);margin-top:5px;font-size:var(--fs-small)">
           <span style="color:var(--text-faint)">Peak Ceiling <b style="color:var(--text-hi)">${peakCeil}</b></span>
           <span style="color:var(--text-faint)">Trajectory <b style="color:${trajCol}">${trajectory}</b></span>
         </div>`
       })()}
       ${_devPathSelector(s)}
       <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px">
-        ${s.noTrade ? `<span style="font-size:7px;color:var(--red-soft);border:1px solid var(--red);padding:1px 5px">No-Trade</span>` : ''}
-        ${s.twoWay  ? `<span style="font-size:7px;color:var(--blue);border:1px solid #468;padding:1px 5px">Two-Way</span>` : ''}
-        ${s.buyoutCost ? `<span style="font-size:7px;color:var(--text-faint)">Buyout: ${fmt(s.buyoutCost)}</span>` : ''}
+        ${s.noTrade ? `<span style="font-size:var(--fs-micro);color:var(--red-soft);border:1px solid var(--red);padding:1px 5px">No-Trade</span>` : ''}
+        ${s.twoWay  ? `<span style="font-size:var(--fs-micro);color:var(--blue);border:1px solid #468;padding:1px 5px">Two-Way</span>` : ''}
+        ${s.buyoutCost ? `<span style="font-size:var(--fs-micro);color:var(--text-faint)">Buyout: ${fmt(s.buyoutCost)}</span>` : ''}
       </div>
       <div style="margin-top:10px;display:flex;gap:5px;flex-wrap:wrap">
-        <button class="gb gb-b" style="font-size:7px;padding:2px 8px" onclick="toggleNoTrade('${s.id}')">
+        <button class="gb gb-b" style="font-size:var(--fs-micro);padding:2px 8px" onclick="toggleNoTrade('${s.id}')">
           ${s.noTrade ? 'Remove No-Trade' : 'Add No-Trade'}
         </button>
-        <button class="gb gb-b" style="font-size:7px;padding:2px 8px" onclick="toggleTwoWay('${s.id}')">
+        <button class="gb gb-b" style="font-size:var(--fs-micro);padding:2px 8px" onclick="toggleTwoWay('${s.id}')">
           ${s.twoWay ? 'Remove Two-Way' : 'Add Two-Way'}
         </button>
-        ${s.buyoutCost ? `<button class="gb gb-r" style="font-size:7px;padding:2px 8px" onclick="executeBuyout('${s.id}')" ${(window.G?.ryo||G.ryo||0)<s.buyoutCost?'disabled':''}>Release (${fmt(s.buyoutCost)})</button>` : ''}
+        ${s.buyoutCost ? `<button class="gb gb-r" style="font-size:var(--fs-micro);padding:2px 8px" onclick="executeBuyout('${s.id}')" ${(window.G?.ryo||G.ryo||0)<s.buyoutCost?'disabled':''}>Release (${fmt(s.buyoutCost)})</button>` : ''}
       </div>
     </div>`
 }
@@ -360,9 +360,9 @@ export function oDos(id) {
   const tierColor = t => t === 'rare' ? 'var(--purple)' : t === 'uncommon' ? 'var(--gold)' : 'var(--blue)'
   const jutsuHtml = knownJutsu.length
     ? `<div style="margin-bottom:10px">
-        <div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">
-          Jutsu Loadout <span style="color:var(--border-hi);font-size:7px">(${loadout.length}/${LOADOUT_MAX} active)</span>
-          ${jlb.powerMod > 0 || jlb.successMod > 0 ? `<span style="color:var(--green);font-size:7px;margin-left:6px">+${Math.round((jlb.powerMod*0.5+jlb.successMod)*100)}% mission</span>` : ''}
+        <div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">
+          Jutsu Loadout <span style="color:var(--border-hi);font-size:var(--fs-micro)">(${loadout.length}/${LOADOUT_MAX} active)</span>
+          ${jlb.powerMod > 0 || jlb.successMod > 0 ? `<span style="color:var(--green);font-size:var(--fs-micro);margin-left:6px">+${Math.round((jlb.powerMod*0.5+jlb.successMod)*100)}% mission</span>` : ''}
         </div>
         ${knownJutsu.map(j => {
           const active = loadout.includes(j.id)
@@ -370,13 +370,13 @@ export function oDos(id) {
           const bonusStr = [j.bonus?.powerMod ? `+${Math.round(j.bonus.powerMod*100)}% pow` : '', j.bonus?.successMod ? `+${Math.round(j.bonus.successMod*100)}% sc` : ''].filter(Boolean).join(' ')
           return `<div style="margin-bottom:4px;padding:4px 6px;border:1px solid ${active?'var(--green)':'var(--border)'};background:${active?'rgba(143,188,143,0.08)':'transparent'}">
             <div style="display:flex;justify-content:space-between;align-items:center">
-              <span style="font-size:9px;color:${tierColor(j.tier)};font-weight:bold">${j.n}</span>
+              <span style="font-size:var(--fs-body);color:${tierColor(j.tier)};font-weight:bold">${j.n}</span>
               <button onclick="toggleJutsuLoadout('${s.id}','${j.id}')"
-                style="font-size:6px;padding:1px 5px;border:1px solid ${active?'var(--green)':'var(--border)'};background:${active?'rgba(143,188,143,0.15)':'transparent'};color:${active?'var(--green)':canAdd?'var(--text-dim)':'var(--border)'};cursor:${canAdd||active?'pointer':'default'}">
+                style="font-size:var(--fs-micro);padding:1px 5px;border:1px solid ${active?'var(--green)':'var(--border)'};background:${active?'rgba(143,188,143,0.15)':'transparent'};color:${active?'var(--green)':canAdd?'var(--text-dim)':'var(--border)'};cursor:${canAdd||active?'pointer':'default'}">
                 ${active ? '✓ Active' : canAdd ? '+ Equip' : '— Full'}
               </button>
             </div>
-            <div style="font-size:7px;color:var(--border-hi);margin-top:1px">${bonusStr} · ${j.desc}</div>
+            <div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:1px">${bonusStr} · ${j.desc}</div>
           </div>`
         }).join('')}
       </div>`
@@ -384,22 +384,22 @@ export function oDos(id) {
   // Build bonds section
   const bondsHtml = (s.bonds || []).length
     ? `<div style="margin-bottom:10px">
-        <div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Bonds</div>
+        <div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Bonds</div>
         ${s.bonds.map(bnd => {
           const other = G.shinobi.find(x => x.id === bnd.otherId)
           if (!other) return ''
           const def = BOND_TYPES[bnd.type]
           const typeColor = bnd.type === 'Rivals' ? 'var(--red)' : bnd.type === 'Mentor/Student' ? 'var(--blue)' : bnd.type === 'Battle-Scarred' ? 'var(--purple)' : 'var(--gold)'
           return `<div style="margin-bottom:5px;padding:4px 6px;border-left:2px solid ${typeColor}">
-            <div style="font-size:9px;color:${typeColor};font-weight:bold">${bnd.type} — ${sn(other)}</div>
-            ${def ? `<div style="font-size:7px;color:var(--text-dim)">${def.desc}</div>` : ''}
+            <div style="font-size:var(--fs-body);color:${typeColor};font-weight:bold">${bnd.type} — ${sn(other)}</div>
+            ${def ? `<div style="font-size:var(--fs-micro);color:var(--text-dim)">${def.desc}</div>` : ''}
           </div>`
         }).filter(Boolean).join('')}
       </div>`
     : ''
   // Dark moment
   const darkHtml = s.darkMoment
-    ? `<div style="margin-bottom:10px;padding:6px 8px;border-left:2px solid var(--red);background:rgba(255,80,80,0.04)"><div style="font-size:7px;color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px">Dark Moment</div><div style="font-size:8px;color:var(--text-dim);font-style:italic">${s.darkMoment}</div></div>`
+    ? `<div style="margin-bottom:10px;padding:6px 8px;border-left:2px solid var(--red);background:rgba(255,80,80,0.04)"><div style="font-size:var(--fs-micro);color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:3px">Dark Moment</div><div style="font-size:var(--fs-small);color:var(--text-dim);font-style:italic">${s.darkMoment}</div></div>`
     : ''
 
   // Injury & availability panel
@@ -415,77 +415,77 @@ export function oDos(id) {
   const canSpecialist = s.status === 'injured' && s.injDays >= 3 && bestAlly && !s.specialistTreated
 
   const injuryHtml = `<div style="margin-bottom:10px">
-    <div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Availability & Workload</div>
+    <div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Availability & Workload</div>
     ${s.status === 'injured' && injTypeDef
       ? `<div style="padding:7px 9px;border:1px solid ${injTypeDef.color};background:rgba(0,0,0,.3);margin-bottom:6px">
-           <div style="font-size:9px;color:${injTypeDef.color};font-weight:bold">${injTypeDef.n}</div>
-           <div style="font-size:8px;color:var(--text-dim);margin-top:2px">${injTypeDef.desc}</div>
-           <div style="font-size:8px;color:var(--text-dim);margin-top:4px">Expected return: <b style="color:var(--text-hi)">${s.injDays} month${s.injDays!==1?'s':''}</b>${s.secondOpinionUsed ? ' <span style="color:var(--blue)">(reviewed)</span>' : ''}</div>
-           ${(s.returningForm||100) < 100 ? `<div style="font-size:8px;color:var(--orange);margin-top:2px">Post-recovery form: ${s.returningForm}% (builds over 2–3 missions)</div>` : ''}
+           <div style="font-size:var(--fs-body);color:${injTypeDef.color};font-weight:bold">${injTypeDef.n}</div>
+           <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">${injTypeDef.desc}</div>
+           <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:4px">Expected return: <b style="color:var(--text-hi)">${s.injDays} month${s.injDays!==1?'s':''}</b>${s.secondOpinionUsed ? ' <span style="color:var(--blue)">(reviewed)</span>' : ''}</div>
+           ${(s.returningForm||100) < 100 ? `<div style="font-size:var(--fs-small);color:var(--orange);margin-top:2px">Post-recovery form: ${s.returningForm}% (builds over 2–3 missions)</div>` : ''}
            <div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap">
-             ${canSecondOpinion ? `<button class="gb" style="font-size:7px;border-color:var(--blue);color:var(--blue)" onclick="secondOpinion('${s.id}')">Second Opinion (3,000 ryo) ▸</button>` : ''}
-             ${canSpecialist ? `<button class="gb gb-g" style="font-size:7px" onclick="specialistTreatment('${s.id}','${bestAlly.n}')">Specialist Treatment via ${bestAlly.n} (12,000 ryo) ▸</button>` : ''}
+             ${canSecondOpinion ? `<button class="gb" style="font-size:var(--fs-micro);border-color:var(--blue);color:var(--blue)" onclick="secondOpinion('${s.id}')">Second Opinion (3,000 ryo) ▸</button>` : ''}
+             ${canSpecialist ? `<button class="gb gb-g" style="font-size:var(--fs-micro)" onclick="specialistTreatment('${s.id}','${bestAlly.n}')">Specialist Treatment via ${bestAlly.n} (12,000 ryo) ▸</button>` : ''}
            </div>
            <div style="margin-top:8px">
-             <div style="font-size:7px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Rehab Plan</div>
+             <div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Rehab Plan</div>
              <div style="display:flex;gap:4px;flex-wrap:wrap">
                ${REHAB_PLANS.map(pl => {
                  const cur = (s.rehabPlan || 'standard') === pl.id
                  const locked = pl.id === 'careful' && !hasMedical
-                 return `<button class="gb" onclick="setRehabPlan('${s.id}','${pl.id}')" ${locked ? 'disabled title="Needs a medical ninja on staff"' : `title="${pl.desc}"`} style="font-size:7px;${cur ? 'border-color:var(--gold);color:var(--gold)' : ''}${locked ? 'opacity:.4' : ''}">${pl.icon} ${pl.label}</button>`
+                 return `<button class="gb" onclick="setRehabPlan('${s.id}','${pl.id}')" ${locked ? 'disabled title="Needs a medical ninja on staff"' : `title="${pl.desc}"`} style="font-size:var(--fs-micro);${cur ? 'border-color:var(--gold);color:var(--gold)' : ''}${locked ? 'opacity:.4' : ''}">${pl.icon} ${pl.label}</button>`
                }).join('')}
              </div>
            </div>
          </div>`
       : s.status === 'injured'
-      ? `<div style="font-size:8px;color:var(--red)">Injured — ${s.injDays} month${s.injDays!==1?'s':''} remaining</div>`
-      : `<div style="font-size:8px;color:#2d5;margin-bottom:4px">${s.status === 'available' ? 'Available' : s.status}</div>`
+      ? `<div style="font-size:var(--fs-small);color:var(--red)">Injured — ${s.injDays} month${s.injDays!==1?'s':''} remaining</div>`
+      : `<div style="font-size:var(--fs-small);color:#2d5;margin-bottom:4px">${s.status === 'available' ? 'Available' : s.status}</div>`
     }
     ${s.traumaStatus ? `<div style="padding:5px 7px;border:1px solid var(--purple);margin-bottom:6px">
-      <div style="font-size:8px;color:var(--purple)">⚠ Psychological Trauma: <b>${s.traumaStatus}</b> (${s.traumaMonths||0} months remaining)</div>
-      <div style="font-size:8px;color:var(--text-dim);margin-top:2px">Stat penalty active. ${s.traumaCount >= 2 ? '<b style="color:var(--red)">High defection risk</b>' : 'Assign medical ninja for faster recovery.'}</div>
-      ${hasMedical ? `<button class="gb gb-g" style="margin-top:5px;font-size:7px" onclick="treatTrauma('${s.id}')">Treat Trauma (5,000 ryo) ▸</button>` : ''}
+      <div style="font-size:var(--fs-small);color:var(--purple)">⚠ Psychological Trauma: <b>${s.traumaStatus}</b> (${s.traumaMonths||0} months remaining)</div>
+      <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">Stat penalty active. ${s.traumaCount >= 2 ? '<b style="color:var(--red)">High defection risk</b>' : 'Assign medical ninja for faster recovery.'}</div>
+      ${hasMedical ? `<button class="gb gb-g" style="margin-top:5px;font-size:var(--fs-micro)" onclick="treatTrauma('${s.id}')">Treat Trauma (5,000 ryo) ▸</button>` : ''}
     </div>` : ''}
     <div style="display:flex;align-items:center;gap:8px;margin-top:5px">
-      <div style="font-size:7px;color:var(--text-dim);text-transform:uppercase;width:60px">Workload</div>
+      <div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;width:60px">Workload</div>
       <div style="flex:1">${workloadBar}</div>
-      <div style="font-size:8px;color:${wColor};min-width:28px;text-align:right">${workload}%</div>
+      <div style="font-size:var(--fs-small);color:${wColor};min-width:28px;text-align:right">${workload}%</div>
     </div>
-    <div style="font-size:7px;color:var(--border-hi);margin-top:2px">High workload (60%+) increases injury risk.</div>
-    ${(s.consecutiveMissions||0) >= 2 ? `<div style="font-size:7px;color:var(--orange);margin-top:2px">⚠ ${s.consecutiveMissions} consecutive missions — overuse risk +10%</div>` : ''}
-    ${(() => { const f = s.fatigue||0; const fc = f >= 80 ? 'var(--red)' : f >= 60 ? 'var(--red-soft)' : f >= 40 ? 'var(--orange)' : 'var(--text-faint)'; return `<div style="display:flex;align-items:center;gap:8px;margin-top:5px"><div style="font-size:7px;color:var(--text-dim);text-transform:uppercase;width:60px">Fatigue</div><div style="flex:1;background:var(--border-dim);height:4px;border-radius:2px;overflow:hidden"><div style="width:${f}%;height:100%;background:${fc};transition:width .3s"></div></div><div style="font-size:8px;color:${fc};min-width:28px;text-align:right">${f}%</div></div>${f >= 40 ? `<div style="font-size:7px;color:${fc};margin-top:2px">${f >= 80 ? '⚠ Exhausted — mission penalty −15%' : f >= 60 ? '⚠ Very tired — mission penalty −9%' : 'Fatigued — mission penalty −4%'}</div>` : ''}` })()}
+    <div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:2px">High workload (60%+) increases injury risk.</div>
+    ${(s.consecutiveMissions||0) >= 2 ? `<div style="font-size:var(--fs-micro);color:var(--orange);margin-top:2px">⚠ ${s.consecutiveMissions} consecutive missions — overuse risk +10%</div>` : ''}
+    ${(() => { const f = s.fatigue||0; const fc = f >= 80 ? 'var(--red)' : f >= 60 ? 'var(--red-soft)' : f >= 40 ? 'var(--orange)' : 'var(--text-faint)'; return `<div style="display:flex;align-items:center;gap:8px;margin-top:5px"><div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;width:60px">Fatigue</div><div style="flex:1;background:var(--border-dim);height:4px;border-radius:2px;overflow:hidden"><div style="width:${f}%;height:100%;background:${fc};transition:width .3s"></div></div><div style="font-size:var(--fs-small);color:${fc};min-width:28px;text-align:right">${f}%</div></div>${f >= 40 ? `<div style="font-size:var(--fs-micro);color:${fc};margin-top:2px">${f >= 80 ? '⚠ Exhausted — mission penalty −15%' : f >= 60 ? '⚠ Very tired — mission penalty −9%' : 'Fatigued — mission penalty −4%'}</div>` : ''}` })()}
   </div>
   ${(s.injuryHistory||[]).length > 0 ? `<div style="margin-bottom:10px">
-    <div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Injury History (${s.injuryHistory.length})</div>
+    <div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Injury History (${s.injuryHistory.length})</div>
     ${s.injuryHistory.slice().reverse().slice(0,6).map(h => {
       const tDef = INJURY_TYPES.find(t => t.id === h.type)
-      return `<div style="display:flex;gap:6px;font-size:8px;margin-bottom:3px;align-items:baseline">
+      return `<div style="display:flex;gap:6px;font-size:var(--fs-small);margin-bottom:3px;align-items:baseline">
         <span style="color:var(--border-hi);min-width:50px">Yr${h.year}·M${h.month}</span>
         <span style="color:${tDef?.color||'var(--red-soft)'}">${h.typeName||h.type}</span>
         <span style="color:var(--text-dim)">${h.duration}mo</span>
-        ${h.treatment !== 'standard' ? `<span style="color:var(--blue);font-size:7px">[${h.treatment}]</span>` : ''}
+        ${h.treatment !== 'standard' ? `<span style="color:var(--blue);font-size:var(--fs-micro)">[${h.treatment}]</span>` : ''}
       </div>`
     }).join('')}
-    ${s.injuryHistory.length > 6 ? `<div style="font-size:7px;color:var(--border-hi)">+${s.injuryHistory.length-6} earlier entries</div>` : ''}
+    ${s.injuryHistory.length > 6 ? `<div style="font-size:var(--fs-micro);color:var(--border-hi)">+${s.injuryHistory.length-6} earlier entries</div>` : ''}
   </div>` : ''}`
   // Personality matrix section
   const judgeLevel = personalityJudge()
   const pm = s.pMatrix || {}
   const pmTraits = ['loyalty','ambition','professionalism','temperament','adaptability']
   const pmHtml = `<div style="margin-bottom:10px">
-    <div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Character Read ${judgeLevel >= 16 ? '(Precise)' : judgeLevel >= 11 ? '(General)' : judgeLevel >= 6 ? '(Broad)' : '(Unknown)'}</div>
+    <div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Character Read ${judgeLevel >= 16 ? '(Precise)' : judgeLevel >= 11 ? '(General)' : judgeLevel >= 6 ? '(Broad)' : '(Unknown)'}</div>
     ${pmTraits.map(k => {
       const val = pm[k] !== undefined ? pm[k] : 10
       const desc = pDesc(val, k, judgeLevel)
       const color = judgeLevel < 6 ? 'var(--border-hi)' : val >= 13 ? 'var(--green)' : val >= 8 ? 'var(--text-mid)' : 'var(--red-soft)'
-      return `<div style="display:flex;gap:6px;font-size:8px;margin-bottom:3px"><span style="color:var(--text-dim);width:80px;text-transform:capitalize">${k}</span><span style="color:${color}">${desc}</span></div>`
+      return `<div style="display:flex;gap:6px;font-size:var(--fs-small);margin-bottom:3px"><span style="color:var(--text-dim);width:80px;text-transform:capitalize">${k}</span><span style="color:${color}">${desc}</span></div>`
     }).join('')}
-    ${judgeLevel < 6 ? '<div style="font-size:7px;color:var(--border-hi);margin-top:4px">Hire a Council Advisor or Head Sensei to read character more accurately.</div>' : ''}
+    ${judgeLevel < 6 ? '<div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:4px">Hire a Council Advisor or Head Sensei to read character more accurately.</div>' : ''}
   </div>`
   // Evolved traits (gained through events, not fixed at creation)
   const evolvedHtml = (s.traits || []).length
-    ? `<div style="margin-bottom:10px"><div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Evolved Traits</div>
-       ${s.traits.map(t => `<div style="margin-bottom:4px"><span class="trait-tag ${t==='Resilient'||t==='Confident'?'trait-pos':t==='Resentful'||t==='Haunted'?'trait-neg':'trait-neu'}">${t}</span><div style="font-size:8px;color:var(--text-dim);margin-top:2px">${EVOLVED_TRAITS[t] || ''}</div></div>`).join('')}</div>`
+    ? `<div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Evolved Traits</div>
+       ${s.traits.map(t => `<div style="margin-bottom:4px"><span class="trait-tag ${t==='Resilient'||t==='Confident'?'trait-pos':t==='Resentful'||t==='Haunted'?'trait-neg':'trait-neu'}">${t}</span><div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">${EVOLVED_TRAITS[t] || ''}</div></div>`).join('')}</div>`
     : ''
   // Individual morale & commitment bars
   const indMor = s.indMorale ?? 70
@@ -493,27 +493,27 @@ export function oDos(id) {
   const mColor = indMor >= 70 ? 'var(--green)' : indMor >= 45 ? 'var(--orange)' : 'var(--red)'
   const cColor = commit >= 60 ? 'var(--gold)' : commit >= 30 ? 'var(--orange)' : 'var(--red)'
   const moraleCommitHtml = `<div style="margin-bottom:10px">
-    <div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">State of Mind</div>
+    <div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">State of Mind</div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-      <div style="font-size:7px;color:var(--text-dim);width:70px">Individual Morale</div>
+      <div style="font-size:var(--fs-micro);color:var(--text-dim);width:70px">Individual Morale</div>
       <div style="flex:1;background:var(--border-dim);height:4px;border-radius:2px"><div style="width:${indMor}%;height:100%;background:${mColor}"></div></div>
-      <div style="font-size:8px;color:${mColor};min-width:24px">${indMor}</div>
+      <div style="font-size:var(--fs-small);color:${mColor};min-width:24px">${indMor}</div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-      <div style="font-size:7px;color:var(--text-dim);width:70px">Commitment</div>
+      <div style="font-size:var(--fs-micro);color:var(--text-dim);width:70px">Commitment</div>
       <div style="flex:1;background:var(--border-dim);height:4px;border-radius:2px"><div style="width:${commit}%;height:100%;background:${cColor}"></div></div>
-      <div style="font-size:8px;color:${cColor};min-width:24px">${commit}</div>
+      <div style="font-size:var(--fs-small);color:${cColor};min-width:24px">${commit}</div>
     </div>
     ${(() => { const st = computeStrain(s), b = strainBand(st); return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-      <div style="font-size:7px;color:var(--text-dim);width:70px">Strain</div>
+      <div style="font-size:var(--fs-micro);color:var(--text-dim);width:70px">Strain</div>
       <div style="flex:1;background:var(--border-dim);height:4px;border-radius:2px"><div style="width:${st}%;height:100%;background:${b.color}"></div></div>
-      <div style="font-size:8px;color:${b.color};min-width:50px">${st} ${b.label}</div>
+      <div style="font-size:var(--fs-small);color:${b.color};min-width:50px">${st} ${b.label}</div>
     </div>` })()}
-    ${s.legendStatus ? '<div style="font-size:8px;color:var(--gold);margin-top:2px">★ Village Legend — exceptionally loyal</div>' : ''}
-    ${commit <= 25 ? '<div style="font-size:7px;color:var(--red);margin-top:2px">⚠ Low commitment — transfer risk! Consider a 1-on-1 meeting.</div>' : ''}
-    ${s.roleGuarantee ? '<div style="font-size:7px;color:var(--blue);margin-top:2px">Role guarantee promised — must deploy regularly.</div>' : ''}
-    ${s.promotionDeadline ? '<div style="font-size:7px;color:var(--orange);margin-top:2px">⏳ Promotion deadline: month ' + s.promotionDeadline + '</div>' : ''}
-    ${s.bingoBookPresence > 0 ? '<div style="font-size:7px;color:var(--orange);margin-top:2px">📖 Bingo Book: ' + ['','Listed','Featured','Legendary'][s.bingoBookPresence] + (s.bingoBookSuppressed ? ' (suppressed)' : '') + '</div>' : ''}
+    ${s.legendStatus ? '<div style="font-size:var(--fs-small);color:var(--gold);margin-top:2px">★ Village Legend — exceptionally loyal</div>' : ''}
+    ${commit <= 25 ? '<div style="font-size:var(--fs-micro);color:var(--red);margin-top:2px">⚠ Low commitment — transfer risk! Consider a 1-on-1 meeting.</div>' : ''}
+    ${s.roleGuarantee ? '<div style="font-size:var(--fs-micro);color:var(--blue);margin-top:2px">Role guarantee promised — must deploy regularly.</div>' : ''}
+    ${s.promotionDeadline ? '<div style="font-size:var(--fs-micro);color:var(--orange);margin-top:2px">⏳ Promotion deadline: month ' + s.promotionDeadline + '</div>' : ''}
+    ${s.bingoBookPresence > 0 ? '<div style="font-size:var(--fs-micro);color:var(--orange);margin-top:2px">📖 Bingo Book: ' + ['','Listed','Featured','Legendary'][s.bingoBookPresence] + (s.bingoBookSuppressed ? ' (suppressed)' : '') + '</div>' : ''}
   </div>`
 
   const marketVal = computeMarketValue(s)
@@ -538,11 +538,11 @@ export function oDos(id) {
   }
 
   const phase4Html = `<div style="margin-bottom:12px;background:#1a1a0d;border:1px solid var(--border-hi);padding:10px">
-    <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">Field Management</div>
+    <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">Field Management</div>
 
     <div style="margin-bottom:8px">
-      <div style="font-size:8px;color:var(--text-dim);margin-bottom:4px">Training Focus <span style="color:var(--border-hi)">(+1–3 stat/month, +12% workload)</span></div>
-      <select onchange="setTrainingFocus('${s.id}',this.value)" style="background:var(--sunken);border:1px solid var(--border-hi);color:var(--text-hi);font-size:8px;padding:3px 6px;width:100%">
+      <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:4px">Training Focus <span style="color:var(--border-hi)">(+1–3 stat/month, +12% workload)</span></div>
+      <select onchange="setTrainingFocus('${s.id}',this.value)" style="background:var(--sunken);border:1px solid var(--border-hi);color:var(--text-hi);font-size:var(--fs-small);padding:3px 6px;width:100%">
         <option value="" ${!s.trainingFocus?'selected':''}>— None —</option>
         ${STAT_OPTIONS.map(st => `<option value="${st}" ${s.trainingFocus===st?'selected':''}>${st.charAt(0).toUpperCase()+st.slice(1)}</option>`).join('')}
       </select>
@@ -550,37 +550,37 @@ export function oDos(id) {
 
     <div style="margin-bottom:8px;display:flex;align-items:center;gap:10px">
       <div>
-        <div style="font-size:8px;color:var(--text-dim);margin-bottom:3px">Rest Month <span style="color:var(--border-hi)">(skip deployment, −30% workload)</span></div>
-        <button onclick="toggleRestMonth('${s.id}')" style="font-size:8px;padding:3px 10px;background:${s.restMonth?'var(--green-bg)':'var(--sunken)'};border:1px solid ${s.restMonth?'var(--green)':'var(--border-hi)'};color:${s.restMonth?'var(--green)':'var(--text-dim)'};cursor:pointer">
+        <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:3px">Rest Month <span style="color:var(--border-hi)">(skip deployment, −30% workload)</span></div>
+        <button onclick="toggleRestMonth('${s.id}')" style="font-size:var(--fs-small);padding:3px 10px;background:${s.restMonth?'var(--green-bg)':'var(--sunken)'};border:1px solid ${s.restMonth?'var(--green)':'var(--border-hi)'};color:${s.restMonth?'var(--green)':'var(--text-dim)'};cursor:pointer">
           ${s.restMonth ? '✓ Resting' : '○ Set Rest'}
         </button>
       </div>
       ${contractYearsLeft !== null ? `<div>
-        <div style="font-size:8px;color:var(--text-dim);margin-bottom:3px">Contract</div>
-        <div style="font-size:8px;color:${contractColor}">${contractYearsLeft <= 0 ? 'EXPIRED' : contractYearsLeft === 1 ? 'Final year' : `${contractYearsLeft}yr remaining`}</div>
-        ${contractYearsLeft <= 1 && !s.contractRenewing ? `<button onclick="openContractRenewal('${s.id}')" style="font-size:7px;margin-top:3px;background:var(--surface-2);border:1px solid var(--blue-bg);color:var(--blue-hi);padding:2px 7px;cursor:pointer">Offer Renewal ▸</button>` : ''}
-        ${s.contractRenewing ? `<div style="font-size:7px;color:var(--orange);margin-top:2px">⏳ Renewal pending</div>` : ''}
+        <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:3px">Contract</div>
+        <div style="font-size:var(--fs-small);color:${contractColor}">${contractYearsLeft <= 0 ? 'EXPIRED' : contractYearsLeft === 1 ? 'Final year' : `${contractYearsLeft}yr remaining`}</div>
+        ${contractYearsLeft <= 1 && !s.contractRenewing ? `<button onclick="openContractRenewal('${s.id}')" style="font-size:var(--fs-micro);margin-top:3px;background:var(--surface-2);border:1px solid var(--blue-bg);color:var(--blue-hi);padding:2px 7px;cursor:pointer">Offer Renewal ▸</button>` : ''}
+        ${s.contractRenewing ? `<div style="font-size:var(--fs-micro);color:var(--orange);margin-top:2px">⏳ Renewal pending</div>` : ''}
       </div>` : ''}
       <div>
-        <div style="font-size:8px;color:var(--text-dim);margin-bottom:3px">Contract Clauses</div>
+        <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:3px">Contract Clauses</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:3px">
-          <button onclick="toggleNoTrade('${s.id}')" style="font-size:7px;padding:2px 6px;background:${s.noTrade?'var(--green-bg)':'var(--sunken)'};border:1px solid ${s.noTrade?'var(--green)':'var(--border-hi)'};color:${s.noTrade?'var(--green)':'var(--text-faint)'};cursor:pointer">
+          <button onclick="toggleNoTrade('${s.id}')" style="font-size:var(--fs-micro);padding:2px 6px;background:${s.noTrade?'var(--green-bg)':'var(--sunken)'};border:1px solid ${s.noTrade?'var(--green)':'var(--border-hi)'};color:${s.noTrade?'var(--green)':'var(--text-faint)'};cursor:pointer">
             ${s.noTrade?'✓ ':''} No-Trade
           </button>
-          <button onclick="toggleTwoWay('${s.id}')" style="font-size:7px;padding:2px 6px;background:${s.twoWay?'var(--surface-2)':'var(--sunken)'};border:1px solid ${s.twoWay?'var(--blue)':'var(--border-hi)'};color:${s.twoWay?'var(--blue)':'var(--text-faint)'};cursor:pointer">
+          <button onclick="toggleTwoWay('${s.id}')" style="font-size:var(--fs-micro);padding:2px 6px;background:${s.twoWay?'var(--surface-2)':'var(--sunken)'};border:1px solid ${s.twoWay?'var(--blue)':'var(--border-hi)'};color:${s.twoWay?'var(--blue)':'var(--text-faint)'};cursor:pointer">
             ${s.twoWay?'✓ ':''} Two-Way
           </button>
         </div>
-        ${s.buyoutCost ? `<div style="font-size:7px;color:var(--text-dim)">Buyout: <span style="color:var(--gold)">${s.buyoutCost.toLocaleString()} ryo</span>
-          <button onclick="executeBuyout('${s.id}')" style="margin-left:4px;font-size:7px;padding:1px 5px;background:var(--red-bg);border:1px solid var(--red);color:var(--red-soft);cursor:pointer" ${(window.G?.ryo||0)<s.buyoutCost?'disabled':''}>Release (buyout)</button>
+        ${s.buyoutCost ? `<div style="font-size:var(--fs-micro);color:var(--text-dim)">Buyout: <span style="color:var(--gold)">${s.buyoutCost.toLocaleString()} ryo</span>
+          <button onclick="executeBuyout('${s.id}')" style="margin-left:4px;font-size:var(--fs-micro);padding:1px 5px;background:var(--red-bg);border:1px solid var(--red);color:var(--red-soft);cursor:pointer" ${(window.G?.ryo||0)<s.buyoutCost?'disabled':''}>Release (buyout)</button>
         </div>` : ''}
-        ${s.twoWay ? `<div style="font-size:7px;color:var(--blue);margin-top:2px">Two-way: not counted against salary cap</div>` : ''}
+        ${s.twoWay ? `<div style="font-size:var(--fs-micro);color:var(--blue);margin-top:2px">Two-way: not counted against salary cap</div>` : ''}
       </div>
     </div>
 
     ${provenPairs.length > 0 ? `<div style="margin-top:6px">
-      <div style="font-size:7px;color:var(--green);margin-bottom:3px">⚗ Proven chemistry:</div>
-      ${provenPairs.map(p => `<span style="font-size:7px;color:var(--green);margin-right:8px">${p.name} (${p.count} missions)</span>`).join('')}
+      <div style="font-size:var(--fs-micro);color:var(--green);margin-bottom:3px">⚗ Proven chemistry:</div>
+      ${provenPairs.map(p => `<span style="font-size:var(--fs-micro);color:var(--green);margin-right:8px">${p.name} (${p.count} missions)</span>`).join('')}
     </div>` : ''}
   </div>`
 
@@ -595,34 +595,34 @@ export function oDos(id) {
   const decMod    = s.declineMod || 0
   const PHASES    = ['developing','prime','veteran','declining']
   const phaseIdx  = PHASES.indexOf(phase)
-  const arcHtml = `<div style="margin-bottom:12px;background:var(--surface,var(--surface));border:1px solid var(--border,var(--border));padding:10px">
-    <div style="font-size:7px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Career Arc</div>
+  const arcHtml = `<div style="margin-bottom:12px;background:var(--surface);border:1px solid var(--border);padding:10px">
+    <div style="font-size:var(--fs-micro);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Career Arc</div>
     <div style="display:flex;gap:8px;margin-bottom:10px">
       <div style="flex:1;text-align:center;padding:5px 8px;background:${phase==='developing'?'rgba(100,150,255,.12)':'transparent'};border:1px solid ${PHASE_META.developing.color};opacity:${phaseIdx===0?1:.35}">
-        <div style="font-size:8px;color:${PHASE_META.developing.color}">${PHASE_META.developing.icon}</div>
-        <div style="font-size:7px;color:${PHASE_META.developing.color}">Developing</div>
+        <div style="font-size:var(--fs-small);color:${PHASE_META.developing.color}">${PHASE_META.developing.icon}</div>
+        <div style="font-size:var(--fs-micro);color:${PHASE_META.developing.color}">Developing</div>
       </div>
       <div style="flex:1;text-align:center;padding:5px 8px;background:${phase==='prime'?'rgba(80,200,120,.12)':'transparent'};border:1px solid ${PHASE_META.prime.color};opacity:${phaseIdx===1?1:.35}">
-        <div style="font-size:8px;color:${PHASE_META.prime.color}">${PHASE_META.prime.icon}</div>
-        <div style="font-size:7px;color:${PHASE_META.prime.color}">Prime</div>
+        <div style="font-size:var(--fs-small);color:${PHASE_META.prime.color}">${PHASE_META.prime.icon}</div>
+        <div style="font-size:var(--fs-micro);color:${PHASE_META.prime.color}">Prime</div>
       </div>
       <div style="flex:1;text-align:center;padding:5px 8px;background:${phase==='veteran'?'rgba(201,168,76,.12)':'transparent'};border:1px solid ${PHASE_META.veteran.color};opacity:${phaseIdx===2?1:.35}">
-        <div style="font-size:8px;color:${PHASE_META.veteran.color}">${PHASE_META.veteran.icon}</div>
-        <div style="font-size:7px;color:${PHASE_META.veteran.color}">Veteran</div>
+        <div style="font-size:var(--fs-small);color:${PHASE_META.veteran.color}">${PHASE_META.veteran.icon}</div>
+        <div style="font-size:var(--fs-micro);color:${PHASE_META.veteran.color}">Veteran</div>
       </div>
       <div style="flex:1;text-align:center;padding:5px 8px;background:${phase==='declining'?'rgba(255,80,80,.12)':'transparent'};border:1px solid ${PHASE_META.declining.color};opacity:${phaseIdx===3?1:.35}">
-        <div style="font-size:8px;color:${PHASE_META.declining.color}">${PHASE_META.declining.icon}</div>
-        <div style="font-size:7px;color:${PHASE_META.declining.color}">Declining</div>
+        <div style="font-size:var(--fs-small);color:${PHASE_META.declining.color}">${PHASE_META.declining.icon}</div>
+        <div style="font-size:var(--fs-micro);color:${PHASE_META.declining.color}">Declining</div>
       </div>
     </div>
-    <div style="display:flex;gap:16px;font-size:8px;flex-wrap:wrap;margin-bottom:6px">
+    <div style="display:flex;gap:16px;font-size:var(--fs-small);flex-wrap:wrap;margin-bottom:6px">
       <span>Age: <b style="color:var(--text-hi)">${s.age}</b></span>
       <span>Peak age: <b style="color:var(--gold)">${peakAge}</b></span>
       <span>Phase: <b style="color:${pMeta.color}">${pMeta.label}</b></span>
       ${yearsLeft !== null && yearsLeft > 0 ? `<span style="color:var(--text-dim)">${yearsLeft}yr${yearsLeft!==1?'s':''} in phase</span>` : ''}
     </div>
     ${decMod < 0 ? `<div style="margin-bottom:6px">
-      <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--text-dim);margin-bottom:2px">
+      <div style="display:flex;justify-content:space-between;font-size:var(--fs-micro);color:var(--text-dim);margin-bottom:2px">
         <span>Decline penalty</span><span style="color:var(--red)">${Math.round(decMod*100)}%</span>
       </div>
       <div style="background:#2a1a1a;height:4px;border-radius:2px">
@@ -630,20 +630,20 @@ export function oDos(id) {
       </div>
     </div>` : ''}
     ${s.retirementOffered ? `<div style="margin-top:8px;padding:8px 10px;background:var(--red-bg);border:1px solid var(--red)">
-      <div style="font-size:8px;color:var(--red);margin-bottom:6px">⚠ ${sn(s)} has been offered retirement options</div>
+      <div style="font-size:var(--fs-small);color:var(--red);margin-bottom:6px">⚠ ${sn(s)} has been offered retirement options</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="gb" style="border-color:var(--green);color:var(--green);font-size:7px" onclick="confirm('Retire ${s.fn} ${s.ln} honorably? This cannot be undone.') && retireShinobi('${s.id}')">Retire Honorably ▸</button>
-        <button class="gb" style="border-color:var(--blue);color:var(--blue);font-size:7px" onclick="confirm('Move ${s.fn} ${s.ln} to coaching staff? This cannot be undone.') && retireToCoach('${s.id}')">Transition to Staff ▸</button>
-        <button class="gb" style="border-color:var(--text-dim);color:var(--text-dim);font-size:7px" onclick="extendCareer('${s.id}')">Request One More Year</button>
+        <button class="gb" style="border-color:var(--green);color:var(--green);font-size:var(--fs-micro)" onclick="confirm('Retire ${s.fn} ${s.ln} honorably? This cannot be undone.') && retireShinobi('${s.id}')">Retire Honorably ▸</button>
+        <button class="gb" style="border-color:var(--blue);color:var(--blue);font-size:var(--fs-micro)" onclick="confirm('Move ${s.fn} ${s.ln} to coaching staff? This cannot be undone.') && retireToCoach('${s.id}')">Transition to Staff ▸</button>
+        <button class="gb" style="border-color:var(--text-dim);color:var(--text-dim);font-size:var(--fs-micro)" onclick="extendCareer('${s.id}')">Request One More Year</button>
       </div>
     </div>` : ''}
   </div>`
 
   const careerInjHtml = (s.injuryHistory||[]).length > 0
-    ? `<div style="margin-bottom:10px"><div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Injury History</div>${s.injuryHistory.slice().reverse().slice(0,5).map(h => { const tDef = INJURY_TYPES.find(t => t.id === h.type); return `<div style="display:flex;gap:6px;font-size:8px;margin-bottom:3px;align-items:baseline"><span style="color:var(--border-hi);min-width:50px">Yr${h.year}·M${h.month}</span><span style="color:${tDef?.color||'var(--red-soft)'}">${h.typeName||h.type}</span><span style="color:var(--text-dim)">${h.duration}mo</span>${h.treatment !== 'standard' ? `<span style="color:var(--blue);font-size:7px">[${h.treatment}]</span>` : ''}</div>` }).join('')}</div>`
+    ? `<div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Injury History</div>${s.injuryHistory.slice().reverse().slice(0,5).map(h => { const tDef = INJURY_TYPES.find(t => t.id === h.type); return `<div style="display:flex;gap:6px;font-size:var(--fs-small);margin-bottom:3px;align-items:baseline"><span style="color:var(--border-hi);min-width:50px">Yr${h.year}·M${h.month}</span><span style="color:${tDef?.color||'var(--red-soft)'}">${h.typeName||h.type}</span><span style="color:var(--text-dim)">${h.duration}mo</span>${h.treatment !== 'standard' ? `<span style="color:var(--blue);font-size:var(--fs-micro)">[${h.treatment}]</span>` : ''}</div>` }).join('')}</div>`
     : ''
   const traumaHistHtml = (s.traumaHistory||[]).length
-    ? `<div style="margin-bottom:10px"><div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Trauma History</div>${s.traumaHistory.map(t => `<div style="font-size:8px;color:var(--purple);margin-bottom:3px;padding:4px 7px;border-left:2px solid var(--purple)">${t.year !== undefined ? `Yr${t.year}·M${t.month}: ` : ''}${t.type||String(t)}</div>`).join('')}</div>`
+    ? `<div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Trauma History</div>${s.traumaHistory.map(t => `<div style="font-size:var(--fs-small);color:var(--purple);margin-bottom:3px;padding:4px 7px;border-left:2px solid var(--purple)">${t.year !== undefined ? `Yr${t.year}·M${t.month}: ` : ''}${t.type||String(t)}</div>`).join('')}</div>`
     : ''
   // Memory + emotional state + role tag section
   const _memBlurb = memoryStateBlurb(s)
@@ -651,12 +651,12 @@ export function oDos(id) {
   const _quote    = getArchetypeQuote(s)
   const _roleTag  = s.roleTag ? s.roleTag.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()) : null
   const _emotion  = s.emotionalStateLabel
-  const memoryHtml = `<div style="margin-bottom:10px"><div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Memory State</div>` +
-    `<div style="font-size:9px;color:var(--text);font-style:italic;margin-bottom:4px">"${_quote}"</div>` +
-    `<div style="font-size:8px;color:var(--text-dim);margin-bottom:4px">${_memBlurb}</div>` +
-    (_salient ? `<div style="font-size:7px;color:var(--text-dim);padding:3px 6px;border-left:2px solid var(--border-hi)">Most vivid: <span style="color:var(--text)">${_salient.label}</span> (intensity ${_salient.intensity.toFixed(2)})</div>` : '') +
-    (_emotion ? `<div style="margin-top:4px;font-size:8px;padding:3px 7px;background:rgba(204,127,184,.1);border:1px solid #cc7fb888;display:inline-block">${_emotion}</div>` : '') +
-    (_roleTag ? `<div style="margin-top:5px;font-size:7px;color:var(--blue);text-transform:uppercase;letter-spacing:1px">Role: ${_roleTag}</div>` : '') +
+  const memoryHtml = `<div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Memory State</div>` +
+    `<div style="font-size:var(--fs-body);color:var(--text);font-style:italic;margin-bottom:4px">"${_quote}"</div>` +
+    `<div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:4px">${_memBlurb}</div>` +
+    (_salient ? `<div style="font-size:var(--fs-micro);color:var(--text-dim);padding:3px 6px;border-left:2px solid var(--border-hi)">Most vivid: <span style="color:var(--text)">${_salient.label}</span> (intensity ${_salient.intensity.toFixed(2)})</div>` : '') +
+    (_emotion ? `<div style="margin-top:4px;font-size:var(--fs-small);padding:3px 7px;background:rgba(204,127,184,.1);border:1px solid #cc7fb888;display:inline-block">${_emotion}</div>` : '') +
+    (_roleTag ? `<div style="margin-top:5px;font-size:var(--fs-micro);color:var(--blue);text-transform:uppercase;letter-spacing:1px">Role: ${_roleTag}</div>` : '') +
     `</div>`
 
   // Mentorship section
@@ -665,25 +665,25 @@ export function oDos(id) {
   const _canStudent = isStudentEligible(s, G.mentorships || [])
   const _eligStudents = _canMentor ? (G.shinobi || []).filter(x => isStudentEligible(x, G.mentorships || []) && x.id !== s.id).slice(0, 6) : []
   const _eligMentors  = _canStudent ? (G.shinobi || []).filter(x => isMentorEligible(x, G.mentorships || []) && x.id !== s.id).slice(0, 6) : []
-  const mentorHtml = `<div style="margin-bottom:10px"><div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Mentorship</div>` +
+  const mentorHtml = `<div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Mentorship</div>` +
     (_mentSum
-      ? `<div style="font-size:9px;color:var(--gold);margin-bottom:4px">${_mentSum}</div>` +
-        `<button class="gb" style="font-size:7px;border-color:var(--text-dim);color:var(--text-dim);padding:2px 7px" onclick="releaseMentor('${s.id}')">End Mentorship</button>`
+      ? `<div style="font-size:var(--fs-body);color:var(--gold);margin-bottom:4px">${_mentSum}</div>` +
+        `<button class="gb" style="font-size:var(--fs-micro);border-color:var(--text-dim);color:var(--text-dim);padding:2px 7px" onclick="releaseMentor('${s.id}')">End Mentorship</button>`
       : _canMentor && _eligStudents.length
-        ? `<div style="font-size:8px;color:var(--text-dim);margin-bottom:4px">Eligible to mentor:</div>` +
-          `<div style="display:flex;flex-wrap:wrap;gap:4px">${_eligStudents.map(x => `<button class="gb" style="font-size:7px;padding:2px 7px" onclick="assignMentor('${s.id}','${x.id}')">${x.fn} ${x.ln}</button>`).join('')}</div>`
+        ? `<div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:4px">Eligible to mentor:</div>` +
+          `<div style="display:flex;flex-wrap:wrap;gap:4px">${_eligStudents.map(x => `<button class="gb" style="font-size:var(--fs-micro);padding:2px 7px" onclick="assignMentor('${s.id}','${x.id}')">${x.fn} ${x.ln}</button>`).join('')}</div>`
         : _canStudent && _eligMentors.length
-          ? `<div style="font-size:8px;color:var(--text-dim);margin-bottom:4px">Request mentorship from:</div>` +
-            `<div style="display:flex;flex-wrap:wrap;gap:4px">${_eligMentors.map(x => `<button class="gb" style="font-size:7px;padding:2px 7px" onclick="assignMentor('${x.id}','${s.id}')">${x.fn} ${x.ln}</button>`).join('')}</div>`
-          : `<div style="font-size:8px;color:var(--border-hi)">No mentorship available right now.</div>`
+          ? `<div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:4px">Request mentorship from:</div>` +
+            `<div style="display:flex;flex-wrap:wrap;gap:4px">${_eligMentors.map(x => `<button class="gb" style="font-size:var(--fs-micro);padding:2px 7px" onclick="assignMentor('${x.id}','${s.id}')">${x.fn} ${x.ln}</button>`).join('')}</div>`
+          : `<div style="font-size:var(--fs-small);color:var(--border-hi)">No mentorship available right now.</div>`
     ) + `</div>`
 
   const _activityHtml = (s.activityLog || []).length
-    ? `<div style="margin-bottom:12px"><div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Recent Activity (last ${s.activityLog.length}mo)</div>${activityGridHtml(s.activityLog)}</div>`
+    ? `<div style="margin-bottom:12px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Recent Activity (last ${s.activityLog.length}mo)</div>${activityGridHtml(s.activityLog)}</div>`
     : ''
-  const careerHtml = `${arcHtml}${memoryHtml}${mentorHtml}${_activityHtml}<div style="margin-bottom:12px"><div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Mission Record</div><div style="display:flex;gap:10px;flex-wrap:wrap"><div style="background:var(--surface);border:1px solid var(--border);padding:8px 12px;flex:1;min-width:70px;text-align:center"><div style="font-size:11px;color:var(--text-hi);font-weight:bold">${s.wins||0}</div><div style="font-size:7px;color:var(--text-dim);text-transform:uppercase;margin-top:2px">Total</div></div><div style="background:var(--surface);border:1px solid #c9a84c33;padding:8px 12px;flex:1;min-width:70px;text-align:center"><div style="font-size:11px;color:var(--gold);font-weight:bold">${s.winsS||0}</div><div style="font-size:7px;color:var(--text-dim);text-transform:uppercase;margin-top:2px">S-Rank</div></div><div style="background:var(--surface);border:1px solid #87ceeb33;padding:8px 12px;flex:1;min-width:70px;text-align:center"><div style="font-size:11px;color:var(--blue);font-weight:bold">${s.winsB||0}</div><div style="font-size:7px;color:var(--text-dim);text-transform:uppercase;margin-top:2px">B/C-Rank</div></div></div></div>${traumaHistHtml}${darkHtml}${bondsHtml}${careerInjHtml}`
+  const careerHtml = `${arcHtml}${memoryHtml}${mentorHtml}${_activityHtml}<div style="margin-bottom:12px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Mission Record</div><div style="display:flex;gap:10px;flex-wrap:wrap"><div style="background:var(--surface);border:1px solid var(--border);padding:8px 12px;flex:1;min-width:70px;text-align:center"><div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold">${s.wins||0}</div><div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;margin-top:2px">Total</div></div><div style="background:var(--surface);border:1px solid #c9a84c33;padding:8px 12px;flex:1;min-width:70px;text-align:center"><div style="font-size:var(--fs-lead);color:var(--gold);font-weight:bold">${s.winsS||0}</div><div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;margin-top:2px">S-Rank</div></div><div style="background:var(--surface);border:1px solid #87ceeb33;padding:8px 12px;flex:1;min-width:70px;text-align:center"><div style="font-size:var(--fs-lead);color:var(--blue);font-weight:bold">${s.winsB||0}</div><div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;margin-top:2px">B/C-Rank</div></div></div></div>${traumaHistHtml}${darkHtml}${bondsHtml}${careerInjHtml}`
   const profileHtml = phase4Html +
-    `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div style="font-size:14px;color:var(--text-hi);font-weight:bold">${sn(s)}</div><div style="font-size:9px;color:var(--text-dim);margin-top:2px">${RANKS[s.ri]} · ${s.clan ? s.clan + ' Clan' : s.spec} · Age ${s.age}${s.prodigy ? ' · <span style="color:var(--gold)">✦ Prodigy</span>' : ''}${s.homegrown ? ' · <span style="color:var(--green)">🌱 Homegrown</span>' : ''}</div><div style="font-size:9px;margin-top:3px">Ability ${_starsHtml(sPow(s))}<span style="color:var(--border-hi);margin:0 5px">·</span>Potential ${_starsHtml(_potential(s))}<span style="color:var(--border-hi);margin:0 5px">·</span><span style="font-size:8px;color:var(--text-dim)">Pwr <b style="color:var(--text-hi)">${sPow(s)}</b></span></div>${jkB ? `<div style="font-size:9px;color:var(--gold);margin-top:2px">Vessel of ${jkB.n} (${jkB.tails} tails)</div>` : ''}${sq ? `<div style="font-size:9px;color:var(--purple);margin-top:2px">Member of ${sq.n}</div>` : ''}</div><span class="rk ${RKC[s.ri]}" style="font-size:10px">${RANKS[s.ri]}</span></div><div style="margin-bottom:10px"><div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Stats</div><div class="sg">${sBars(s)}</div></div>${injuryHtml}${moraleCommitHtml}<div style="margin-bottom:10px"><div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Personality</div><span class="trait-tag ${pCl(s.pers)}">${s.pers.n}</span>${s.narrativeArchetype ? `<span style="margin-left:6px;font-size:7px;color:var(--purple);text-transform:uppercase;letter-spacing:1px;padding:2px 6px;border:1px solid #cc7fb855">${s.narrativeArchetype.replace('_',' ')}</span>` : ''}${s.confidence !== undefined ? `<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;font-size:7px;color:var(--text-dim);margin-bottom:2px"><span>Confidence</span><span style="color:${s.confidence>=70?'var(--green)':s.confidence<=30?'var(--red)':'var(--text)'}">${s.confidence}/100</span></div><div style="background:var(--surface);border:1px solid var(--border);height:4px;border-radius:2px"><div style="background:${s.confidence>=70?'var(--green)':s.confidence<=30?'var(--red)':'var(--gold)'};width:${s.confidence}%;height:100%;border-radius:2px"></div></div></div>` : ''}<div style="font-size:9px;color:var(--text-dim);margin-top:5px">${s.pers.desc}</div></div>${pmHtml}${evolvedHtml}<div>${s.archetype ? `<div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Archetype</div><div style="font-size:9px;color:var(--purple);margin-bottom:3px">${s.archetype.n}</div><div style="font-size:9px;color:var(--text-dim);margin-bottom:10px;font-style:italic">${s.archetype.flavor}</div>` : ''}</div>${darkHtml}${jutsuHtml}${bondsHtml}<div><div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Background</div><div class="dossier">${s.backstory}</div>${(s.element||s.quirk||s.dream)?`<div style="margin-top:7px;font-size:8px;color:var(--text-dim);line-height:1.8">${s.element?`<div>Chakra nature: <span style="color:var(--gold)">${s.element}</span></div>`:''}${s.nationArchetype?`<div>School: <span style="color:var(--green)">${s.nationArchetype}</span></div>`:''}${s.quirk?`<div>Quirk: <span style="color:var(--text);font-style:italic">${s.quirk}</span></div>`:''}${s.dream?`<div>Dream: <span style="color:var(--purple);font-style:italic">“${s.dream}”</span></div>`:''}</div>`:''}</div><div style="margin-top:10px;display:flex;gap:10px;font-size:9px;color:var(--text-dim);flex-wrap:wrap"><span>Power: <b style="color:var(--text-hi)">${sPow(s)}</b></span><span>Potential: <b style="color:var(--gold)">${s.scouted === false ? '???' : s.potential}</b></span><span>Wins: <b style="color:var(--green)">${s.wins}</b></span><span>Streak: <b style="color:${(s.streak||0)>=3?'var(--gold)':'var(--text-dim)'}">${s.streak||0}</b></span><span>Grade: <b style="color:${dosGrade.color}">${dosGrade.label}</b></span><span>Market Value: <b style="color:var(--orange)">${fmt(marketVal)}</b></span></div>${s.status === 'available' && !jkB && G.beasts.some(b => b.sealed && !b.jk) ? `<div style="margin-top:10px"><div style="font-size:9px;color:var(--text-dim);margin-bottom:6px">Assign as Vessel:</div>${G.beasts.filter(b => b.sealed && !b.jk).map(b => `<button class="gb gb-g" onclick="mkJK('${s.id}','${b.n}')" style="margin-right:5px">Seal ${b.n} ►</button>`).join('')}</div>` : ''}`
+    `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div style="font-size:var(--fs-sub);color:var(--text-hi);font-weight:bold">${sn(s)}</div><div style="font-size:var(--fs-body);color:var(--text-dim);margin-top:2px">${RANKS[s.ri]} · ${s.clan ? s.clan + ' Clan' : s.spec} · Age ${s.age}${s.prodigy ? ' · <span style="color:var(--gold)">✦ Prodigy</span>' : ''}${s.homegrown ? ' · <span style="color:var(--green)">🌱 Homegrown</span>' : ''}</div><div style="font-size:var(--fs-body);margin-top:3px">Ability ${_starsHtml(sPow(s))}<span style="color:var(--border-hi);margin:0 5px">·</span>Potential ${_starsHtml(_potential(s))}<span style="color:var(--border-hi);margin:0 5px">·</span><span style="font-size:var(--fs-small);color:var(--text-dim)">Pwr <b style="color:var(--text-hi)">${sPow(s)}</b></span></div>${jkB ? `<div style="font-size:var(--fs-body);color:var(--gold);margin-top:2px">Vessel of ${jkB.n} (${jkB.tails} tails)</div>` : ''}${sq ? `<div style="font-size:var(--fs-body);color:var(--purple);margin-top:2px">Member of ${sq.n}</div>` : ''}</div><span class="rk ${RKC[s.ri]}" style="font-size:var(--fs-body)">${RANKS[s.ri]}</span></div><div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Stats</div><div class="sg">${sBars(s)}</div></div>${injuryHtml}${moraleCommitHtml}<div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Personality</div><span class="trait-tag ${pCl(s.pers)}">${s.pers.n}</span>${s.narrativeArchetype ? `<span style="margin-left:6px;font-size:var(--fs-micro);color:var(--purple);text-transform:uppercase;letter-spacing:1px;padding:2px 6px;border:1px solid #cc7fb855">${s.narrativeArchetype.replace('_',' ')}</span>` : ''}${s.confidence !== undefined ? `<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;font-size:var(--fs-micro);color:var(--text-dim);margin-bottom:2px"><span>Confidence</span><span style="color:${s.confidence>=70?'var(--green)':s.confidence<=30?'var(--red)':'var(--text)'}">${s.confidence}/100</span></div><div style="background:var(--surface);border:1px solid var(--border);height:4px;border-radius:2px"><div style="background:${s.confidence>=70?'var(--green)':s.confidence<=30?'var(--red)':'var(--gold)'};width:${s.confidence}%;height:100%;border-radius:2px"></div></div></div>` : ''}<div style="font-size:var(--fs-body);color:var(--text-dim);margin-top:5px">${s.pers.desc}</div></div>${pmHtml}${evolvedHtml}<div>${s.archetype ? `<div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Archetype</div><div style="font-size:var(--fs-body);color:var(--purple);margin-bottom:3px">${s.archetype.n}</div><div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:10px;font-style:italic">${s.archetype.flavor}</div>` : ''}</div>${darkHtml}${jutsuHtml}${bondsHtml}<div><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Background</div><div class="dossier">${s.backstory}</div>${(s.element||s.quirk||s.dream)?`<div style="margin-top:7px;font-size:var(--fs-small);color:var(--text-dim);line-height:1.8">${s.element?`<div>Chakra nature: <span style="color:var(--gold)">${s.element}</span></div>`:''}${s.nationArchetype?`<div>School: <span style="color:var(--green)">${s.nationArchetype}</span></div>`:''}${s.quirk?`<div>Quirk: <span style="color:var(--text);font-style:italic">${s.quirk}</span></div>`:''}${s.dream?`<div>Dream: <span style="color:var(--purple);font-style:italic">“${s.dream}”</span></div>`:''}</div>`:''}</div><div style="margin-top:10px;display:flex;gap:10px;font-size:var(--fs-body);color:var(--text-dim);flex-wrap:wrap"><span>Power: <b style="color:var(--text-hi)">${sPow(s)}</b></span><span>Potential: <b style="color:var(--gold)">${s.scouted === false ? '???' : s.potential}</b></span><span>Wins: <b style="color:var(--green)">${s.wins}</b></span><span>Streak: <b style="color:${(s.streak||0)>=3?'var(--gold)':'var(--text-dim)'}">${s.streak||0}</b></span><span>Grade: <b style="color:${dosGrade.color}">${dosGrade.label}</b></span><span>Market Value: <b style="color:var(--orange)">${fmt(marketVal)}</b></span></div>${s.status === 'available' && !jkB && G.beasts.some(b => b.sealed && !b.jk) ? `<div style="margin-top:10px"><div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:6px">Assign as Vessel:</div>${G.beasts.filter(b => b.sealed && !b.jk).map(b => `<button class="gb gb-g" onclick="mkJK('${s.id}','${b.n}')" style="margin-right:5px">Seal ${b.n} ►</button>`).join('')}</div>` : ''}`
   document.getElementById('dos-c').innerHTML = `<div style="display:flex;gap:6px;margin-bottom:12px"><button class="tab${dosActiveTab==='profile'?' active':''}" onclick="dosTab('profile')">Profile</button><button class="tab${dosActiveTab==='career'?' active':''}" onclick="dosTab('career')">Career</button></div><div style="${dosActiveTab==='career'?'display:none':''}">${profileHtml}</div><div style="${dosActiveTab==='profile'?'display:none':''}">${careerHtml}</div>`
   document.getElementById('ov-dossier').classList.add('open')
 }

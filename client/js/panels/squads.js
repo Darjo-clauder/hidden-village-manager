@@ -19,9 +19,9 @@ function _cadenceNote(sq) {
   const consec = sq.consecutiveDeployMonths || 0
   const idle = sq.idleMonths || 0
   const gm = grindMod(consec)
-  if (gm < 0) return `<div style="font-size:7px;color:var(--orange);margin-top:3px">⚠ ${consec}mo straight in the field — ${Math.round(-gm * 100)}% success penalty</div>`
+  if (gm < 0) return `<div style="font-size:var(--fs-micro);color:var(--orange);margin-top:3px">⚠ ${consec}mo straight in the field — ${Math.round(-gm * 100)}% success penalty</div>`
   const decay = idleCohesionDecay(idle)
-  if (decay > 0) return `<div style="font-size:7px;color:var(--blue);margin-top:3px">💤 Idle ${idle}mo — losing ${decay} cohesion/mo</div>`
+  if (decay > 0) return `<div style="font-size:var(--fs-micro);color:var(--blue);margin-top:3px">💤 Idle ${idle}mo — losing ${decay} cohesion/mo</div>`
   return ''
 }
 
@@ -32,9 +32,9 @@ function _squadConditionPreview(sq) {
   const stams = mbs.map(s => Math.min(100, staminaStart({ chakra: s.stats?.chakra || 30, workload: s.workload || 0 }) + comp.startBonus))
   const avg = Math.round(stams.reduce((a, v) => a + v, 0) / stams.length)
   const band = staminaBand(avg)
-  const tags = comp.tags.map(tg => `<span title="${tg.desc}" style="font-size:7px;border:1px solid ${tg.good ? 'var(--green)' : 'var(--orange)'};color:${tg.good ? 'var(--green)' : 'var(--orange)'};padding:1px 5px;cursor:help">${tg.label}</span>`).join(' ')
+  const tags = comp.tags.map(tg => `<span title="${tg.desc}" style="font-size:var(--fs-micro);border:1px solid ${tg.good ? 'var(--green)' : 'var(--orange)'};color:${tg.good ? 'var(--green)' : 'var(--orange)'};padding:1px 5px;cursor:help">${tg.label}</span>`).join(' ')
   const bars = mbs.map((s, i) => `<span title="${sn(s)} — ${staminaBand(stams[i]).label}" style="display:inline-block;width:22px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;vertical-align:middle"><span style="display:block;height:100%;width:${stams[i]}%;background:${staminaBand(stams[i]).color}"></span></span>`).join(' ')
-  return `<div style="font-size:7px;color:var(--text-dim);margin-top:5px;padding-top:5px;border-top:1px solid var(--surface-3)">
+  return `<div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:5px;padding-top:5px;border-top:1px solid var(--surface-3)">
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
       <span style="text-transform:uppercase;letter-spacing:1px">Match condition</span>
       <b style="color:${band.color}">${avg} · ${band.label}</b>
@@ -78,12 +78,12 @@ export function setFormation(squadId, formation) {
 
 export function rSq() {
   const el = document.getElementById('sql')
-  if (!G.squads.length) { el.innerHTML = `<div style="color:var(--text-dim);font-size:10px">${t('squad.none')}</div>`; return }
+  if (!G.squads.length) { el.innerHTML = `<div style="color:var(--text-dim);font-size:var(--fs-body)">${t('squad.none')}</div>`; return }
   const _fit = _squadFitMatrix()
   const _fitHtml = `<div style="background:var(--surface);border:1px solid var(--border);padding:10px 12px;margin-bottom:12px">
-    <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">${t('squad.fitMatrix')}</div>
+    <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">${t('squad.fitMatrix')}</div>
     ${heatmapHtml(_fit.rows, _fit.cols, _fit.matrix)}
-    <div style="font-size:7px;color:var(--border-hi);margin-top:6px">Higher = better suited. Pair a squad with missions matching its strongest specialties.</div>
+    <div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:6px">Higher = better suited. Pair a squad with missions matching its strongest specialties.</div>
   </div>`
   el.innerHTML = _fitHtml + G.squads.map(sq => {
     const mbs = sq.members.map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
@@ -99,26 +99,26 @@ export function rSq() {
 
     const synHtml = syn.bonuses.length
       ? `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${syn.bonuses.map(b =>
-          `<span title="${b.desc}" style="font-size:7px;padding:2px 6px;border:1px solid ${b.color};color:${b.color};cursor:help">${b.label}</span>`
+          `<span title="${b.desc}" style="font-size:var(--fs-micro);padding:2px 6px;border:1px solid ${b.color};color:${b.color};cursor:help">${b.label}</span>`
         ).join('')}</div>`
       : ''
 
     return `<div class="card">
-      <div style="font-size:11px;color:var(--text-hi);font-weight:bold;margin-bottom:3px">
+      <div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold;margin-bottom:3px">
         ${sq.n}
-        ${sq.identity ? `<span style="font-size:8px;color:var(--gold);margin-left:5px">"${sq.identity.title}"</span>` : ''}
-        <span style="font-size:8px;color:var(--text-dim)">Power ${pw}${syn.powerMult > 1 ? ` <span style="color:var(--green)">(+${Math.round((syn.powerMult - 1) * 100)}%)</span>` : ''}</span>
+        ${sq.identity ? `<span style="font-size:var(--fs-small);color:var(--gold);margin-left:5px">"${sq.identity.title}"</span>` : ''}
+        <span style="font-size:var(--fs-small);color:var(--text-dim)">Power ${pw}${syn.powerMult > 1 ? ` <span style="color:var(--green)">(+${Math.round((syn.powerMult - 1) * 100)}%)</span>` : ''}</span>
       </div>
-      ${sq.identity ? `<div style="font-size:8px;color:var(--text-dim);margin-bottom:3px;font-style:italic">${sq.identity.desc}</div>` : ''}
-      <div style="font-size:8px;color:var(--text-dim);margin-bottom:5px">Leader: ${leader ? sn(leader) : '-'} (${leader ? RANKS[leader.ri] : '-'})</div>
+      ${sq.identity ? `<div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:3px;font-style:italic">${sq.identity.desc}</div>` : ''}
+      <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:5px">Leader: ${leader ? sn(leader) : '-'} (${leader ? RANKS[leader.ri] : '-'})</div>
       <div style="margin-bottom:6px">${mbs.map(s => {
         const roleDef = SQUAD_ROLES.find(r => r.id === (s.squadRole || 'flex'))
         const depthEntry = G.depthChart?.[sq.id]
         const isStarter = depthEntry && Object.values(depthEntry).some(slot => slot.starter === s.id)
-        return `<span class="squad-mb">${sn(s)} <span style="color:var(--gold)">${RANKS[s.ri]}</span>${s.jk ? ' 🔮' : ''}${roleDef ? ` <span title="${roleDef.n}" style="font-size:7px;padding:1px 4px;border:1px solid ${roleDef.color};color:${roleDef.color};margin-left:3px">${roleDef.icon}${isStarter ? ' S' : ''}</span>` : ''}</span>`
+        return `<span class="squad-mb">${sn(s)} <span style="color:var(--gold)">${RANKS[s.ri]}</span>${s.jk ? ' 🔮' : ''}${roleDef ? ` <span title="${roleDef.n}" style="font-size:var(--fs-micro);padding:1px 4px;border:1px solid ${roleDef.color};color:${roleDef.color};margin-left:3px">${roleDef.icon}${isStarter ? ' S' : ''}</span>` : ''}</span>`
       }).join('')}</div>
       <div style="margin-bottom:6px">
-        <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-dim);margin-bottom:3px">
+        <div style="display:flex;justify-content:space-between;font-size:var(--fs-small);color:var(--text-dim);margin-bottom:3px">
           <span>Cohesion — <span style="color:var(--text-hi)">${cohesionLabel(cohesion)}</span></span>
           <span style="color:var(--gold)">${cohesion}/100</span>
         </div>
@@ -126,7 +126,7 @@ export function rSq() {
         ${_cadenceNote(sq)}
       </div>
       <div style="margin-bottom:6px">
-        <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-dim);margin-bottom:3px">
+        <div style="display:flex;justify-content:space-between;font-size:var(--fs-small);color:var(--text-dim);margin-bottom:3px">
           <span>Chemistry — <span style="color:${chem.color}">${chem.tier}</span></span>
           <span style="color:${chem.color}">${chem.score}/100</span>
         </div>
@@ -134,7 +134,7 @@ export function rSq() {
       </div>
       ${synHtml}
       ${_squadConditionPreview(sq)}
-      <div style="display:flex;gap:10px;font-size:8px;color:var(--text-dim);margin-top:6px">
+      <div style="display:flex;gap:10px;font-size:var(--fs-small);color:var(--text-dim);margin-top:6px">
         <span>W: <b style="color:var(--green)">${sq.wins||0}</b></span>
         <span>L: <b style="color:var(--red)">${sq.losses||0}</b></span>
         <span>Active: <b style="color:var(--gold)">${sq.monthsActive||0}m</b></span>
@@ -143,13 +143,13 @@ export function rSq() {
           : `<span>🤝 Bond in <b style="color:var(--blue)">${bi.away}</b>W</span>` })()}
       </div>
       ${G._ff_tacticalFormation ? `<div style="display:flex;gap:5px;align-items:center;margin-top:6px">
-        <span style="font-size:7px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">${t('squad.formation')}</span>
-        ${Object.entries(FORMATIONS).map(([fid, f]) => `<button onclick="setFormation('${sq.id}','${fid}')" style="font-size:7px;padding:2px 7px;cursor:pointer;background:${(sq.formation || 'balanced') === fid ? 'var(--gold)' : 'transparent'};color:${(sq.formation || 'balanced') === fid ? '#0d0d0f' : 'var(--gold)'};border:1px solid var(--gold)">${f.name}</button>`).join('')}
+        <span style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">${t('squad.formation')}</span>
+        ${Object.entries(FORMATIONS).map(([fid, f]) => `<button onclick="setFormation('${sq.id}','${fid}')" style="font-size:var(--fs-micro);padding:2px 7px;cursor:pointer;background:${(sq.formation || 'balanced') === fid ? 'var(--gold)' : 'transparent'};color:${(sq.formation || 'balanced') === fid ? '#0d0d0f' : 'var(--gold)'};border:1px solid var(--gold)">${f.name}</button>`).join('')}
       </div>` : ''}
-      ${(sq.fallen||[]).length ? `<div style="margin-top:5px;font-size:7px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase">${t('squad.fallen')}</div>
-        ${sq.fallen.map(f => `<div style="font-size:7px;color:var(--red);margin-top:1px">✦ ${f.name} · ${f.rank} · Y${f.year}M${f.month} — "${f.mission}"</div>`).join('')}` : ''}
+      ${(sq.fallen||[]).length ? `<div style="margin-top:5px;font-size:var(--fs-micro);color:var(--text-dim);letter-spacing:1px;text-transform:uppercase">${t('squad.fallen')}</div>
+        ${sq.fallen.map(f => `<div style="font-size:var(--fs-micro);color:var(--red);margin-top:1px">✦ ${f.name} · ${f.rank} · Y${f.year}M${f.month} — "${f.mission}"</div>`).join('')}` : ''}
       ${aM
-        ? `<div style="font-size:9px;color:var(--orange);margin-top:6px">⟳ On mission — ${aM.daysLeft}m left</div>`
+        ? `<div style="font-size:var(--fs-body);color:var(--orange);margin-top:6px">⟳ On mission — ${aM.daysLeft}m left</div>`
         : `<div style="display:flex;gap:6px;margin-top:8px"><button class="gb" onclick="oSqA('${sq.id}')" ${allAv ? '' : 'disabled'}>Assign ►</button><button class="gb gb-r" onclick="disbSq('${sq.id}')">Disband</button></div>`
       }
     </div>`
@@ -160,8 +160,8 @@ export function oCS() {
   ui.csL = null; ui.csM = []
   const j = G.shinobi.filter(s => s.ri >= 2 && s.status === 'available' && !G.squads.find(q => q.leaderId === s.id))
   document.getElementById('cs-l').innerHTML = j.map(s =>
-    `<div class="pi" onclick="csSL('${s.id}',this)" id="csl-${s.id}"><div><div style="font-size:10px;color:var(--text-hi)">${sn(s)}</div><div style="font-size:8px;color:var(--text-dim)">${RANKS[s.ri]} · Pwr ${sPow(s)}${s.pers.n === 'Charismatic' ? ' · +5 sq pwr' : ''}</div></div></div>`
-  ).join('') || `<div style="color:var(--text-dim);font-size:9px">${t('squad.noJonin')}</div>`
+    `<div class="pi" onclick="csSL('${s.id}',this)" id="csl-${s.id}"><div><div style="font-size:var(--fs-body);color:var(--text-hi)">${sn(s)}</div><div style="font-size:var(--fs-small);color:var(--text-dim)">${RANKS[s.ri]} · Pwr ${sPow(s)}${s.pers.n === 'Charismatic' ? ' · +5 sq pwr' : ''}</div></div></div>`
+  ).join('') || `<div style="color:var(--text-dim);font-size:var(--fs-body)">${t('squad.noJonin')}</div>`
   rCSM()
   document.getElementById('sqni').value = 'Squad ' + (G.squads.length + 1)
   document.getElementById('ov-csquad').classList.add('open')
@@ -178,7 +178,7 @@ export function rCSM() {
   const av = G.shinobi.filter(s => s.status === 'available' && s.id !== ui.csL && !G.squads.some(q => q.members.includes(s.id)))
   document.getElementById('cs-m').innerHTML = av.map(s => {
     const sel = ui.csM.includes(s.id)
-    return `<div class="pi" onclick="csMT('${s.id}')" style="${sel ? 'border-color:var(--gold);background:rgba(201,168,76,0.08)' : ''}"><div><div style="font-size:10px;color:var(--text-hi)">${sn(s)}</div><div style="font-size:8px;color:var(--text-dim)">${RANKS[s.ri]} · Pwr ${sPow(s)}</div></div>${sel ? '<span style="color:var(--gold);font-size:9px">✓</span>' : ''}</div>`
+    return `<div class="pi" onclick="csMT('${s.id}')" style="${sel ? 'border-color:var(--gold);background:rgba(201,168,76,0.08)' : ''}"><div><div style="font-size:var(--fs-body);color:var(--text-hi)">${sn(s)}</div><div style="font-size:var(--fs-small);color:var(--text-dim)">${RANKS[s.ri]} · Pwr ${sPow(s)}</div></div>${sel ? '<span style="color:var(--gold);font-size:var(--fs-body)">✓</span>' : ''}</div>`
   }).join('')
 }
 
@@ -196,10 +196,10 @@ export function rSynPrev() {
   if (all.length < 2) { el.innerHTML = ''; return }
   const fakeSq = { id: '_prev', members: all, leaderId: ui.csL, cohesion: 0 }
   const syn = sqSynergy(fakeSq, G.shinobi)
-  if (!syn.bonuses.length) { el.innerHTML = `<div style="font-size:8px;color:var(--border-hi)">${t('squad.noSynergy')}</div>`; return }
-  el.innerHTML = `<div style="font-size:8px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">${t('squad.synergyPreview')}</div>` +
+  if (!syn.bonuses.length) { el.innerHTML = `<div style="font-size:var(--fs-small);color:var(--border-hi)">${t('squad.noSynergy')}</div>`; return }
+  el.innerHTML = `<div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">${t('squad.synergyPreview')}</div>` +
     syn.bonuses.map(b =>
-      `<div style="margin-bottom:4px"><span style="font-size:8px;color:${b.color};font-weight:bold">${b.label}</span><div style="font-size:8px;color:var(--text-dim)">${b.desc}</div></div>`
+      `<div style="margin-bottom:4px"><span style="font-size:var(--fs-small);color:${b.color};font-weight:bold">${b.label}</span><div style="font-size:var(--fs-small);color:var(--text-dim)">${b.desc}</div></div>`
     ).join('')
 }
 
@@ -240,8 +240,8 @@ export function oSqA(sqId) {
   if (rB.riskReduction > 0) bonusLines.push(`−${Math.round(rB.riskReduction*100)}% KIA risk`)
   if (rB.injReduction  > 0) bonusLines.push(`−${Math.round(rB.injReduction*100*0.5)}% injury severity`)
   const bonusHtml = (bonusLines.length
-    ? `<div style="font-size:7px;color:var(--green);margin-top:3px">⚔ Depth chart bonuses: ${bonusLines.join(' · ')}</div>`
-    : `<div style="font-size:7px;color:var(--border-hi);margin-top:3px">${t('squad.noDepthBonuses')}</div>`)
+    ? `<div style="font-size:var(--fs-micro);color:var(--green);margin-top:3px">⚔ Depth chart bonuses: ${bonusLines.join(' · ')}</div>`
+    : `<div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:3px">${t('squad.noDepthBonuses')}</div>`)
     + _squadConditionPreview(sq)
 
   document.getElementById('msa-t').textContent = 'Assign ' + sq.n + ' (power ' + pw + ')'
@@ -253,14 +253,14 @@ export function oSqA(sqId) {
   if (!ui.sqApproach) ui.sqApproach = 'balanced'
   const SPEC_LABEL = { stealth:'Stealth', combat:'Combat', intel:'Intel', escort:'Escort', siege:'Siege', recovery:'Recovery' }
   const approachHtml = `<div style="margin-bottom:10px">
-    <div style="font-size:7px;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px">${t('squad.tacticalApproach')}</div>
+    <div style="font-size:var(--fs-micro);letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px">${t('squad.tacticalApproach')}</div>
     <div style="display:flex;gap:5px">
       ${MISSION_APPROACHES.map(a => {
         const sel = a.id === ui.sqApproach
         return `<div onclick="setSqApproach('${a.id}')" style="flex:1;text-align:center;padding:5px 4px;cursor:pointer;border:1px solid ${sel ? 'var(--gold)' : 'var(--border)'};background:${sel ? 'rgba(201,168,76,.10)' : 'transparent'}">
-          <div style="font-size:12px">${a.icon}</div>
-          <div style="font-size:8px;color:${sel ? 'var(--gold)' : 'var(--text-mid)'};font-weight:${sel ? 'bold' : 'normal'}">${a.label}</div>
-          <div style="font-size:6px;color:var(--text-faint);margin-top:1px">${a.favors.length ? a.favors.map(f => SPEC_LABEL[f]).join('/') : 'any'}</div>
+          <div style="font-size:var(--fs-lead)">${a.icon}</div>
+          <div style="font-size:var(--fs-small);color:${sel ? 'var(--gold)' : 'var(--text-mid)'};font-weight:${sel ? 'bold' : 'normal'}">${a.label}</div>
+          <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:1px">${a.favors.length ? a.favors.map(f => SPEC_LABEL[f]).join('/') : 'any'}</div>
         </div>`
       }).join('')}
     </div>
@@ -272,17 +272,17 @@ export function oSqA(sqId) {
     const ok = pw >= m.mp, rc = 'mr-' + m.rk.toLowerCase()
     const fav = m.spec && _appSel.favors.includes(m.spec)
     const mis = m.spec && _appSel.id !== 'balanced' && !_appSel.favors.includes(m.spec)
-    const matchTag = fav ? ' <span style="font-size:7px;color:var(--green)">▲</span>' : mis ? ' <span style="font-size:7px;color:var(--red-soft)">▼</span>' : ''
+    const matchTag = fav ? ' <span style="font-size:var(--fs-micro);color:var(--green)">▲</span>' : mis ? ' <span style="font-size:var(--fs-micro);color:var(--red-soft)">▼</span>' : ''
     const effectiveSc = Math.round((1 - m.risk + rB.missionBonus - rB.riskReduction + (fav ? 0.07 : mis ? -0.07 : 0)) * 100)
     return `<div class="pi" onclick="${ok ? `doSqA('${m.id}')` : ''}" style="${ok ? '' : 'opacity:0.4;cursor:not-allowed'}">
       <div>
-        <div style="font-size:10px;color:var(--text-hi)">${m.n} <span class="mrb ${rc}">${m.rk}</span>${m.spec ? ` <span style="font-size:7px;color:var(--blue-hi)">${SPEC_LABEL[m.spec]}${matchTag}</span>` : ''}</div>
-        <div style="font-size:8px;color:var(--text-dim)">${fmt(m.ryo)} ryo · ${m.dur}m · Min ${m.mp}${ok ? '' : ` (need ${m.mp - pw} more)`}</div>
-        ${ok && bonusLines.length ? `<div style="font-size:7px;color:var(--green)">Est. success: ~${Math.min(97, effectiveSc)}%</div>` : ''}
+        <div style="font-size:var(--fs-body);color:var(--text-hi)">${m.n} <span class="mrb ${rc}">${m.rk}</span>${m.spec ? ` <span style="font-size:var(--fs-micro);color:var(--blue-hi)">${SPEC_LABEL[m.spec]}${matchTag}</span>` : ''}</div>
+        <div style="font-size:var(--fs-small);color:var(--text-dim)">${fmt(m.ryo)} ryo · ${m.dur}m · Min ${m.mp}${ok ? '' : ` (need ${m.mp - pw} more)`}</div>
+        ${ok && bonusLines.length ? `<div style="font-size:var(--fs-micro);color:var(--green)">Est. success: ~${Math.min(97, effectiveSc)}%</div>` : ''}
       </div>
-      <span style="font-size:8px;color:${ok ? 'var(--green)' : 'var(--red)'}">${ok ? '✓' : '✗'}</span>
+      <span style="font-size:var(--fs-small);color:${ok ? 'var(--green)' : 'var(--red)'}">${ok ? '✓' : '✗'}</span>
     </div>`
-  }).join('') || `<div style="color:var(--text-dim);font-size:9px">${t('squad.noMissions')}</div>`
+  }).join('') || `<div style="color:var(--text-dim);font-size:var(--fs-body)">${t('squad.noMissions')}</div>`
   document.getElementById('ov-sqassign').classList.add('open')
 }
 

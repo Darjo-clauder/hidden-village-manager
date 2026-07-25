@@ -19,7 +19,7 @@ export function rSafehouses() {
   const activeOps = (G.aM || []).filter(a => a.isDeepCover)
   const activeOpsHtml = activeOps.length === 0 ? '' : `
     <div style="background:var(--sunken);border:1px solid #3a2a0a;padding:10px;margin-bottom:12px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:8px">Active Operations (${activeOps.length})</div>
+      <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:8px">Active Operations (${activeOps.length})</div>
       <div style="display:grid;gap:6px">
         ${activeOps.map(am => {
           const op = DC_OP_BY_ID[am.opId]
@@ -33,16 +33,16 @@ export function rSafehouses() {
           return `<div style="background:var(--bg);border:1px solid var(--border-dim);padding:8px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
               <div>
-                <span style="font-size:9px;color:var(--text-hi)">${op?.n || am.opId}</span>
-                <span style="font-size:7px;color:var(--text-dim);margin-left:6px">${s ? sn(s) : '?'} · ${SH_LOCATION_BY_ID[sh?.locationId]?.name || 'field'}</span>
+                <span style="font-size:var(--fs-body);color:var(--text-hi)">${op?.n || am.opId}</span>
+                <span style="font-size:var(--fs-micro);color:var(--text-dim);margin-left:6px">${s ? sn(s) : '?'} · ${SH_LOCATION_BY_ID[sh?.locationId]?.name || 'field'}</span>
               </div>
               <div style="text-align:right">
-                <span style="font-size:8px;color:var(--gold)">${am.daysLeft}mo left</span>
-                <span style="font-size:7px;color:${riskCol};margin-left:6px">${risk} exposure</span>
+                <span style="font-size:var(--fs-small);color:var(--gold)">${am.daysLeft}mo left</span>
+                <span style="font-size:var(--fs-micro);color:${riskCol};margin-left:6px">${risk} exposure</span>
               </div>
             </div>
             <div style="background:var(--sunken);height:4px;border-radius:2px;overflow:hidden"><div style="background:var(--gold);height:4px;width:${pct}%"></div></div>
-            <div style="text-align:right;margin-top:4px"><button class="gb gb-r" style="font-size:7px;padding:2px 7px" onclick="abortDeepCover('${am.id}')">${t("safehouses.abort")}</button></div>
+            <div style="text-align:right;margin-top:4px"><button class="gb gb-r" style="font-size:var(--fs-micro);padding:2px 7px" onclick="abortDeepCover('${am.id}')">${t("safehouses.abort")}</button></div>
           </div>`
         }).join('')}
       </div>
@@ -50,8 +50,8 @@ export function rSafehouses() {
 
   el.innerHTML = `
     <div style="background:var(--bg);border:1px solid var(--border-dim);padding:10px;margin-bottom:12px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">${t("safehouses.networkStatus")}</div>
-      <div style="display:flex;gap:12px;font-size:8px">
+      <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">${t("safehouses.networkStatus")}</div>
+      <div style="display:flex;gap:12px;font-size:var(--fs-small)">
         <span style="color:var(--text-hi)">Safehouses: ${active.length} / ${MAX_SAFEHOUSES}</span>
         <span style="color:var(--gold)">Active ops: ${activeOps.length}</span>
         ${shP.prospectBonus ? `<span style="color:var(--green)">+${(shP.prospectBonus*100).toFixed(0)}% prospect leads</span>` : ''}
@@ -60,7 +60,7 @@ export function rSafehouses() {
     </div>
     ${activeOpsHtml}
 
-    <div style="font-size:8px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Establish Safehouse (${SAFEHOUSE_COST.toLocaleString()} ryo)</div>
+    <div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Establish Safehouse (${SAFEHOUSE_COST.toLocaleString()} ryo)</div>
     <div style="display:grid;gap:6px;margin-bottom:16px">
     ${SAFEHOUSE_LOCATIONS.map(loc => {
       const existing = active.find(s => s.locationId === loc.id)
@@ -68,22 +68,22 @@ export function rSafehouses() {
       return `
         <div style="background:var(--bg);border:1px solid ${existing ? 'var(--green-bg)' : 'var(--border-dim)'};padding:8px;display:flex;justify-content:space-between;align-items:center">
           <div>
-            <span style="font-size:10px">${loc.icon}</span>
-            <span style="font-size:9px;color:var(--text-hi);margin-left:6px">${loc.name}</span>
-            <div style="font-size:7px;color:var(--text-dim);margin-top:2px">${loc.desc}</div>
-            <div style="font-size:7px;color:#5a8060;margin-top:1px">+${(loc.prospectBonus*100).toFixed(0)}% prospects · +${(loc.opSuccessBonus*100).toFixed(0)}% op success</div>
+            <span style="font-size:var(--fs-body)">${loc.icon}</span>
+            <span style="font-size:var(--fs-body);color:var(--text-hi);margin-left:6px">${loc.name}</span>
+            <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:2px">${loc.desc}</div>
+            <div style="font-size:var(--fs-micro);color:#5a8060;margin-top:1px">+${(loc.prospectBonus*100).toFixed(0)}% prospects · +${(loc.opSuccessBonus*100).toFixed(0)}% op success</div>
           </div>
           ${existing
-            ? '<span style="font-size:8px;color:var(--green)">✓ Active</span>'
-            : `<button onclick="window.establishSafehouse('${loc.id}')" style="font-size:8px;padding:4px 10px;background:${canBuy?'var(--green-bg)':'var(--sunken)'};color:${canBuy?'var(--green)':'var(--text-faint)'};border:1px solid ${canBuy?'var(--green-bg)':'var(--border-dim)'};cursor:${canBuy?'pointer':'default'}">${canBuy ? 'Establish' : active.length >= MAX_SAFEHOUSES ? 'Network Full' : 'Need ryo'}</button>`
+            ? '<span style="font-size:var(--fs-small);color:var(--green)">✓ Active</span>'
+            : `<button onclick="window.establishSafehouse('${loc.id}')" style="font-size:var(--fs-small);padding:4px 10px;background:${canBuy?'var(--green-bg)':'var(--sunken)'};color:${canBuy?'var(--green)':'var(--text-faint)'};border:1px solid ${canBuy?'var(--green-bg)':'var(--border-dim)'};cursor:${canBuy?'pointer':'default'}">${canBuy ? 'Establish' : active.length >= MAX_SAFEHOUSES ? 'Network Full' : 'Need ryo'}</button>`
           }
         </div>`
     }).join('')}
     </div>
 
-    <div style="font-size:8px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">${t("safehouses.deepCover")}</div>
+    <div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">${t("safehouses.deepCover")}</div>
     ${active.length === 0
-      ? `<div style="font-size:8px;color:var(--border-hi)">${t("safehouses.establishFirst")}</div>`
+      ? `<div style="font-size:var(--fs-small);color:var(--border-hi)">${t("safehouses.establishFirst")}</div>`
       : `<div style="display:grid;gap:8px">
         ${DEEP_COVER_OPS.map(op => {
           const eligible = available.filter(s => (s.ri || 0) >= op.reqRi)
@@ -92,24 +92,24 @@ export function rSafehouses() {
             <div style="background:var(--bg);border:1px solid var(--border-dim);padding:8px">
               <div style="display:flex;justify-content:space-between;margin-bottom:4px">
                 <div>
-                  <span style="font-size:9px;color:var(--text-hi)">${op.n}</span>
-                  <span style="font-size:8px;color:${RKC2[op.rk]||'var(--text-mid)'};margin-left:6px">[${op.rk}]</span>
-                  <span style="font-size:7px;color:var(--text-dim);margin-left:6px">${op.daysActive} month(s)</span>
+                  <span style="font-size:var(--fs-body);color:var(--text-hi)">${op.n}</span>
+                  <span style="font-size:var(--fs-small);color:${RKC2[op.rk]||'var(--text-mid)'};margin-left:6px">[${op.rk}]</span>
+                  <span style="font-size:var(--fs-micro);color:var(--text-dim);margin-left:6px">${op.daysActive} month(s)</span>
                 </div>
-                <div style="text-align:right;font-size:8px;color:var(--green)">+${op.ryo.toLocaleString()} ryo</div>
+                <div style="text-align:right;font-size:var(--fs-small);color:var(--green)">+${op.ryo.toLocaleString()} ryo</div>
               </div>
-              <div style="font-size:7px;color:var(--gold-2);margin-bottom:6px">${op.desc}</div>
+              <div style="font-size:var(--fs-micro);color:var(--gold-2);margin-bottom:6px">${op.desc}</div>
               ${eligible.length === 0
-                ? `<div style="font-size:7px;color:var(--text-faint)">${t("safehouses.noEligible")}</div>`
+                ? `<div style="font-size:var(--fs-micro);color:var(--text-faint)">${t("safehouses.noEligible")}</div>`
                 : `<div style="display:flex;gap:6px;align-items:center">
-                    <select id="dc-sh-${op.id}" style="font-size:8px;padding:3px;background:var(--sunken);color:var(--text-hi);border:1px solid var(--border)">
+                    <select id="dc-sh-${op.id}" style="font-size:var(--fs-small);padding:3px;background:var(--sunken);color:var(--text-hi);border:1px solid var(--border)">
                       ${active.map(sh => `<option value="${sh.id}">${SH_LOCATION_BY_ID[sh.locationId]?.name || sh.id}</option>`).join('')}
                     </select>
-                    <select id="dc-s-${op.id}" style="font-size:8px;padding:3px;background:var(--sunken);color:var(--text-hi);border:1px solid var(--border)">
+                    <select id="dc-s-${op.id}" style="font-size:var(--fs-small);padding:3px;background:var(--sunken);color:var(--text-hi);border:1px solid var(--border)">
                       <option value="">— shinobi —</option>
                       ${eligible.map(s => `<option value="${s.id}">${sn(s)}</option>`).join('')}
                     </select>
-                    <button onclick="launchDeepCover('${op.id}')" style="font-size:8px;padding:3px 8px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-bg);cursor:pointer">${t("safehouses.deploy")}</button>
+                    <button onclick="launchDeepCover('${op.id}')" style="font-size:var(--fs-small);padding:3px 8px;background:var(--green-bg);color:var(--green);border:1px solid var(--green-bg);cursor:pointer">${t("safehouses.deploy")}</button>
                   </div>`}
             </div>`
         }).join('')}

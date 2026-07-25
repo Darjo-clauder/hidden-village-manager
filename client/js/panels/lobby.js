@@ -9,7 +9,7 @@ export function rLob() {
   const isHost = RS.isHost
 
   if (!snap) {
-    el.innerHTML = '<div class="pt">Lobby</div><div style="color:var(--text-dim);font-size:9px;padding:10px">Not in a room.</div>'
+    el.innerHTML = '<div class="pt">Lobby</div><div style="color:var(--text-dim);font-size:var(--fs-body);padding:10px">Not in a room.</div>'
     return
   }
 
@@ -25,14 +25,14 @@ export function rLob() {
     <div class="pt">Lobby — Room <span style="color:var(--gold);font-family:monospace">${snap.code}</span></div>
 
     <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
-      <span style="font-size:9px;color:var(--text-dim)">Turn ${snap.turnNumber}</span>
-      <span style="font-size:9px;color:${paused?'var(--red-soft)':'#8c8'}"> · ${paused ? 'PAUSED' : snap.status === 'lobby' ? 'lobby' : 'playing'}</span>
-      <span style="font-size:9px;color:var(--text-dim)"> · ${snap.playerCount}/${snap.maxPlayers} players</span>
-      ${snap.closedToJoiners ? '<span style="font-size:9px;color:var(--red)"> · Closed</span>' : ''}
+      <span style="font-size:var(--fs-body);color:var(--text-dim)">Turn ${snap.turnNumber}</span>
+      <span style="font-size:var(--fs-body);color:${paused?'var(--red-soft)':'#8c8'}"> · ${paused ? 'PAUSED' : snap.status === 'lobby' ? 'lobby' : 'playing'}</span>
+      <span style="font-size:var(--fs-body);color:var(--text-dim)"> · ${snap.playerCount}/${snap.maxPlayers} players</span>
+      ${snap.closedToJoiners ? '<span style="font-size:var(--fs-body);color:var(--red)"> · Closed</span>' : ''}
     </div>
 
     <!-- Invite link -->
-    <div style="background:var(--sunken);border:1px solid var(--border);padding:6px 8px;margin-bottom:10px;font-size:8px;color:var(--text-dim)">
+    <div style="background:var(--sunken);border:1px solid var(--border);padding:6px 8px;margin-bottom:10px;font-size:var(--fs-small);color:var(--text-dim)">
       <span style="color:var(--gold)">Invite Link: </span>
       <span id="lob-invite" style="color:var(--text-hi);cursor:pointer;text-decoration:underline" onclick="copyInvite()">${inviteLink}</span>
     </div>
@@ -44,48 +44,48 @@ export function rLob() {
         const isHostP = p.socketId === snap.hostSocketId
         return `
         <div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--gold-bg)">
-          <span style="font-size:16px">${p.icon}</span>
+          <span style="font-size:var(--fs-head)">${p.icon}</span>
           <div style="flex:1;min-width:0">
-            <div style="font-size:10px;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            <div style="font-size:var(--fs-body);color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
               ${p.name}${isMe ? ' <span style="color:var(--gold)">(you)</span>' : ''}${isHostP ? ' 👑' : ''}
             </div>
-            <div style="font-size:8px;color:var(--text-dim)">${p.kageName}</div>
+            <div style="font-size:var(--fs-small);color:var(--text-dim)">${p.kageName}</div>
           </div>
           <div style="flex-shrink:0">
             ${p.ready
-              ? '<span style="color:#8f8;font-size:9px">✓ Ready</span>'
+              ? '<span style="color:#8f8;font-size:var(--fs-body)">✓ Ready</span>'
               : p.online
-                ? '<span style="color:var(--red-soft);font-size:9px">⏳ Waiting</span>'
-                : '<span style="color:var(--text-faint);font-size:9px">📶 Offline</span>'}
+                ? '<span style="color:var(--red-soft);font-size:var(--fs-body)">⏳ Waiting</span>'
+                : '<span style="color:var(--text-faint);font-size:var(--fs-body)">📶 Offline</span>'}
           </div>
-          ${isHost && !isMe ? `<button class="gb" style="font-size:8px;padding:2px 5px" onclick="kickPlayer('${p.socketId}','Removed by host.')">✕</button>` : ''}
-          ${isHost && !isMe && p.online ? `<button class="gb" style="font-size:8px;padding:2px 5px" onclick="transferHost('${p.socketId}')">👑</button>` : ''}
+          ${isHost && !isMe ? `<button class="gb" style="font-size:var(--fs-small);padding:2px 5px" onclick="kickPlayer('${p.socketId}','Removed by host.')">✕</button>` : ''}
+          ${isHost && !isMe && p.online ? `<button class="gb" style="font-size:var(--fs-small);padding:2px 5px" onclick="transferHost('${p.socketId}')">👑</button>` : ''}
         </div>`
       }).join('')}
     </div>
 
     <!-- Ready status bar -->
-    <div style="font-size:9px;color:var(--text-dim);margin-bottom:8px">
+    <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:8px">
       ${readyCount} / ${totalOnline} online players ready
       ${readyCount >= totalOnline && totalOnline > 0 && offlinePlayers.length > 0 ? `
-        <button class="gb" style="font-size:8px;padding:2px 6px;margin-left:8px" onclick="voteAdvance()">Vote to advance without offline players</button>
+        <button class="gb" style="font-size:var(--fs-small);padding:2px 6px;margin-left:8px" onclick="voteAdvance()">Vote to advance without offline players</button>
       ` : ''}
     </div>
 
     <!-- Host controls -->
     ${isHost ? `
     <div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px">
-      <div style="font-size:9px;color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Host Controls</div>
+      <div style="font-size:var(--fs-body);color:var(--gold);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Host Controls</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
         <button class="gb" onclick="${paused ? 'resumeRoom()' : 'pauseRoom()'}"> ${paused ? 'Resume' : 'Pause'}</button>
         <button class="gb" onclick="toggleClose()">${snap.closedToJoiners ? 'Open to joiners' : 'Close to joiners'}</button>
         <div style="display:flex;align-items:center;gap:4px">
-          <span style="font-size:8px;color:var(--text-dim)">Timeout:</span>
-          ${[5,10,15,30].map(m => `<button class="gb${snap.autoReadyTimeout===m?' sel':''}" style="font-size:8px;padding:2px 5px" onclick="setTimeout_(${m})">${m}m</button>`).join('')}
+          <span style="font-size:var(--fs-small);color:var(--text-dim)">Timeout:</span>
+          ${[5,10,15,30].map(m => `<button class="gb${snap.autoReadyTimeout===m?' sel':''}" style="font-size:var(--fs-small);padding:2px 5px" onclick="setTimeout_(${m})">${m}m</button>`).join('')}
         </div>
         <div style="display:flex;align-items:center;gap:4px">
-          <span style="font-size:8px;color:var(--text-dim)">Max:</span>
-          ${[2,3,4,5,6].map(n => `<button class="gb${snap.maxPlayers===n?' sel':''}" style="font-size:8px;padding:2px 5px" onclick="setMaxPlayers(${n})">${n}</button>`).join('')}
+          <span style="font-size:var(--fs-small);color:var(--text-dim)">Max:</span>
+          ${[2,3,4,5,6].map(n => `<button class="gb${snap.maxPlayers===n?' sel':''}" style="font-size:var(--fs-small);padding:2px 5px" onclick="setMaxPlayers(${n})">${n}</button>`).join('')}
         </div>
       </div>
     </div>

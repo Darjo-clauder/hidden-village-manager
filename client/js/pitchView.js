@@ -17,6 +17,8 @@
  *   destroy()          — stop rAF + drop the canvas
  */
 
+import { cssVar } from './cssVar.js'
+
 const W = 400, H = 250            // internal canvas resolution (CSS scales it)
 const R_SHINOBI = 7               // circle radius
 const CX = W / 2, CY = H / 2
@@ -29,7 +31,7 @@ export const ROLE_TINT = {
   support:  { fill: '#5bb8c0', edge: '#8fe0e6', glyph: '✚', label: 'Support' },
   intel:    { fill: '#9a8fe0', edge: '#c2b8f6', glyph: '◆', label: 'Intel' },
   medical:  { fill: '#7ac97a', edge: '#a6e6a6', glyph: '✚', label: 'Medic' },
-  flex:     { fill: 'var(--gold)', edge: 'var(--gold-hi)', glyph: '●', label: 'Flex' },
+  flex:     { fill: cssVar('--gold'), edge: cssVar('--gold-hi'), glyph: '●', label: 'Flex' },
 }
 function _roleTint(role) { return ROLE_TINT[role] || ROLE_TINT.flex }
 
@@ -41,7 +43,7 @@ export const ELEMENT_FX = {
   Earth:     { color: '#c9a86a', glyph: '⛰' },
   Lightning: { color: '#e0d060', glyph: '⚡' },
 }
-function _elemFx(el) { return ELEMENT_FX[el] || { color: 'var(--gold)', glyph: '✦' } }
+function _elemFx(el) { return ELEMENT_FX[el] || { color: cssVar('--gold'), glyph: '✦' } }
 
 // Deterministic per-index jitter so formations look organic but stable.
 function _jit(i, salt = 0) { const s = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453; return (s - Math.floor(s)) - 0.5 }
@@ -130,7 +132,7 @@ function _drawShinobi(ctx, s, color, edge, hot, carrying) {
     ctx.strokeStyle = '#fff'; ctx.globalAlpha = 0.85; ctx.lineWidth = 1.5; ctx.stroke(); ctx.globalAlpha = 1
   }
   const tint = s.role ? _roleTint(s.role) : null
-  const fill = s.ko ? 'var(--text-faint)' : (tint ? tint.fill : color)
+  const fill = s.ko ? cssVar('--text-faint') : (tint ? tint.fill : color)
   const stroke = tint ? tint.edge : edge
   ctx.globalAlpha = s.ko ? 0.6 : 1
   // Element edge ring — a thin chakra-nature halo outside the token.
@@ -156,7 +158,7 @@ function _drawShinobi(ctx, s, color, edge, hot, carrying) {
   ctx.lineWidth = 1.5; ctx.strokeStyle = stroke; ctx.stroke()
   if (s.tag) {
     ctx.font = 'bold 7px monospace'; ctx.textAlign = 'center'
-    ctx.fillStyle = 'var(--bg)'
+    ctx.fillStyle = cssVar('--bg')
     ctx.fillText(s.tag, s.x, s.y + 2.5)
   }
   // Role badge — small glyph disc at the token's shoulder.
@@ -168,14 +170,14 @@ function _drawShinobi(ctx, s, color, edge, hot, carrying) {
     ctx.fillText(tint.glyph, bx, by + 1.8)
   }
   if (s.ko) {
-    ctx.strokeStyle = 'var(--red)'; ctx.lineWidth = 1.5
+    ctx.strokeStyle = cssVar('--red'); ctx.lineWidth = 1.5
     ctx.beginPath(); ctx.moveTo(s.x - 4, s.y - 4); ctx.lineTo(s.x + 4, s.y + 4)
     ctx.moveTo(s.x + 4, s.y - 4); ctx.lineTo(s.x - 4, s.y + 4); ctx.stroke()
   }
   // Stamina arc — replaces the old bar; wraps the lower hemisphere, band-coloured.
   if (s.stamina != null && !s.ko) {
     const frac = Math.max(0, Math.min(1, s.stamina / 100))
-    const col = s.stamina >= 60 ? 'var(--green)' : s.stamina >= 35 ? 'var(--gold)' : s.stamina >= 15 ? 'var(--orange)' : 'var(--red)'
+    const col = s.stamina >= 60 ? cssVar('--green') : s.stamina >= 35 ? cssVar('--gold') : s.stamina >= 15 ? cssVar('--orange') : cssVar('--red')
     ctx.beginPath(); ctx.arc(s.x, s.y, R_SHINOBI + 3, Math.PI * 0.75, Math.PI * 0.75 + Math.PI * 1.5, false)
     ctx.strokeStyle = 'rgba(6,6,4,.75)'; ctx.lineWidth = 2.4; ctx.stroke()
     ctx.beginPath(); ctx.arc(s.x, s.y, R_SHINOBI + 3, Math.PI * 0.75, Math.PI * 0.75 + Math.PI * 1.5 * frac, false)
@@ -200,7 +202,7 @@ function _drawObjective(ctx, obj) {
   ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2)
   ctx.fillStyle = 'rgba(201,168,76,.18)'; ctx.fill()
   // scroll body
-  ctx.fillStyle = 'var(--gold-hi)'; ctx.strokeStyle = '#8a6a2a'; ctx.lineWidth = 1
+  ctx.fillStyle = cssVar('--gold-hi'); ctx.strokeStyle = '#8a6a2a'; ctx.lineWidth = 1
   ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-5, -3.5, 10, 7, 1.5) : ctx.rect(-5, -3.5, 10, 7)
   ctx.fill(); ctx.stroke()
   // ribbon tie
@@ -228,13 +230,13 @@ function _drawZoneTint(ctx, ctl, boosted) {
   const cap = boosted ? 0.28 : 0.1
   ctl.forEach((v, i) => {
     if (Math.abs(v) < 0.08 && !boosted) return
-    ctx.fillStyle = v > 0 ? 'var(--gold)' : 'var(--red)'
+    ctx.fillStyle = v > 0 ? cssVar('--gold') : cssVar('--red')
     ctx.globalAlpha = Math.min(cap, Math.abs(v) * cap)
     ctx.fillRect(CX - HEX_R + i * bandW, CY - HEX_R, bandW, HEX_R * 2)
     if (boosted) {
       ctx.globalAlpha = 0.7
       ctx.font = '7px monospace'; ctx.textAlign = 'center'
-      ctx.fillStyle = v > 0.08 ? 'var(--gold)' : v < -0.08 ? 'var(--red)' : 'var(--text-dim)'
+      ctx.fillStyle = v > 0.08 ? cssVar('--gold') : v < -0.08 ? cssVar('--red') : cssVar('--text-dim')
       ctx.fillText(_ZONE_NAMES[i], CX - HEX_R + (i + 0.5) * bandW, CY + HEX_R - 8)
     }
   })
@@ -266,7 +268,7 @@ function _drawOverlay(ctx, st, arena) {
       })
       ctx.beginPath(); ctx.moveTo(car.x, car.y); ctx.lineTo(m.x, m.y)
       ctx.setLineDash(blocked ? [3, 3] : [])
-      ctx.strokeStyle = blocked ? 'var(--red)' : 'var(--green)'
+      ctx.strokeStyle = blocked ? cssVar('--red') : cssVar('--green')
       ctx.globalAlpha = blocked ? 0.55 : 0.45
       ctx.lineWidth = 1.2; ctx.stroke()
       ctx.setLineDash([])
@@ -294,7 +296,7 @@ function _drawOverlay(ctx, st, arena) {
       if (live.length > 2) ctx.closePath()
       ctx.strokeStyle = color; ctx.globalAlpha = 0.4; ctx.lineWidth = 1; ctx.stroke()
     }
-    draw(st.home, 'var(--gold)'); draw(st.away, arena.palette.accent)
+    draw(st.home, cssVar('--gold')); draw(st.away, arena.palette.accent)
   }
   ctx.restore(); ctx.globalAlpha = 1
 }
@@ -433,7 +435,7 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
       st.fx.push({ kind: 'proj', sx: actor.x, sy: actor.y, tx: cx + 40, ty: cy, t: 0, speed: 0.06, color: e.color })
     } else if (role === 'vanguard' || !actor?.element) {
       // Vanguard / no element: melee — a slash between the actor and an enemy.
-      st.fx.push({ kind: 'slash', sx: actor.x, sy: actor.y, tx: target.x, ty: target.y, t: 0, speed: 0.09, color: beat.won ? 'var(--gold-hi)' : 'var(--red)' })
+      st.fx.push({ kind: 'slash', sx: actor.x, sy: actor.y, tx: target.x, ty: target.y, t: 0, speed: 0.09, color: beat.won ? cssVar('--gold-hi') : cssVar('--red') })
     } else {
       // Elemental ninjutsu — a coloured jutsu arcs to an enemy and bursts.
       const e = _elemFx(actor.element)
@@ -442,7 +444,7 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
     // Ambient skirmish: a couple of slashes between random opposing pairs.
     for (let k = 0; k < 2; k++) {
       const h = st.home[Math.abs(i * 3 + k) % st.home.length], a = st.away[Math.abs(i + k * 5) % st.away.length]
-      st.fx.push({ kind: 'slash', sx: h.x, sy: h.y, tx: a.x, ty: a.y, t: 0, speed: 0.12, color: 'var(--text-dim)' })
+      st.fx.push({ kind: 'slash', sx: h.x, sy: h.y, tx: a.x, ty: a.y, t: 0, speed: 0.12, color: cssVar('--text-dim') })
     }
     if (st.fx.length > 40) st.fx = st.fx.slice(-40)
   }
@@ -475,7 +477,7 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
           B.vx += ux * push; B.vy += uy * push
         }
       }
-      const all = [[st.home, 'var(--gold)', 'var(--gold-hi)'], [st.away, arena.palette.accent, arena.palette.line]]
+      const all = [[st.home, cssVar('--gold'), cssVar('--gold-hi')], [st.away, arena.palette.accent, arena.palette.line]]
       all.forEach(([team, col, edge]) => team.forEach((s, i) => {
         // Snappy steering + role accel profile (§5.1); a spent squad visibly slows.
         const accel = 0.026 * (s.role === 'vanguard' ? 1.2 : s.role === 'medical' ? 0.85 : 1)
@@ -508,7 +510,7 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
       // team labels in the stands
       if (homeLabel || awayLabel) {
         ctx.font = '8px monospace'; ctx.globalAlpha = 0.75
-        ctx.fillStyle = 'var(--gold)'; ctx.textAlign = 'left'; ctx.fillText(homeLabel, 8, 14)
+        ctx.fillStyle = cssVar('--gold'); ctx.textAlign = 'left'; ctx.fillText(homeLabel, 8, 14)
         ctx.fillStyle = arena.palette.accent; ctx.textAlign = 'right'; ctx.fillText(awayLabel, W - 8, 14)
         ctx.globalAlpha = 1
       }
@@ -520,7 +522,7 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
         const tw = ctx.measureText(nm).width + 8
         ctx.fillStyle = 'rgba(6,6,4,.85)'
         ctx.fillRect(hs.x - tw / 2, hs.y - R_SHINOBI - 15, tw, 11)
-        ctx.fillStyle = hs.side === 'home' ? 'var(--gold)' : arena.palette.accent
+        ctx.fillStyle = hs.side === 'home' ? cssVar('--gold') : arena.palette.accent
         ctx.fillText(nm, hs.x, hs.y - R_SHINOBI - 7)
       }
     }
@@ -563,15 +565,15 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
       // Spotlight the acting shinobi — pull them to the front of the clash + ring.
       st.spot = (spotIdx >= 0 && st.home[spotIdx]) ? st.home[spotIdx] : null
       if (st.spot) { st.spot.tx = cx + (beat.won ? -6 : 6); st.spot.ty = cy - 4 }
-      st.flash = 1; st.flashCol = beat.won ? 'var(--green)' : 'var(--red)'
+      st.flash = 1; st.flashCol = beat.won ? cssVar('--green') : cssVar('--red')
       _spawnBeatFx(st, i, beat)
       // Objective drifts toward the side that won this exchange.
       st.obj.tx = CX + (beat.won ? -1 : 1) * HEX_R * 0.42; st.obj.ty = cy * 0.5 + CY * 0.5
       // Crowd reacts: a roar when it's your beat, a groan (or a gasp on a KO) when it's theirs.
       st.crowd = 1
-      st.roar = koHome ? { text: 'OOF!', color: 'var(--red)', life: 1 }
-        : beat.won ? { text: 'ROAAR!', color: 'var(--green)', life: 1 }
-        : { text: 'groan…', color: 'var(--text-mid)', life: 1 }
+      st.roar = koHome ? { text: 'OOF!', color: cssVar('--red'), life: 1 }
+        : beat.won ? { text: 'ROAAR!', color: cssVar('--green'), life: 1 }
+        : { text: 'groan…', color: cssVar('--text-mid'), life: 1 }
     },
     /** Final tableau. `result`: 'win' (home rings the centre), 'loss' (away does),
      *  or 'draw' (both sides hold their own half at the line — nobody claims it).
@@ -587,8 +589,8 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
         })
         line(st.home, 'home'); line(st.away, 'away')
         st.obj.tx = CX; st.obj.ty = CY
-        st.flash = 1; st.flashCol = 'var(--gold)'; st.crowd = 0.6
-        st.roar = { text: 'HONOURS EVEN', color: 'var(--gold)', life: 1 }
+        st.flash = 1; st.flashCol = cssVar('--gold'); st.crowd = 0.6
+        st.roar = { text: 'HONOURS EVEN', color: cssVar('--gold'), life: 1 }
         return
       }
       const won = res === 'win'
@@ -599,10 +601,10 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
         s.tx = CX + Math.cos(a) * 28; s.ty = CY + Math.sin(a) * 24
       })
       loseSide.forEach((s, k) => { s.tx = CX + (won ? 1 : -1) * HEX_R * 0.72; s.ty = CY + (k - (loseSide.length - 1) / 2) * Math.min(24, HEX_R * 1.4 / loseSide.length) })
-      st.flash = 1; st.flashCol = won ? 'var(--gold)' : 'var(--red)'
+      st.flash = 1; st.flashCol = won ? cssVar('--gold') : cssVar('--red')
       st.obj.tx = won ? CX - HEX_R * 0.2 : CX + HEX_R * 0.2; st.obj.ty = CY   // claimed toward the victor
       st.crowd = 1
-      st.roar = won ? { text: 'VICTORY!', color: 'var(--gold)', life: 1.4 } : { text: '…', color: 'var(--text-mid)', life: 0.6 }
+      st.roar = won ? { text: 'VICTORY!', color: cssVar('--gold'), life: 1.4 } : { text: '…', color: cssVar('--text-mid'), life: 0.6 }
     },
     /** Back to kickoff formations — used by the replay control. */
     reset() {
@@ -646,18 +648,18 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
         const rcv = team[ev.target % team.length]
         if (rcv) {
           rcv.tx = px; rcv.ty = py + _jit(ev.target, 29) * 20
-          st.fx.push({ kind: 'passline', sx: actor.x, sy: actor.y, tx: rcv.tx, ty: rcv.ty, t: 0, speed: 0.05, color: 'var(--gold-hi)' })
+          st.fx.push({ kind: 'passline', sx: actor.x, sy: actor.y, tx: rcv.tx, ty: rcv.ty, t: 0, speed: 0.05, color: cssVar('--gold-hi') })
           st.carrier = { side: ev.side, idx: ev.target % team.length }
         }
       } else if (ev.type === 'pass_fail') {
-        st.fx.push({ kind: 'passline', sx: actor.x, sy: actor.y, tx: px, ty: py, t: 0, speed: 0.05, color: 'var(--red)', fail: true })
+        st.fx.push({ kind: 'passline', sx: actor.x, sy: actor.y, tx: px, ty: py, t: 0, speed: 0.05, color: cssVar('--red'), fail: true })
         st.carrier = null
-        mark('✕', 'var(--red)')
+        mark('✕', cssVar('--red'))
       } else if (ev.type === 'intercept') {
         st.carrier = { side: ev.side, idx: ev.actor % team.length }
         actor.tx = px; actor.ty = py
         actor.vx += (ev.side === 'home' ? -1.5 : 1.5)   // burst onto the loose scroll
-        mark('⚡', 'var(--blue)')
+        mark('⚡', cssVar('--blue'))
         st.crowd = Math.max(st.crowd, 0.5)
       } else if (ev.type === 'strike' || ev.type === 'block') {
         actor.tx = px + (ev.side === 'home' ? -14 : 14); actor.ty = py
@@ -666,16 +668,16 @@ export function mountPitch(container, { arena, home = [], away = [], homeLabel =
         if (ev.type === 'block') {
           const blocker = foes[(ev.target ?? 0) % foes.length]
           if (blocker) { blocker.tx = px; blocker.ty = py }
-          mark('▣', 'var(--text-mid)')
+          mark('▣', cssVar('--text-mid'))
         } else {
-          mark('✦', ev.side === 'home' ? 'var(--gold)' : arena.palette.accent)
+          mark('✦', ev.side === 'home' ? cssVar('--gold') : arena.palette.accent)
           st.crowd = Math.max(st.crowd, ev.side === 'home' ? 1 : 0.6)
-          if (ev.side === 'home') st.roar = { text: 'ROAAR!', color: 'var(--green)', life: 0.9 }
+          if (ev.side === 'home') st.roar = { text: 'ROAAR!', color: cssVar('--green'), life: 0.9 }
         }
       } else if (ev.type === 'turnover') {
         st.carrier = null
         actor.tx = px; actor.ty = py
-        mark('✕', 'var(--text-mid)')
+        mark('✕', cssVar('--text-mid'))
       }
       if (st.fx.length > 48) st.fx = st.fx.slice(-48)
     },

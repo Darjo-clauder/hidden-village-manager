@@ -35,13 +35,13 @@ export function rBe() {
 
     ${escapeNotices.length > 0 ? `
       <div style="background:#3a0a0a;border:1px solid var(--red);padding:12px 14px;margin-bottom:14px">
-        <div style="font-size:9px;color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">⚠ Beast Escape Alert</div>
+        <div style="font-size:var(--fs-body);color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">⚠ Beast Escape Alert</div>
         ${escapeNotices.map(n => `
           <div style="margin-bottom:8px;padding:8px 10px;background:rgba(255,0,0,0.05);border-left:2px solid var(--red)">
-            <div style="font-size:9px;color:var(--text-hi);margin-bottom:6px">${n.beastName} has escaped containment!</div>
+            <div style="font-size:var(--fs-body);color:var(--text-hi);margin-bottom:6px">${n.beastName} has escaped containment!</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="gb" style="border-color:var(--red);color:var(--red);font-size:8px" onclick="resolveEscape('${n.beastName}','containment')">Containment Team (3,000 ryo)</button>
-              <button class="gb" style="font-size:8px" onclick="resolveEscape('${n.beastName}','dismiss')">Dismiss</button>
+              <button class="gb" style="border-color:var(--red);color:var(--red);font-size:var(--fs-small)" onclick="resolveEscape('${n.beastName}','containment')">Containment Team (3,000 ryo)</button>
+              <button class="gb" style="font-size:var(--fs-small)" onclick="resolveEscape('${n.beastName}','dismiss')">Dismiss</button>
             </div>
           </div>
         `).join('')}
@@ -67,34 +67,34 @@ function _renderOverview(sealedBeasts, wildBeasts, passives, rivalHeld = []) {
 
   return `
     ${dualWarning ? `
-      <div style="background:#3a1010;border:1px solid var(--red);padding:10px 14px;margin-bottom:12px;font-size:9px;color:var(--red)">
+      <div style="background:#3a1010;border:1px solid var(--red);padding:10px 14px;margin-bottom:12px;font-size:var(--fs-body);color:var(--red)">
         ⚠ Dual vessel active — extraction attempts doubled, server-wide threat level increased.
       </div>
     ` : ''}
 
     ${sealedBeasts.length === 0 ? `
-      <div style="text-align:center;padding:30px;color:var(--text-dim);font-size:10px">No sealed beasts. Launch a capture mission to begin.</div>
+      <div style="text-align:center;padding:30px;color:var(--text-dim);font-size:var(--fs-body)">No sealed beasts. Launch a capture mission to begin.</div>
     ` : sealedBeasts.map(b => _renderSealedCard(b)).join('')}
 
     ${wildBeasts.length > 0 ? `
       <div style="margin-top:20px">
-        <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">Wild Beasts</div>
+        <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">Wild Beasts</div>
         ${wildBeasts.map(b => _renderWildCard(b)).join('')}
       </div>
     ` : ''}
 
     ${rivalHeld.length > 0 ? `
       <div style="margin-top:20px">
-        <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">Held by Rival Villages</div>
+        <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">Held by Rival Villages</div>
         ${rivalHeld.map(b => {
           const data = BEAST_DATA[b.n] || {}
           return `<div style="background:var(--surface);border:1px solid var(--border-dim);padding:12px;margin-bottom:8px;opacity:0.85">
             <div style="display:flex;align-items:flex-start;justify-content:space-between">
               <div>
-                <div style="font-size:12px;color:var(--text-hi)">${b.n}</div>
-                <div style="font-size:8px;color:var(--text-dim);margin-top:2px">${'◆'.repeat(b.tails)} Tier-${b.tails} Primal · ${b.element || data.element || ''} · Power ${b.pow || data.pow}</div>
+                <div style="font-size:var(--fs-lead);color:var(--text-hi)">${b.n}</div>
+                <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">${'◆'.repeat(b.tails)} Tier-${b.tails} Primal · ${b.element || data.element || ''} · Power ${b.pow || data.pow}</div>
               </div>
-              <div style="font-size:8px;color:var(--orange);padding:2px 8px;border:1px solid var(--orange)">Held by ${b.owner}</div>
+              <div style="font-size:var(--fs-small);color:var(--orange);padding:2px 8px;border:1px solid var(--orange)">Held by ${b.owner}</div>
             </div>
             ${_extractionBlock(b)}
           </div>`
@@ -113,13 +113,13 @@ function _extractionBlock(b) {
     const stageName = EXTRACTION_STAGES[op.stage] || 'Complete'
     const chance = Math.round(stageSuccessChance(op.stage, pStr, hStr) * 100)
     return `<div style="margin-top:8px;padding:8px;border:1px solid var(--orange);background:rgba(0,0,0,.35)">
-      <div style="font-size:8px;color:var(--orange);font-weight:bold;margin-bottom:4px">⚔ Extraction underway — Stage ${op.stage + 1}/3: ${stageName}</div>
+      <div style="font-size:var(--fs-small);color:var(--orange);font-weight:bold;margin-bottom:4px">⚔ Extraction underway — Stage ${op.stage + 1}/3: ${stageName}</div>
       <div style="display:flex;gap:4px;margin-bottom:5px">${EXTRACTION_STAGES.map((s, i) => `<div style="flex:1;height:4px;border-radius:2px;background:${i < op.stage ? 'var(--green)' : i === op.stage ? 'var(--orange)' : 'var(--border)'}"></div>`).join('')}</div>
-      ${(op.log || []).slice(-3).map(l => `<div style="font-size:7px;color:var(--text-dim)">${l}</div>`).join('')}
-      <div style="font-size:8px;color:var(--text-dim);margin:5px 0">Next stage success chance: <b style="color:${chance >= 60 ? 'var(--green)' : chance >= 40 ? 'var(--orange)' : 'var(--red)'}">${chance}%</b> · a failed stage risks war (${Math.round(warRiskOnFail(op.stage) * 100)}%).</div>
+      ${(op.log || []).slice(-3).map(l => `<div style="font-size:var(--fs-micro);color:var(--text-dim)">${l}</div>`).join('')}
+      <div style="font-size:var(--fs-small);color:var(--text-dim);margin:5px 0">Next stage success chance: <b style="color:${chance >= 60 ? 'var(--green)' : chance >= 40 ? 'var(--orange)' : 'var(--red)'}">${chance}%</b> · a failed stage risks war (${Math.round(warRiskOnFail(op.stage) * 100)}%).</div>
       <div style="display:flex;gap:6px">
-        <button class="gb gb-g" style="font-size:8px" onclick="advanceBeastExtraction()">Advance operation ▸</button>
-        <button class="gb gb-r" style="font-size:8px" onclick="abortBeastExtraction()">Abort</button>
+        <button class="gb gb-g" style="font-size:var(--fs-small)" onclick="advanceBeastExtraction()">Advance operation ▸</button>
+        <button class="gb gb-r" style="font-size:var(--fs-small)" onclick="abortBeastExtraction()">Abort</button>
       </div>
     </div>`
   }
@@ -127,8 +127,8 @@ function _extractionBlock(b) {
   const canAfford = (G.ryo || 0) >= cost
   const oddsHint = Math.round(stageSuccessChance(0, pStr, hStr) * 100)
   return `<div style="margin-top:8px">
-    <div style="font-size:8px;color:var(--text-dim);margin-bottom:5px;font-style:italic">Mount a covert operation to seize this primal (Intel → Infiltration → Extraction). Your strength ${pStr} vs ${b.owner}'s ${hStr} — opening odds ~${oddsHint}%. Failure risks open war.</div>
-    <button class="gb" style="font-size:8px${canAfford ? '' : ';opacity:.5'}" ${canAfford && !op ? '' : 'disabled'} onclick="startBeastExtraction('${b.id}')" title="${op ? 'An operation is already active' : ''}">🎯 Launch Extraction — ${fmt(cost)} ryo</button>
+    <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:5px;font-style:italic">Mount a covert operation to seize this primal (Intel → Infiltration → Extraction). Your strength ${pStr} vs ${b.owner}'s ${hStr} — opening odds ~${oddsHint}%. Failure risks open war.</div>
+    <button class="gb" style="font-size:var(--fs-small)${canAfford ? '' : ';opacity:.5'}" ${canAfford && !op ? '' : 'disabled'} onclick="startBeastExtraction('${b.id}')" title="${op ? 'An operation is already active' : ''}">🎯 Launch Extraction — ${fmt(cost)} ryo</button>
   </div>`
 }
 
@@ -206,91 +206,91 @@ function _renderSealedCard(b) {
       <!-- Header -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
         <div>
-          <div style="font-size:14px;color:var(--text-hi);font-weight:bold">${b.n}</div>
-          <div style="font-size:9px;color:var(--text-dim);margin-top:2px">
+          <div style="font-size:var(--fs-sub);color:var(--text-hi);font-weight:bold">${b.n}</div>
+          <div style="font-size:var(--fs-body);color:var(--text-dim);margin-top:2px">
             ${'◆'.repeat(b.tails)} Tier-${b.tails} Primal · ${b.element || data.element || ''}
           </div>
-          <div style="font-size:8px;color:var(--text-dim);margin-top:2px;font-style:italic">${data.personality || ''}</div>
+          <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px;font-style:italic">${data.personality || ''}</div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:8px;padding:3px 9px;border:1px solid ${stageInfo.color};color:${stageInfo.color}">${stageInfo.n}</div>
-          <div style="font-size:8px;color:var(--text-dim);margin-top:4px">Month ${syncM}</div>
-          ${b.loreBonusActive ? `<div style="font-size:7px;color:var(--gold);margin-top:3px">✦ Lore Mastered</div>` : ''}
+          <div style="font-size:var(--fs-small);padding:3px 9px;border:1px solid ${stageInfo.color};color:${stageInfo.color}">${stageInfo.n}</div>
+          <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:4px">Month ${syncM}</div>
+          ${b.loreBonusActive ? `<div style="font-size:var(--fs-micro);color:var(--gold);margin-top:3px">✦ Lore Mastered</div>` : ''}
         </div>
       </div>
 
       <!-- Sync Progress Bar -->
       ${stage < 5 ? `
         <div style="margin-bottom:12px">
-          <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-dim);margin-bottom:4px">
+          <div style="display:flex;justify-content:space-between;font-size:var(--fs-small);color:var(--text-dim);margin-bottom:4px">
             <span>Sync Progress</span>
             <span>${syncM}m / ${nextStageM}m → ${SYNC_STAGES[Math.min(stage+1,5)].n}</span>
           </div>
           <div style="height:6px;background:var(--surface-3);border-radius:2px;overflow:hidden">
             <div style="height:100%;width:${progressPct}%;background:${stageInfo.color};transition:width .3s"></div>
           </div>
-          ${data.syncCeiling && data.syncCeiling < 5 ? `<div style="font-size:7px;color:var(--text-dim);margin-top:3px">Sync ceiling: Stage ${data.syncCeiling} (${SYNC_STAGES[data.syncCeiling].n})</div>` : ''}
+          ${data.syncCeiling && data.syncCeiling < 5 ? `<div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:3px">Sync ceiling: Stage ${data.syncCeiling} (${SYNC_STAGES[data.syncCeiling].n})</div>` : ''}
         </div>
-      ` : `<div style="margin-bottom:12px;font-size:9px;color:var(--blue)">✦ Full Sync — Maximum bond achieved.</div>`}
+      ` : `<div style="margin-bottom:12px;font-size:var(--fs-body);color:var(--blue)">✦ Full Sync — Maximum bond achieved.</div>`}
 
       <!-- Unique Ability -->
       ${data.uniqueAbility ? `
         <div style="background:var(--surface-2);border:1px solid var(--border);padding:8px 12px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
           <div style="flex:1">
-            <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:3px">Unique Ability</div>
-            <div style="font-size:9px;color:${stage >= data.uniqueAbility.stage ? 'var(--green)' : 'var(--text-dim)'}">
+            <div style="font-size:var(--fs-micro);letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:3px">Unique Ability</div>
+            <div style="font-size:var(--fs-body);color:${stage >= data.uniqueAbility.stage ? 'var(--green)' : 'var(--text-dim)'}">
               ${data.uniqueAbility.desc}
             </div>
           </div>
           ${stage >= data.uniqueAbility.stage
-            ? `<div style="font-size:7px;font-weight:bold;color:var(--green);padding:2px 7px;border:1px solid var(--green)">ACTIVE</div>`
-            : `<div style="font-size:7px;color:var(--text-dim);white-space:nowrap">Unlocks at Stage ${data.uniqueAbility.stage}</div>`
+            ? `<div style="font-size:var(--fs-micro);font-weight:bold;color:var(--green);padding:2px 7px;border:1px solid var(--green)">ACTIVE</div>`
+            : `<div style="font-size:var(--fs-micro);color:var(--text-dim);white-space:nowrap">Unlocks at Stage ${data.uniqueAbility.stage}</div>`
           }
         </div>
       ` : ''}
 
       <!-- Stage Description -->
-      <div style="background:var(--surface-2);border-left:2px solid ${stageInfo.color};padding:8px 10px;font-size:9px;color:var(--text-dim);margin-bottom:12px;line-height:1.6">
+      <div style="background:var(--surface-2);border-left:2px solid ${stageInfo.color};padding:8px 10px;font-size:var(--fs-body);color:var(--text-dim);margin-bottom:12px;line-height:1.6">
         ${_stageFlavor(b, stage)}
       </div>
 
       <!-- Vessel -->
       ${jkS ? `
         <div style="margin-bottom:12px;padding:10px;background:var(--surface-2);border:1px solid var(--border)">
-          <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">Vessel</div>
+          <div style="font-size:var(--fs-micro);letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">Vessel</div>
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div>
-              <div style="font-size:11px;color:var(--text-hi)">${jkS.fn} ${jkS.ln}</div>
-              <div style="font-size:8px;color:var(--text-dim);margin-top:2px">${jkS.status} · Commitment: ${jkS.commitment ?? 50}</div>
-              ${jkS.title ? `<div style="font-size:8px;color:var(--gold);margin-top:2px">${jkS.title}</div>` : ''}
+              <div style="font-size:var(--fs-lead);color:var(--text-hi)">${jkS.fn} ${jkS.ln}</div>
+              <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">${jkS.status} · Commitment: ${jkS.commitment ?? 50}</div>
+              ${jkS.title ? `<div style="font-size:var(--fs-small);color:var(--gold);margin-top:2px">${jkS.title}</div>` : ''}
             </div>
-            <div style="text-align:right;font-size:8px;color:var(--text-dim)">
+            <div style="text-align:right;font-size:var(--fs-small);color:var(--text-dim)">
               ${_statBonusLabel(b, stage)}
             </div>
           </div>
           ${G._ff_bloodlineActive ? `
             <div style="margin-top:8px">
               ${(b.activeUntil || 0) > G.month
-                ? `<div style="font-size:8px;color:var(--green)">⚡ Bloodline channelled — active through M${b.activeUntil}</div>`
+                ? `<div style="font-size:var(--fs-small);color:var(--green)">⚡ Bloodline channelled — active through M${b.activeUntil}</div>`
                 : (b.cooldownUntil || 0) > G.month
-                  ? `<div style="font-size:8px;color:var(--text-dim)">Bloodline on cooldown until M${b.cooldownUntil}</div>`
+                  ? `<div style="font-size:var(--fs-small);color:var(--text-dim)">Bloodline on cooldown until M${b.cooldownUntil}</div>`
                   : stage >= 3
-                    ? `<button class="gb" style="font-size:7px;border-color:var(--gold);color:var(--gold)" onclick="activateBloodline('${b.n}')">Channel Bloodline ▸</button>`
-                    : `<div style="font-size:8px;color:var(--text-dim)">Channel unlocks at Stage 3</div>`}
+                    ? `<button class="gb" style="font-size:var(--fs-micro);border-color:var(--gold);color:var(--gold)" onclick="activateBloodline('${b.n}')">Channel Bloodline ▸</button>`
+                    : `<div style="font-size:var(--fs-small);color:var(--text-dim)">Channel unlocks at Stage 3</div>`}
             </div>` : ''}
           ${stage >= 4 && data.uniqueAbility ? `
-            <div style="margin-top:8px;font-size:8px;background:var(--surface-3);padding:6px 8px;border-left:2px solid var(--gold)">
+            <div style="margin-top:8px;font-size:var(--fs-small);background:var(--surface-3);padding:6px 8px;border-left:2px solid var(--gold)">
               <span style="color:var(--gold)">Unique Ability:</span> <span style="color:var(--text)">${data.uniqueAbility.desc}</span>
             </div>
           ` : stage < 4 && data.uniqueAbility ? `
-            <div style="margin-top:8px;font-size:8px;color:var(--text-dim);padding:6px 8px;background:var(--surface-3)">
+            <div style="margin-top:8px;font-size:var(--fs-small);color:var(--text-dim);padding:6px 8px;background:var(--surface-3)">
               🔒 Unique Ability unlocks at Stage ${data.uniqueAbility.stage} (${SYNC_STAGES[data.uniqueAbility.stage].n})
             </div>
           ` : ''}
         </div>
       ` : `
         <div style="margin-bottom:12px;padding:10px;background:var(--surface-2);border:1px solid var(--border)">
-          <div style="font-size:9px;color:var(--orange)">No Vessel assigned. Assign from the Roster (click any shinobi → Vessel section).</div>
+          <div style="font-size:var(--fs-body);color:var(--orange)">No Vessel assigned. Assign from the Roster (click any shinobi → Vessel section).</div>
         </div>
       `}
 
@@ -301,20 +301,20 @@ function _renderSealedCard(b) {
         const cLabel = ctrl >= 70 ? 'Stable' : ctrl >= 35 ? 'Strained' : 'Critical — instability risk'
         const cost = 2000 + b.tails * 1000
         return `<div style="margin-bottom:12px;padding:10px;background:var(--surface-2);border:1px solid ${ctrl < 35 ? 'var(--red)' : 'var(--border)'}">
-          <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text-dim);margin-bottom:4px">
+          <div style="display:flex;justify-content:space-between;font-size:var(--fs-small);color:var(--text-dim);margin-bottom:4px">
             <span>Seal Control — <b style="color:${cCol}">${cLabel}</b></span>
             <span style="color:${cCol}">${ctrl}/100</span>
           </div>
           <div style="height:6px;background:var(--surface-3);border-radius:2px;overflow:hidden;margin-bottom:8px">
             <div style="height:100%;width:${ctrl}%;background:${cCol};transition:width .3s"></div>
           </div>
-          <div style="font-size:7px;color:var(--text-dim);margin-bottom:6px">Control rises with sync stage and host commitment; channelling the beast strains it. Below 35 risks instability (morale loss, host injury).</div>
-          <button class="gb" style="font-size:7px;border-color:var(--gold);color:var(--gold)" onclick="reinforceSeal('${b.n}')" ${G.ryo < cost || ctrl >= 95 ? 'disabled' : ''}>Reinforce Seal — ${fmt(cost)} ryo (+18)</button>
+          <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-bottom:6px">Control rises with sync stage and host commitment; channelling the beast strains it. Below 35 risks instability (morale loss, host injury).</div>
+          <button class="gb" style="font-size:var(--fs-micro);border-color:var(--gold);color:var(--gold)" onclick="reinforceSeal('${b.n}')" ${G.ryo < cost || ctrl >= 95 ? 'disabled' : ''}>Reinforce Seal — ${fmt(cost)} ryo (+18)</button>
         </div>`
       })() : ''}
 
       <!-- Lore & Escapes Row -->
-      <div style="display:flex;gap:10px;font-size:8px;color:var(--text-dim)">
+      <div style="display:flex;gap:10px;font-size:var(--fs-small);color:var(--text-dim)">
         <span>Lore: <b style="color:${loreCount>=loreTot?'var(--gold)':'var(--text)'}">${loreCount}/${loreTot}</b></span>
         ${escapes > 0 ? `<span style="color:var(--red)">Escape incidents: ${escapes}</span>` : '<span>No escape events</span>'}
         <span>Power: <b style="color:var(--text-hi)">${b.pow || data.pow}</b></span>
@@ -338,21 +338,21 @@ function _renderWildCard(b) {
     <div style="background:var(--surface);border:1px solid var(--border-dim);padding:14px;margin-bottom:10px;opacity:0.85">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
         <div>
-          <div style="font-size:12px;color:var(--text-hi)">${b.n}</div>
-          <div style="font-size:8px;color:var(--text-dim);margin-top:2px">
+          <div style="font-size:var(--fs-lead);color:var(--text-hi)">${b.n}</div>
+          <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">
             ${'◆'.repeat(b.tails)} Tier-${b.tails} Primal · ${b.element || data.element || ''}
           </div>
-          <div style="font-size:8px;color:var(--text-dim);margin-top:1px;font-style:italic">${data.personality || ''}</div>
+          <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:1px;font-style:italic">${data.personality || ''}</div>
         </div>
-        <div style="font-size:8px;color:var(--text-dim);padding:2px 8px;border:1px solid var(--border)">Wild</div>
+        <div style="font-size:var(--fs-small);color:var(--text-dim);padding:2px 8px;border:1px solid var(--border)">Wild</div>
       </div>
-      <div style="font-size:9px;color:var(--text-dim);margin-bottom:8px;line-height:1.5">${data.flavors?.[0] || ''}</div>
-      <div style="font-size:8px;color:var(--text-dim);margin-bottom:8px">
+      <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:8px;line-height:1.5">${data.flavors?.[0] || ''}</div>
+      <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:8px">
         Capture: ~${data.captureMonths || 4} months · Power: ${data.pow || b.pow}
         ${data.syncCeiling < 5 ? ` · Sync ceiling: Stage ${data.syncCeiling}` : ''}
       </div>
       ${capM
-        ? `<div style="font-size:9px;color:var(--gold)">⟳ Capture mission in progress — ${capM.daysLeft}m remaining</div>`
+        ? `<div style="font-size:var(--fs-body);color:var(--gold)">⟳ Capture mission in progress — ${capM.daysLeft}m remaining</div>`
         : `<button class="gb" onclick="lCap('${b.n}')" ${!canCapture ? 'disabled title="Need Shadow+ available"' : ''}>Launch Capture (Shadow+) ▸</button>`
       }
     </div>
@@ -389,29 +389,29 @@ function _renderLore(sealedBeasts) {
     const stage = getSyncStage(b)
     return `
       <div style="margin-bottom:20px">
-        <div style="font-size:10px;color:var(--text-hi);margin-bottom:10px;font-weight:bold">
+        <div style="font-size:var(--fs-body);color:var(--text-hi);margin-bottom:10px;font-weight:bold">
           ${b.n} — ${loreUnlocked.length}/${(data.lore || []).length} records
-          ${b.loreBonusActive ? ' <span style="color:var(--gold);font-size:8px">✦ Bonus Active</span>' : ''}
+          ${b.loreBonusActive ? ' <span style="color:var(--gold);font-size:var(--fs-small)">✦ Bonus Active</span>' : ''}
         </div>
         ${(data.lore || []).map((l, i) => {
           const unlocked = loreUnlocked.includes(l.stage)
           return `
             <div style="margin-bottom:8px;padding:10px;background:var(--surface);border:1px solid ${unlocked ? 'var(--border)' : 'var(--border-dim)'}">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${unlocked ? '6px' : '0'}">
-                <div style="font-size:9px;color:${unlocked ? 'var(--gold)' : 'var(--text-dim)'}">
+                <div style="font-size:var(--fs-body);color:${unlocked ? 'var(--gold)' : 'var(--text-dim)'}">
                   ${unlocked ? '' : '🔒 '}${l.title}
                 </div>
-                <div style="font-size:7px;color:var(--text-dim)">Stage ${l.stage} ${unlocked ? '✓' : '(locked)'}</div>
+                <div style="font-size:var(--fs-micro);color:var(--text-dim)">Stage ${l.stage} ${unlocked ? '✓' : '(locked)'}</div>
               </div>
               ${unlocked
-                ? `<div style="font-size:9px;color:var(--text);line-height:1.6;font-style:italic">"${l.body}"</div>`
-                : `<div style="font-size:8px;color:var(--text-dim)">Reach Stage ${l.stage} (${SYNC_STAGES[l.stage].n}) to unlock this record.</div>`
+                ? `<div style="font-size:var(--fs-body);color:var(--text);line-height:1.6;font-style:italic">"${l.body}"</div>`
+                : `<div style="font-size:var(--fs-small);color:var(--text-dim)">Reach Stage ${l.stage} (${SYNC_STAGES[l.stage].n}) to unlock this record.</div>`
               }
             </div>
           `
         }).join('')}
         ${b.loreBonusActive ? `
-          <div style="padding:8px 12px;background:var(--surface-2);border:1px solid var(--gold);font-size:9px">
+          <div style="padding:8px 12px;background:var(--surface-2);border:1px solid var(--gold);font-size:var(--fs-body)">
             <span style="color:var(--gold)">Permanent Bonus:</span> <span style="color:var(--text)">${data.loreBonus?.desc || ''}</span>
           </div>
         ` : ''}
@@ -427,8 +427,8 @@ function _renderPassives(passives) {
 
   return `
     <div style="background:var(--surface);border:1px solid var(--border);padding:14px;margin-bottom:14px">
-      <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px">Active Village Passives</div>
-      ${sealedWithJk.length === 0 ? `<div style="color:var(--text-dim);font-size:9px">No vessel — no passive bonuses active.</div>` : `
+      <div style="font-size:var(--fs-micro);letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px">Active Village Passives</div>
+      ${sealedWithJk.length === 0 ? `<div style="color:var(--text-dim);font-size:var(--fs-body)">No vessel — no passive bonuses active.</div>` : `
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">
           ${[
             { label: 'Mission Luck',       val: passives.missionLuck > 0 ? `+${Math.round(passives.missionLuck*100)}%` : '—', color: passives.missionLuck > 0 ? 'var(--green)' : 'var(--text-dim)' },
@@ -438,8 +438,8 @@ function _renderPassives(passives) {
             { label: 'Village Morale',     val: passives.moraleBonus !== 0 ? (passives.moraleBonus > 0 ? `+${passives.moraleBonus}` : passives.moraleBonus) : '—', color: passives.moraleBonus > 0 ? 'var(--green)' : passives.moraleBonus < 0 ? 'var(--red)' : 'var(--text-dim)' },
           ].map(row => `
             <div style="background:var(--surface-2);padding:8px 12px">
-              <div style="font-size:7px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">${row.label}</div>
-              <div style="font-size:12px;color:${row.color}">${row.val}</div>
+              <div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">${row.label}</div>
+              <div style="font-size:var(--fs-lead);color:${row.color}">${row.val}</div>
             </div>
           `).join('')}
         </div>
@@ -452,8 +452,8 @@ function _renderPassives(passives) {
       const pv = data.passiveVillage || {}
       return `
         <div style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:8px">
-          <div style="font-size:9px;color:var(--text-hi);margin-bottom:6px;font-weight:bold">${b.n} (Stage ${stage}: ${SYNC_STAGES[stage].n})</div>
-          <div style="font-size:8px;color:var(--text-dim);line-height:1.8">
+          <div style="font-size:var(--fs-body);color:var(--text-hi);margin-bottom:6px;font-weight:bold">${b.n} (Stage ${stage}: ${SYNC_STAGES[stage].n})</div>
+          <div style="font-size:var(--fs-small);color:var(--text-dim);line-height:1.8">
             ${Object.entries(pv).filter(([k,v]) => v && k !== 'wind').map(([k,v]) => `
               <div>${_pvLabel(k)}: <b style="color:var(--text)">${_pvVal(k,v)}</b></div>
             `).join('')}
@@ -465,8 +465,8 @@ function _renderPassives(passives) {
 
     ${passives.featuredBonuses.length > 0 ? `
       <div style="background:var(--surface);border:1px solid var(--gold);padding:12px;margin-top:8px">
-        <div style="font-size:7px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Lore Mastery Bonuses</div>
-        ${passives.featuredBonuses.map(lb => `<div style="font-size:9px;color:var(--text);margin-bottom:4px">✦ ${lb.desc}</div>`).join('')}
+        <div style="font-size:var(--fs-micro);letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Lore Mastery Bonuses</div>
+        ${passives.featuredBonuses.map(lb => `<div style="font-size:var(--fs-body);color:var(--text);margin-bottom:4px">✦ ${lb.desc}</div>`).join('')}
       </div>
     ` : ''}
   `

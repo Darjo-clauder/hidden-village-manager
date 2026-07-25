@@ -23,7 +23,7 @@ export function toggleAutoWatch() {
 // Tactical approach picker — favored/mismatch highlighted against a mission's spec.
 export function _approachPickerHtml(spec, selId, setterFn) {
   return `<div style="margin-bottom:10px">
-    <div style="font-size:7px;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px">Tactical Approach</div>
+    <div style="font-size:var(--fs-micro);letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;margin-bottom:4px">Tactical Approach</div>
     <div style="display:flex;gap:5px">
       ${MISSION_APPROACHES.map(a => {
         const fav = spec && a.favors.includes(spec)
@@ -31,9 +31,9 @@ export function _approachPickerHtml(spec, selId, setterFn) {
         const sel = a.id === selId
         const tag = fav ? '<span style="color:var(--green)">▲ favored</span>' : mis ? '<span style="color:var(--red-soft)">▼ mismatch</span>' : '<span style="color:var(--text-faint)">—</span>'
         return `<div onclick="${setterFn}('${a.id}')" style="flex:1;text-align:center;padding:5px 4px;cursor:pointer;border:1px solid ${sel ? 'var(--gold)' : 'var(--border)'};background:${sel ? 'rgba(201,168,76,.10)' : 'transparent'}">
-          <div style="font-size:12px">${a.icon}</div>
-          <div style="font-size:8px;color:${sel ? 'var(--gold)' : 'var(--text-mid)'};font-weight:${sel ? 'bold' : 'normal'}">${a.label}</div>
-          <div style="font-size:6px;margin-top:1px">${tag}</div>
+          <div style="font-size:var(--fs-lead)">${a.icon}</div>
+          <div style="font-size:var(--fs-small);color:${sel ? 'var(--gold)' : 'var(--text-mid)'};font-weight:${sel ? 'bold' : 'normal'}">${a.label}</div>
+          <div style="font-size:var(--fs-micro);margin-top:1px">${tag}</div>
         </div>`
       }).join('')}
     </div>
@@ -61,7 +61,7 @@ export function rMissionInspector() {
   const el = document.getElementById('ms-inspector'); if (!el) return
   const m = (G.avM || []).find(x => x.id === ui.msSel && !x.sq)
   if (!m) {
-    el.innerHTML = `<div style="border:1px solid var(--border);background:var(--sunken);padding:14px;font-size:8px;color:var(--text-faint);text-align:center;line-height:1.6">${tr('mission.inspector.empty')}</div>`
+    el.innerHTML = `<div style="border:1px solid var(--border);background:var(--sunken);padding:14px;font-size:var(--fs-small);color:var(--text-faint);text-align:center;line-height:1.6">${tr('mission.inspector.empty')}</div>`
     return
   }
   if (!ui.aApproach) ui.aApproach = 'balanced'
@@ -71,23 +71,23 @@ export function rMissionInspector() {
   const aM = G.aM.find(a => a.missionId === m.id && !a.isSquad)
   el.innerHTML = `
     <div style="border:1px solid var(--accent-border);background:var(--sunken);padding:12px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">${tr('mission.briefing')}</div>
-      <div style="font-size:11px;color:var(--text-hi);font-weight:bold;margin-bottom:3px">${m.n}</div>
-      <div style="font-size:8px;color:var(--text-dim);margin-bottom:8px">${m.rk}-Rank · ${fmt(m.ryo)} ryo · +${m.rep} rep · ${m.dur}m · Risk ${Math.round(m.risk * 100)}% · Min pwr ${m.mp}</div>
+      <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--accent);text-transform:uppercase;margin-bottom:6px">${tr('mission.briefing')}</div>
+      <div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold;margin-bottom:3px">${m.n}</div>
+      <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:8px">${m.rk}-Rank · ${fmt(m.ryo)} ryo · +${m.rep} rep · ${m.dur}m · Risk ${Math.round(m.risk * 100)}% · Min pwr ${m.mp}</div>
       ${_missionIntel(m)}
       ${aM
-        ? `<div style="font-size:9px;color:var(--orange);margin-top:8px">⟳ ${sn(G.shinobi.find(s => s.id === aM.assignedTo) || { fn: '?', ln: '' })} deployed — ${aM.daysLeft}m left</div>`
-        : `<div style="font-size:7px;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;margin:8px 0 4px">Tactical Approach</div>
+        ? `<div style="font-size:var(--fs-body);color:var(--orange);margin-top:8px">⟳ ${sn(G.shinobi.find(s => s.id === aM.assignedTo) || { fn: '?', ln: '' })} deployed — ${aM.daysLeft}m left</div>`
+        : `<div style="font-size:var(--fs-micro);letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;margin:8px 0 4px">Tactical Approach</div>
            ${_approachPickerHtml(m.spec, ui.aApproach, 'setInspectorApproach')}
-           <div style="font-size:7px;letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;margin:8px 0 4px">Best-Fit Squad</div>
+           <div style="font-size:var(--fs-micro);letter-spacing:1px;color:var(--text-dim);text-transform:uppercase;margin:8px 0 4px">Best-Fit Squad</div>
            ${ranked.length ? ranked.map(c => {
              const col = c.sc >= 0.65 ? 'var(--green)' : c.sc >= 0.4 ? 'var(--orange)' : 'var(--red)'
              return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--surface)">
-               <div style="flex:1"><div style="font-size:9px;color:var(--text-hi)">${sn(c.s)}</div><div style="font-size:7px;color:var(--text-faint)">${RANKS[c.s.ri]} · Pwr ${c.pw}</div></div>
-               <span style="font-size:9px;color:${col};font-family:var(--font-num,'Courier New',monospace)">${Math.round(c.sc * 100)}%</span>
-               <button class="gb" style="font-size:7px;padding:2px 7px" onclick="deployFromInspector('${c.s.id}')">${tr('mission.deploy')}</button>
+               <div style="flex:1"><div style="font-size:var(--fs-body);color:var(--text-hi)">${sn(c.s)}</div><div style="font-size:var(--fs-micro);color:var(--text-faint)">${RANKS[c.s.ri]} · Pwr ${c.pw}</div></div>
+               <span style="font-size:var(--fs-body);color:${col};font-family:var(--font-num,'Courier New',monospace)">${Math.round(c.sc * 100)}%</span>
+               <button class="gb" style="font-size:var(--fs-micro);padding:2px 7px" onclick="deployFromInspector('${c.s.id}')">${tr('mission.deploy')}</button>
              </div>`
-           }).join('') : `<div style="font-size:8px;color:var(--red)">No eligible shinobi (need power ${m.mp}+).</div>`}`}
+           }).join('') : `<div style="font-size:var(--fs-small);color:var(--red)">No eligible shinobi (need power ${m.mp}+).</div>`}`}
     </div>`
 }
 
@@ -103,9 +103,9 @@ export function rTacticalPrep() {
   el.innerHTML = `<div style="display:flex;gap:6px;margin-bottom:14px;align-items:stretch">
     ${modes.map(m => `
       <div onclick="setMissionPrep('${m.id}')" style="flex:1;padding:7px 8px;border:1px solid ${mode===m.id?m.color:'var(--border)'};background:${mode===m.id?'rgba(0,0,0,.4)':'transparent'};cursor:pointer;text-align:center">
-        <div style="font-size:12px;margin-bottom:2px">${m.icon}</div>
-        <div style="font-size:8px;color:${mode===m.id?m.color:'var(--text-dim)'};font-weight:${mode===m.id?'bold':'normal'}">${m.label}</div>
-        <div style="font-size:7px;color:var(--border-hi);margin-top:2px">${m.desc}</div>
+        <div style="font-size:var(--fs-lead);margin-bottom:2px">${m.icon}</div>
+        <div style="font-size:var(--fs-small);color:${mode===m.id?m.color:'var(--text-dim)'};font-weight:${mode===m.id?'bold':'normal'}">${m.label}</div>
+        <div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:2px">${m.desc}</div>
       </div>`).join('')}
   </div>`
 }
@@ -128,29 +128,29 @@ export function rMissionReport() {
       ${r.phases.map(p => {
         const c = p.won ? 'var(--green)' : 'var(--red)'
         return `<div style="flex:1;border:1px solid ${c}44;background:${p.won?'rgba(143,188,143,.06)':'rgba(255,102,102,.06)'};padding:5px 7px;text-align:center">
-          <div style="font-size:7px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">${p.name}</div>
-          <div style="font-size:11px;color:${c};font-weight:bold;margin-top:2px">${p.won ? '✓' : '✕'}</div>
+          <div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">${p.name}</div>
+          <div style="font-size:var(--fs-lead);color:${c};font-weight:bold;margin-top:2px">${p.won ? '✓' : '✕'}</div>
         </div>`
       }).join('')}
     </div>
-    ${r.quality ? `<div style="font-size:8px;color:var(--text-dim);margin-bottom:8px">Outcome: <b style="color:${r.succeeded ? 'var(--green)' : 'var(--red)'}">${QUALITY_LABEL[r.quality] || r.quality}</b>${r.margin != null ? ` · margin ${r.margin > 0 ? '+' : ''}${r.margin}` : ''}</div>` : ''}` : ''
+    ${r.quality ? `<div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:8px">Outcome: <b style="color:${r.succeeded ? 'var(--green)' : 'var(--red)'}">${QUALITY_LABEL[r.quality] || r.quality}</b>${r.margin != null ? ` · margin ${r.margin > 0 ? '+' : ''}${r.margin}` : ''}</div>` : ''}` : ''
   el.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);padding:10px;margin-bottom:12px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase">
+      <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase">
         Last Mission Report — ${r.missionName} (${r.missionRk}-Rank) · ${r.succeeded?'<span style="color:var(--green)">SUCCESS</span>':'<span style="color:var(--red)">FAILURE</span>'}
       </div>
       ${(r.phases && r.phases.length) ? `<div style="display:flex;align-items:center;gap:8px">
-        <button class="gb" style="font-size:7px;padding:2px 8px;border-color:var(--gold);color:var(--gold)" onclick="watchLastBattle()">▶ Watch</button>
-        <label style="font-size:7px;color:${G._autoWatchBattles ? 'var(--green)' : 'var(--text-dim)'};cursor:pointer;user-select:none;display:flex;align-items:center;gap:3px" onclick="toggleAutoWatch()">${G._autoWatchBattles ? '☑' : '☐'} Auto-watch</label>
+        <button class="gb" style="font-size:var(--fs-micro);padding:2px 8px;border-color:var(--gold);color:var(--gold)" onclick="watchLastBattle()">▶ Watch</button>
+        <label style="font-size:var(--fs-micro);color:${G._autoWatchBattles ? 'var(--green)' : 'var(--text-dim)'};cursor:pointer;user-select:none;display:flex;align-items:center;gap:3px" onclick="toggleAutoWatch()">${G._autoWatchBattles ? '☑' : '☐'} Auto-watch</label>
       </div>` : ''}
     </div>
     ${beatHtml}
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       ${r.scores.map(sc => `<div style="background:var(--sunken);border:1px solid ${GRADE_COLOR[sc.grade]}22;padding:6px 9px;min-width:80px">
-        <div style="font-size:9px;color:var(--text-hi)">${sc.name}</div>
-        <div style="font-size:7px;color:var(--text-dim);margin-top:1px">${sc.role}</div>
-        <div style="font-size:16px;font-weight:bold;color:${GRADE_COLOR[sc.grade]};margin-top:3px">${sc.grade}</div>
-        <div style="font-size:7px;color:${GRADE_COLOR[sc.grade]};margin-top:1px">${sc.detail}</div>
+        <div style="font-size:var(--fs-body);color:var(--text-hi)">${sc.name}</div>
+        <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:1px">${sc.role}</div>
+        <div style="font-size:var(--fs-head);font-weight:bold;color:${GRADE_COLOR[sc.grade]};margin-top:3px">${sc.grade}</div>
+        <div style="font-size:var(--fs-micro);color:${GRADE_COLOR[sc.grade]};margin-top:1px">${sc.detail}</div>
       </div>`).join('')}
     </div>
   </div>`
@@ -192,7 +192,7 @@ function _expiryBadge(m) {
   // Clamp display
   const ml = Math.max(0, m.expiresMonth - G.month + (m.addedYear && m.addedYear < G.year ? (G.year - m.addedYear) * 12 * -1 : 0))
   const color = ml <= 1 ? 'var(--red)' : ml <= 2 ? 'var(--orange)' : 'var(--text-dim)'
-  return `<span style="font-size:7px;color:${color};border:1px solid ${color};padding:1px 4px;margin-left:5px">Expires ${ml}m</span>`
+  return `<span style="font-size:var(--fs-micro);color:${color};border:1px solid ${color};padding:1px 4px;margin-left:5px">Expires ${ml}m</span>`
 }
 
 // Risk-tier color so danger reads at a glance when scanning the board:
@@ -204,7 +204,7 @@ function _riskColor(risk) {
 
 function _chainBadge(m) {
   if (!m.chainId) return ''
-  return `<span style="font-size:7px;color:var(--blue);border:1px solid var(--blue);padding:1px 4px;margin-left:5px" title="Chain: ${m.chainName}">⛓ ${m.chainName} ${m.chainStep + 1}/${m.chainTotal}</span>`
+  return `<span style="font-size:var(--fs-micro);color:var(--blue);border:1px solid var(--blue);padding:1px 4px;margin-left:5px" title="Chain: ${m.chainName}">⛓ ${m.chainName} ${m.chainStep + 1}/${m.chainTotal}</span>`
 }
 
 // ── Route B: Mission Intel Phase ─────────────────────────────────────────────
@@ -219,7 +219,7 @@ function _missionIntel(m) {
   const adv       = m.spec ? `${_SPEC_ADV_LBL[m.spec]} +15% success` : 'No unit-type advantage'
   const dangerCol = m.rk === 'S' ? 'var(--red)' : m.rk === 'A' ? 'var(--orange)' : m.rk === 'B' ? '#a09080' : 'var(--text-faint)'
   const danger    = m.rk === 'S' ? 'Extreme' : m.rk === 'A' ? 'High' : m.rk === 'B' ? 'Medium' : 'Low'
-  return `<div style="background:rgba(0,0,0,.3);border-left:2px solid var(--surface-3);padding:5px 8px;margin-bottom:7px;font-size:8px">
+  return `<div style="background:rgba(0,0,0,.3);border-left:2px solid var(--surface-3);padding:5px 8px;margin-bottom:7px;font-size:var(--fs-small)">
     <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:2px">
       <span style="color:var(--text-faint)">🗺 <span style="color:var(--text-mid)">${terrain}</span></span>
       <span style="color:var(--text-faint)">⚔ <span style="color:var(--text-mid)">${clan}</span></span>
@@ -243,10 +243,10 @@ export function rSoloM() {
     const rc  = 'mr-' + m.rk.toLowerCase()
     const aM  = G.aM.find(a => a.missionId === m.id && !a.isSquad)
     // Tags row
-    const crisisTag   = m.isCrisis   ? `<span style="font-size:6px;padding:1px 4px;border:1px solid var(--red);color:var(--red-soft);border-radius:2px;margin-right:3px">⚠ URGENT</span>` : ''
-    const seasonalTag = m.seasonal   ? `<span style="font-size:6px;padding:1px 4px;border:1px solid var(--gold);color:#e8c86a;border-radius:2px;margin-right:3px">Seasonal</span>` : ''
-    const followUpTag = m.isFollowUp ? `<span style="font-size:6px;padding:1px 4px;border:1px solid var(--blue-hi);color:var(--blue-hi);border-radius:2px;margin-right:3px">Recovery</span>` : ''
-    const specTag     = m.spec       ? `<span style="font-size:6px;padding:1px 4px;border:1px solid #6a8fa0;color:var(--blue-hi);border-radius:2px">${SPEC_LABEL[m.spec]}</span>` : ''
+    const crisisTag   = m.isCrisis   ? `<span style="font-size:var(--fs-micro);padding:1px 4px;border:1px solid var(--red);color:var(--red-soft);border-radius:2px;margin-right:3px">⚠ URGENT</span>` : ''
+    const seasonalTag = m.seasonal   ? `<span style="font-size:var(--fs-micro);padding:1px 4px;border:1px solid var(--gold);color:#e8c86a;border-radius:2px;margin-right:3px">Seasonal</span>` : ''
+    const followUpTag = m.isFollowUp ? `<span style="font-size:var(--fs-micro);padding:1px 4px;border:1px solid var(--blue-hi);color:var(--blue-hi);border-radius:2px;margin-right:3px">Recovery</span>` : ''
+    const specTag     = m.spec       ? `<span style="font-size:var(--fs-micro);padding:1px 4px;border:1px solid #6a8fa0;color:var(--blue-hi);border-radius:2px">${SPEC_LABEL[m.spec]}</span>` : ''
     // Best-fit preview (highest sc eligible shinobi)
     let bestFitBtn = ''
     if (!aM && av.length) {
@@ -263,11 +263,11 @@ export function rSoloM() {
       <div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:6px">
         <span class="mrb ${rc}">${m.rk}</span>
         <div style="flex:1">
-          <div style="font-size:11px;color:var(--text-hi);font-weight:bold;cursor:pointer" onclick="selectMission('${m.id}')" title="View briefing ▸">${m.n}</div>
+          <div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold;cursor:pointer" onclick="selectMission('${m.id}')" title="View briefing ▸">${m.n}</div>
           <div style="margin-top:3px">${crisisTag}${seasonalTag}${followUpTag}${specTag} ${_expiryBadge(m)}${_chainBadge(m)}</div>
         </div>
       </div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:8px;color:var(--text-dim);margin-bottom:7px">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:var(--fs-small);color:var(--text-dim);margin-bottom:7px">
         <span>Reward: <span style="color:var(--gold);font-weight:bold">${fmt(m.ryo)} ryo</span></span>
         <span>Rep: <span style="color:var(--text-hi)">+${m.rep}</span></span>
         <span>Duration: <span style="color:var(--text-hi)">${m.dur}m</span></span>
@@ -276,7 +276,7 @@ export function rSoloM() {
       </div>
       ${_missionIntel(m)}
       ${aM
-        ? `<div style="font-size:9px;color:var(--orange)">⟳ ${sn(G.shinobi.find(s => s.id === aM.assignedTo) || {fn:'?',ln:''})} — ${aM.daysLeft}m left</div>`
+        ? `<div style="font-size:var(--fs-body);color:var(--orange)">⟳ ${sn(G.shinobi.find(s => s.id === aM.assignedTo) || {fn:'?',ln:''})} — ${aM.daysLeft}m left</div>`
         : `<div style="display:flex;gap:4px;flex-wrap:wrap">${bestFitBtn}<button class="gb" onclick="oA('${m.id}')" ${av.length ? '' : 'disabled'}>${tr('mission.assign')}</button></div>`
       }
     </div>`
@@ -288,16 +288,16 @@ export function rSoloM() {
   const aspirational= main.filter(m => maxPow < m.mp * 0.80)
 
   const idleBadge = idle > 0
-    ? `<div style="font-size:8px;color:var(--orange);margin-bottom:10px">⚠ ${idle} shinobi idle — assign missions below</div>`
+    ? `<div style="font-size:var(--fs-small);color:var(--orange);margin-bottom:10px">⚠ ${idle} shinobi idle — assign missions below</div>`
     : ''
 
   const civilianSection = civilian.length === 0 ? '' : `
-    <div style="font-size:7px;letter-spacing:2px;color:var(--border-hi);text-transform:uppercase;margin:14px 0 6px">${tr('mission.civilianContracts')}</div>
+    <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--border-hi);text-transform:uppercase;margin:14px 0 6px">${tr('mission.civilianContracts')}</div>
     <div style="opacity:0.7">${civilian.map(_mCard).join('')}</div>`
 
   const aspirationalSection = aspirational.length === 0 ? '' : `
     <details style="margin-top:14px">
-      <summary style="font-size:7px;letter-spacing:2px;color:var(--border-hi);text-transform:uppercase;cursor:pointer;user-select:none">
+      <summary style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--border-hi);text-transform:uppercase;cursor:pointer;user-select:none">
         Future Ops — ${aspirational.length} mission${aspirational.length>1?'s':''} (need more power)
       </summary>
       <div style="opacity:0.45;margin-top:8px">${aspirational.map(_mCard).join('')}</div>
@@ -325,19 +325,19 @@ function _offSeasonBlock() {
   const dRankPool = (G.avM || []).filter(m => !m.sq && m.rk === 'D')
   const dSection = dRankPool.length > 0 ? `
     <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--surface-3)">
-      <div style="font-size:8px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Civilian Contracts — available year-round</div>
+      <div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Civilian Contracts — available year-round</div>
       ${dRankPool.map(m => {
         const aM  = (G.aM||[]).find(a => a.missionId === m.id)
         const av2 = G.shinobi.filter(s => s.status === 'available')
         const best = av2.sort((a,b) => sPow(b)-sPow(a))[0]
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border:1px solid var(--surface-3);background:var(--bg);margin-bottom:4px">
           <div>
-            <div style="font-size:9px;color:var(--text-hi)">${m.n}</div>
-            <div style="font-size:7px;color:var(--text-dim)">${fmt(m.ryo)} ryo · ${m.dur}m · Risk <span style="color:${_riskColor(m.risk)}">${Math.round(m.risk*100)}%</span></div>
+            <div style="font-size:var(--fs-body);color:var(--text-hi)">${m.n}</div>
+            <div style="font-size:var(--fs-micro);color:var(--text-dim)">${fmt(m.ryo)} ryo · ${m.dur}m · Risk <span style="color:${_riskColor(m.risk)}">${Math.round(m.risk*100)}%</span></div>
           </div>
           ${aM
-            ? `<div style="font-size:8px;color:var(--orange)">⟳ ${sn(G.shinobi.find(s=>s.id===aM.assignedTo)||{fn:'?',ln:''})} — ${aM.daysLeft}m</div>`
-            : best ? `<button class="gb" style="font-size:7px" onclick="doA('${best.id}');rSoloM()">▶ ${sn(best)}</button>` : '<span style="font-size:7px;color:var(--text-faint)">No shinobi</span>'
+            ? `<div style="font-size:var(--fs-small);color:var(--orange)">⟳ ${sn(G.shinobi.find(s=>s.id===aM.assignedTo)||{fn:'?',ln:''})} — ${aM.daysLeft}m</div>`
+            : best ? `<button class="gb" style="font-size:var(--fs-micro)" onclick="doA('${best.id}');rSoloM()">▶ ${sn(best)}</button>` : '<span style="font-size:var(--fs-micro);color:var(--text-faint)">No shinobi</span>'
           }
         </div>`
       }).join('')}
@@ -346,41 +346,41 @@ function _offSeasonBlock() {
   return `<div style="border:1px solid #4a8080;background:rgba(0,80,80,.12);padding:16px;margin-bottom:12px">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
       <div>
-        <div style="font-size:13px;color:var(--blue);font-weight:bold">⛄ Off-Season — Month ${G.month}</div>
-        <div style="font-size:8px;color:var(--text-dim);margin-top:3px">Full missions resume Month 4 · ${monthsLeft > 0 ? monthsLeft + 'm remaining' : 'last month of rest'}</div>
+        <div style="font-size:var(--fs-sub);color:var(--blue);font-weight:bold">⛄ Off-Season — Month ${G.month}</div>
+        <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:3px">Full missions resume Month 4 · ${monthsLeft > 0 ? monthsLeft + 'm remaining' : 'last month of rest'}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:8px;color:var(--text-dim)">Avg fatigue</div>
-        <div style="font-size:14px;color:${avgFatigue>15?'var(--orange)':'var(--green)'};font-weight:bold">${avgFatigue}</div>
+        <div style="font-size:var(--fs-small);color:var(--text-dim)">Avg fatigue</div>
+        <div style="font-size:var(--fs-sub);color:${avgFatigue>15?'var(--orange)':'var(--green)'};font-weight:bold">${avgFatigue}</div>
       </div>
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px">
       <div style="background:var(--surface);padding:8px;border:1px solid var(--border);text-align:center">
-        <div style="font-size:14px;color:var(--green);font-weight:bold">${available}</div>
-        <div style="font-size:7px;color:var(--text-faint)">Resting</div>
+        <div style="font-size:var(--fs-sub);color:var(--green);font-weight:bold">${available}</div>
+        <div style="font-size:var(--fs-micro);color:var(--text-faint)">Resting</div>
       </div>
       <div style="background:var(--surface);padding:8px;border:1px solid var(--border);text-align:center">
-        <div style="font-size:14px;color:var(--orange);font-weight:bold">${onMission}</div>
-        <div style="font-size:7px;color:var(--text-faint)">On mission</div>
+        <div style="font-size:var(--fs-sub);color:var(--orange);font-weight:bold">${onMission}</div>
+        <div style="font-size:var(--fs-micro);color:var(--text-faint)">On mission</div>
       </div>
       <div style="background:var(--surface);padding:8px;border:1px solid var(--border);text-align:center">
-        <div style="font-size:14px;color:${injured>0?'var(--red)':'var(--text-faint)'};font-weight:bold">${injured}</div>
-        <div style="font-size:7px;color:var(--text-faint)">Injured</div>
+        <div style="font-size:var(--fs-sub);color:${injured>0?'var(--red)':'var(--text-faint)'};font-weight:bold">${injured}</div>
+        <div style="font-size:var(--fs-micro);color:var(--text-faint)">Injured</div>
       </div>
       <div style="background:var(--surface);padding:8px;border:1px solid var(--border);text-align:center">
-        <div style="font-size:14px;color:${highFatigue>0?'var(--red-soft)':'var(--text-faint)'};font-weight:bold">${highFatigue}</div>
-        <div style="font-size:7px;color:var(--text-faint)">High fatigue</div>
+        <div style="font-size:var(--fs-sub);color:${highFatigue>0?'var(--red-soft)':'var(--text-faint)'};font-weight:bold">${highFatigue}</div>
+        <div style="font-size:var(--fs-micro);color:var(--text-faint)">High fatigue</div>
       </div>
     </div>
 
-    <div style="font-size:9px;color:var(--text);font-weight:bold;margin-bottom:8px">Off-Season Actions</div>
+    <div style="font-size:var(--fs-body);color:var(--text);font-weight:bold;margin-bottom:8px">Off-Season Actions</div>
     <div style="display:flex;flex-direction:column;gap:6px">
       <div style="border:1px solid #3a5050;padding:10px;background:#0d1a1a">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-size:10px;color:var(--blue);font-weight:bold">🏕 Training Camp</div>
-            <div style="font-size:8px;color:var(--text-dim);margin-top:2px">Reset fatigue, +1 stat for each shinobi, +5 morale · 8,000 ryo${canAfford ? '' : ' <span style="color:var(--red)">(insufficient funds)</span>'}</div>
+            <div style="font-size:var(--fs-body);color:var(--blue);font-weight:bold">🏕 Training Camp</div>
+            <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">Reset fatigue, +1 stat for each shinobi, +5 morale · 8,000 ryo${canAfford ? '' : ' <span style="color:var(--red)">(insufficient funds)</span>'}</div>
           </div>
           <button class="gb" onclick="runTrainingCamp()" ${canAfford ? '' : 'disabled'} style="white-space:nowrap">${canAfford ? 'Run Camp ►' : 'Need ryo'}</button>
         </div>
@@ -388,8 +388,8 @@ function _offSeasonBlock() {
       <div style="border:1px solid var(--border-hi);padding:10px;background:var(--sunken)">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-size:10px;color:var(--text-hi);font-weight:bold">🎓 Youth Academy</div>
-            <div style="font-size:8px;color:var(--text-dim);margin-top:2px">Review and graduate incoming prospects.</div>
+            <div style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold">🎓 Youth Academy</div>
+            <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">Review and graduate incoming prospects.</div>
           </div>
           <button class="gb" onclick="sp('academy')">View Academy ►</button>
         </div>
@@ -397,8 +397,8 @@ function _offSeasonBlock() {
       <div style="border:1px solid var(--border-hi);padding:10px;background:var(--sunken)">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-size:10px;color:var(--text-hi);font-weight:bold">🛒 Free Agent Market</div>
-            <div style="font-size:8px;color:var(--text-dim);margin-top:2px">Sign available shinobi before the season opens.</div>
+            <div style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold">🛒 Free Agent Market</div>
+            <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">Sign available shinobi before the season opens.</div>
           </div>
           <button class="gb" onclick="sp('transfers')">Open Market ►</button>
         </div>
@@ -406,8 +406,8 @@ function _offSeasonBlock() {
       <div style="border:1px solid var(--border-hi);padding:10px;background:var(--sunken)">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-size:10px;color:var(--text-hi);font-weight:bold">📋 Contract Renewals</div>
-            <div style="font-size:8px;color:var(--text-dim);margin-top:2px">Review salaries and renew contracts now.</div>
+            <div style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold">📋 Contract Renewals</div>
+            <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">Review salaries and renew contracts now.</div>
           </div>
           <button class="gb" onclick="sp('roster')">Open Roster ►</button>
         </div>
@@ -415,8 +415,8 @@ function _offSeasonBlock() {
       <div style="border:1px solid var(--border-hi);padding:10px;background:var(--sunken)">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div>
-            <div style="font-size:10px;color:var(--text-hi);font-weight:bold">🌍 Diplomacy</div>
-            <div style="font-size:8px;color:var(--text-dim);margin-top:2px">Negotiate trade routes and village relations during the quiet season.</div>
+            <div style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold">🌍 Diplomacy</div>
+            <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">Negotiate trade routes and village relations during the quiet season.</div>
           </div>
           <button class="gb" onclick="sp('diplomacy')">Open ►</button>
         </div>
@@ -435,19 +435,19 @@ export function rSqM() {
       <div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:6px">
         <span class="mrb ${rc}">${m.rk}</span>
         <div>
-          <div style="font-size:11px;color:var(--text-hi);font-weight:bold">${m.n} <span style="font-size:8px;color:var(--purple)">Squad</span></div>
+          <div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold">${m.n} <span style="font-size:var(--fs-small);color:var(--purple)">Squad</span></div>
           <div style="margin-top:3px">${_expiryBadge(m)}${_chainBadge(m)}</div>
         </div>
       </div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:8px;color:var(--text-dim);margin-bottom:7px">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:var(--fs-small);color:var(--text-dim);margin-bottom:7px">
         <span>Reward: <span style="color:var(--gold);font-weight:bold">${fmt(m.ryo)} ryo</span></span>
         <span>Min sq pwr: <span style="color:var(--text-hi)">${m.mp}</span></span>
         <span>Duration: <span style="color:var(--text-hi)">${m.dur}m</span></span>
         ${m.risk != null ? `<span>Risk: <span style="color:${_riskColor(m.risk)};font-weight:bold">${Math.round(m.risk * 100)}%</span></span>` : ''}
       </div>
-      ${aM ? `<div style="font-size:9px;color:var(--orange)">⟳ Squad on mission — ${aM.daysLeft}m left</div>` : `<button class="gb" onclick="pickSq('${m.id}')">${tr('mission.assignSquad')}</button>`}
+      ${aM ? `<div style="font-size:var(--fs-body);color:var(--orange)">⟳ Squad on mission — ${aM.daysLeft}m left</div>` : `<button class="gb" onclick="pickSq('${m.id}')">${tr('mission.assignSquad')}</button>`}
     </div>`
-  }).join('') || '<div style="color:var(--text-dim);font-size:10px">No squad missions.</div>'
+  }).join('') || '<div style="color:var(--text-dim);font-size:var(--fs-body)">No squad missions.</div>'
 }
 
 export function pickSq(mId) {
@@ -458,11 +458,11 @@ export function pickSq(mId) {
 
 export function rDef() {
   const el = document.getElementById('ms-def')
-  if (!G.raid || G.raid.resolved) { el.innerHTML = `<div style="color:var(--text-dim);font-size:10px">${tr('mission.noThreats')}</div>`; return }
+  if (!G.raid || G.raid.resolved) { el.innerHTML = `<div style="color:var(--text-dim);font-size:var(--fs-body)">${tr('mission.noThreats')}</div>`; return }
   const wD = (G.upgrades.wall === 1 ? 15 : G.upgrades.wall === 2 ? 35 : 0) + (G.upgrades.seal === 1 ? 10 : G.upgrades.seal === 2 ? 25 : 0) + (G.tempDef || 0)
   const def = G.defSh ? G.shinobi.find(s => s.id === G.defSh) : null
   const av = G.shinobi.filter(s => s.status === 'available')
-  el.innerHTML = `<div style="background:#1a0000;border:1px solid var(--red);padding:12px"><div style="font-size:9px;color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">⚠ ${G.raid.n}</div><div style="font-size:10px;color:var(--red-soft);margin-bottom:10px">${G.raid.desc}</div><div style="display:flex;gap:18px;margin-bottom:10px"><div><div style="font-size:7px;color:var(--text-dim);letter-spacing:1px">THREAT</div><div style="font-size:18px;color:var(--red);font-weight:bold">${G.raid.str}</div></div><div><div style="font-size:7px;color:var(--text-dim);letter-spacing:1px">WALL DEF</div><div style="font-size:18px;color:var(--green);font-weight:bold">${wD}</div></div><div><div style="font-size:7px;color:var(--text-dim);letter-spacing:1px">ARRIVES IN</div><div style="font-size:18px;color:var(--orange);font-weight:bold">${G.raidW}m</div></div></div>${def ? `<div style="font-size:10px;color:var(--green);margin-bottom:7px">Defender: ${sn(def)} (Pwr ${sPow(def)})</div><button class="gb gb-r" onclick="G_defShClear()">Remove</button>` : av.map(s => `<div class="pi" onclick="G_defShSet('${s.id}')" style="margin-bottom:4px"><div style="font-size:10px;color:var(--text-hi)">${sn(s)}</div><div style="font-size:8px;color:var(--text-dim)">${RANKS[s.ri]} · Pwr ${sPow(s)}</div></div>`).join('') || '<div style="color:var(--text-dim);font-size:9px">No shinobi available.</div>'}</div>`
+  el.innerHTML = `<div style="background:#1a0000;border:1px solid var(--red);padding:12px"><div style="font-size:var(--fs-body);color:var(--red);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">⚠ ${G.raid.n}</div><div style="font-size:var(--fs-body);color:var(--red-soft);margin-bottom:10px">${G.raid.desc}</div><div style="display:flex;gap:18px;margin-bottom:10px"><div><div style="font-size:var(--fs-micro);color:var(--text-dim);letter-spacing:1px">THREAT</div><div style="font-size:var(--fs-head);color:var(--red);font-weight:bold">${G.raid.str}</div></div><div><div style="font-size:var(--fs-micro);color:var(--text-dim);letter-spacing:1px">WALL DEF</div><div style="font-size:var(--fs-head);color:var(--green);font-weight:bold">${wD}</div></div><div><div style="font-size:var(--fs-micro);color:var(--text-dim);letter-spacing:1px">ARRIVES IN</div><div style="font-size:var(--fs-head);color:var(--orange);font-weight:bold">${G.raidW}m</div></div></div>${def ? `<div style="font-size:var(--fs-body);color:var(--green);margin-bottom:7px">Defender: ${sn(def)} (Pwr ${sPow(def)})</div><button class="gb gb-r" onclick="G_defShClear()">Remove</button>` : av.map(s => `<div class="pi" onclick="G_defShSet('${s.id}')" style="margin-bottom:4px"><div style="font-size:var(--fs-body);color:var(--text-hi)">${sn(s)}</div><div style="font-size:var(--fs-small);color:var(--text-dim)">${RANKS[s.ri]} · Pwr ${sPow(s)}</div></div>`).join('') || '<div style="color:var(--text-dim);font-size:var(--fs-body)">No shinobi available.</div>'}</div>`
 }
 
 export function rChains() {
@@ -474,7 +474,7 @@ export function rChains() {
   const RK_COLORS = { D:'var(--green)', C:'var(--blue)', B:'var(--gold)', A:'var(--orange)', S:'var(--red)' }
 
   const activeHtml = active.length === 0
-    ? `<div style="color:var(--text-dim);font-size:9px;margin-bottom:12px">${tr('mission.chains.none')}</div>`
+    ? `<div style="color:var(--text-dim);font-size:var(--fs-body);margin-bottom:12px">${tr('mission.chains.none')}</div>`
     : active.map(chain => {
         const completedCount = chain.completedSteps.length
         const totalSteps = chain.steps.length
@@ -487,10 +487,10 @@ export function rChains() {
         return `<div style="background:#0d1a0d;border:1px solid var(--green-bg);padding:10px;margin-bottom:8px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <div>
-              <div style="font-size:10px;color:var(--gold);font-weight:bold">⛓ ${chain.n}</div>
-              <div style="font-size:7px;color:var(--text-dim);margin-top:1px">Started Y${chain.startYear}·M${chain.startMonth}</div>
+              <div style="font-size:var(--fs-body);color:var(--gold);font-weight:bold">⛓ ${chain.n}</div>
+              <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:1px">Started Y${chain.startYear}·M${chain.startMonth}</div>
             </div>
-            <div style="font-size:9px;color:var(--green)">${completedCount}/${totalSteps} complete</div>
+            <div style="font-size:var(--fs-body);color:var(--green)">${completedCount}/${totalSteps} complete</div>
           </div>
           <div style="background:var(--sunken);height:4px;border-radius:2px;margin-bottom:8px">
             <div style="background:var(--green);height:4px;border-radius:2px;width:${pct}%"></div>
@@ -502,19 +502,19 @@ export function rChains() {
               const active = i === chain.currentStep
               const rkC    = RK_COLORS[step.rk] || 'var(--text-mid)'
               return `<div style="flex:1;padding:4px;border:1px solid ${done?'var(--green)':failed?'var(--red)':active?rkC:'var(--border)'};background:${done?'#0a1a0a':failed?'var(--red-bg)':active?'rgba(0,0,0,.4)':'transparent'};text-align:center">
-                <div style="font-size:6px;color:${done?'var(--green)':failed?'var(--red)':active?rkC:'var(--text-faint)'};text-transform:uppercase">${done?'✓':failed?'✗':active?'NOW':String(i+1)}</div>
-                <div style="font-size:7px;color:${active?rkC:'var(--text-faint)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${step.rk}-Rank</div>
+                <div style="font-size:var(--fs-micro);color:${done?'var(--green)':failed?'var(--red)':active?rkC:'var(--text-faint)'};text-transform:uppercase">${done?'✓':failed?'✗':active?'NOW':String(i+1)}</div>
+                <div style="font-size:var(--fs-micro);color:${active?rkC:'var(--text-faint)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${step.rk}-Rank</div>
               </div>`
             }).join('')}
           </div>
-          ${currentStep ? `<div style="font-size:8px;color:var(--text-dim)">
+          ${currentStep ? `<div style="font-size:var(--fs-small);color:var(--text-dim)">
             Next: <span style="color:var(--text-hi)">${currentStep.n}</span> (${currentStep.rk}-Rank · ${fmt(currentStep.ryo)} ryo)
             ${boardM ? ` · <span style="color:${activeM ? 'var(--orange)' : 'var(--blue)'}">
               ${activeM ? `⟳ In progress` : '📋 On mission board'}
             </span>` : ' · <span style="color:var(--text-dim)">Generating…</span>'}
           </div>` : ''}
           ${chain.state && (chain.state.ryoAccumulated > 0 || chain.state.injuryEscalation > 0) ? `
-          <div style="display:flex;gap:12px;font-size:7px;color:var(--text-dim);margin-top:5px;padding-top:5px;border-top:1px solid var(--green-bg)">
+          <div style="display:flex;gap:12px;font-size:var(--fs-micro);color:var(--text-dim);margin-top:5px;padding-top:5px;border-top:1px solid var(--green-bg)">
             ${chain.state.ryoAccumulated > 0 ? `<span>Banked: <span style="color:var(--gold)">+${fmt(Math.round(chain.state.ryoAccumulated*0.5))} ryo</span> on completion</span>` : ''}
             ${chain.state.injuryEscalation > 0 ? `<span>Risk escalation: <span style="color:var(--red-soft)">+${Math.round(chain.state.injuryEscalation*100)}%</span></span>` : ''}
           </div>` : ''}
@@ -522,22 +522,22 @@ export function rChains() {
       }).join('')
 
   const completedHtml = completed.length === 0
-    ? '<div style="font-size:9px;color:var(--border-hi)">No completed chains yet.</div>'
+    ? '<div style="font-size:var(--fs-body);color:var(--border-hi)">No completed chains yet.</div>'
     : completed.map(chain => {
         const bonusRyo = chain.state ? Math.round(chain.state.ryoAccumulated * 0.5) : 0
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-left:2px solid var(--green);margin-bottom:4px">
           <div>
-            <div style="font-size:8px;color:var(--green)">✓ ${chain.n}</div>
-            ${bonusRyo > 0 ? `<div style="font-size:7px;color:var(--gold)">${fmt(bonusRyo)} ryo chain bonus paid</div>` : ''}
+            <div style="font-size:var(--fs-small);color:var(--green)">✓ ${chain.n}</div>
+            ${bonusRyo > 0 ? `<div style="font-size:var(--fs-micro);color:var(--gold)">${fmt(bonusRyo)} ryo chain bonus paid</div>` : ''}
           </div>
-          <div style="font-size:7px;color:var(--border-hi)">Y${chain.completedYear}·M${chain.completedMonth||'?'}</div>
+          <div style="font-size:var(--fs-micro);color:var(--border-hi)">Y${chain.completedYear}·M${chain.completedMonth||'?'}</div>
         </div>`
       }).join('')
 
   el.innerHTML = `
-    <div style="font-size:7px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">${tr('mission.chains.active')}</div>
+    <div style="font-size:var(--fs-micro);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">${tr('mission.chains.active')}</div>
     ${activeHtml}
-    <div style="font-size:7px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-top:14px;margin-bottom:8px">${tr('mission.chains.completed')}</div>
+    <div style="font-size:var(--fs-micro);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-top:14px;margin-bottom:8px">${tr('mission.chains.completed')}</div>
     ${completedHtml}
   `
 }
@@ -556,23 +556,23 @@ function _previewSc(s, m) {
 function _scBadge(sc) {
   const pct = Math.round(sc * 100)
   const col = sc >= 0.65 ? 'var(--green)' : sc >= 0.40 ? 'var(--orange)' : 'var(--red)'
-  return `<span style="font-size:7px;padding:1px 5px;border:1px solid ${col};color:${col};border-radius:2px">${pct}%</span>`
+  return `<span style="font-size:var(--fs-micro);padding:1px 5px;border:1px solid ${col};color:${col};border-radius:2px">${pct}%</span>`
 }
 
 function _fatigueBar(s) {
   const f = s.fatigue || 0
   const pct = Math.round(f * 4)   // fatigue 0-25 → 0-100%
   const col = f <= 8 ? 'var(--green)' : f <= 16 ? 'var(--orange)' : 'var(--red)'
-  return `<span style="font-size:7px;color:${col}">⚡${pct}%</span>`
+  return `<span style="font-size:var(--fs-micro);color:${col}">⚡${pct}%</span>`
 }
 
 export function oA(mId) {
   ui.aT = mId
   const m = G.avM.find(x => x.id === mId)
   const SPEC_LABEL = { stealth:'Stealth', combat:'Combat', intel:'Intel', escort:'Escort', siege:'Siege', recovery:'Recovery' }
-  const specTag     = m.spec     ? `<span style="font-size:7px;padding:1px 5px;border:1px solid #6a8fa0;color:var(--blue-hi);border-radius:2px">${SPEC_LABEL[m.spec]}</span> ` : ''
-  const crisisTag   = m.isCrisis ? `<span style="font-size:7px;padding:1px 5px;border:1px solid var(--red);color:var(--red-soft);border-radius:2px">URGENT</span> ` : ''
-  const seasonalTag = m.seasonal ? `<span style="font-size:7px;padding:1px 5px;border:1px solid var(--gold);color:#e8c86a;border-radius:2px">Seasonal</span> ` : ''
+  const specTag     = m.spec     ? `<span style="font-size:var(--fs-micro);padding:1px 5px;border:1px solid #6a8fa0;color:var(--blue-hi);border-radius:2px">${SPEC_LABEL[m.spec]}</span> ` : ''
+  const crisisTag   = m.isCrisis ? `<span style="font-size:var(--fs-micro);padding:1px 5px;border:1px solid var(--red);color:var(--red-soft);border-radius:2px">URGENT</span> ` : ''
+  const seasonalTag = m.seasonal ? `<span style="font-size:var(--fs-micro);padding:1px 5px;border:1px solid var(--gold);color:#e8c86a;border-radius:2px">Seasonal</span> ` : ''
   document.getElementById('ma-t').innerHTML = crisisTag + seasonalTag + specTag + 'Assign: ' + m.n
   document.getElementById('ma-d').textContent = m.rk + '-Rank · ' + fmt(m.ryo) + ' ryo · Risk ' + Math.round(m.risk * 100) + '% · Min pwr ' + m.mp
 
@@ -594,25 +594,25 @@ export function oA(mId) {
     .sort((a, b) => b.sc - a.sc)[0]?.s.id ?? null
 
   const bestFitBtn = bestFitId
-    ? `<button onclick="doA('${bestFitId}')" style="width:100%;margin-bottom:10px;background:var(--green-bg);border:1px solid var(--green);color:var(--green);padding:5px;border-radius:3px;cursor:pointer;font-size:8px">★ Best Fit — auto-assign highest chance</button>`
+    ? `<button onclick="doA('${bestFitId}')" style="width:100%;margin-bottom:10px;background:var(--green-bg);border:1px solid var(--green);color:var(--green);padding:5px;border-radius:3px;cursor:pointer;font-size:var(--fs-small)">★ Best Fit — auto-assign highest chance</button>`
     : ''
 
   if (!ui.aApproach) ui.aApproach = 'balanced'
   const approachHtml = _approachPickerHtml(m.spec, ui.aApproach, 'setMissionApproach')
   document.getElementById('ma-l').innerHTML = approachHtml + bestFitBtn + candidates.map(({ s, pw, ok, ref, sc, specMatch }) => {
     const eligible = ok && !ref
-    const specBadge = specMatch ? `<span style="font-size:6px;color:var(--blue-hi);margin-left:3px">▲${m.spec}</span>` : ''
+    const specBadge = specMatch ? `<span style="font-size:var(--fs-micro);color:var(--blue-hi);margin-left:3px">▲${m.spec}</span>` : ''
     return `<div class="pi" onclick="${eligible ? `doA('${s.id}')` : ''}" style="${eligible ? '' : 'opacity:0.4;cursor:not-allowed'}">
       <div>
-        <div style="font-size:10px;color:var(--text-hi)">${sn(s)} <span class="trait-tag ${pCl(s.pers)}" style="font-size:7px">${s.pers.n}</span>${specBadge}</div>
-        <div style="font-size:8px;color:var(--text-dim)">${RANKS[s.ri]} · Pwr ${pw}${ref ? ' · Refuses low-rank' : !ok ? ` (need ${m.mp - pw} more)` : ''} · ${_fatigueBar(s)}</div>
+        <div style="font-size:var(--fs-body);color:var(--text-hi)">${sn(s)} <span class="trait-tag ${pCl(s.pers)}" style="font-size:var(--fs-micro)">${s.pers.n}</span>${specBadge}</div>
+        <div style="font-size:var(--fs-small);color:var(--text-dim)">${RANKS[s.ri]} · Pwr ${pw}${ref ? ' · Refuses low-rank' : !ok ? ` (need ${m.mp - pw} more)` : ''} · ${_fatigueBar(s)}</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
-        ${sc !== null ? _scBadge(sc) : '<span style="font-size:8px;color:var(--red)">✗</span>'}
-        ${eligible && s.id === bestFitId ? '<span style="font-size:6px;color:var(--green)">★best</span>' : ''}
+        ${sc !== null ? _scBadge(sc) : '<span style="font-size:var(--fs-small);color:var(--red)">✗</span>'}
+        ${eligible && s.id === bestFitId ? '<span style="font-size:var(--fs-micro);color:var(--green)">★best</span>' : ''}
       </div>
     </div>`
-  }).join('') || '<div style="color:var(--text-dim);font-size:9px">No available shinobi.</div>'
+  }).join('') || '<div style="color:var(--text-dim);font-size:var(--fs-body)">No available shinobi.</div>'
   document.getElementById('ov-assign').classList.add('open')
 }
 
@@ -696,17 +696,17 @@ export function rMissionLog() {
   // Match replay archive — re-watch recent matches on the animated board.
   const archive = G.matchArchive || []
   const archiveHtml = archive.length ? `<div style="border:1px solid var(--border);background:var(--bg);padding:8px 10px;margin-bottom:12px">
-    <div style="font-size:7px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">📼 Match Replays</div>
+    <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">📼 Match Replays</div>
     <div style="display:grid;gap:3px">
       ${archive.map((a, i) => {
         const res = a.kind === 'league' ? (a.result === 'win' ? 'W' : a.result === 'draw' ? 'D' : 'L')
           : a.kind === 'tournament' ? (a.champion ? '🏆' : '—') : (a.succeeded ? '✓' : '✕')
         const rc = (res === 'W' || res === '✓' || res === '🏆') ? 'var(--green)' : res === 'D' ? 'var(--gold)' : 'var(--red)'
-        return `<div style="display:flex;align-items:center;gap:8px;font-size:8px;padding:2px 4px">
+        return `<div style="display:flex;align-items:center;gap:8px;font-size:var(--fs-small);padding:2px 4px">
           <span style="color:var(--text-faint);width:34px">Y${a.year}M${a.month}</span>
           <span style="flex:1;color:var(--text-hi)">${a.missionName}${a.oppVillage ? ` <span style="color:var(--text-dim)">vs ${a.oppVillage}</span>` : ''}</span>
           <span style="color:${rc};font-weight:bold;width:14px;text-align:center">${res}</span>
-          <button class="gb" style="font-size:7px;padding:1px 7px;border-color:var(--gold);color:var(--gold)" onclick="watchArchivedMatch(${i})">▶ Replay</button>
+          <button class="gb" style="font-size:var(--fs-micro);padding:1px 7px;border-color:var(--gold);color:var(--gold)" onclick="watchArchivedMatch(${i})">▶ Replay</button>
         </div>`
       }).join('')}
     </div>
@@ -716,12 +716,12 @@ export function rMissionLog() {
     <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap">
       ${filters.map(f => `
         <button onclick="missionLogFilter('${f.id}')"
-          style="font-size:8px;padding:3px 8px;border:1px solid ${filter===f.id?'var(--gold)':'var(--border)'};
+          style="font-size:var(--fs-small);padding:3px 8px;border:1px solid ${filter===f.id?'var(--gold)':'var(--border)'};
           background:${filter===f.id?'rgba(201,168,76,.15)':'transparent'};color:${filter===f.id?'var(--gold)':'var(--text-dim)'};cursor:pointer">
           ${f.label}
         </button>`).join('')}
     </div>
-    ${visible.length === 0 ? `<div style="color:var(--text-dim);font-size:9px">${tr('mission.log.none')}</div>` : ''}
+    ${visible.length === 0 ? `<div style="color:var(--text-dim);font-size:var(--fs-body)">${tr('mission.log.none')}</div>` : ''}
     ${visible.map(e => {
       const statusColor = e.success ? 'var(--green)' : 'var(--red)'
       const rankColor = e.rank === 'S' ? 'var(--gold)' : e.rank === 'A' ? 'var(--blue)' : e.rank === 'B' ? 'var(--green)' : 'var(--text-dim)'
@@ -729,21 +729,21 @@ export function rMissionLog() {
         <div style="border:1px solid var(--border);padding:8px;margin-bottom:6px;background:var(--surface)">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
             <div>
-              <span style="font-size:8px;color:${rankColor};font-weight:bold">${e.rank}-rank</span>
-              <span style="font-size:9px;color:var(--text-hi);margin-left:6px">${e.missionName}</span>
-              ${e.chainName ? `<span style="font-size:7px;color:var(--gold);margin-left:5px">⛓ ${e.chainName}</span>` : ''}
+              <span style="font-size:var(--fs-small);color:${rankColor};font-weight:bold">${e.rank}-rank</span>
+              <span style="font-size:var(--fs-body);color:var(--text-hi);margin-left:6px">${e.missionName}</span>
+              ${e.chainName ? `<span style="font-size:var(--fs-micro);color:var(--gold);margin-left:5px">⛓ ${e.chainName}</span>` : ''}
             </div>
-            <div style="font-size:7px;color:var(--text-dim)">${e.year} Y${e.month}</div>
+            <div style="font-size:var(--fs-micro);color:var(--text-dim)">${e.year} Y${e.month}</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;margin-bottom:3px;flex-wrap:wrap">
-            <span style="font-size:8px;color:${statusColor}">${e.success ? '✓ Success' : '✗ Failed'}</span>
-            ${(() => { const q=e.quality; if(!q||q==='narrow'&&e.success)return ''; const qc={decisive:'var(--gold)',narrow:'var(--orange)',costly:'var(--red-soft)',disaster:'var(--red)'}; const ql={decisive:'⚔ Decisive',narrow:'⚡ Narrow',costly:'💸 Costly',disaster:'💥 Disaster'}; return `<span style="font-size:7px;padding:1px 5px;border:1px solid ${qc[q]||'var(--text-dim)'};color:${qc[q]||'var(--text-dim)'};border-radius:2px">${ql[q]||q}</span>` })()}
-            ${e.success ? `<span style="font-size:8px;color:var(--gold)">+${e.ryo.toLocaleString()} ryo</span>` : ''}
-            ${e.success ? `<span style="font-size:8px;color:var(--text-dim)">+${e.rep} rep</span>` : ''}
+            <span style="font-size:var(--fs-small);color:${statusColor}">${e.success ? '✓ Success' : '✗ Failed'}</span>
+            ${(() => { const q=e.quality; if(!q||q==='narrow'&&e.success)return ''; const qc={decisive:'var(--gold)',narrow:'var(--orange)',costly:'var(--red-soft)',disaster:'var(--red)'}; const ql={decisive:'⚔ Decisive',narrow:'⚡ Narrow',costly:'💸 Costly',disaster:'💥 Disaster'}; return `<span style="font-size:var(--fs-micro);padding:1px 5px;border:1px solid ${qc[q]||'var(--text-dim)'};color:${qc[q]||'var(--text-dim)'};border-radius:2px">${ql[q]||q}</span>` })()}
+            ${e.success ? `<span style="font-size:var(--fs-small);color:var(--gold)">+${e.ryo.toLocaleString()} ryo</span>` : ''}
+            ${e.success ? `<span style="font-size:var(--fs-small);color:var(--text-dim)">+${e.rep} rep</span>` : ''}
           </div>
-          ${e.injuryName ? `<div style="font-size:7px;color:var(--red);margin-bottom:2px">🩸 Injury: ${e.injuryName}</div>` : ''}
-          ${e.chainBonus ? `<div style="font-size:7px;color:var(--gold);margin-bottom:2px">⛓ Chain bonus: +${e.chainBonus.toLocaleString()} ryo</div>` : ''}
-          ${e.narrative ? `<div style="font-size:7px;color:var(--text-dim);font-style:italic">${e.narrative}</div>` : ''}
+          ${e.injuryName ? `<div style="font-size:var(--fs-micro);color:var(--red);margin-bottom:2px">🩸 Injury: ${e.injuryName}</div>` : ''}
+          ${e.chainBonus ? `<div style="font-size:var(--fs-micro);color:var(--gold);margin-bottom:2px">⛓ Chain bonus: +${e.chainBonus.toLocaleString()} ryo</div>` : ''}
+          ${e.narrative ? `<div style="font-size:var(--fs-micro);color:var(--text-dim);font-style:italic">${e.narrative}</div>` : ''}
         </div>`
     }).join('')}
   `
@@ -781,14 +781,14 @@ export function rUnderground() {
 
   el.innerHTML = `
     <div style="background:#0a0802;border:1px solid var(--gold-bg);padding:10px;margin-bottom:12px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--gold-2);text-transform:uppercase;margin-bottom:6px">Underworld Standing</div>
+      <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--gold-2);text-transform:uppercase;margin-bottom:6px">Underworld Standing</div>
       <div style="display:flex;align-items:center;gap:10px">
-        <div style="font-size:13px;color:var(--gold);font-weight:bold">${tier.label}</div>
-        <div style="font-size:8px;color:var(--gold-2)">Rep: ${bmRep}${nextTier ? ` / ${nextTier.minRep} → ${nextTier.label}` : ' (MAX)'}</div>
-        ${tier.passiveRyo ? `<div style="font-size:8px;color:var(--green)">+${tier.passiveRyo.toLocaleString()} ryo/mo passive</div>` : ''}
+        <div style="font-size:var(--fs-sub);color:var(--gold);font-weight:bold">${tier.label}</div>
+        <div style="font-size:var(--fs-small);color:var(--gold-2)">Rep: ${bmRep}${nextTier ? ` / ${nextTier.minRep} → ${nextTier.label}` : ' (MAX)'}</div>
+        ${tier.passiveRyo ? `<div style="font-size:var(--fs-small);color:var(--green)">+${tier.passiveRyo.toLocaleString()} ryo/mo passive</div>` : ''}
       </div>
     </div>
-    ${activeBM.length ? `<div style="font-size:8px;color:var(--gold-2);margin-bottom:8px">Active contracts: ${activeBM.map(a => `<span style="color:var(--gold)">${BM_MISSION_BY_ID?.[a.bmId]?.n || a.bmId}</span>`).join(', ')}</div>` : ''}
+    ${activeBM.length ? `<div style="font-size:var(--fs-small);color:var(--gold-2);margin-bottom:8px">Active contracts: ${activeBM.map(a => `<span style="color:var(--gold)">${BM_MISSION_BY_ID?.[a.bmId]?.n || a.bmId}</span>`).join(', ')}</div>` : ''}
     <div style="display:grid;gap:8px">
     ${BLACK_MARKET_MISSIONS.map(bm => {
       const locked = tier.id === 'unknown' && bm.id !== 'bm_sabotage' && bm.id !== 'bm_theft'
@@ -800,22 +800,22 @@ export function rUnderground() {
         <div style="background:#0d0a06;border:1px solid ${locked?'var(--border-dim)':'var(--gold-bg)'};padding:10px;opacity:${locked?0.4:1}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
             <div>
-              <span style="font-size:9px;color:var(--text-hi)">${bm.icon} ${bm.n}</span>
-              <span style="font-size:8px;color:${RKC2[bm.rk]||'var(--text-mid)'};margin-left:6px">[${bm.rk}-Rank]</span>
+              <span style="font-size:var(--fs-body);color:var(--text-hi)">${bm.icon} ${bm.n}</span>
+              <span style="font-size:var(--fs-small);color:${RKC2[bm.rk]||'var(--text-mid)'};margin-left:6px">[${bm.rk}-Rank]</span>
             </div>
             <div style="text-align:right">
-              <div style="font-size:9px;color:var(--green)">+${bm.ryo.toLocaleString()} ryo</div>
-              ${bm.repLoss ? `<div style="font-size:7px;color:var(--red)">Discovery: −${bm.repLoss} rep</div>` : ''}
+              <div style="font-size:var(--fs-body);color:var(--green)">+${bm.ryo.toLocaleString()} ryo</div>
+              ${bm.repLoss ? `<div style="font-size:var(--fs-micro);color:var(--red)">Discovery: −${bm.repLoss} rep</div>` : ''}
             </div>
           </div>
-          <div style="font-size:7px;color:var(--gold-2);margin-bottom:8px">${bm.desc}</div>
-          ${locked ? '<div style="font-size:7px;color:var(--text-faint)">Requires higher underworld standing.</div>' :
-            canAssign.length === 0 ? '<div style="font-size:7px;color:var(--text-faint)">No eligible shinobi available.</div>' : `
-            <select id="bm-sel-${bm.id}" style="font-size:8px;padding:3px;background:var(--sunken);color:var(--text-hi);border:1px solid var(--gold-bg);margin-right:6px">
+          <div style="font-size:var(--fs-micro);color:var(--gold-2);margin-bottom:8px">${bm.desc}</div>
+          ${locked ? '<div style="font-size:var(--fs-micro);color:var(--text-faint)">Requires higher underworld standing.</div>' :
+            canAssign.length === 0 ? '<div style="font-size:var(--fs-micro);color:var(--text-faint)">No eligible shinobi available.</div>' : `
+            <select id="bm-sel-${bm.id}" style="font-size:var(--fs-small);padding:3px;background:var(--sunken);color:var(--text-hi);border:1px solid var(--gold-bg);margin-right:6px">
               <option value="">— assign shinobi —</option>
               ${canAssign.map(s => `<option value="${s.id}">${sn(s)} [${RANKS[s.ri]}]</option>`).join('')}
             </select>
-            <button onclick="assignBM('${bm.id}')" style="font-size:8px;padding:3px 8px;background:var(--gold-bg);color:var(--gold);border:1px solid #5a4010;cursor:pointer">Send</button>
+            <button onclick="assignBM('${bm.id}')" style="font-size:var(--fs-small);padding:3px 8px;background:var(--gold-bg);color:var(--gold);border:1px solid #5a4010;cursor:pointer">Send</button>
           `}
         </div>`
     }).join('')}

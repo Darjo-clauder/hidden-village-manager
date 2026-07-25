@@ -9,7 +9,7 @@ import { aL, ntf, upUI } from '../ui.js'
 function _doctrineHtml() {
   const chosen = G.villageDoctrine ? DOCTRINE_BY_ID[G.villageDoctrine] : null
   return `<div style="margin-bottom:18px">
-    <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">
+    <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">
       Village Doctrine ${chosen ? `<span style="color:var(--accent);margin-left:6px">${chosen.icon} ${chosen.n} — locked in</span>` : '<span style="color:var(--orange);margin-left:6px">choose one (permanent)</span>'}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
@@ -17,11 +17,11 @@ function _doctrineHtml() {
         const sel = G.villageDoctrine === d.id
         const locked = G.villageDoctrine && !sel
         return `<div style="border:1px solid ${sel ? 'var(--accent)' : 'var(--border)'};background:${sel ? 'var(--accent-bg)' : 'transparent'};padding:9px;opacity:${locked ? 0.45 : 1}">
-          <div style="font-size:10px;color:${sel ? 'var(--accent)' : 'var(--text-hi)'};font-weight:bold;margin-bottom:3px">${d.icon} ${d.n}</div>
-          <div style="font-size:7px;color:var(--text-dim);margin-bottom:7px;line-height:1.4">${d.desc}</div>
-          ${sel ? '<div style="font-size:8px;color:var(--accent)">✓ Active</div>'
-                : G.villageDoctrine ? '<div style="font-size:7px;color:var(--text-dim)">— not chosen</div>'
-                : `<button class="gb gb-g" style="font-size:7px" onclick="chooseDoctrine('${d.id}')">Adopt ►</button>`}
+          <div style="font-size:var(--fs-body);color:${sel ? 'var(--accent)' : 'var(--text-hi)'};font-weight:bold;margin-bottom:3px">${d.icon} ${d.n}</div>
+          <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-bottom:7px;line-height:1.4">${d.desc}</div>
+          ${sel ? '<div style="font-size:var(--fs-small);color:var(--accent)">✓ Active</div>'
+                : G.villageDoctrine ? '<div style="font-size:var(--fs-micro);color:var(--text-dim)">— not chosen</div>'
+                : `<button class="gb gb-g" style="font-size:var(--fs-micro)" onclick="chooseDoctrine('${d.id}')">Adopt ►</button>`}
         </div>`
       }).join('')}
     </div>
@@ -56,22 +56,22 @@ function _prestigeProjectsHtml() {
     const prog = build ? buildProgress(build) : 0
     const startable = canStartProject(p.id, G.ryo, completed, builds.map(b => b.id))
     const status = done
-      ? `<span style="color:var(--green);font-size:8px">✓ Complete</span>`
+      ? `<span style="color:var(--green);font-size:var(--fs-small)">✓ Complete</span>`
       : build
-        ? `<span style="font-size:8px;color:var(--gold)">Building ${Math.round(prog * 100)}%</span>`
-        : `<button class="gb" onclick="startPrestigeProject('${p.id}')" ${startable ? '' : 'disabled'} style="font-size:8px">Commission · ${fmt(p.cost)}</button>`
+        ? `<span style="font-size:var(--fs-small);color:var(--gold)">Building ${Math.round(prog * 100)}%</span>`
+        : `<button class="gb" onclick="startPrestigeProject('${p.id}')" ${startable ? '' : 'disabled'} style="font-size:var(--fs-small)">Commission · ${fmt(p.cost)}</button>`
     return `<div style="border:1px solid ${done ? '#3a5a3a' : 'var(--border)'};background:var(--bg);padding:8px 10px;margin-bottom:6px">
       <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:16px">${p.icon}</span>
-        <div style="flex:1"><div style="font-size:10px;color:var(--text-hi)">${p.name}</div><div style="font-size:7px;color:var(--text-dim)">${p.desc} · ${Math.round(p.buildMonths / 12 * 10) / 10}yr build</div></div>
+        <span style="font-size:var(--fs-head)">${p.icon}</span>
+        <div style="flex:1"><div style="font-size:var(--fs-body);color:var(--text-hi)">${p.name}</div><div style="font-size:var(--fs-micro);color:var(--text-dim)">${p.desc} · ${Math.round(p.buildMonths / 12 * 10) / 10}yr build</div></div>
         ${status}
       </div>
       ${build ? `<div style="height:3px;background:var(--sunken);margin-top:6px;border-radius:2px;overflow:hidden"><div style="width:${prog * 100}%;height:100%;background:var(--gold)"></div></div>` : ''}
     </div>`
   }).join('')
   return `<div style="margin-top:16px">
-    <div style="font-size:8px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">🗿 Prestige Projects</div>
-    <div style="font-size:7px;color:var(--text-dim);margin-bottom:8px">Multi-year monuments. A heavy ryo cost buys lasting prestige — legend, morale, defense — not more money. The dynasty's mark on the world.</div>
+    <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">🗿 Prestige Projects</div>
+    <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-bottom:8px">Multi-year monuments. A heavy ryo cost buys lasting prestige — legend, morale, defense — not more money. The dynasty's mark on the world.</div>
     ${rows}
     ${_festivalHtml()}
   </div>`
@@ -86,9 +86,9 @@ function _festivalHtml() {
   const canHold = (G.ryo || 0) >= cost
   return `<div style="border:1px solid var(--border);background:var(--bg);padding:8px 10px;margin-top:10px">
     <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:16px">🎆</span>
-      <div style="flex:1"><div style="font-size:10px;color:var(--text-hi)">Grand Festival</div><div style="font-size:7px;color:var(--text-dim)">A lavish village-wide festival — +${rw.legend} legend, +${rw.morale} morale now. ${held ? `Held ${held}× · each costs more.` : 'Repeatable; cost rises each time.'}</div></div>
-      <button class="gb" onclick="holdFestival()" ${canHold ? '' : 'disabled'} style="font-size:8px">Hold · ${fmt(cost)}</button>
+      <span style="font-size:var(--fs-head)">🎆</span>
+      <div style="flex:1"><div style="font-size:var(--fs-body);color:var(--text-hi)">Grand Festival</div><div style="font-size:var(--fs-micro);color:var(--text-dim)">A lavish village-wide festival — +${rw.legend} legend, +${rw.morale} morale now. ${held ? `Held ${held}× · each costs more.` : 'Repeatable; cost rises each time.'}</div></div>
+      <button class="gb" onclick="holdFestival()" ${canHold ? '' : 'disabled'} style="font-size:var(--fs-small)">Hold · ${fmt(cost)}</button>
     </div>
   </div>`
 }
@@ -132,30 +132,30 @@ export function rUp() {
   const maint = _monthlyMaintenance()
   const defColor = def.total >= 50 ? 'var(--green)' : def.total >= 25 ? 'var(--gold)' : def.total > 0 ? 'var(--orange)' : 'var(--red)'
   const summaryHtml = `
-    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:10px 13px;background:var(--surface,var(--surface));border:1px solid var(--border,var(--border))">
+    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:10px 13px;background:var(--surface);border:1px solid var(--border)">
       <div>
-        <div style="font-size:7px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("upgrades.defenseRating")}</div>
-        <div style="font-size:16px;color:${defColor};font-family:'Courier New',monospace">${def.total}</div>
-        <div style="font-size:7px;color:var(--text-dim);margin-top:2px">Walls +${def.wall} · Seals +${def.seal}${def.temp ? ` · Temp +${def.temp}` : ''}${def.doc ? ` · Doctrine ${def.doc > 0 ? '+' : ''}${def.doc}` : ''}${def.proj ? ` · Monuments +${def.proj}` : ''}</div>
+        <div style="font-size:var(--fs-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("upgrades.defenseRating")}</div>
+        <div style="font-size:var(--fs-head);color:${defColor};font-family:'Courier New',monospace">${def.total}</div>
+        <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:2px">Walls +${def.wall} · Seals +${def.seal}${def.temp ? ` · Temp +${def.temp}` : ''}${def.doc ? ` · Doctrine ${def.doc > 0 ? '+' : ''}${def.doc}` : ''}${def.proj ? ` · Monuments +${def.proj}` : ''}</div>
       </div>
       <div>
-        <div style="font-size:7px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("upgrades.upkeep")}</div>
-        <div style="font-size:16px;color:var(--red);font-family:'Courier New',monospace">-${fmt(maint)}</div>
-        <div style="font-size:7px;color:var(--text-dim);margin-top:2px">${t("upgrades.maintNote")}</div>
+        <div style="font-size:var(--fs-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("upgrades.upkeep")}</div>
+        <div style="font-size:var(--fs-head);color:var(--red);font-family:'Courier New',monospace">-${fmt(maint)}</div>
+        <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:2px">${t("upgrades.maintNote")}</div>
       </div>
       <div>
-        <div style="font-size:7px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("upgrades.districts")}</div>
-        <div style="font-size:16px;color:var(--blue);font-family:'Courier New',monospace">${builtCount}</div>
-        <div style="font-size:7px;color:var(--text-dim);margin-top:2px">${building ? `⚒ ${building.id} (${building.buildMonthsLeft}mo)` : 'None under construction'}</div>
+        <div style="font-size:var(--fs-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("upgrades.districts")}</div>
+        <div style="font-size:var(--fs-head);color:var(--blue);font-family:'Courier New',monospace">${builtCount}</div>
+        <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:2px">${building ? `⚒ ${building.id} (${building.buildMonthsLeft}mo)` : 'None under construction'}</div>
       </div>
-      <div style="margin-left:auto;align-self:center;max-width:200px;font-size:7px;color:var(--text-dim);text-align:right">
+      <div style="margin-left:auto;align-self:center;max-width:200px;font-size:var(--fs-micro);color:var(--text-dim);text-align:right">
         Defense reduces raid losses. Every building level adds monthly upkeep — weigh the payoff against your net income.
       </div>
     </div>`
 
   const districtHtml = `
     <div style="margin-top:18px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">
+      <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">
         Village Districts
         ${builtCount > 0 ? `<span style="color:var(--green);margin-left:8px">${builtCount} built</span>` : ''}
         ${building ? `<span style="color:var(--gold);margin-left:8px">⚒ ${building.id} — ${building.buildMonthsLeft}mo left</span>` : ''}
@@ -173,13 +173,13 @@ export function rUp() {
           }).join(', ')
           return `
             <div style="border:1px solid ${borderColor};padding:8px;background:${isBuilt?'rgba(143,188,143,0.05)':'transparent'}">
-              <div style="font-size:10px;margin-bottom:2px">${d.icon} <span style="color:var(--text-hi);font-weight:bold">${d.n}</span></div>
-              <div style="font-size:7px;color:var(--text-dim);margin-bottom:4px">${d.desc}</div>
-              <div style="font-size:7px;color:${d.color};margin-bottom:5px">${effectStr}</div>
-              ${isBuilt ? `<div style="font-size:8px;color:var(--green)">✓ Active</div>`
-              : isBuilding ? `<div style="font-size:8px;color:var(--gold)">⚒ Building — ${state.buildMonthsLeft}mo remaining</div>`
+              <div style="font-size:var(--fs-body);margin-bottom:2px">${d.icon} <span style="color:var(--text-hi);font-weight:bold">${d.n}</span></div>
+              <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-bottom:4px">${d.desc}</div>
+              <div style="font-size:var(--fs-micro);color:${d.color};margin-bottom:5px">${effectStr}</div>
+              ${isBuilt ? `<div style="font-size:var(--fs-small);color:var(--green)">✓ Active</div>`
+              : isBuilding ? `<div style="font-size:var(--fs-small);color:var(--gold)">⚒ Building — ${state.buildMonthsLeft}mo remaining</div>`
               : `<button class="gb gb-g" onclick="buildDistrict('${d.id}')" ${canBuild ? '' : 'disabled'}
-                  style="font-size:7px">
+                  style="font-size:var(--fs-micro)">
                   Build — ${fmt(d.cost)} ryo (${d.buildMonths}mo)
                 </button>`}
             </div>`
@@ -193,8 +193,8 @@ export function rUp() {
     UPGRADES_DEF.map(u => {
       const lv = G.upgrades[u.id] || 0, maxed = lv >= u.levels.length - 1
       const upkeep = (BUILDING_MAINTENANCE[u.id] || 400) * lv
-      const upkeepTag = lv > 0 ? `<span style="font-size:7px;color:var(--red);float:right">-${fmt(upkeep)}/mo</span>` : ''
-      return `<div class="card"><div style="font-size:11px;color:var(--text-hi);font-weight:bold;margin-bottom:2px">${u.n}${upkeepTag}</div><div class="upg-lv">Level ${lv}/${u.levels.length - 1}: ${u.levels[lv]}</div>${maxed ? '<div style="font-size:8px;color:var(--green)">✓ Fully Upgraded</div>' : `<div style="font-size:8px;color:var(--text-dim);margin-bottom:5px">Next: ${u.levels[lv + 1]} — ${fmt(u.cost[lv + 1])} ryo · +${fmt(BUILDING_MAINTENANCE[u.id] || 400)}/mo upkeep</div><button class="gb gb-g" onclick="buyUp('${u.id}')" ${G.ryo < u.cost[lv + 1] ? 'disabled' : ''}>Upgrade ► ${fmt(u.cost[lv + 1])} ryo</button>`}</div>`
+      const upkeepTag = lv > 0 ? `<span style="font-size:var(--fs-micro);color:var(--red);float:right">-${fmt(upkeep)}/mo</span>` : ''
+      return `<div class="card"><div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold;margin-bottom:2px">${u.n}${upkeepTag}</div><div class="upg-lv">Level ${lv}/${u.levels.length - 1}: ${u.levels[lv]}</div>${maxed ? '<div style="font-size:var(--fs-small);color:var(--green)">✓ Fully Upgraded</div>' : `<div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:5px">Next: ${u.levels[lv + 1]} — ${fmt(u.cost[lv + 1])} ryo · +${fmt(BUILDING_MAINTENANCE[u.id] || 400)}/mo upkeep</div><button class="gb gb-g" onclick="buyUp('${u.id}')" ${G.ryo < u.cost[lv + 1] ? 'disabled' : ''}>Upgrade ► ${fmt(u.cost[lv + 1])} ryo</button>`}</div>`
     }).join('') + districtHtml + _prestigeProjectsHtml()
 }
 

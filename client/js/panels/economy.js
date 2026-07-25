@@ -26,12 +26,12 @@ export function rTr() {
     const inR = r.req === 'intel' && G.upgrades.intel < 1
     const bl = jkR || inR
     const secureCost = Math.round((r._fullIncome || r.income * 2) * 0.6)
-    const disruptedTag = r.disrupted ? ' <span style="color:var(--red);font-size:8px">⚠ DISRUPTED</span>' : ''
-    const statusTag = r.active && !r.disrupted ? ' <span style="color:var(--green);font-size:8px">● Active</span>' : ''
+    const disruptedTag = r.disrupted ? ' <span style="color:var(--red);font-size:var(--fs-small)">⚠ DISRUPTED</span>' : ''
+    const statusTag = r.active && !r.disrupted ? ' <span style="color:var(--green);font-size:var(--fs-small)">● Active</span>' : ''
     const incomeLine = r.disrupted
       ? `<span>Monthly: <span style="color:var(--red)">+${fmt(r.income)} ryo</span> <span style="color:var(--text-dim)">(was +${fmt(r._fullIncome || r.income * 2)})</span></span>`
       : `<span>Monthly: <span style="color:var(--green)">+${fmt(r.income)} ryo</span></span>`
-    return `<div class="tr-card" style="${r.disrupted ? 'border-left:2px solid var(--red)' : ''}"><div style="font-size:11px;color:var(--text-hi);font-weight:bold;margin-bottom:3px">${r.n}${statusTag}${disruptedTag}</div><div style="font-size:9px;color:var(--text-dim);margin-bottom:7px">${r.desc}${bl ? ` <span style="color:var(--red)">(Requires ${r.req === 'jk' ? 'Vessel' : 'Intel Network'})</span>` : ''}</div><div style="display:flex;gap:14px;font-size:8px;color:var(--text-dim);margin-bottom:7px">${r.cost > 0 ? `<span>Setup: <span style="color:var(--text-hi)">${fmt(r.cost)} ryo</span></span>` : ''}${incomeLine}</div>${r.disrupted ? `<button class="gb gb-g" onclick="secureRoute('${r.id}')" ${G.ryo < secureCost ? 'disabled' : ''}>Secure Route — ${fmt(secureCost)} ryo ►</button> ` : ''}${r.active ? `<button class="gb gb-r" onclick="tgTr('${r.id}',false)">${tr("economy.closeRoute")}</button>` : `<button class="gb gb-g" onclick="tgTr('${r.id}',true)" ${G.ryo < r.cost || bl ? 'disabled' : ''}>Open Route${r.cost > 0 ? ' — ' + fmt(r.cost) + ' ryo' : ' (free)'} ►</button>`}</div>`
+    return `<div class="tr-card" style="${r.disrupted ? 'border-left:2px solid var(--red)' : ''}"><div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold;margin-bottom:3px">${r.n}${statusTag}${disruptedTag}</div><div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:7px">${r.desc}${bl ? ` <span style="color:var(--red)">(Requires ${r.req === 'jk' ? 'Vessel' : 'Intel Network'})</span>` : ''}</div><div style="display:flex;gap:14px;font-size:var(--fs-small);color:var(--text-dim);margin-bottom:7px">${r.cost > 0 ? `<span>Setup: <span style="color:var(--text-hi)">${fmt(r.cost)} ryo</span></span>` : ''}${incomeLine}</div>${r.disrupted ? `<button class="gb gb-g" onclick="secureRoute('${r.id}')" ${G.ryo < secureCost ? 'disabled' : ''}>Secure Route — ${fmt(secureCost)} ryo ►</button> ` : ''}${r.active ? `<button class="gb gb-r" onclick="tgTr('${r.id}',false)">${tr("economy.closeRoute")}</button>` : `<button class="gb gb-g" onclick="tgTr('${r.id}',true)" ${G.ryo < r.cost || bl ? 'disabled' : ''}>Open Route${r.cost > 0 ? ' — ' + fmt(r.cost) + ' ryo' : ' (free)'} ►</button>`}</div>`
   }).join('')
 }
 
@@ -57,7 +57,7 @@ export function tgTr(id, on) {
 
 export function rCo() {
   document.getElementById('ec-contracts').innerHTML = G.contracts.map(c =>
-    `<div class="tr-card"><div style="font-size:11px;color:var(--text-hi);font-weight:bold;margin-bottom:3px">${c.n}${c.active ? ' <span style="color:var(--green);font-size:8px">● Active</span>' : ''}</div><div style="font-size:9px;color:var(--text-dim);margin-bottom:7px">${c.desc}</div><div style="display:flex;gap:14px;font-size:8px;color:var(--text-dim);margin-bottom:7px"><span>Setup: <span style="color:var(--text-hi)">${fmt(c.cost)} ryo</span></span><span>Monthly: <span style="color:var(--green)">+${fmt(c.income)} ryo</span></span></div>${c.active ? `<button class="gb gb-r" onclick="tgCo('${c.id}',false)">${tr("btn.cancel")}</button>` : `<button class="gb gb-g" onclick="tgCo('${c.id}',true)" ${G.ryo < c.cost ? 'disabled' : ''}>Sign — ${fmt(c.cost)} ryo ►</button>`}</div>`
+    `<div class="tr-card"><div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold;margin-bottom:3px">${c.n}${c.active ? ' <span style="color:var(--green);font-size:var(--fs-small)">● Active</span>' : ''}</div><div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:7px">${c.desc}</div><div style="display:flex;gap:14px;font-size:var(--fs-small);color:var(--text-dim);margin-bottom:7px"><span>Setup: <span style="color:var(--text-hi)">${fmt(c.cost)} ryo</span></span><span>Monthly: <span style="color:var(--green)">+${fmt(c.income)} ryo</span></span></div>${c.active ? `<button class="gb gb-r" onclick="tgCo('${c.id}',false)">${tr("btn.cancel")}</button>` : `<button class="gb gb-g" onclick="tgCo('${c.id}',true)" ${G.ryo < c.cost ? 'disabled' : ''}>Sign — ${fmt(c.cost)} ryo ►</button>`}</div>`
   ).join('')
 }
 
@@ -74,12 +74,12 @@ export function rBl() {
   const ledgerHtml = ledger.history.length ? `
     <div style="margin-bottom:14px;padding:10px 12px;border:1px solid #5a2a1a;background:var(--sunken)">
       <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:9px;color:var(--orange);letter-spacing:1px;text-transform:uppercase">${tr("economy.offBooksLedger")}</span>
-        <span style="font-size:10px;color:var(--orange);font-weight:bold">${fmt(ledger.balance)} ryo accumulated</span>
+        <span style="font-size:var(--fs-body);color:var(--orange);letter-spacing:1px;text-transform:uppercase">${tr("economy.offBooksLedger")}</span>
+        <span style="font-size:var(--fs-body);color:var(--orange);font-weight:bold">${fmt(ledger.balance)} ryo accumulated</span>
       </div>
       <div style="max-height:120px;overflow-y:auto">
         ${[...ledger.history].reverse().map(e => `
-          <div style="display:flex;justify-content:space-between;font-size:8px;padding:3px 0;border-bottom:1px solid #2a1a0a">
+          <div style="display:flex;justify-content:space-between;font-size:var(--fs-small);padding:3px 0;border-bottom:1px solid #2a1a0a">
             <span style="color:var(--text-dim)">Y${e.year} M${e.month} — ${e.type}</span>
             <span style="color:${e.amount > 0 ? 'var(--orange)' : 'var(--red)'}">${e.amount > 0 ? '+' : ''}${fmt(e.amount)}</span>
           </div>`).join('')}
@@ -91,19 +91,19 @@ export function rBl() {
   const heatHtml = `
     <div style="margin-bottom:12px;padding:9px 12px;border:1px solid #5a2a1a;background:var(--sunken)">
       <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-        <span style="font-size:8px;color:var(--orange);letter-spacing:1px;text-transform:uppercase">${tr("economy.underworldHeat")}</span>
-        <span style="font-size:9px;color:${heatColor}">${heat}/100 · exposure ×${heatMult.toFixed(2)}</span>
+        <span style="font-size:var(--fs-small);color:var(--orange);letter-spacing:1px;text-transform:uppercase">${tr("economy.underworldHeat")}</span>
+        <span style="font-size:var(--fs-body);color:${heatColor}">${heat}/100 · exposure ×${heatMult.toFixed(2)}</span>
       </div>
       <div style="background:var(--sunken);height:5px;border-radius:2px;overflow:hidden"><div style="background:${heatColor};height:5px;width:${heat}%"></div></div>
-      <div style="font-size:7px;color:var(--text-dim);margin-top:5px">Each deal raises heat and multiplies exposure risk. Heat cools ~6/month if you lie low.</div>
+      <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:5px">Each deal raises heat and multiplies exposure risk. Heat cools ~6/month if you lie low.</div>
     </div>`
   document.getElementById('ec-black').innerHTML =
-    `<div style="font-size:9px;color:var(--orange);margin-bottom:10px;padding:8px;border:1px solid var(--red);background:var(--sunken)">⚠ Black market dealings risk your reputation.${hon ? ' An Honorable shinobi may expose you.' : ''}</div>` +
+    `<div style="font-size:var(--fs-body);color:var(--orange);margin-bottom:10px;padding:8px;border:1px solid var(--red);background:var(--sunken)">⚠ Black market dealings risk your reputation.${hon ? ' An Honorable shinobi may expose you.' : ''}</div>` +
     heatHtml +
     ledgerHtml +
     BLACK_MARKET.map(bm => {
       const effRisk = Math.min(0.95, bm.risk * heatMult)
-      return `<div class="bm-card"><div style="font-size:11px;color:var(--orange);font-weight:bold;margin-bottom:3px">${bm.n}</div><div style="font-size:9px;color:var(--text-dim);margin-bottom:7px">${bm.desc}</div><div style="display:flex;gap:14px;font-size:8px;margin-bottom:7px"><span style="color:var(--orange)">Gain: ${fmt(bm.ryoGain)} ryo</span><span style="color:var(--red)">Rep loss: -${bm.repLoss}</span><span style="color:var(--text-dim)">Exposure: <span style="color:${effRisk > bm.risk ? 'var(--red)' : 'var(--text-dim)'}">${Math.round(effRisk * 100)}%</span>${effRisk > bm.risk ? ` (base ${Math.round(bm.risk*100)}%)` : ''}</span></div><button class="gb" style="border-color:var(--orange);color:var(--orange)" onclick="doBl('${bm.id}')">Execute ►</button></div>`
+      return `<div class="bm-card"><div style="font-size:var(--fs-lead);color:var(--orange);font-weight:bold;margin-bottom:3px">${bm.n}</div><div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:7px">${bm.desc}</div><div style="display:flex;gap:14px;font-size:var(--fs-small);margin-bottom:7px"><span style="color:var(--orange)">Gain: ${fmt(bm.ryoGain)} ryo</span><span style="color:var(--red)">Rep loss: -${bm.repLoss}</span><span style="color:var(--text-dim)">Exposure: <span style="color:${effRisk > bm.risk ? 'var(--red)' : 'var(--text-dim)'}">${Math.round(effRisk * 100)}%</span>${effRisk > bm.risk ? ` (base ${Math.round(bm.risk*100)}%)` : ''}</span></div><button class="gb" style="border-color:var(--orange);color:var(--orange)" onclick="doBl('${bm.id}')">Execute ►</button></div>`
     }).join('')
 }
 

@@ -62,7 +62,7 @@ function renderPipeline() {
   const shinobi = G.shinobi || []
 
   if (mentorships.length === 0) {
-    el.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--text-dim);font-size:10px">
+    el.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--text-dim);font-size:var(--fs-body)">
       <div style="font-size:28px;margin-bottom:8px">📖</div>
       ${t('academy.mentorships.none')}
     </div>`
@@ -86,12 +86,12 @@ function renderPipeline() {
     return `<div style="border:1px solid var(--surface-3);border-left:3px solid var(--gold);padding:12px;margin-bottom:10px;background:var(--sunken)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
         <div>
-          <div style="font-size:9px;color:var(--text-hi);font-weight:bold">${sn(mentor)} <span style="color:var(--text-dim)">→</span> ${sn(student)}</div>
-          <div style="font-size:7px;color:var(--text-dim);margin-top:2px">${RANKS[mentor.ri]} mentoring ${RANKS[student.ri]} · ${m.months}mo elapsed</div>
+          <div style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold">${sn(mentor)} <span style="color:var(--text-dim)">→</span> ${sn(student)}</div>
+          <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:2px">${RANKS[mentor.ri]} mentoring ${RANKS[student.ri]} · ${m.months}mo elapsed</div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:8px;color:var(--gold)">${pct}%</div>
-          <div style="font-size:7px;color:var(--text-dim)">of 12mo</div>
+          <div style="font-size:var(--fs-small);color:var(--gold)">${pct}%</div>
+          <div style="font-size:var(--fs-micro);color:var(--text-dim)">of 12mo</div>
         </div>
       </div>
 
@@ -103,27 +103,27 @@ function renderPipeline() {
       <!-- Milestones -->
       <div style="display:flex;gap:8px;margin-bottom:8px">
         <div style="flex:1;text-align:center;padding:5px;border:1px solid ${milestone3?'var(--green)':'var(--surface-3)'};background:${milestone3?'rgba(143,188,143,.08)':'transparent'}">
-          <div style="font-size:7px;color:${milestone3?'var(--green)':'var(--border-hi)'}">Mo 3</div>
-          <div style="font-size:7px;color:${milestone3?'var(--green)':'var(--border-hi)'};margin-top:2px">${milestone3?'✓ Bond memory':'Memory bond'}</div>
+          <div style="font-size:var(--fs-micro);color:${milestone3?'var(--green)':'var(--border-hi)'}">Mo 3</div>
+          <div style="font-size:var(--fs-micro);color:${milestone3?'var(--green)':'var(--border-hi)'};margin-top:2px">${milestone3?'✓ Bond memory':'Memory bond'}</div>
         </div>
         <div style="flex:1;text-align:center;padding:5px;border:1px solid ${milestone6?'var(--green)':'var(--surface-3)'};background:${milestone6?'rgba(143,188,143,.08)':'transparent'}">
-          <div style="font-size:7px;color:${milestone6?'var(--green)':'var(--border-hi)'}">Mo 6</div>
-          <div style="font-size:7px;color:${milestone6?'var(--green)':'var(--border-hi)'};margin-top:2px">${milestone6?'✓ Morale +8':'+8 morale'}</div>
+          <div style="font-size:var(--fs-micro);color:${milestone6?'var(--green)':'var(--border-hi)'}">Mo 6</div>
+          <div style="font-size:var(--fs-micro);color:${milestone6?'var(--green)':'var(--border-hi)'};margin-top:2px">${milestone6?'✓ Morale +8':'+8 morale'}</div>
         </div>
         <div style="flex:1;text-align:center;padding:5px;border:1px solid ${milestone12?'var(--gold)':'var(--surface-3)'};background:${milestone12?'rgba(201,168,76,.08)':'transparent'}">
-          <div style="font-size:7px;color:${milestone12?'var(--gold)':'var(--border-hi)'}">Mo 12</div>
-          <div style="font-size:7px;color:${milestone12?'var(--gold)':'var(--border-hi)'};margin-top:2px">${milestone12?'✓ Grad bonus':'+3 ' + bonusStat}</div>
+          <div style="font-size:var(--fs-micro);color:${milestone12?'var(--gold)':'var(--border-hi)'}">Mo 12</div>
+          <div style="font-size:var(--fs-micro);color:${milestone12?'var(--gold)':'var(--border-hi)'};margin-top:2px">${milestone12?'✓ Grad bonus':'+3 ' + bonusStat}</div>
         </div>
       </div>
 
       <!-- Student stat preview -->
-      <div style="font-size:8px;color:var(--text-dim);margin-bottom:6px">
+      <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:6px">
         ${student.fn}'s strongest path: <span style="color:var(--text-hi)">${bonusStat}</span>
         <span style="color:var(--gold)">${student.stats[bonusStat]}</span>
         ${!milestone12 ? `<span style="color:var(--text-dim)"> → projected <span style="color:var(--gold)">${Math.min(99, student.stats[bonusStat] + 3)}</span> at graduation</span>` : '<span style="color:var(--green)"> (graduated)</span>'}
       </div>
 
-      <button class="gb" style="font-size:7px;border-color:var(--text-dim);color:var(--text-dim);padding:2px 8px" onclick="releaseMentor('${mentor.id}')">${t('academy.endMentorship')}</button>
+      <button class="gb" style="font-size:var(--fs-micro);border-color:var(--text-dim);color:var(--text-dim);padding:2px 8px" onclick="releaseMentor('${mentor.id}')">${t('academy.endMentorship')}</button>
     </div>`
   }).join('')
 }
@@ -148,14 +148,14 @@ function _hiddenAttrsHtml(p) {
     const meta = ATTR_LABELS[attr.key] || { short: attr.key.slice(0, 3).toUpperCase(), color: 'var(--text-dim)' }
     if (!attr.revealed) {
       return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;opacity:.35">
-        <div style="font-size:6px;color:var(--text-faint)">${meta.short}</div>
-        <div style="font-size:9px;color:var(--text-faint)">?</div>
+        <div style="font-size:var(--fs-micro);color:var(--text-faint)">${meta.short}</div>
+        <div style="font-size:var(--fs-body);color:var(--text-faint)">?</div>
       </div>`
     }
     const pct = Math.round((attr.value / 20) * 100)
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px" title="${attr.key}: ${attr.value}/20">
-      <div style="font-size:6px;color:${meta.color}">${meta.short}</div>
-      <div style="font-size:9px;color:${meta.color};font-weight:bold">${attr.value}</div>
+      <div style="font-size:var(--fs-micro);color:${meta.color}">${meta.short}</div>
+      <div style="font-size:var(--fs-body);color:${meta.color};font-weight:bold">${attr.value}</div>
       <div style="width:18px;height:2px;background:var(--border);border-radius:1px">
         <div style="width:${pct}%;height:100%;background:${meta.color};border-radius:1px"></div>
       </div>
@@ -163,7 +163,7 @@ function _hiddenAttrsHtml(p) {
   }).join('')
 
   return `<div style="margin-top:7px;padding-top:6px;border-top:1px solid var(--border)">
-    <div style="font-size:7px;color:var(--text-faint);margin-bottom:4px">Hidden Attributes — ${revealedCount}/5 revealed</div>
+    <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-bottom:4px">Hidden Attributes — ${revealedCount}/5 revealed</div>
     <div style="display:flex;gap:8px">${slots}</div>
   </div>`
 }
@@ -186,13 +186,13 @@ function _developmentHtml(p) {
   const curveHtml = p.curveRevealed && p.developmentCurve
     ? (() => {
         const m = CURVE_META[p.developmentCurve] || { label: p.developmentCurve, color: 'var(--text-dim)', desc: '' }
-        return `<span style="color:${m.color};font-size:7px" title="${m.desc}">⬡ ${m.label}</span>`
+        return `<span style="color:${m.color};font-size:var(--fs-micro)" title="${m.desc}">⬡ ${m.label}</span>`
       })()
     : ''
 
   const progressHtml = hasPotential
     ? `<div style="margin-top:4px">
-        <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--text-faint);margin-bottom:2px">
+        <div style="display:flex;justify-content:space-between;font-size:var(--fs-micro);color:var(--text-faint);margin-bottom:2px">
           <span>Dev progress <span style="color:var(--text-hi)">${ability}</span> → pot <span style="color:var(--gold)">${potential}</span></span>
           <span style="color:var(--text-dim)">${pct}%</span>
         </div>
@@ -203,7 +203,7 @@ function _developmentHtml(p) {
     : ''
 
   const mileHtml = milestones.length
-    ? `<div style="font-size:7px;color:var(--green);margin-top:3px">✦ ${milestones[milestones.length - 1].ability} reached Y${milestones[milestones.length - 1].year}</div>`
+    ? `<div style="font-size:var(--fs-micro);color:var(--green);margin-top:3px">✦ ${milestones[milestones.length - 1].ability} reached Y${milestones[milestones.length - 1].year}</div>`
     : ''
 
   if (!curveHtml && !progressHtml) return ''
@@ -236,15 +236,15 @@ function _rivalOfferHtml(p) {
   const matchCost  = offer.offerRyo
   const exceedCost = Math.round(offer.offerRyo * 1.2)
   return `<div style="margin-top:7px;padding:7px;background:#1a0a00;border:1px solid #8b3a00;border-radius:3px">
-    <div style="font-size:8px;color:#f90;font-weight:bold;margin-bottom:4px">⚔ ${offer.village} offer — ${offer.offerRyo.toLocaleString()} ryo</div>
-    <div style="font-size:7px;color:#7a5a3a;margin-bottom:6px">Expires Y${offer.expiresYear}·M${offer.expiresMonth}. Match to secure, exceed for loyalty bonus.</div>
+    <div style="font-size:var(--fs-small);color:#f90;font-weight:bold;margin-bottom:4px">⚔ ${offer.village} offer — ${offer.offerRyo.toLocaleString()} ryo</div>
+    <div style="font-size:var(--fs-micro);color:#7a5a3a;margin-bottom:6px">Expires Y${offer.expiresYear}·M${offer.expiresMonth}. Match to secure, exceed for loyalty bonus.</div>
     <div style="display:flex;gap:5px">
       <button class="gb gb-g" onclick="matchRivalOffer('${p.id}')" ${canMatch ? '' : 'disabled'}
-        style="font-size:7px">Match — ${matchCost.toLocaleString()} ryo</button>
+        style="font-size:var(--fs-micro)">Match — ${matchCost.toLocaleString()} ryo</button>
       <button class="gb" onclick="exceedRivalOffer('${p.id}')" ${canExceed ? '' : 'disabled'}
-        style="font-size:7px;color:var(--gold);border-color:var(--gold)">Exceed +20% — ${exceedCost.toLocaleString()} ryo</button>
+        style="font-size:var(--fs-micro);color:var(--gold);border-color:var(--gold)">Exceed +20% — ${exceedCost.toLocaleString()} ryo</button>
       <button class="gb gb-r" onclick="confirm('Let ${p.fn} ${p.ln} go to ${offer.village}? They will sign elsewhere.') && declineRivalOffer('${p.id}')"
-        style="font-size:7px">${t('academy.letGo')}</button>
+        style="font-size:var(--fs-micro)">${t('academy.letGo')}</button>
     </div>
   </div>`
 }
@@ -256,11 +256,11 @@ function _trainingPlanHtml(p) {
   const coachRevealed = coachAttr?.revealed
 
   const badge = active
-    ? `<span style="font-size:7px;padding:1px 6px;border:1px solid ${active.color};color:${active.color};border-radius:2px">${active.icon} ${active.label}</span>`
-    : `<span style="font-size:7px;color:var(--text-faint)">${t('academy.noPlan')}</span>`
+    ? `<span style="font-size:var(--fs-micro);padding:1px 6px;border:1px solid ${active.color};color:${active.color};border-radius:2px">${active.icon} ${active.label}</span>`
+    : `<span style="font-size:var(--fs-micro);color:var(--text-faint)">${t('academy.noPlan')}</span>`
 
   const coachHint = coachRevealed
-    ? `<span style="font-size:7px;color:var(--purple);margin-left:6px" title="Coachability amplifies plan bonus">COA ${coachAttr.value}/20 +${Math.round(coachAttr.value / 20 * 10)}%</span>`
+    ? `<span style="font-size:var(--fs-micro);color:var(--purple);margin-left:6px" title="Coachability amplifies plan bonus">COA ${coachAttr.value}/20 +${Math.round(coachAttr.value / 20 * 10)}%</span>`
     : ''
 
   const opts = TRAINING_PLANS.map(pl =>
@@ -273,13 +273,13 @@ function _trainingPlanHtml(p) {
     </div>
     <div style="display:flex;gap:5px;align-items:center">
       <select onchange="setTrainingPlan('${p.id}',this.value)"
-        style="flex:1;background:#1a1a12;border:1px solid #3a3620;color:var(--gold);font-size:7px;padding:2px 4px;border-radius:2px">
+        style="flex:1;background:#1a1a12;border:1px solid #3a3620;color:var(--gold);font-size:var(--fs-micro);padding:2px 4px;border-radius:2px">
         <option value="">— Assign plan…</option>
         ${opts}
       </select>
-      ${active ? `<span style="font-size:7px;color:var(--text-faint)" title="${active.desc}">?</span>` : ''}
+      ${active ? `<span style="font-size:var(--fs-micro);color:var(--text-faint)" title="${active.desc}">?</span>` : ''}
     </div>
-    ${active ? `<div style="font-size:7px;color:var(--text-faint);margin-top:3px;font-style:italic">${active.desc}</div>` : ''}
+    ${active ? `<div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:3px;font-style:italic">${active.desc}</div>` : ''}
   </div>`
 }
 
@@ -317,36 +317,36 @@ export function rAc() {
     const isScoutSourced = !!p.fromRegion
     const urgencyBorder = isScoutSourced && p.urgencyMonths <= 2 && p.rivalInterest ? 'border-color:var(--red)' : p.prodigy ? 'border-color:var(--gold);box-shadow:0 0 8px rgba(201,168,76,0.2)' : waited >= 6 ? 'border-color:var(--red)' : ''
     return `<div class="card" style="${urgencyBorder}" oncontextmenu="return acCtx(event,'${p.id}')">
-      ${isScoutSourced && p.rivalInterest && p.urgencyMonths > 0 ? `<div style="background:#3a0000;border-radius:3px;padding:2px 6px;font-size:7px;color:var(--red-soft);margin-bottom:5px">⚠ Rival village interest — ${p.urgencyMonths}m urgency window</div>` : ''}
-      ${isScoutSourced ? `<div style="font-size:7px;color:#9b7fbf;margin-bottom:4px">🗺 Scouted by ${p.scoutName||'unknown'} · ${p.origin}</div>` : ''}
+      ${isScoutSourced && p.rivalInterest && p.urgencyMonths > 0 ? `<div style="background:#3a0000;border-radius:3px;padding:2px 6px;font-size:var(--fs-micro);color:var(--red-soft);margin-bottom:5px">⚠ Rival village interest — ${p.urgencyMonths}m urgency window</div>` : ''}
+      ${isScoutSourced ? `<div style="font-size:var(--fs-micro);color:#9b7fbf;margin-bottom:4px">🗺 Scouted by ${p.scoutName||'unknown'} · ${p.origin}</div>` : ''}
       <div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:7px">
         <div style="flex:1">
-          <div style="font-size:11px;color:${p.prodigy ? 'var(--gold)' : 'var(--text-hi)'};font-weight:bold" onmousemove="acHover(event,'${p.id}')" onmouseleave="hideHoverPreview()">${sn(p)}${p.prodigy ? ' <span style="font-size:8px;color:var(--gold)">✦ PRODIGY</span>' : ''}</div>
-          <div style="font-size:8px;color:var(--text-dim)">${p.clan ? p.clan + ' · ' + p.trait : (p.spec || '—')} · Age ${p.age}${p.origin ? ' · <span style="color:var(--purple)">from ' + p.origin + '</span>' : ''}</div>
-          ${p.archetype ? `<div style="font-size:8px;color:var(--purple);margin-top:2px;letter-spacing:1px">${p.archetype.n}</div>` : ''}
-          ${rival ? `<div style="font-size:8px;color:var(--red);margin-top:2px">⚔ Rivals with ${sn(rival)}</div>` : ''}
-          ${familySib.length ? `<div style="font-size:8px;color:var(--blue);margin-top:2px">👪 ${p.ln} family — with ${familySib.map(x => x.fn).join(', ')}</div>` : ''}
-          ${currentSensei ? `<div style="font-size:8px;color:var(--gold);margin-top:2px">Sensei: ${sn(currentSensei)}</div>` : ''}
+          <div style="font-size:var(--fs-lead);color:${p.prodigy ? 'var(--gold)' : 'var(--text-hi)'};font-weight:bold" onmousemove="acHover(event,'${p.id}')" onmouseleave="hideHoverPreview()">${sn(p)}${p.prodigy ? ' <span style="font-size:var(--fs-small);color:var(--gold)">✦ PRODIGY</span>' : ''}</div>
+          <div style="font-size:var(--fs-small);color:var(--text-dim)">${p.clan ? p.clan + ' · ' + p.trait : (p.spec || '—')} · Age ${p.age}${p.origin ? ' · <span style="color:var(--purple)">from ' + p.origin + '</span>' : ''}</div>
+          ${p.archetype ? `<div style="font-size:var(--fs-small);color:var(--purple);margin-top:2px;letter-spacing:1px">${p.archetype.n}</div>` : ''}
+          ${rival ? `<div style="font-size:var(--fs-small);color:var(--red);margin-top:2px">⚔ Rivals with ${sn(rival)}</div>` : ''}
+          ${familySib.length ? `<div style="font-size:var(--fs-small);color:var(--blue);margin-top:2px">👪 ${p.ln} family — with ${familySib.map(x => x.fn).join(', ')}</div>` : ''}
+          ${currentSensei ? `<div style="font-size:var(--fs-small);color:var(--gold);margin-top:2px">Sensei: ${sn(currentSensei)}</div>` : ''}
         </div>
         ${p.ri === undefined || p.ri === null
           ? `<span class="rk" style="color:var(--text-dim);border-color:var(--border)">Prospect</span>`
           : `<span class="rk ${RKC[p.ri]}">${RANKS[p.ri]}</span>`}
       </div>
-      <div style="font-size:8px;color:var(--text-dim);font-style:italic;margin-bottom:7px;line-height:1.5">${archFlavorTrunc}</div>
+      <div style="font-size:var(--fs-small);color:var(--text-dim);font-style:italic;margin-bottom:7px;line-height:1.5">${archFlavorTrunc}</div>
       <div class="sg">${sBars(p)}</div>
       <div style="margin-top:7px;display:flex;align-items:center;justify-content:space-between">
         ${p.pers ? `<span class="trait-tag ${pCl(p.pers)}">${p.pers.n}</span>` : ''}
-        <div style="font-size:8px">
+        <div style="font-size:var(--fs-small)">
           Pwr <span style="color:var(--text-hi)">${sPow(p)}</span>
           &nbsp;·&nbsp;
           Pot <span style="color:${potColor}">${isScoutSourced && p.potRange && !p.potRange.exact ? p.potRange.lo + '–' + p.potRange.hi + '?' : potText}</span>
-          ${p.scouted ? '' : isScoutSourced ? '' : '<span style="color:var(--border-hi);font-size:7px"> (unverified)</span>'}
+          ${p.scouted ? '' : isScoutSourced ? '' : '<span style="color:var(--border-hi);font-size:var(--fs-micro)"> (unverified)</span>'}
         </div>
       </div>
       ${_trainingPlanHtml(p)}
       ${_developmentHtml(p)}
       <div style="margin-top:6px">
-        <div style="display:flex;justify-content:space-between;font-size:7px;color:var(--text-dim);margin-bottom:2px">
+        <div style="display:flex;justify-content:space-between;font-size:var(--fs-micro);color:var(--text-dim);margin-bottom:2px">
           <span>Patience — <span style="color:${patienceColor}">${patienceLabel}</span></span>
           <span style="color:${patienceColor}">${waited}m waiting</span>
         </div>
@@ -360,15 +360,15 @@ export function rAc() {
       <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
         <button class="gb gb-g" onclick="rec('${p.id}')" ${canRecruit ? '' : 'disabled'}>${t('academy.recruit')}</button>
         ${scoutingAm
-          ? `<div style="font-size:9px;color:var(--orange);align-self:center">⟳ Being scouted…</div>`
+          ? `<div style="font-size:var(--fs-body);color:var(--orange);align-self:center">⟳ Being scouted…</div>`
           : p.scouted
-            ? `<div style="font-size:9px;color:var(--green);align-self:center">✓ Scouted</div>`
+            ? `<div style="font-size:var(--fs-body);color:var(--green);align-self:center">✓ Scouted</div>`
             : `<button class="gb" onclick="oScout('${p.id}')" ${G.ryo >= 3000 ? '' : 'disabled'}>Scout — 3,000 ryo ►</button>`
         }
         ${!p.mentor ? `<button class="gb" onclick="oSensei('${p.id}')">${t('academy.assignSensei')}</button>` : ''}
       </div>
     </div>`
-  }).join('') || `<div style="color:var(--text-dim);font-size:10px">${t('academy.prospects.none')}</div>`
+  }).join('') || `<div style="color:var(--text-dim);font-size:var(--fs-body)">${t('academy.prospects.none')}</div>`
 }
 
 export function rec(id) {
@@ -416,10 +416,10 @@ export function oScout(prospectId) {
   document.getElementById('scout-list').innerHTML = scouts.map(s =>
     `<div class="pi" onclick="doScout('${s.id}')">
       <div>
-        <div style="font-size:10px;color:var(--text-hi)">${sn(s)}</div>
-        <div style="font-size:8px;color:var(--text-dim)">${RANKS[s.ri]} · Pwr ${sPow(s)}</div>
+        <div style="font-size:var(--fs-body);color:var(--text-hi)">${sn(s)}</div>
+        <div style="font-size:var(--fs-small);color:var(--text-dim)">${RANKS[s.ri]} · Pwr ${sPow(s)}</div>
       </div>
-      <span style="font-size:9px;color:var(--green)">Deploy ►</span>
+      <span style="font-size:var(--fs-body);color:var(--green)">Deploy ►</span>
     </div>`
   ).join('')
   document.getElementById('ov-scout').classList.add('open')
@@ -434,10 +434,10 @@ export function oSensei(prospectId) {
   document.getElementById('sensei-list').innerHTML = available.map(s =>
     `<div class="pi" onclick="doSensei('${s.id}')">
       <div>
-        <div style="font-size:10px;color:var(--text-hi)">${sn(s)}</div>
-        <div style="font-size:8px;color:var(--text-dim)">${RANKS[s.ri]} · ${s.pers.n} · Pwr ${sPow(s)}</div>
+        <div style="font-size:var(--fs-body);color:var(--text-hi)">${sn(s)}</div>
+        <div style="font-size:var(--fs-small);color:var(--text-dim)">${RANKS[s.ri]} · ${s.pers.n} · Pwr ${sPow(s)}</div>
       </div>
-      <span style="font-size:9px;color:var(--gold)">${t('academy.assign')}</span>
+      <span style="font-size:var(--fs-body);color:var(--gold)">${t('academy.assign')}</span>
     </div>`
   ).join('')
   document.getElementById('ov-sensei').classList.add('open')

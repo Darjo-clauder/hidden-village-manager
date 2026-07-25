@@ -33,7 +33,7 @@ export function staffHover(e, id) {
     ${row('Rating', st.rating)}${row('Salary', fmt(st.salary) + '/mo')}
     ${row('Ambition', (st.ambition || 0) >= 14 ? 'High' : (st.ambition || 0) >= 10 ? 'Moderate' : 'Low')}
     ${st.hiddenFlaw && st.flawRevealed ? row('Flaw', st.hiddenFlaw) : ''}
-    <div class="hp-row" style="margin-top:4px"><span style="font-size:7px;color:var(--text-faint)">${stats}</span></div>`)
+    <div class="hp-row" style="margin-top:4px"><span style="font-size:var(--fs-micro);color:var(--text-faint)">${stats}</span></div>`)
 }
 
 let _hireRoleId = null
@@ -71,10 +71,10 @@ function _rosterTab() {
     const ts = (G.staff||[]).find(x => x.id === G.staffConflict.teamSenseiId)
     if (hs && ts) {
       html += `<div style="border:1px solid var(--red);background:#1a0a0a;padding:10px;margin-bottom:14px">
-        <div style="font-size:9px;color:var(--red);font-weight:bold;margin-bottom:4px">⚠ STAFF CONFLICT — Mediation Required</div>
-        <div style="font-size:8px;color:var(--text-dim);margin-bottom:8px">${hs.fn} ${hs.ln} (Head Sensei) and ${ts.fn} ${ts.ln} (Team Sensei) have reached a breaking point.</div>
+        <div style="font-size:var(--fs-body);color:var(--red);font-weight:bold;margin-bottom:4px">⚠ STAFF CONFLICT — Mediation Required</div>
+        <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:8px">${hs.fn} ${hs.ln} (Head Sensei) and ${ts.fn} ${ts.ln} (Team Sensei) have reached a breaking point.</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${STAFF_CONFLICT_RESPONSES.map(r => `<button class="gb" style="font-size:7px;border-color:${r.id==='back_head'?'var(--blue)':r.id==='back_team'?'var(--gold)':'var(--green)'};color:${r.id==='back_head'?'var(--blue)':r.id==='back_team'?'var(--gold)':'var(--green)'}" onclick="resolveStaffConflict('${r.id}')">${r.n} ▸</button>`).join('')}
+          ${STAFF_CONFLICT_RESPONSES.map(r => `<button class="gb" style="font-size:var(--fs-micro);border-color:${r.id==='back_head'?'var(--blue)':r.id==='back_team'?'var(--gold)':'var(--green)'};color:${r.id==='back_head'?'var(--blue)':r.id==='back_team'?'var(--gold)':'var(--green)'}" onclick="resolveStaffConflict('${r.id}')">${r.n} ▸</button>`).join('')}
         </div>
       </div>`
     }
@@ -83,12 +83,12 @@ function _rosterTab() {
   if (G.staffPoachOffer) {
     const offer = G.staffPoachOffer
     html += `<div style="border:1px solid var(--orange);background:#1a1205;padding:10px;margin-bottom:14px">
-      <div style="font-size:9px;color:var(--orange);font-weight:bold;margin-bottom:4px">⚠ RIVAL RECRUITMENT OFFER — Expires Month ${offer.expiresMonth}</div>
-      <div style="font-size:8px;color:var(--text-dim);margin-bottom:8px">${offer.village} is offering ${offer.staffName} a position. Respond before they accept.</div>
+      <div style="font-size:var(--fs-body);color:var(--orange);font-weight:bold;margin-bottom:4px">⚠ RIVAL RECRUITMENT OFFER — Expires Month ${offer.expiresMonth}</div>
+      <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:8px">${offer.village} is offering ${offer.staffName} a position. Respond before they accept.</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="gb gb-g" onclick="matchPoachOffer()" style="font-size:7px">Match Offer (${fmt(offer.matchCost)} ryo retention bonus) ▸</button>
-        <button class="gb" onclick="confirm('Let ${offer.staffName} go to ${offer.village}?') && dismissPoachOffer('let')" style="font-size:7px;border-color:var(--green);color:var(--green)">Let Them Go ▸</button>
-        <button class="gb gb-r" onclick="confirm('Block ${offer.village}? This costs −10 relations.') && dismissPoachOffer('block')" style="font-size:7px">Block (−10 rel with ${offer.village}) ▸</button>
+        <button class="gb gb-g" onclick="matchPoachOffer()" style="font-size:var(--fs-micro)">Match Offer (${fmt(offer.matchCost)} ryo retention bonus) ▸</button>
+        <button class="gb" onclick="confirm('Let ${offer.staffName} go to ${offer.village}?') && dismissPoachOffer('let')" style="font-size:var(--fs-micro);border-color:var(--green);color:var(--green)">Let Them Go ▸</button>
+        <button class="gb gb-r" onclick="confirm('Block ${offer.village}? This costs −10 relations.') && dismissPoachOffer('block')" style="font-size:var(--fs-micro)">Block (−10 rel with ${offer.village}) ▸</button>
       </div>
     </div>`
   }
@@ -111,15 +111,15 @@ function _rosterTab() {
       html += `<div style="border:1px solid var(--border);background:var(--surface);padding:11px;margin-bottom:7px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
           <div>
-            <div style="font-size:11px;color:var(--text-hi);font-weight:bold">${roleDef.n} <span style="font-size:8px;color:var(--text-dim)">(${current.length}/${slots})</span></div>
-            <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${roleDef.desc}</div>
-            <div style="font-size:8px;color:var(--gold);margin-top:2px;font-style:italic">${roleDef.effectDesc}</div>
+            <div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold">${roleDef.n} <span style="font-size:var(--fs-small);color:var(--text-dim)">(${current.length}/${slots})</span></div>
+            <div style="font-size:var(--fs-body);color:var(--text-dim);margin-top:2px">${roleDef.desc}</div>
+            <div style="font-size:var(--fs-small);color:var(--gold);margin-top:2px;font-style:italic">${roleDef.effectDesc}</div>
           </div>
           ${!isFull ? `<button class="gb" onclick="openStaffHire('${roleId}')">${tr("staff.hire")}</button>` : ''}
         </div>`
 
       if (current.length === 0) {
-        html += `<div style="font-size:8px;color:var(--border-hi);font-style:italic;padding:4px 0">— Vacant —</div>`
+        html += `<div style="font-size:var(--fs-small);color:var(--border-hi);font-style:italic;padding:4px 0">— Vacant —</div>`
       } else {
         current.forEach(st => {
           const statEntries = Object.entries(st.stats || {})
@@ -132,24 +132,24 @@ function _rosterTab() {
           html += `<div style="border:1px solid var(--border);padding:8px;margin-top:6px;background:var(--sunken)" oncontextmenu="return staffCtx(event,'${st.id}')">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
               <div onmousemove="staffHover(event,'${st.id}')" onmouseleave="hideHoverPreview()">
-                <div style="font-size:10px;color:var(--text-hi);font-weight:bold">${st.fn} ${st.ln}${isAsstKage ? ' <span style="color:var(--blue);font-size:8px">★ Asst. Warden</span>' : ''}</div>
-                <div style="font-size:8px;color:var(--text-dim)">Rating: <span style="color:var(--gold);font-weight:bold">${st.rating}</span> · ${yearsServed > 0 ? yearsServed + 'yr ' : ''}${st.monthsServed}mo · ${fmt(st.salary)}/mo</div>
-                ${(() => { const lvl = st.staffLevel || 1; const need = xpForStaffLevel(lvl); const pct = lvl >= STAFF_MAX_LEVEL ? 100 : Math.min(100, Math.round((st.staffXp || 0) / need * 100)); return `<div style="display:flex;align-items:center;gap:5px;margin-top:2px"><span style="font-size:7px;color:var(--green)" title="Staff mastery — improves their craft as they gain experience">◆ ${staffTitle(lvl)}${lvl >= STAFF_MAX_LEVEL ? ' (max)' : ' L' + lvl}</span><div style="flex:1;max-width:70px;height:3px;background:var(--border-dim);border-radius:2px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--green)"></div></div></div>` })()}
-                <div style="font-size:7px;color:${ambColor};margin-top:2px">${ambLabel}${(st.ambition||0)>=14&&roleId==='team_sensei'?' — watching for head sensei opening':''}${st.hiddenFlaw&&st.flawRevealed?' · ⚠ '+st.hiddenFlaw:''}</div>
-                ${st.institutional > 0 ? `<div style="font-size:8px;color:var(--purple)">Legacy bonus: +${st.institutional} to next hire</div>` : ''}
-                ${st.fromShinobi ? `<div style="font-size:8px;color:var(--gold)">↳ Transitioned from active duty</div>` : ''}
+                <div style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold">${st.fn} ${st.ln}${isAsstKage ? ' <span style="color:var(--blue);font-size:var(--fs-small)">★ Asst. Warden</span>' : ''}</div>
+                <div style="font-size:var(--fs-small);color:var(--text-dim)">Rating: <span style="color:var(--gold);font-weight:bold">${st.rating}</span> · ${yearsServed > 0 ? yearsServed + 'yr ' : ''}${st.monthsServed}mo · ${fmt(st.salary)}/mo</div>
+                ${(() => { const lvl = st.staffLevel || 1; const need = xpForStaffLevel(lvl); const pct = lvl >= STAFF_MAX_LEVEL ? 100 : Math.min(100, Math.round((st.staffXp || 0) / need * 100)); return `<div style="display:flex;align-items:center;gap:5px;margin-top:2px"><span style="font-size:var(--fs-micro);color:var(--green)" title="Staff mastery — improves their craft as they gain experience">◆ ${staffTitle(lvl)}${lvl >= STAFF_MAX_LEVEL ? ' (max)' : ' L' + lvl}</span><div style="flex:1;max-width:70px;height:3px;background:var(--border-dim);border-radius:2px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--green)"></div></div></div>` })()}
+                <div style="font-size:var(--fs-micro);color:${ambColor};margin-top:2px">${ambLabel}${(st.ambition||0)>=14&&roleId==='team_sensei'?' — watching for head sensei opening':''}${st.hiddenFlaw&&st.flawRevealed?' · ⚠ '+st.hiddenFlaw:''}</div>
+                ${st.institutional > 0 ? `<div style="font-size:var(--fs-small);color:var(--purple)">Legacy bonus: +${st.institutional} to next hire</div>` : ''}
+                ${st.fromShinobi ? `<div style="font-size:var(--fs-small);color:var(--gold)">↳ Transitioned from active duty</div>` : ''}
               </div>
               <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-                <button class="gb gb-r" onclick="confirm('Release ${st.fn} ${st.ln}? This cannot be undone.') && releaseStaff('${st.id}')" style="font-size:7px;padding:3px 7px">${tr("staff.release")}</button>
-                ${canBeAK ? `<button class="gb" onclick="designateAsstKage('${st.id}')" style="font-size:7px;padding:3px 7px;border-color:var(--blue);color:var(--blue)">${tr("staff.designateAK")}</button>` : ''}
-                ${isAsstKage ? `<button class="gb" onclick="designateAsstKage(null)" style="font-size:7px;padding:3px 7px;border-color:var(--text-faint);color:var(--text-faint)">${tr("staff.removeAK")}</button>` : ''}
-                ${(st.monthsServed||0) >= 6 && st.hiddenFlaw && !st.flawRevealed ? `<button class="gb" onclick="staffPersonalMeeting('${st.id}')" style="font-size:7px;padding:3px 7px;border-color:var(--gold);color:var(--gold)">${tr("staff.meeting")}</button>` : ''}
+                <button class="gb gb-r" onclick="confirm('Release ${st.fn} ${st.ln}? This cannot be undone.') && releaseStaff('${st.id}')" style="font-size:var(--fs-micro);padding:3px 7px">${tr("staff.release")}</button>
+                ${canBeAK ? `<button class="gb" onclick="designateAsstKage('${st.id}')" style="font-size:var(--fs-micro);padding:3px 7px;border-color:var(--blue);color:var(--blue)">${tr("staff.designateAK")}</button>` : ''}
+                ${isAsstKage ? `<button class="gb" onclick="designateAsstKage(null)" style="font-size:var(--fs-micro);padding:3px 7px;border-color:var(--text-faint);color:var(--text-faint)">${tr("staff.removeAK")}</button>` : ''}
+                ${(st.monthsServed||0) >= 6 && st.hiddenFlaw && !st.flawRevealed ? `<button class="gb" onclick="staffPersonalMeeting('${st.id}')" style="font-size:var(--fs-micro);padding:3px 7px;border-color:var(--gold);color:var(--gold)">${tr("staff.meeting")}</button>` : ''}
               </div>
             </div>
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px">
               ${statEntries.map(([k, v]) => `<div style="text-align:center;background:var(--bg);padding:3px">
-                <div style="font-size:7px;color:var(--border-hi);text-transform:uppercase;letter-spacing:1px;margin-bottom:1px">${k.slice(0,5)}</div>
-                <div style="font-size:11px;color:${v>=15?'var(--gold)':v>=10?'var(--green)':'var(--text-dim)'};font-weight:bold">${v}</div>
+                <div style="font-size:var(--fs-micro);color:var(--border-hi);text-transform:uppercase;letter-spacing:1px;margin-bottom:1px">${k.slice(0,5)}</div>
+                <div style="font-size:var(--fs-lead);color:${v>=15?'var(--gold)':v>=10?'var(--green)':'var(--text-dim)'};font-weight:bold">${v}</div>
               </div>`).join('')}
             </div>
           </div>`
@@ -161,18 +161,18 @@ function _rosterTab() {
 
   // ── Retire to Staff ───────────────────────────────────────────────────────
   html += `<div class="pt" style="margin-top:14px">${tr("staff.retireToStaff")}</div>
-    <div style="font-size:9px;color:var(--text-dim);margin-bottom:8px">Shinobi with 20+ wins can transition to a staff role upon retirement.</div>`
+    <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:8px">Shinobi with 20+ wins can transition to a staff role upon retirement.</div>`
   const eligible = G.shinobi.filter(s => s.wins >= 20 && s.ri >= 2)
   if (eligible.length === 0) {
-    html += `<div style="font-size:8px;color:var(--border-hi);font-style:italic">No eligible shinobi — requires Veteran+ with 20+ wins.</div>`
+    html += `<div style="font-size:var(--fs-small);color:var(--border-hi);font-style:italic">No eligible shinobi — requires Veteran+ with 20+ wins.</div>`
   } else {
     eligible.forEach(s => {
       html += `<div style="border:1px solid var(--border);padding:8px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center">
         <div>
-          <div style="font-size:10px;color:var(--text-hi)">${sn(s)}</div>
-          <div style="font-size:8px;color:var(--text-dim)">${RANKS[s.ri]} · ${s.wins} wins · Power ${Math.round(Object.values(s.stats).reduce((a,b)=>a+b,0)/6)}</div>
+          <div style="font-size:var(--fs-body);color:var(--text-hi)">${sn(s)}</div>
+          <div style="font-size:var(--fs-small);color:var(--text-dim)">${RANKS[s.ri]} · ${s.wins} wins · Power ${Math.round(Object.values(s.stats).reduce((a,b)=>a+b,0)/6)}</div>
         </div>
-        <button class="gb gb-g" onclick="openRetireToStaff('${s.id}')" style="font-size:7px;padding:3px 7px">Retire ▸</button>
+        <button class="gb gb-g" onclick="openRetireToStaff('${s.id}')" style="font-size:var(--fs-micro);padding:3px 7px">Retire ▸</button>
       </div>`
     })
   }
@@ -181,9 +181,9 @@ function _rosterTab() {
   const akLog = G.asstKageLog || []
   if (akLog.length > 0) {
     html += `<div class="pt" style="margin-top:14px">${tr("staff.akDecisions")}</div>
-      <div style="font-size:9px;color:var(--text-dim);margin-bottom:6px">${tr("staff.akAutonomous")}</div>`
+      <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:6px">${tr("staff.akAutonomous")}</div>`
     html += akLog.slice(0, 8).map(entry =>
-      `<div style="font-size:8px;color:var(--text-dim);border-left:2px solid var(--border);padding:4px 8px;margin-bottom:4px"><span style="color:var(--border-hi)">Yr${entry.year}·M${entry.month}</span> ${entry.text}</div>`
+      `<div style="font-size:var(--fs-small);color:var(--text-dim);border-left:2px solid var(--border);padding:4px 8px;margin-bottom:4px"><span style="color:var(--border-hi)">Yr${entry.year}·M${entry.month}</span> ${entry.text}</div>`
     ).join('')
   }
 
@@ -195,17 +195,17 @@ function _legacyTab() {
   if (hof.length === 0) {
     return `<div style="color:var(--text-faint);text-align:center;padding:40px;font-size:.85rem">No inductees yet. Staff who serve 8+ years before retiring earn a permanent legacy entry.</div>`
   }
-  let html = `<div style="font-size:9px;color:var(--text-dim);margin-bottom:10px">${tr("staff.hallNote")}</div>`
+  let html = `<div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:10px">${tr("staff.hallNote")}</div>`
   html += hof.map(entry => {
     const roleDef = STAFF_ROLES.find(r => r.id === entry.role)
     return `<div style="border:1px solid var(--border);background:var(--surface);padding:11px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
-          <div style="font-size:11px;color:var(--gold);font-weight:bold">${entry.fn} ${entry.ln}</div>
-          <div style="font-size:9px;color:var(--text-dim);margin-top:2px">${roleDef?.n || entry.role} · ${entry.yearsServed} years of service · Peak Rating ${entry.peakRating}</div>
-          <div style="font-size:8px;color:var(--border-hi);margin-top:2px">Inducted Year ${entry.year}${entry.fromShinobi ? ' · Transitioned from active duty' : ''}</div>
+          <div style="font-size:var(--fs-lead);color:var(--gold);font-weight:bold">${entry.fn} ${entry.ln}</div>
+          <div style="font-size:var(--fs-body);color:var(--text-dim);margin-top:2px">${roleDef?.n || entry.role} · ${entry.yearsServed} years of service · Peak Rating ${entry.peakRating}</div>
+          <div style="font-size:var(--fs-small);color:var(--border-hi);margin-top:2px">Inducted Year ${entry.year}${entry.fromShinobi ? ' · Transitioned from active duty' : ''}</div>
         </div>
-        <div style="font-size:14px;color:var(--gold)">⭐</div>
+        <div style="font-size:var(--fs-sub);color:var(--gold)">⭐</div>
       </div>
     </div>`
   }).join('')
@@ -240,20 +240,20 @@ function _renderHireCandidates() {
     const scouted = c.flawRevealed
     return `<div style="border:1px solid ${scouted?'var(--blue)':'var(--border)'};background:var(--bg);padding:10px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
-        <span style="font-size:10px;color:var(--text-hi);font-weight:bold">${c.fn} ${c.ln}</span>
-        <span style="font-size:9px;color:var(--gold)">Rating ${c.rating} · ${fmt(c.salary)}/mo</span>
+        <span style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold">${c.fn} ${c.ln}</span>
+        <span style="font-size:var(--fs-body);color:var(--gold)">Rating ${c.rating} · ${fmt(c.salary)}/mo</span>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-bottom:7px">
         ${statEntries.map(([k,v]) => `<div style="text-align:center;background:var(--sunken);padding:3px">
-          <div style="font-size:7px;color:var(--border-hi);text-transform:uppercase">${k.slice(0,5)}</div>
-          <div style="font-size:10px;color:${v>=15?'var(--gold)':v>=10?'var(--green)':'var(--text-dim)'};font-weight:bold">${v}</div>
+          <div style="font-size:var(--fs-micro);color:var(--border-hi);text-transform:uppercase">${k.slice(0,5)}</div>
+          <div style="font-size:var(--fs-body);color:${v>=15?'var(--gold)':v>=10?'var(--green)':'var(--text-dim)'};font-weight:bold">${v}</div>
         </div>`).join('')}
       </div>
-      ${scouted && c.hiddenFlaw ? `<div style="font-size:8px;color:var(--red-soft);margin-bottom:6px;padding:4px 6px;border:1px solid var(--red);background:#0d0505">⚠ Scout Report: Hidden flaw detected — "${c.hiddenFlaw}"</div>` : ''}
-      ${scouted && !c.hiddenFlaw ? `<div style="font-size:8px;color:var(--green);margin-bottom:6px;padding:4px 6px;border:1px solid #1a3a1a;background:#050d05">✓ Scout Report: No concerns — well-regarded by former colleagues.</div>` : ''}
+      ${scouted && c.hiddenFlaw ? `<div style="font-size:var(--fs-small);color:var(--red-soft);margin-bottom:6px;padding:4px 6px;border:1px solid var(--red);background:#0d0505">⚠ Scout Report: Hidden flaw detected — "${c.hiddenFlaw}"</div>` : ''}
+      ${scouted && !c.hiddenFlaw ? `<div style="font-size:var(--fs-small);color:var(--green);margin-bottom:6px;padding:4px 6px;border:1px solid #1a3a1a;background:#050d05">✓ Scout Report: No concerns — well-regarded by former colleagues.</div>` : ''}
       <div style="display:flex;gap:6px">
-        <button class="gb gb-g" onclick="doStaffHire(${i})" style="font-size:7px">${tr("staff.hire")}</button>
-        ${!scouted ? `<button class="gb" onclick="scoutStaffCandidate(${i})" style="font-size:7px;border-color:var(--blue);color:var(--blue)">${tr("staff.scout")}</button>` : ''}
+        <button class="gb gb-g" onclick="doStaffHire(${i})" style="font-size:var(--fs-micro)">${tr("staff.hire")}</button>
+        ${!scouted ? `<button class="gb" onclick="scoutStaffCandidate(${i})" style="font-size:var(--fs-micro);border-color:var(--blue);color:var(--blue)">${tr("staff.scout")}</button>` : ''}
       </div>
     </div>`
   }).join('')
@@ -406,9 +406,9 @@ export function openRetireToStaff(shinobiId) {
   document.getElementById('rts-roles').innerHTML = roles.map(r => `
     <div class="pi" onclick="doRetireToStaff('${shinobiId}','${r.id}')">
       <div>
-        <div style="font-size:10px;color:var(--text-hi)">${r.n}</div>
-        <div style="font-size:8px;color:var(--text-dim)">${r.effectDesc}</div>
-        <div style="font-size:8px;color:var(--gold)">Est. rating: ${Math.max(5, derivedRating)} · Salary: ~${fmt(Math.round(r.salBase*(0.7+Math.max(5,derivedRating)*0.04)))}/mo</div>
+        <div style="font-size:var(--fs-body);color:var(--text-hi)">${r.n}</div>
+        <div style="font-size:var(--fs-small);color:var(--text-dim)">${r.effectDesc}</div>
+        <div style="font-size:var(--fs-small);color:var(--gold)">Est. rating: ${Math.max(5, derivedRating)} · Salary: ~${fmt(Math.round(r.salBase*(0.7+Math.max(5,derivedRating)*0.04)))}/mo</div>
       </div>
     </div>
   `).join('')

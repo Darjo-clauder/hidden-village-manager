@@ -58,25 +58,25 @@ export function rDep() {
 
     ${(criticalGaps + warnGaps > 0) ? `
     <div style="margin-bottom:12px;padding:9px 12px;background:${criticalGaps > 0 ? 'var(--red-bg)' : '#1a1305'};border:1px solid ${criticalGaps > 0 ? 'var(--red)' : '#5a4800'}">
-      <div style="font-size:9px;color:${criticalGaps > 0 ? 'var(--red)' : 'var(--orange)'};margin-bottom:4px">${criticalGaps > 0 ? '⚠ Critical gaps detected' : '⚠ Depth gaps detected'}</div>
-      ${gaps.map(g => `<div style="font-size:8px;color:${g.severity === 'critical' ? 'var(--red-soft)' : g.severity === 'emergency' ? 'var(--red)' : 'var(--orange)'};margin-top:2px">
+      <div style="font-size:var(--fs-body);color:${criticalGaps > 0 ? 'var(--red)' : 'var(--orange)'};margin-bottom:4px">${criticalGaps > 0 ? '⚠ Critical gaps detected' : '⚠ Depth gaps detected'}</div>
+      ${gaps.map(g => `<div style="font-size:var(--fs-small);color:${g.severity === 'critical' ? 'var(--red-soft)' : g.severity === 'emergency' ? 'var(--red)' : 'var(--orange)'};margin-top:2px">
         ${g.squadName} — ${g.roleName}: ${g.reason}
-        ${g.nearGradIds?.length ? `<button onclick="emergencyCallUp('${g.nearGradIds[0]}')" style="margin-left:8px;background:var(--green-bg);border:1px solid var(--green-hi);color:var(--green);font-size:7px;padding:1px 5px;cursor:pointer">Call Up ►</button>` : ''}
+        ${g.nearGradIds?.length ? `<button onclick="emergencyCallUp('${g.nearGradIds[0]}')" style="margin-left:8px;background:var(--green-bg);border:1px solid var(--green-hi);color:var(--green);font-size:var(--fs-micro);padding:1px 5px;cursor:pointer">Call Up ►</button>` : ''}
       </div>`).join('')}
     </div>` : ''}
 
     <!-- Per-squad role depth table -->
-    ${G.squads.length === 0 ? `<div style="color:var(--text-dim);font-size:9px;padding:12px 0">${tr("depthchart.noSquads")}</div>` : ''}
+    ${G.squads.length === 0 ? `<div style="color:var(--text-dim);font-size:var(--fs-body);padding:12px 0">${tr("depthchart.noSquads")}</div>` : ''}
     ${G.squads.map(sq => _squadDepthTable(sq)).join('')}
 
     <!-- Roster tier summary -->
     <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);padding:13px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">Full Roster — Tier Summary</div>
+      <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">Full Roster — Tier Summary</div>
       ${tiers.map(t => `
         <div class="depth-tier" style="margin-bottom:8px">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">
-            <div style="font-size:8px;color:var(--text-hi);min-width:56px">${t.label}</div>
-            <div style="font-size:8px;color:var(--text-dim)">
+            <div style="font-size:var(--fs-small);color:var(--text-hi);min-width:56px">${t.label}</div>
+            <div style="font-size:var(--fs-small);color:var(--text-dim)">
               ${t.all.length} total ·
               <span style="color:var(--green)">${t.available.length} ready</span>
               ${t.onMission.length ? ` · <span style="color:var(--orange)">${t.onMission.length} deployed</span>` : ''}
@@ -88,26 +88,26 @@ export function rDep() {
             ${t.onMission.map(s => _slotHtml(s, 'on-mission')).join('')}
             ${t.injured.map(s => _slotHtml(s, 'injured')).join('')}
             ${t.onExam.map(s => _slotHtml(s, 'exam')).join('')}
-          </div>` : `<div style="border:1px dashed var(--border);padding:6px 10px;font-size:8px;color:var(--text-dim)">No ${t.label} on roster</div>`}
+          </div>` : `<div style="border:1px dashed var(--border);padding:6px 10px;font-size:var(--fs-small);color:var(--text-dim)">No ${t.label} on roster</div>`}
         </div>
       `).join('')}
     </div>
 
     <!-- Academy pipeline -->
     <div style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-top:10px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">Academy Pipeline → Initiate</div>
-      <div style="font-size:9px;color:var(--text-dim);margin-bottom:6px">
+      <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">Academy Pipeline → Initiate</div>
+      <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:6px">
         ${(G.intakeClass||[]).length} students enrolled
         ${graduating.length > 0 ? ` · <span style="color:var(--green)">↑ ${graduating.length} graduating soon</span>` : ''}
       </div>
-      ${(G.intakeClass||[]).length === 0 ? `<div style="font-size:9px;color:var(--text-dim)">${tr("depthchart.noStudents")}</div>` : `
+      ${(G.intakeClass||[]).length === 0 ? `<div style="font-size:var(--fs-body);color:var(--text-dim)">${tr("depthchart.noStudents")}</div>` : `
         <div class="depth-row">
           ${(G.intakeClass||[]).map(s => {
             const mLeft = 12 - (s.monthsInClass || s.monthsEnrolled || 0)
             return `<div class="depth-slot ${mLeft <= 2 ? 'available' : 'incoming'}">
-              <div style="font-size:9px;color:var(--text-hi)">${s.fn} ${s.ln}</div>
-              <div style="font-size:7px;color:var(--text-dim);margin-top:2px">${mLeft}mo to grad</div>
-              ${s.devCurveRevealed && s.devCurve ? `<div style="font-size:7px;color:var(--gold)">${s.devCurve}</div>` : ''}
+              <div style="font-size:var(--fs-body);color:var(--text-hi)">${s.fn} ${s.ln}</div>
+              <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:2px">${mLeft}mo to grad</div>
+              ${s.devCurveRevealed && s.devCurve ? `<div style="font-size:var(--fs-micro);color:var(--gold)">${s.devCurve}</div>` : ''}
             </div>`
           }).join('')}
         </div>
@@ -122,7 +122,7 @@ function _squadDepthTable(sq) {
 
   return `
     <div style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-bottom:10px">
-      <div style="font-size:10px;color:var(--gold);font-weight:bold;margin-bottom:10px">${sq.n} — Depth Chart</div>
+      <div style="font-size:var(--fs-body);color:var(--gold);font-weight:bold;margin-bottom:10px">${sq.n} — Depth Chart</div>
       <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
         ${SQUAD_ROLES.map(role => {
           const slot = entry[role.id] || { starter: null, backup: null, emergency: null, locked: false }
@@ -132,13 +132,13 @@ function _squadDepthTable(sq) {
           const ruleColor = { auto:'var(--blue)', seniority:'var(--gold)', power:'var(--orange)', manual:'var(--text-dim)' }[promotionRule]
           return `
             <div style="border:1px solid ${gap?.severity === 'critical' ? 'var(--red)' : gap?.severity === 'warn' ? 'var(--orange)' : 'var(--border)'};padding:7px;min-height:120px">
-              <div style="font-size:8px;color:${role.color};font-weight:bold;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:var(--fs-small);color:${role.color};font-weight:bold;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center">
                 <span>${role.icon} ${role.n}</span>
-                ${role.missionBonus || role.riskReduction || role.injReduction ? `<span style="font-size:7px;color:var(--text-dim)" title="${role.desc}">+${Math.round((role.missionBonus||role.riskReduction||0)*100)}%</span>` : ''}
+                ${role.missionBonus || role.riskReduction || role.injReduction ? `<span style="font-size:var(--fs-micro);color:var(--text-dim)" title="${role.desc}">+${Math.round((role.missionBonus||role.riskReduction||0)*100)}%</span>` : ''}
               </div>
               <div style="margin-bottom:5px">
                 <select onchange="setPromotionRule('${sq.id}','${role.id}',this.value)"
-                  style="font-size:6px;background:var(--surface-2);border:1px solid ${ruleColor};color:${ruleColor};width:100%;padding:1px 2px;border-radius:2px">
+                  style="font-size:var(--fs-micro);background:var(--surface-2);border:1px solid ${ruleColor};color:${ruleColor};width:100%;padding:1px 2px;border-radius:2px">
                   ${['auto','seniority','power','manual'].map(r =>
                     `<option value="${r}" ${promotionRule===r?'selected':''}>${r.charAt(0).toUpperCase()+r.slice(1)}</option>`
                   ).join('')}
@@ -148,9 +148,9 @@ function _squadDepthTable(sq) {
                 const active = G.shinobi.find(s => s.id === activeId)
                 if (!active) return ''
                 const ob = opportunityBand(active.workload)
-                return `<div style="font-size:7px;color:var(--green);margin-bottom:1px">▶ ${active.fn} ${active.ln}</div>
-                  <div style="font-size:6px;color:${ob.color};margin-bottom:4px" title="${ob.note}">${ob.label}</div>`
-              })() : `<div style="font-size:7px;color:var(--red);margin-bottom:4px">▶ No active starter</div>`}
+                return `<div style="font-size:var(--fs-micro);color:var(--green);margin-bottom:1px">▶ ${active.fn} ${active.ln}</div>
+                  <div style="font-size:var(--fs-micro);color:${ob.color};margin-bottom:4px" title="${ob.note}">${ob.label}</div>`
+              })() : `<div style="font-size:var(--fs-micro);color:var(--red);margin-bottom:4px">▶ No active starter</div>`}
               ${['starter','backup','emergency'].map(slotKey => {
                 const sid = slot[slotKey]
                 const s = sid ? G.shinobi.find(x => x.id === sid) : null
@@ -158,13 +158,13 @@ function _squadDepthTable(sq) {
                 const slotLabel = slotKey === 'starter' ? 'S' : slotKey === 'backup' ? 'B' : 'E'
                 return `
                   <div style="margin-bottom:4px">
-                    <div style="font-size:7px;color:var(--text-dim);margin-bottom:2px">${slotKey.toUpperCase()}</div>
+                    <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-bottom:2px">${slotKey.toUpperCase()}</div>
                     ${s ? `
-                      <div style="font-size:8px;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.fn} ${s.ln}</div>
-                      <div style="font-size:7px;color:${statusColor}">${s.status}</div>
-                      <button onclick="clearDepthSlot('${sq.id}','${role.id}','${slotKey}')" style="font-size:6px;background:none;border:1px solid var(--border);color:var(--text-dim);padding:1px 4px;cursor:pointer;margin-top:2px">✕</button>
+                      <div style="font-size:var(--fs-small);color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.fn} ${s.ln}</div>
+                      <div style="font-size:var(--fs-micro);color:${statusColor}">${s.status}</div>
+                      <button onclick="clearDepthSlot('${sq.id}','${role.id}','${slotKey}')" style="font-size:var(--fs-micro);background:none;border:1px solid var(--border);color:var(--text-dim);padding:1px 4px;cursor:pointer;margin-top:2px">✕</button>
                     ` : `
-                      <select onchange="setDepthSlot('${sq.id}','${role.id}','${slotKey}',this.value)" style="font-size:7px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);width:100%;padding:2px">
+                      <select onchange="setDepthSlot('${sq.id}','${role.id}','${slotKey}',this.value)" style="font-size:var(--fs-micro);background:var(--surface-2);border:1px solid var(--border);color:var(--text);width:100%;padding:2px">
                         <option value="">— assign —</option>
                         ${available.map(s => `<option value="${s.id}">${s.fn} ${s.ln} (P${sPow(s)})</option>`).join('')}
                       </select>
@@ -190,11 +190,11 @@ function _slotHtml(s, cls) {
   const ob = opportunityBand(s.workload)
   return `
     <div class="depth-slot ${cls}" title="${s.fn} ${s.ln} — ${ob.note}" oncontextmenu="return depCtx(event,'${s.id}')" onmousemove="depHover(event,'${s.id}')" onmouseleave="hideHoverPreview()">
-      <div style="font-size:9px;color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.fn} ${s.ln}</div>
-      <div style="font-size:7px;color:var(--text-dim);margin-top:2px">Avg: ${statAvg}</div>
-      <div style="font-size:7px;color:${phaseColors[phase]};margin-top:1px">${phaseIcons[phase]} ${phase}</div>
-      ${cls === 'available' ? `<div style="font-size:7px;color:${ob.color};margin-top:1px">${ob.label}</div>` : ''}
-      ${statusLabel ? `<div style="font-size:7px;color:${statusColor};margin-top:1px">${statusLabel}</div>` : ''}
+      <div style="font-size:var(--fs-body);color:var(--text-hi);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.fn} ${s.ln}</div>
+      <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:2px">Avg: ${statAvg}</div>
+      <div style="font-size:var(--fs-micro);color:${phaseColors[phase]};margin-top:1px">${phaseIcons[phase]} ${phase}</div>
+      ${cls === 'available' ? `<div style="font-size:var(--fs-micro);color:${ob.color};margin-top:1px">${ob.label}</div>` : ''}
+      ${statusLabel ? `<div style="font-size:var(--fs-micro);color:${statusColor};margin-top:1px">${statusLabel}</div>` : ''}
     </div>`
 }
 

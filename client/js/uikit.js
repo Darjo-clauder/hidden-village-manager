@@ -94,7 +94,7 @@ export function tblHeaderHtml(columns, sort, onSortFn) {
     const arrow = active ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''
     const ariaSort = active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'
     return `<th role="columnheader" aria-sort="${ariaSort}" tabindex="0" onclick="${onSortFn}('${c.key}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${onSortFn}('${c.key}')}" title="Sort by ${c.label}"
-      style="padding:4px 6px;font-size:7px;color:${active ? 'var(--accent)' : 'var(--text-faint)'};letter-spacing:1px;text-align:${c.align || 'left'};text-transform:uppercase;cursor:pointer;user-select:none;white-space:nowrap">${c.label}${arrow}</th>`
+      style="padding:4px 6px;font-size:var(--fs-micro);color:${active ? 'var(--accent)' : 'var(--text-faint)'};letter-spacing:1px;text-align:${c.align || 'left'};text-transform:uppercase;cursor:pointer;user-select:none;white-space:nowrap">${c.label}${arrow}</th>`
   }).join('')
 }
 
@@ -118,7 +118,7 @@ export function tblToggleColumnManager(id) {
 /** Line + area chart with a zero baseline. values: number[]. */
 export function lineChartSvg(values, opts = {}) {
   const { width = 280, height = 72, color = 'var(--accent)', labels = [], format = v => v } = opts
-  if (!values || values.length < 2) return `<div style="font-size:8px;color:var(--text-faint);padding:8px 0">Not enough data yet.</div>`
+  if (!values || values.length < 2) return `<div style="font-size:var(--fs-small);color:var(--text-faint);padding:8px 0">Not enough data yet.</div>`
   const pad = 4
   const max = Math.max(...values, 0)
   const min = Math.min(...values, 0)
@@ -129,13 +129,13 @@ export function lineChartSvg(values, opts = {}) {
   const area = `${pad},${(height - pad).toFixed(1)} ${pts} ${(width - pad).toFixed(1)},${(height - pad).toFixed(1)}`
   const zy = y(0).toFixed(1)
   const lastV = values[values.length - 1]
-  const lastColor = lastV >= 0 ? 'var(--green,var(--green))' : 'var(--red,#f0605a)'
+  const lastColor = lastV >= 0 ? 'var(--green)' : 'var(--red,#f0605a)'
   return `<svg viewBox="0 0 ${width} ${height}" width="100%" height="${height}" preserveAspectRatio="none" role="img" aria-label="Trend chart, latest ${format(lastV)}">
     <polygon points="${area}" fill="${color}" opacity="0.10"></polygon>
     <line x1="${pad}" y1="${zy}" x2="${width - pad}" y2="${zy}" stroke="var(--text-faint)" stroke-width="0.5" stroke-dasharray="2 2"></line>
     <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"></polyline>
     <circle cx="${x(values.length - 1).toFixed(1)}" cy="${y(lastV).toFixed(1)}" r="2.5" fill="${lastColor}"></circle>
-  </svg>${labels.length ? `<div style="display:flex;justify-content:space-between;font-size:7px;color:var(--text-faint);margin-top:2px"><span>${labels[0]}</span><span>${labels[labels.length - 1]}</span></div>` : ''}`
+  </svg>${labels.length ? `<div style="display:flex;justify-content:space-between;font-size:var(--fs-micro);color:var(--text-faint);margin-top:2px"><span>${labels[0]}</span><span>${labels[labels.length - 1]}</span></div>` : ''}`
 }
 
 /** Heatmap grid. rowLabels[], colLabels[], matrix[r][c] in 0..1 (red→green). */
@@ -146,22 +146,22 @@ export function heatmapHtml(rowLabels, colLabels, matrix, opts = {}) {
     const r = Math.round(240 * (1 - t) + 90 * t), g = Math.round(96 * (1 - t) + 188 * t), b = Math.round(90 * (1 - t) + 143 * t)
     return `rgba(${r},${g},${b},0.88)`
   }
-  const head = `<tr><th style="width:${labelW}px"></th>${colLabels.map(c => `<th style="font-size:7px;color:var(--text-dim,var(--text-dim));font-weight:normal;text-transform:uppercase;letter-spacing:.5px;padding:2px;text-align:center">${c}</th>`).join('')}</tr>`
+  const head = `<tr><th style="width:${labelW}px"></th>${colLabels.map(c => `<th style="font-size:var(--fs-micro);color:var(--text-dim);font-weight:normal;text-transform:uppercase;letter-spacing:.5px;padding:2px;text-align:center">${c}</th>`).join('')}</tr>`
   const body = rowLabels.map((rl, r) => `<tr>
-    <td style="font-size:8px;color:var(--text,#c9c0a8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${labelW}px;padding-right:6px">${rl}</td>
-    ${colLabels.map((_, c) => { const v = (matrix[r] && matrix[r][c]) || 0; return `<td style="padding:1px"><div title="${Math.round(v * 100)}%" style="height:${cell - 6}px;background:${col(v)};border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:7px;color:#0a0c10;font-weight:600">${Math.round(v * 100)}</div></td>` }).join('')}
+    <td style="font-size:var(--fs-small);color:var(--text,#c9c0a8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${labelW}px;padding-right:6px">${rl}</td>
+    ${colLabels.map((_, c) => { const v = (matrix[r] && matrix[r][c]) || 0; return `<td style="padding:1px"><div title="${Math.round(v * 100)}%" style="height:${cell - 6}px;background:${col(v)};border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:var(--fs-micro);color:#0a0c10;font-weight:600">${Math.round(v * 100)}</div></td>` }).join('')}
   </tr>`).join('')
   return `<table style="width:100%;border-collapse:collapse">${head}${body}</table>`
 }
 
 /** Activity grid — months:[{m, state}]; colored cells with a legend. */
 export function activityGridHtml(months, opts = {}) {
-  const COLORS = { mission: 'var(--accent,var(--gold))', injured: 'var(--red,#f0605a)', exam: 'var(--blue,#4a88c0)', war: '#a05050', rest: 'var(--surface-3,var(--bg))', available: 'var(--surface-3)', training: 'var(--green,var(--green))' }
+  const COLORS = { mission: 'var(--accent,var(--gold))', injured: 'var(--red,#f0605a)', exam: 'var(--blue,#4a88c0)', war: '#a05050', rest: 'var(--surface-3,var(--bg))', available: 'var(--surface-3)', training: 'var(--green)' }
   const LABEL = { mission: 'Mission', injured: 'Injured', exam: 'Exam', war: 'War', rest: 'Rest', available: 'Idle', training: 'Training' }
-  if (!months || !months.length) return `<div style="font-size:8px;color:var(--text-faint)">No activity recorded yet.</div>`
+  if (!months || !months.length) return `<div style="font-size:var(--fs-small);color:var(--text-faint)">No activity recorded yet.</div>`
   const cells = months.map(x => `<div title="M${x.m}: ${LABEL[x.state] || x.state}" style="flex:1;min-width:9px;height:14px;border-radius:2px;background:${COLORS[x.state] || 'var(--border-dim)'}"></div>`).join('')
   const seen = [...new Set(months.map(x => x.state))]
-  const legend = seen.map(s => `<span style="display:inline-flex;align-items:center;gap:3px;font-size:7px;color:var(--text-dim,var(--text-dim))"><span style="width:8px;height:8px;border-radius:2px;background:${COLORS[s] || 'var(--border-dim)'}"></span>${LABEL[s] || s}</span>`).join('  ')
+  const legend = seen.map(s => `<span style="display:inline-flex;align-items:center;gap:3px;font-size:var(--fs-micro);color:var(--text-dim)"><span style="width:8px;height:8px;border-radius:2px;background:${COLORS[s] || 'var(--border-dim)'}"></span>${LABEL[s] || s}</span>`).join('  ')
   return `<div style="display:flex;gap:2px;margin-bottom:4px">${cells}</div><div style="display:flex;gap:8px;flex-wrap:wrap">${legend}</div>`
 }
 
@@ -172,10 +172,10 @@ export function barRowsSvg(items, opts = {}) {
   const max = Math.max(1, ...items.map(i => Math.abs(i.value)))
   return `<div style="display:flex;flex-direction:column;gap:4px">${items.map(it => {
     const pct = Math.round((Math.abs(it.value) / max) * 100)
-    return `<div style="display:flex;align-items:center;gap:6px;font-size:8px">
-      <span style="width:84px;color:var(--text-dim,var(--text-dim));white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.label}</span>
+    return `<div style="display:flex;align-items:center;gap:6px;font-size:var(--fs-small)">
+      <span style="width:84px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.label}</span>
       <div style="flex:1;background:var(--bg);height:8px;border-radius:2px;overflow:hidden"><div style="height:8px;width:${pct}%;background:${it.color || 'var(--accent)'}"></div></div>
-      <span style="width:62px;text-align:right;color:var(--text-hi,var(--text-hi));font-family:var(--font-num,'Courier New',monospace)">${format(it.value)}</span>
+      <span style="width:62px;text-align:right;color:var(--text-hi);font-family:var(--font-num,'Courier New',monospace)">${format(it.value)}</span>
     </div>`
   }).join('')}</div>`
 }

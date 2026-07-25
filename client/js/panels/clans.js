@@ -47,22 +47,22 @@ export function rClans() {
   const council = _activeClanCouncilEvent()
   const councilHtml = council ? `
     <div style="background:var(--sunken);border:1px solid #5a4800;border-left:3px solid var(--gold);padding:11px 13px;margin-bottom:12px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">⚖ Clan Council — ${_quarterKey()}</div>
-      <div style="font-size:9px;color:var(--text-hi);margin-bottom:8px">
+      <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">⚖ Clan Council — ${_quarterKey()}</div>
+      <div style="font-size:var(--fs-body);color:var(--text-hi);margin-bottom:8px">
         ${council.high.clan.icon} <b>${council.high.clan.name}</b> (approval ${council.high.approval}%) and
         ${council.low.clan.icon} <b>${council.low.clan.name}</b> (approval ${council.low.approval}%) clash over council representation. Your ruling will be remembered.
       </div>
       <div style="display:grid;gap:5px">
-        <button class="gb" style="text-align:left;font-size:8px;padding:5px 9px" onclick="resolveClanCouncil('high')">Back the ${council.high.clan.name} — reward your power base (+8 their approval, −5 ${council.low.clan.name})</button>
-        <button class="gb" style="text-align:left;font-size:8px;padding:5px 9px" onclick="resolveClanCouncil('low')">Elevate the ${council.low.clan.name} — balance the houses (+8 their approval, −5 ${council.high.clan.name}, −2 morale)</button>
-        <button class="gb" style="text-align:left;font-size:8px;padding:5px 9px" onclick="resolveClanCouncil('neutral')">Rule impartially — seen as fair (−3 both, +3 morale)</button>
+        <button class="gb" style="text-align:left;font-size:var(--fs-small);padding:5px 9px" onclick="resolveClanCouncil('high')">Back the ${council.high.clan.name} — reward your power base (+8 their approval, −5 ${council.low.clan.name})</button>
+        <button class="gb" style="text-align:left;font-size:var(--fs-small);padding:5px 9px" onclick="resolveClanCouncil('low')">Elevate the ${council.low.clan.name} — balance the houses (+8 their approval, −5 ${council.high.clan.name}, −2 morale)</button>
+        <button class="gb" style="text-align:left;font-size:var(--fs-small);padding:5px 9px" onclick="resolveClanCouncil('neutral')">Rule impartially — seen as fair (−3 both, +3 morale)</button>
       </div>
     </div>` : ''
 
   el.innerHTML = councilHtml + `
     <div style="background:var(--bg);border:1px solid var(--border-dim);padding:10px;margin-bottom:12px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">${t("clans.activePassives")}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:8px">
+      <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">${t("clans.activePassives")}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;font-size:var(--fs-small)">
         ${clP.successMod     ? `<span style="color:var(--green)">+${(clP.successMod*100).toFixed(0)}% mission success</span>` : ''}
         ${clP.growthBonus    ? `<span style="color:var(--green)">+${(clP.growthBonus*100).toFixed(0)}% growth</span>` : ''}
         ${clP.missionRiskReduction ? `<span style="color:var(--green)">−${(clP.missionRiskReduction*100).toFixed(0)}% mission risk</span>` : ''}
@@ -77,7 +77,7 @@ export function rClans() {
       // Only surface clans the village actually has members of — with 17 defined
       // clans (9 great + 8 minor-nation), rendering every empty one is clutter.
       const present = CLANS.filter(c => (G.shinobi || []).some(s => s.clan?.toLowerCase() === c.id))
-      if (!present.length) return `<div style="color:var(--text-dim);font-size:9px;padding:12px 0">No bloodline clans in the village yet. Recruit clan-born shinobi (great-village or minor-nation) to unlock their bloodline passives here.</div>`
+      if (!present.length) return `<div style="color:var(--text-dim);font-size:var(--fs-body);padding:12px 0">No bloodline clans in the village yet. Recruit clan-born shinobi (great-village or minor-nation) to unlock their bloodline passives here.</div>`
       return present.map(clan => {
       const members = (G.shinobi || []).filter(s => s.clan?.toLowerCase() === clan.id)
       const active = members.filter(s => s.status === 'available')
@@ -90,48 +90,48 @@ export function rClans() {
         <div style="background:var(--bg);border:1px solid ${passiveActive?'var(--green-bg)':'var(--border-dim)'};padding:10px">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
             <div>
-              <span style="font-size:12px">${clan.icon}</span>
-              <span style="font-size:10px;color:var(--text-hi);font-weight:bold;margin-left:6px">${clan.name}</span>
-              <span style="font-size:7px;color:var(--text-dim);margin-left:6px">${clan.bloodline}</span>
+              <span style="font-size:var(--fs-lead)">${clan.icon}</span>
+              <span style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold;margin-left:6px">${clan.name}</span>
+              <span style="font-size:var(--fs-micro);color:var(--text-dim);margin-left:6px">${clan.bloodline}</span>
             </div>
-            <div style="text-align:right;font-size:7px">
+            <div style="text-align:right;font-size:var(--fs-micro)">
               <div style="color:${appColor}">Approval: ${approval}%</div>
               <div style="color:var(--text-dim)">Council: ${infPct}%</div>
             </div>
           </div>
-          <div style="font-size:7px;color:var(--gold-2);margin-bottom:6px">${clan.desc}</div>
+          <div style="font-size:var(--fs-micro);color:var(--gold-2);margin-bottom:6px">${clan.desc}</div>
           <div style="background:var(--bg);border-left:2px solid ${passiveActive?'var(--green)':'var(--border)'};padding:4px 7px;margin-bottom:6px">
-            <div style="font-size:7px;color:${passiveActive?'var(--green)':'var(--text-dim)'};font-weight:bold">${clan.bloodline} Bloodline ${passiveActive ? '— Active' : '— Dormant'}</div>
-            <div style="font-size:7px;color:${passiveActive?'#a8c0a8':'var(--text-faint)'};margin-top:1px">${_passiveStr(clan.passive)}</div>
+            <div style="font-size:var(--fs-micro);color:${passiveActive?'var(--green)':'var(--text-dim)'};font-weight:bold">${clan.bloodline} Bloodline ${passiveActive ? '— Active' : '— Dormant'}</div>
+            <div style="font-size:var(--fs-micro);color:${passiveActive?'#a8c0a8':'var(--text-faint)'};margin-top:1px">${_passiveStr(clan.passive)}</div>
           </div>
-          <div style="font-size:7px;color:${passiveActive?'var(--green)':'var(--text-faint)'};margin-bottom:6px">
+          <div style="font-size:var(--fs-micro);color:${passiveActive?'var(--green)':'var(--text-faint)'};margin-bottom:6px">
             ${passiveActive ? '✓ Bloodline active' : members.length ? `⚠ Need ${clan.approvalNeeded}% approval or active member` : 'No members recruited'}
           </div>
           ${members.length ? `
-            <div style="font-size:7px;color:var(--text-dim);margin-bottom:6px">
+            <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-bottom:6px">
               Members: ${members.map(s => `<span style="color:${s.status==='available'?'var(--text-hi)':'var(--text-faint)'}">${sn(s)}</span>`).join(', ')}
             </div>` : ''}
           ${chains.length ? `
             <div style="margin-top:8px">
-              <div style="font-size:7px;letter-spacing:1px;color:var(--text-faint);text-transform:uppercase;margin-bottom:4px">${t("clans.chains")}</div>
+              <div style="font-size:var(--fs-micro);letter-spacing:1px;color:var(--text-faint);text-transform:uppercase;margin-bottom:4px">${t("clans.chains")}</div>
               ${chains.map(({ chainId, chain, eligible, canRun }) => `
                 <div style="background:var(--bg);border:1px solid #2a2000;padding:6px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center">
                   <div>
-                    <span style="font-size:8px;color:var(--text-hi)">${chain.n}</span>
-                    <span style="font-size:7px;color:var(--gold-2);margin-left:6px">[${chain.rk}-Rank]</span>
-                    <div style="font-size:7px;color:var(--text-dim);margin-top:2px">${chain.desc}</div>
+                    <span style="font-size:var(--fs-small);color:var(--text-hi)">${chain.n}</span>
+                    <span style="font-size:var(--fs-micro);color:var(--gold-2);margin-left:6px">[${chain.rk}-Rank]</span>
+                    <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:2px">${chain.desc}</div>
                   </div>
                   <div style="text-align:right">
-                    <div style="font-size:8px;color:var(--green)">+${chain.ryo.toLocaleString()} ryo</div>
+                    <div style="font-size:var(--fs-small);color:var(--green)">+${chain.ryo.toLocaleString()} ryo</div>
                     ${canRun
-                      ? `<button onclick="launchClanChain('${clan.id}','${chainId}')" style="font-size:7px;padding:2px 6px;background:#2a2000;color:var(--gold);border:1px solid #4a3000;cursor:pointer;margin-top:3px">${t("clans.launch")}</button>`
-                      : `<div style="font-size:7px;color:var(--text-faint)">Need ${chain.reqClanSize} member(s)</div>`}
+                      ? `<button onclick="launchClanChain('${clan.id}','${chainId}')" style="font-size:var(--fs-micro);padding:2px 6px;background:#2a2000;color:var(--gold);border:1px solid #4a3000;cursor:pointer;margin-top:3px">${t("clans.launch")}</button>`
+                      : `<div style="font-size:var(--fs-micro);color:var(--text-faint)">Need ${chain.reqClanSize} member(s)</div>`}
                   </div>
                 </div>`).join('')}
             </div>` : ''}
           ${approval < clan.approvalNeeded ? `
             <div style="margin-top:6px">
-              <button onclick="clanGift('${clan.id}')" style="font-size:7px;padding:3px 8px;background:var(--sunken);color:var(--gold);border:1px solid var(--gold-bg);cursor:pointer">
+              <button onclick="clanGift('${clan.id}')" style="font-size:var(--fs-micro);padding:3px 8px;background:var(--sunken);color:var(--gold);border:1px solid var(--gold-bg);cursor:pointer">
                 Gift (500 ryo) +5 Approval
               </button>
             </div>` : ''}

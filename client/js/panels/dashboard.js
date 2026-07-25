@@ -18,16 +18,16 @@ export function saveGameSlot(n) {
 
 function _saveSlotsCard() {
   const slots = listSlots()
-  return `<div style="background:var(--surface,var(--surface));border:1px solid var(--border);padding:10px 12px;margin-bottom:12px">
-    <div style="font-size:8px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">💾 Save Slots</div>
+  return `<div style="background:var(--surface);border:1px solid var(--border);padding:10px 12px;margin-bottom:12px">
+    <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">💾 Save Slots</div>
     ${slots.map(s => {
       const m = s.meta
       const when = m ? new Date(m.savedAt).toLocaleDateString() : null
       return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-        <span style="font-size:9px;color:var(--text-dim);width:14px">${s.n}</span>
-        <span style="flex:1;font-size:8px;color:${m ? 'var(--text-hi)' : 'var(--text-faint)'}">${m ? `${m.vIcon || ''} ${m.vName} — Y${m.year} · ${m.prestige || 'D'}-tier · ${when}` : 'Empty slot'}</span>
-        <button class="gb" style="font-size:7px;padding:2px 7px" onclick="saveGameSlot(${s.n})">Save</button>
-        ${m ? `<button class="gb" style="font-size:7px;padding:2px 7px;border-color:var(--green);color:var(--green)" onclick="if(confirm('Load slot ${s.n}? Unsaved progress is lost.'))restoreSlot(${s.n})">Load</button>` : ''}
+        <span style="font-size:var(--fs-body);color:var(--text-dim);width:14px">${s.n}</span>
+        <span style="flex:1;font-size:var(--fs-small);color:${m ? 'var(--text-hi)' : 'var(--text-faint)'}">${m ? `${m.vIcon || ''} ${m.vName} — Y${m.year} · ${m.prestige || 'D'}-tier · ${when}` : 'Empty slot'}</span>
+        <button class="gb" style="font-size:var(--fs-micro);padding:2px 7px" onclick="saveGameSlot(${s.n})">Save</button>
+        ${m ? `<button class="gb" style="font-size:var(--fs-micro);padding:2px 7px;border-color:var(--green);color:var(--green)" onclick="if(confirm('Load slot ${s.n}? Unsaved progress is lost.'))restoreSlot(${s.n})">Load</button>` : ''}
       </div>`
     }).join('')}
   </div>`
@@ -39,11 +39,11 @@ function _populaceStrip() {
   if (sup == null) return ''
   const tier = supportTier(sup)
   const mult = revenueMult(sup)
-  return `<div title="Civilian support shifts gate revenue and can spark festivals or unrest" style="display:flex;align-items:center;gap:10px;background:var(--surface,var(--surface));border:1px solid var(--border);padding:7px 12px;margin-bottom:12px">
-    <span style="font-size:11px">🎏</span>
-    <span style="font-size:9px;color:${tier.color};font-weight:bold">Populace: ${tier.label}</span>
+  return `<div title="Civilian support shifts gate revenue and can spark festivals or unrest" style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);padding:7px 12px;margin-bottom:12px">
+    <span style="font-size:var(--fs-lead)">🎏</span>
+    <span style="font-size:var(--fs-body);color:${tier.color};font-weight:bold">Populace: ${tier.label}</span>
     <div style="flex:1;max-width:160px;background:var(--bg);height:5px;border-radius:3px;overflow:hidden"><div style="height:5px;width:${Math.round(sup)}%;background:${tier.color}"></div></div>
-    <span style="font-size:8px;color:var(--text-dim);margin-left:auto">Gate revenue ${mult > 1 ? '+' : ''}${Math.round((mult - 1) * 100)}%</span>
+    <span style="font-size:var(--fs-small);color:var(--text-dim);margin-left:auto">Gate revenue ${mult > 1 ? '+' : ''}${Math.round((mult - 1) * 100)}%</span>
   </div>`
 }
 
@@ -54,12 +54,12 @@ function _kageStrip() {
   const xpNext = xpForLevel(k.level)
   const xpPct = Math.min(100, Math.round((k.xp / xpNext) * 100))
   const path = k.path ? PATH_BY_ID[k.path] : null
-  return `<div onclick="sp('kagedev')" title="Open Warden Path" style="display:flex;align-items:center;gap:10px;background:var(--surface,var(--surface));border:1px solid var(--border);padding:7px 12px;margin-bottom:12px;cursor:pointer">
-    <span style="font-size:11px;color:var(--accent);font-weight:bold">${G.kName || 'Warden'}</span>
-    <span style="font-size:8px;color:var(--text-dim)">Lvl ${k.level}${path ? ` · ${path.icon} ${path.n}` : ' · no path chosen'}</span>
+  return `<div onclick="sp('kagedev')" title="Open Warden Path" style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);padding:7px 12px;margin-bottom:12px;cursor:pointer">
+    <span style="font-size:var(--fs-lead);color:var(--accent);font-weight:bold">${G.kName || 'Warden'}</span>
+    <span style="font-size:var(--fs-small);color:var(--text-dim)">Lvl ${k.level}${path ? ` · ${path.icon} ${path.n}` : ' · no path chosen'}</span>
     <div style="flex:1;max-width:160px;background:var(--bg);height:5px;border-radius:3px;overflow:hidden"><div style="height:5px;width:${xpPct}%;background:var(--accent)"></div></div>
-    <span style="font-size:7px;color:var(--text-faint);font-family:var(--font-num,'Courier New',monospace)">${k.xp}/${xpNext} XP</span>
-    ${k.points > 0 ? `<span style="font-size:8px;color:var(--green);margin-left:auto">● ${k.points} point${k.points !== 1 ? 's' : ''} to spend ▸</span>` : '<span style="font-size:8px;color:var(--border-hi);margin-left:auto">Warden Path ▸</span>'}
+    <span style="font-size:var(--fs-micro);color:var(--text-faint);font-family:var(--font-num,'Courier New',monospace)">${k.xp}/${xpNext} XP</span>
+    ${k.points > 0 ? `<span style="font-size:var(--fs-small);color:var(--green);margin-left:auto">● ${k.points} point${k.points !== 1 ? 's' : ''} to spend ▸</span>` : '<span style="font-size:var(--fs-small);color:var(--border-hi);margin-left:auto">Warden Path ▸</span>'}
   </div>`
 }
 
@@ -70,7 +70,7 @@ function _decisionDigest() {
   const n = getInboxCount()
   if (!items.length && !blocking) {
     return `<div class="hd-digest is-clear"><div class="hd-digest-h">${t('digest.clearTitle')}</div>
-      <div style="font-size:9px;color:var(--text-dim)">${t('digest.clearSub')}</div></div>`
+      <div style="font-size:var(--fs-body);color:var(--text-dim)">${t('digest.clearSub')}</div></div>`
   }
   const blockRow = blocking
     ? `<div class="hd-item"><span class="hd-item-ico">⛔</span><span class="hd-item-t" style="color:var(--red)">${G.examActive ? t('digest.examInProgress') : G.warActive ? t('digest.warInProgress') : t('digest.fieldDecision')}</span><button class="hd-item-go" onclick="sp('${G.examActive || G.warActive ? 'exam' : 'inbox'}')">${t('digest.resolve')}</button></div>`
@@ -178,21 +178,21 @@ export function rDash() {
 
     ${G._ff_nationHud ? `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;flex-wrap:wrap">
-      <span style="font-size:8px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">${t('dash.nation')}</span>
+      <span style="font-size:var(--fs-small);color:var(--text-dim);text-transform:uppercase;letter-spacing:1px">${t('dash.nation')}</span>
       ${Object.entries(NATIONS).map(([id, n]) => `
-        <button onclick="setNation('${id}')" style="font-size:8px;padding:3px 9px;cursor:pointer;background:${G.nationId === id ? n.accent : 'transparent'};color:${G.nationId === id ? '#0d0d0f' : n.accent};border:1px solid ${n.accent}">${n.crest} ${n.name}${G._a11yColorblind ? ' ·' + n.pattern : ''}</button>`).join('')}
-      <button onclick="toggleColorblind()" title="Colorblind mode: show pattern tags" style="font-size:8px;padding:3px 9px;cursor:pointer;background:transparent;color:var(--text-dim);border:1px solid var(--border)">${G._a11yColorblind ? '◑ CB on' : '◐ CB'}</button>
-      ${G.nationId ? (() => { const m = nationMods(G.nationId); const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%'; const parts = [m.successMod !== 0 && `${pct(m.successMod)} success`, m.ryoMod !== 0 && `${pct(m.ryoMod)} income`].filter(Boolean); return `<span style="font-size:8px;color:var(--text-dim)">${parts.length ? parts.join(' · ') : '— no stat bonus'}</span>` })() : '<span style="font-size:8px;color:var(--text-dim)">— pick a nation for bonuses</span>'}
+        <button onclick="setNation('${id}')" style="font-size:var(--fs-small);padding:3px 9px;cursor:pointer;background:${G.nationId === id ? n.accent : 'transparent'};color:${G.nationId === id ? '#0d0d0f' : n.accent};border:1px solid ${n.accent}">${n.crest} ${n.name}${G._a11yColorblind ? ' ·' + n.pattern : ''}</button>`).join('')}
+      <button onclick="toggleColorblind()" title="Colorblind mode: show pattern tags" style="font-size:var(--fs-small);padding:3px 9px;cursor:pointer;background:transparent;color:var(--text-dim);border:1px solid var(--border)">${G._a11yColorblind ? '◑ CB on' : '◐ CB'}</button>
+      ${G.nationId ? (() => { const m = nationMods(G.nationId); const pct = v => (v >= 0 ? '+' : '') + Math.round(v * 100) + '%'; const parts = [m.successMod !== 0 && `${pct(m.successMod)} success`, m.ryoMod !== 0 && `${pct(m.ryoMod)} income`].filter(Boolean); return `<span style="font-size:var(--fs-small);color:var(--text-dim)">${parts.length ? parts.join(' · ') : '— no stat bonus'}</span>` })() : '<span style="font-size:var(--fs-small);color:var(--text-dim)">— pick a nation for bonuses</span>'}
     </div>` : ''}
 
     <!-- Tactics quick-bar -->
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-      <span style="font-size:7px;color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-right:2px">${t('dash.stance')}</span>
+      <span style="font-size:var(--fs-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-right:2px">${t('dash.stance')}</span>
       ${[['aggressive','⚔','var(--gold)','suc +8% kia +4%'],['balanced','⚖','var(--green)','default'],['defensive','🛡','var(--blue)','suc −6% kia −3%']].map(([id,icon,col,hint]) =>
-        `<button onclick="setMissionPrep('${id}')" style="font-size:8px;padding:3px 10px;cursor:pointer;border:1px solid ${G.missionPrep===id ? col : 'var(--border-hi)'};background:${G.missionPrep===id ? col+'22' : 'transparent'};color:${G.missionPrep===id ? col : 'var(--text-dim)'}">${icon} ${id.charAt(0).toUpperCase()+id.slice(1)}<span style="font-size:7px;color:var(--text-faint);margin-left:4px">${hint}</span></button>`
+        `<button onclick="setMissionPrep('${id}')" style="font-size:var(--fs-small);padding:3px 10px;cursor:pointer;border:1px solid ${G.missionPrep===id ? col : 'var(--border-hi)'};background:${G.missionPrep===id ? col+'22' : 'transparent'};color:${G.missionPrep===id ? col : 'var(--text-dim)'}">${icon} ${id.charAt(0).toUpperCase()+id.slice(1)}<span style="font-size:var(--fs-micro);color:var(--text-faint);margin-left:4px">${hint}</span></button>`
       ).join('')}
-      ${G.citizenMorale !== undefined ? `<span style="font-size:8px;color:var(--text-dim);margin-left:8px">Citizens <b style="color:${G.citizenMorale>=70?'var(--green)':G.citizenMorale>=40?'var(--orange)':'var(--red)'}">${G.citizenMorale}%</b></span>` : ''}
-      ${G.isOffSeason ? `<span style="font-size:8px;color:var(--gold);margin-left:8px">⛄ Off-season</span>` : ''}
+      ${G.citizenMorale !== undefined ? `<span style="font-size:var(--fs-small);color:var(--text-dim);margin-left:8px">Citizens <b style="color:${G.citizenMorale>=70?'var(--green)':G.citizenMorale>=40?'var(--orange)':'var(--red)'}">${G.citizenMorale}%</b></span>` : ''}
+      ${G.isOffSeason ? `<span style="font-size:var(--fs-small);color:var(--gold);margin-left:8px">⛄ Off-season</span>` : ''}
     </div>
 
     <!-- Health snapshot -->
@@ -213,7 +213,7 @@ export function rDash() {
           const col = months < 3 ? 'var(--red)' : months < 6 ? 'var(--orange)' : 'var(--text-dim)'
           return `<div class="dash-stat-sub" style="margin-top:2px;color:${col}">~${months} mo runway · missions extend it</div>`
         })()}
-        <div class="dash-stat-sub" style="margin-top:3px;text-transform:uppercase;font-size:7px;letter-spacing:1px;color:${financeColor}">${financeHealth}</div>
+        <div class="dash-stat-sub" style="margin-top:3px;text-transform:uppercase;font-size:var(--fs-micro);letter-spacing:1px;color:${financeColor}">${financeHealth}</div>
       </div>
 
       <div class="dash-card">
@@ -224,7 +224,7 @@ export function rDash() {
           <span style="color:var(--orange)">${onMission} deployed</span> ·
           <span style="color:var(--red)">${injured} injured</span>
         </div>
-        <div style="display:flex;gap:6px;margin-top:6px;font-size:8px;flex-wrap:wrap">
+        <div style="display:flex;gap:6px;margin-top:6px;font-size:var(--fs-small);flex-wrap:wrap">
           ${['G','C','J','A','S'].map((r,i) => `<span style="color:var(--text-dim)">${r}: <b style="color:var(--text)">${byRank[i]}</b></span>`).join('')}
         </div>
       </div>
@@ -247,7 +247,7 @@ export function rDash() {
 
       <div class="dash-card">
         <div class="dash-card-title">${t('card.social')}</div>
-        <div class="dash-stat" style="color:${(G.citizenMorale||60)>=70?'var(--green)':(G.citizenMorale||60)>=40?'var(--gold)':'var(--red)'}">${G.citizenMorale || 60}<span style="font-size:9px;color:var(--text-faint)">%</span></div>
+        <div class="dash-stat" style="color:${(G.citizenMorale||60)>=70?'var(--green)':(G.citizenMorale||60)>=40?'var(--gold)':'var(--red)'}">${G.citizenMorale || 60}<span style="font-size:var(--fs-body);color:var(--text-faint)">%</span></div>
         <div class="dash-stat-sub">Citizens · Rev ×${((G._citizenRevMult||1)).toFixed(2)}</div>
         <div class="dash-stat-sub" style="margin-top:3px">Alumni: ${(G.alumni||[]).length} · Sponsor: ${G.sponsorship ? G.sponsorship.n.slice(0,12) : 'none'}</div>
       </div>
@@ -258,9 +258,9 @@ export function rDash() {
 
       <!-- At-risk alerts -->
       <div style="background:var(--surface);border:1px solid var(--border);padding:13px">
-        <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.alerts')}</div>
+        <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.alerts')}</div>
         ${alerts.length === 0
-          ? `<div style="font-size:9px;color:var(--text-dim);padding:6px 0">${t('section.alerts.none')}</div>`
+          ? `<div style="font-size:var(--fs-body);color:var(--text-dim);padding:6px 0">${t('section.alerts.none')}</div>`
           : alerts.slice(0,6).map(a => `
           <div class="alert-item ${a.urgency}">
             <div class="alert-icon">${a.icon}</div>
@@ -274,7 +274,7 @@ export function rDash() {
 
       <!-- Upcoming calendar -->
       <div style="background:var(--surface);border:1px solid var(--border);padding:13px">
-        <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.events')}</div>
+        <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.events')}</div>
         ${calendar.slice(0,6).map(e => `
           <div class="cal-item">
             <div class="cal-date">${MONTH_NAMES[(e.m-1)%12]}</div>
@@ -286,12 +286,12 @@ export function rDash() {
 
     <!-- Monthly summary -->
     <div style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-bottom:12px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.lastMonth')}</div>
+      <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.lastMonth')}</div>
       ${recentLog.length === 0
-        ? `<div style="font-size:9px;color:var(--text-dim)">${t('section.lastMonth.none')}</div>`
+        ? `<div style="font-size:var(--fs-body);color:var(--text-dim)">${t('section.lastMonth.none')}</div>`
         : recentLog.map(e => {
             const col = e.t === 'good' ? 'var(--green)' : e.t === 'bad' ? 'var(--red)' : e.t === 'warn' ? 'var(--orange)' : 'var(--text-dim)'
-            return `<div style="padding:4px 0;border-bottom:1px solid var(--border-dim);font-size:9px;color:${col}">${e.msg}</div>`
+            return `<div style="padding:4px 0;border-bottom:1px solid var(--border-dim);font-size:var(--fs-body);color:${col}">${e.msg}</div>`
           }).join('')
       }
     </div>
@@ -299,9 +299,9 @@ export function rDash() {
     <!-- Active world events -->
     ${activeEvents.length > 0 ? `
     <div style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-bottom:12px">
-      <div style="font-size:7px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.worldEvents')}</div>
+      <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.worldEvents')}</div>
       ${activeEvents.map(n => `
-        <div style="padding:5px 0;border-bottom:1px solid var(--border-dim);font-size:9px;color:var(--blue)">${n.text || n.msg || ''}</div>
+        <div style="padding:5px 0;border-bottom:1px solid var(--border-dim);font-size:var(--fs-body);color:var(--blue)">${n.text || n.msg || ''}</div>
       `).join('')}
     </div>` : ''}
 
@@ -309,10 +309,10 @@ export function rDash() {
     ${(!G._onboardingDismissed && G.year === 1 && G.month <= 4) ? `
     <div style="background:#0a1208;border:1px solid var(--green-bg);padding:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-size:7px;letter-spacing:2px;color:var(--green);text-transform:uppercase">Getting Started</div>
-        <button onclick="dismissOnboarding()" style="font-size:7px;padding:2px 8px;background:transparent;color:#5a7050;border:1px solid var(--green-bg);cursor:pointer">Dismiss</button>
+        <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--green);text-transform:uppercase">Getting Started</div>
+        <button onclick="dismissOnboarding()" style="font-size:var(--fs-micro);padding:2px 8px;background:transparent;color:#5a7050;border:1px solid var(--green-bg);cursor:pointer">Dismiss</button>
       </div>
-      <div style="font-size:9px;color:#7a9070;margin-bottom:10px">Your village is young. Here are the key actions for your first few months:</div>
+      <div style="font-size:var(--fs-body);color:#7a9070;margin-bottom:10px">Your village is young. Here are the key actions for your first few months:</div>
       <div style="display:grid;gap:6px">
         ${[
           { done: (G.shinobi||[]).some(s=>s.status==='mission'||s.wins>0), label: 'Assign a shinobi to a mission', tab: 'roster', hint: 'Open Roster → select a shinobi → assign a mission.' },
@@ -323,12 +323,12 @@ export function rDash() {
           { done: (G.lifetimeMissions||0) >= 3, label: 'Mind your runway — you start at a deficit', tab: 'finances', hint: 'A young village spends more than its tax base earns. Run missions for ryo (or release a scout in Staff) before the treasury runs dry.' },
         ].map(item => `
           <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #1a2818">
-            <div style="font-size:10px;color:${item.done?'var(--green)':'#3a5030'};min-width:14px;margin-top:1px">${item.done?'✓':'○'}</div>
+            <div style="font-size:var(--fs-body);color:${item.done?'var(--green)':'#3a5030'};min-width:14px;margin-top:1px">${item.done?'✓':'○'}</div>
             <div style="flex:1">
-              <div style="font-size:9px;color:${item.done?'#5a7050':'#c9c0a8'};text-decoration:${item.done?'line-through':'none'}">${item.label}</div>
-              ${!item.done ? `<div style="font-size:7px;color:#4a5a40;margin-top:2px">${item.hint}</div>` : ''}
+              <div style="font-size:var(--fs-body);color:${item.done?'#5a7050':'#c9c0a8'};text-decoration:${item.done?'line-through':'none'}">${item.label}</div>
+              ${!item.done ? `<div style="font-size:var(--fs-micro);color:#4a5a40;margin-top:2px">${item.hint}</div>` : ''}
             </div>
-            ${!item.done ? `<button onclick="sp('${item.tab}')" style="font-size:7px;padding:2px 6px;background:#0d1a0a;color:var(--green);border:1px solid var(--green-bg);cursor:pointer;white-space:nowrap">Open ▸</button>` : ''}
+            ${!item.done ? `<button onclick="sp('${item.tab}')" style="font-size:var(--fs-micro);padding:2px 6px;background:#0d1a0a;color:var(--green);border:1px solid var(--green-bg);cursor:pointer;white-space:nowrap">Open ▸</button>` : ''}
           </div>`).join('')}
       </div>
     </div>` : ''}

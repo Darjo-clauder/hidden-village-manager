@@ -4,6 +4,7 @@ import { SEASONS, MONTHS } from './constants.js'
 import { nationIdentity, isValidNation } from '../../shared/constants/nations.js'
 import { schEx } from './state.js'
 import { t } from '../../shared/utils/i18n.js'
+import { clearCssVarCache } from './cssVar.js'
 
 // Panel renderers
 import { rRo } from './panels/roster.js'
@@ -202,6 +203,7 @@ function _applyNationTheme(nationId) {
   setTint('--accent-bg',     _hexAlpha(accent, 0.08))
   setTint('--accent-border', _hexAlpha(accent, 0.30))
   setTint('--accent-sb',     _hexAlpha(accent, 0.04))  // sidebar tint
+  clearCssVarCache()   // canvas renderers cache resolved tokens; the accent just moved
   // Village name + icon in sidebar
   const vn = document.getElementById('sb-vname'); if (vn) vn.style.color = accent
   const ic = document.getElementById('sb-icon');  if (ic) ic.style.color = accent
