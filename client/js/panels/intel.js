@@ -3,6 +3,9 @@ import { ANBU_OPS } from '../constants.js'
 import { aL, ntf } from '../ui.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { openContextMenu } from '../uikit.js'
+import { LEVERAGE_PLAYS, PLAY_BY_ID, playEligibility, leverageSuccessChance, leverageEffect } from '../../../shared/utils/leverage.js'
+import { shiftKageRel } from '../rivalKage.js'
+import { kageMod } from '../../../shared/constants/kageDev.js'
 
 // Right-click a rival village → intel verb menu (reuses the P1 portal).
 export function intelCtx(e, villageId) {
@@ -25,7 +28,7 @@ window._intelTab = 'threats'
 export function rIn() {
   const el = document.getElementById('itl')
   if (!el) return
-  const tabs = ['threats', 'dossiers', 'anbu', 'caught', 'counter']
+  const tabs = ['threats', 'dossiers', 'anbu', 'leverage', 'caught', 'counter']
   const tabHtml = `<div style="display:flex;gap:6px;margin-bottom:12px">
     ${tabs.map(t => `<button class="btn${window._intelTab === t ? ' act' : ''}" onclick="intelTab('${t}')" style="font-size:9px;padding:3px 8px">${({ anbu: 'SHADOW OPS' }[t] || t.toUpperCase())}</button>`).join('')}
   </div>`
@@ -37,6 +40,7 @@ function _intelBody() {
   if (t === 'threats')  return _threats()
   if (t === 'dossiers') return _dossiers()
   if (t === 'anbu') return _anbu()
+  if (t === 'leverage') return _leverage()
   if (t === 'caught') return _caught()
   if (t === 'counter') return _counter()
   return ''
@@ -231,6 +235,103 @@ export function upgradeCounterIntel() {
   G.counterIntelRating = rating + 1
   aL(tr('toast.intel.counterTrained', { rating: G.counterIntelRating }), 'good')
   ntf(tr('toast.intel.counterUpgraded'))
+  rIn()
+}
+
+// ── Leverage plays — spend what you know ─────────────────────────────────────
+// Every rival row shows each play's live eligibility, so the reason a play is
+// closed to you reads as world state ("relations are too cordial") rather than
+// a greyed-out button with no explanation.
+// Procedural villages carry no `id` — name is the only stable key.
+const _vKey = v => v.id || v.n
+
+function _leverageCtx(v) {
+  const now = (G.year - 1) * 12 + G.month
+  const k = _vKey(v)
+  const hasIntel = (G.intelReports || []).some(r => (r.villageId === k || r.villageId === v.n) && (r.expiresMonth ?? 0) >= now)
+  return {
+    hasIntel,
+    kagePersonalRel: v.kagePersonalRel ?? 50,
+    aceCount: (v.aces || []).length,
+    hasBlocOffer: !!G.summitBlocOffer,
+    grudgeTicks: v.grudgeTicks || 0,
+    counterIntel: v.counterIntelRating || 0,
+    espionageBonus: kageMod(G, 'espionage'),
+  }
+}
+
+function _leverage() {
+  const villages = G.villages || []
+  if (!villages.length) return `<div style="color:#555;font-size:11px;padding:20px 0">${tr('intel.noData')}</div>`
+  const now = (G.year - 1) * 12 + G.month
+
+  return `<div>
+    <div style="font-size:10px;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Leverage Plays</div>
+    <div style="font-size:8px;color:#7a7060;margin-bottom:12px;line-height:1.5">
+      Recon is ammunition — every play needs a current intel report on the target. Failure exposes you: relations sour and their guard goes up.
+    </div>
+    ${villages.map(v => {
+      const ctx = _leverageCtx(v)
+      const suppressed = (v.demandsSuppressedUntil || 0) > now
+      return `<div style="background:var(--surface);border:1px solid var(--border);padding:10px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-size:10px;color:var(--text-hi)">${v.ico || ''} ${v.n}</div>
+          <div style="font-size:7px;color:${ctx.hasIntel ? 'var(--green)' : 'var(--text-dim)'}">
+            ${ctx.hasIntel ? '📄 intel on file' : 'no current intel'}
+          </div>
+        </div>
+        <div style="font-size:7px;color:#7a7060;margin-bottom:7px">
+          Warden rel ${ctx.kagePersonalRel} · aces ${ctx.aceCount} · heat ${ctx.grudgeTicks}
+          ${suppressed ? ` · <span style="color:var(--green)">silenced ${(v.demandsSuppressedUntil - now)}mo</span>` : ''}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+          ${LEVERAGE_PLAYS.map(p => {
+            const el = playEligibility(p.id, ctx)
+            const chance = Math.round(leverageSuccessChance(p.id, ctx) * 100)
+            const afford = G.ryo >= p.cost
+            const ok = el.ok && afford
+            return `<div style="border:1px solid ${ok ? 'var(--border)' : '#2e2a22'};padding:6px">
+              <div style="font-size:8px;color:${ok ? 'var(--text-hi)' : 'var(--text-dim)'};margin-bottom:2px">${p.n}</div>
+              <div style="font-size:7px;color:#7a7060;margin-bottom:4px;line-height:1.4">${p.desc}</div>
+              <div style="font-size:7px;color:${ok ? 'var(--gold)' : 'var(--text-dim)'};margin-bottom:4px">${fmt(p.cost)} ryo · ${chance}%</div>
+              ${ok
+                ? `<button class="btn" style="font-size:7px;padding:2px 6px;width:100%" onclick="runLeveragePlay('${p.id}','${_vKey(v)}')">Run ▸</button>`
+                : `<div style="font-size:6px;color:#6a6255;line-height:1.4">${afford ? el.reason : 'Not enough ryo.'}</div>`}
+            </div>`
+          }).join('')}
+        </div>
+      </div>`
+    }).join('')}
+  </div>`
+}
+
+export function runLeveragePlay(playId, villageId) {
+  const v = (G.villages || []).find(x => _vKey(x) === villageId); if (!v) return
+  const play = PLAY_BY_ID[playId]; if (!play) return
+  const ctx = _leverageCtx(v)
+  const el = playEligibility(playId, ctx)
+  if (!el.ok) { ntf(el.reason); return }
+  if (G.ryo < play.cost) { ntf(tr('toast.common.notEnoughRyoDot')); return }
+
+  G.ryo -= play.cost
+  const success = Math.random() < leverageSuccessChance(playId, ctx)
+  const fx = leverageEffect(playId, success)
+
+  v.rel = clamp((v.rel ?? 50) + fx.relDelta, 0, 100)
+  v.threat = clamp((v.threat || 0) + fx.threatDelta, 0, 100)
+  v.grudgeTicks = (v.grudgeTicks || 0) + fx.grudgeDelta
+  if (fx.strengthDelta) v.strength = Math.max(10, (v.strength || 50) + fx.strengthDelta)
+  if (fx.kageRelDelta) aL(shiftKageRel(v, fx.kageRelDelta, play.n, G), 'neutral')
+  if (fx.clearBloc) G.summitBlocOffer = null
+  if (fx.suppressDemandsMonths) {
+    v.demandsSuppressedUntil = (G.year - 1) * 12 + G.month + fx.suppressDemandsMonths
+  }
+  // The play consumes the report it was built on — leverage is spent, not permanent.
+  G.intelReports = (G.intelReports || []).filter(r => r.villageId !== _vKey(v) && r.villageId !== v.n)
+
+  aL(`${play.n} vs ${v.n}: ${success ? 'succeeded' : 'FAILED'}. ${fx.note}`, success ? 'good' : 'bad')
+  addChronicle(success ? 'Leverage' : 'Exposed', `${play.n} against ${v.n} — ${success ? 'it landed' : 'it was traced back to you'}.`, 'diplomacy')
+  ntf(success ? `${play.n} landed.` : `${play.n} exposed.`)
   rIn()
 }
 

@@ -51,7 +51,9 @@ function _rivalDemandHtml() {
   if (!G.rivalDemand || G.rivalDemand.resolvedQuarter) {
     if (G.rivalDemand?.quarter === _diploQuarter()) return ''  // already handled this quarter
     const playerStr = G._playerStrength || 50
-    const aggressors = (G.villages || []).filter(v => v.rel < 40 && (v.strength || 50) > playerStr * 1.05 && !v.allied)
+    const nowM = (G.year - 1) * 12 + G.month
+    // A blackmailed Warden stays quiet until their suppression window lapses.
+    const aggressors = (G.villages || []).filter(v => v.rel < 40 && (v.strength || 50) > playerStr * 1.05 && !v.allied && !((v.demandsSuppressedUntil || 0) > nowM))
     if (!aggressors.length) return ''
     const v = aggressors.sort((a, b) => (b.strength || 50) - (a.strength || 50))[0]
     const amount = Math.round(3000 + (v.strength || 50) * 120)

@@ -21,10 +21,10 @@ export function getKageTier(personalRel) {
 
 /** Called when initializing a village — seeds personal Warden relationship. */
 export function initKageRel(village) {
-  if (village.kagePersonalRel === undefined) {
-    village.kagePersonalRel = 50 // Start professional
-    village.kageHistory = []     // Events that shaped this relationship
-  }
+  if (village.kagePersonalRel === undefined) village.kagePersonalRel = 50 // Start professional
+  // Guarded independently: a village can carry a rel from an older save (or a
+  // system that set it directly) without ever having had a history array.
+  if (!Array.isArray(village.kageHistory)) village.kageHistory = []
 }
 
 /** Ensure all villages have Warden relationship data. */
