@@ -9,6 +9,7 @@ import { identityFor, identityStageAdv } from '../../../shared/constants/village
 import { openBattleViewer } from '../liveBattle.js'
 import { arenaFor } from '../../../shared/constants/arenas.js'
 import { squadPower, seedEdge, survivalMult as _survivalMult, warMobilizeProb, warFrontProb, warCasualtyChance, duelScore } from '../../../shared/utils/stageMath.js'
+import { allocationEffects } from '../../../shared/utils/budgetRamp.js'
 
 /** Replay the player's run through the last Grand Tournament as a live bracket. */
 export function watchTournament() {
@@ -88,8 +89,9 @@ function _buildWarField() {
       const sq = G.squads.find(q => q.id === sqId); if (!sq) return null
       const members = (sq.members || []).map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
       if (!members.length) return null
-      const _warPrepBonus = ((G.budgetPriority?.warPrep || 33) - 33) / 100 * 0.4  // ±26% pow shift
-      return { id: sqId, name: sq.n, sqRef: sq, members, pow: Math.round(_squadPow(members, sq.cohesion) * (1 + _warPrepBonus)), isPlayer: true, seedBonus: seedBonus(G.vName) }
+      // Reads the EFFECTIVE allocation — war prep funded this month hasn't landed yet.
+      const _warMult = allocationEffects(G.budgetEffective || G.budgetPriority).warMult
+      return { id: sqId, name: sq.n, sqRef: sq, members, pow: Math.round(_squadPow(members, sq.cohesion) * _warMult), isPlayer: true, seedBonus: seedBonus(G.vName) }
     }).filter(Boolean),
     out: [],
   }

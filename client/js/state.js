@@ -335,7 +335,8 @@ export function initState() {
     // Scouting depth
     scoutWatchlist: [],        // array of prospect ids the player is tracking
     scoutBudget: { domestic: 40, foreign: 30, shadow: 30 },  // % split, sums to 100
-    budgetPriority: { training: 33, warPrep: 33, infra: 34 }, // % split, sums to 100
+    budgetPriority: { training: 33, warPrep: 33, infra: 34 }, // target split, normalised to 100
+    budgetEffective: { training: 33, warPrep: 33, infra: 34 }, // what's actually funded; ramps toward the target
     regionalMeta: {},          // regionId -> { eventId, monthsLeft }
     // Youth academy depth
     academyRecords: {},        // statKey -> { value, name, year }

@@ -30,6 +30,7 @@ import { resolveBattleCall, callBeatIndex } from '../../shared/utils/battleCalls
 import { staminaStart, finishEffects, scrollOutcome } from '../../shared/utils/matchSim.js'
 import { opportunityGrowthMod } from '../../shared/utils/depthPressure.js'
 import { tickCadence, idleCohesionDecay, grindMod, grindCohesionPenalty } from '../../shared/utils/squadCadence.js'
+import { normalizeAllocation, rampToward, allocationEffects, DEFAULT_ALLOCATION } from '../../shared/utils/budgetRamp.js'
 import { sponsorMoodDelta, moodPayoutMult, applyMoodDelta, SPONSOR_QUIT_MOOD } from '../../shared/utils/sponsors.js'
 import { supportDelta, revenueMult, applySupport, FESTIVAL_THRESH, UNREST_THRESH } from '../../shared/utils/populace.js'
 import { effectivePlan, medQuality, recoveryStep, reinjuryChance, returningForm } from '../../shared/utils/medical.js'
@@ -2247,9 +2248,12 @@ export function adv() {
     + (G._kurenigykiBonus ? 5000 : 0) // Kureni+Hachitsuno trade bonus
   const daimyoB = Math.round(computeDaimyoBonus() * (G.daimyoBudgetMult || 1))
   const villageRev = Math.round(computeVillageRevenue() * (G.daimyoBudgetMult || 1) * revenueMult(G.populace?.support))
-  if (!G.budgetPriority) G.budgetPriority = { training: 33, warPrep: 33, infra: 34 }
-  const _infraPct = (G.budgetPriority.infra || 34) / 100
-  const maintenance = Math.round(computeMaintenance() * (1 - _infraPct * 0.3))
+  if (!G.budgetPriority) G.budgetPriority = { ...DEFAULT_ALLOCATION }
+  // Effective allocation lags the target — this month's maintenance reflects
+  // what has actually been funded so far, not what was just requested.
+  if (!G.budgetEffective) G.budgetEffective = normalizeAllocation(G.budgetPriority)
+  G.budgetEffective = rampToward(G.budgetEffective, G.budgetPriority)
+  const maintenance = Math.round(computeMaintenance() * allocationEffects(G.budgetEffective).maintMult)
   // twoWay players (farm-assigned) don't count against the salary cap payroll
   const shinobiSal = G.shinobi.reduce((a, s) => a + (s.salary || 0), 0)
   const capPayroll = G.shinobi.filter(s => !s.twoWay).reduce((a, s) => a + (s.salary || 0), 0)
@@ -2569,8 +2573,7 @@ export function adv() {
     let statGain = 0
     // Growth
     const _philProspectMult = 1 + getPhilosophyMods(G).prospectGrowth
-    const _trainingPct = ((G.budgetPriority?.training || 33) - 33) / 100  // 0 at 33%, ±0.67 at extremes
-    const _trainingMult = 1 + _trainingPct * 0.5  // training=100% → +33.5% growth
+    const _trainingMult = allocationEffects(G.budgetEffective || G.budgetPriority).devMult
     if (!student.burnout) {
       const growAmount = Math.round(intensity.mult * sensMult * peerMult * _philProspectMult * _trainingMult)
       // Bonus stats from track

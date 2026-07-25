@@ -6,6 +6,7 @@ import { capStatus, SALARY_CAP } from '../../../shared/constants/salaryCap.js'
 import { lineChartSvg, barRowsSvg } from '../uikit.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { moodTier, moodPayoutMult } from '../../../shared/utils/sponsors.js'
+import { BUDGET_KEYS, DEFAULT_ALLOCATION, normalizeAllocation, monthsToConverge, allocationEffects, trackBand } from '../../../shared/utils/budgetRamp.js'
 
 function tierColor(name) {
   const t = FINANCE_TIERS.find(x => x.n === name)
@@ -223,36 +224,64 @@ export function rFi() {
   `
 }
 
+// Allocation is a zero-sum bet placed in advance: the split you set is
+// normalised to 100 (so you cannot fund everything at once) and the sim reads
+// an EFFECTIVE split that walks toward it over a couple of quarters. The panel
+// shows both, plus how long the change still has to land.
 function _budgetPriorityHtml() {
-  const bp = G.budgetPriority || { training: 33, warPrep: 33, infra: 34 }
-  const total = (bp.training || 0) + (bp.warPrep || 0) + (bp.infra || 0)
-  const totalColor = total === 100 ? '#8fbc8f' : '#f66'
-  const descs = {
-    training: `Dev speed ×${(1 + ((bp.training - 33) / 100) * 0.5).toFixed(2)}`,
-    warPrep:  `War pow ×${(1 + ((bp.warPrep  - 33) / 100) * 0.4).toFixed(2)}`,
-    infra:    `Maintenance ×${(1 - (bp.infra / 100) * 0.3).toFixed(2)}`,
+  const target = normalizeAllocation(G.budgetPriority || DEFAULT_ALLOCATION)
+  const effective = normalizeAllocation(G.budgetEffective || target)
+  const fxNow = allocationEffects(effective)
+  const fxTarget = allocationEffects(target)
+  const lag = monthsToConverge(effective, target)
+  const labels = { training: 'Training', warPrep: 'War Prep', infra: 'Infrastructure' }
+  const fxLabel = {
+    training: (fx) => `Dev speed ×${fx.devMult.toFixed(2)}`,
+    warPrep:  (fx) => `War pow ×${fx.warMult.toFixed(2)}`,
+    infra:    (fx) => `Maintenance ×${fx.maintMult.toFixed(2)}`,
   }
+
   return `<div style="background:#1a1814;border:1px solid #2e2a22;padding:12px 14px;margin-bottom:14px">
-    <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px">${tr('fin.budgetPriority')}</div>
-    ${['training','warPrep','infra'].map(k => {
-      const labels = { training:'Training', warPrep:'War Prep', infra:'Infrastructure' }
-      return `<div style="margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div style="font-size:8px;letter-spacing:2px;color:#c9a84c;text-transform:uppercase">${tr('fin.budgetPriority')}</div>
+      <div style="font-size:7px;color:${lag > 0 ? '#f0a030' : '#8fbc8f'}">
+        ${lag > 0 ? `⏳ ${lag}mo until fully funded` : '✓ fully funded'}
+      </div>
+    </div>
+    <div style="font-size:7px;color:#7a7060;margin-bottom:10px;line-height:1.5">
+      Always splits to 100% — funding one track starves the others. Changes take effect gradually, so commit early.
+    </div>
+    ${BUDGET_KEYS.map(k => {
+      const band = trackBand(effective[k])
+      const drift = target[k] - effective[k]
+      return `<div style="margin-bottom:9px">
         <div style="display:flex;justify-content:space-between;font-size:8px;color:#7a7060;margin-bottom:3px">
-          <span>${labels[k]}</span>
-          <span style="color:#e8e0cc">${bp[k]}% <span style="color:#555;font-size:7px">— ${descs[k]}</span></span>
+          <span>${labels[k]} <span style="color:${band.color};font-size:7px">${band.label}</span></span>
+          <span style="color:#e8e0cc">
+            ${effective[k]}%${drift !== 0 ? `<span style="color:#f0a030"> → ${target[k]}%</span>` : ''}
+            <span style="color:#555;font-size:7px">— ${fxLabel[k](fxNow)}${drift !== 0 ? ` → ${fxLabel[k](fxTarget).split(' ').pop()}` : ''}</span>
+          </span>
         </div>
-        <input type="range" min="0" max="100" value="${bp[k]}"
-          oninput="setBudgetPriority('${k}', this.value)"
-          style="width:100%;accent-color:#c9a84c">
+        <div style="position:relative">
+          <input type="range" min="0" max="100" value="${target[k]}"
+            oninput="setBudgetPriority('${k}', this.value)"
+            style="width:100%;accent-color:#c9a84c">
+          <div style="height:3px;background:#111;border-radius:2px;margin-top:1px">
+            <div style="height:100%;width:${effective[k]}%;background:${band.color};border-radius:2px;transition:width .3s"></div>
+          </div>
+        </div>
       </div>`
     }).join('')}
-    <div style="font-size:7px;color:${totalColor}">Total: ${total}% ${total !== 100 ? '(must equal 100%)' : '✓'}</div>
+    <div style="font-size:7px;color:#555;margin-top:2px">Slider = target · bar = what's actually funded right now.</div>
   </div>`
 }
 
 export function setBudgetPriority(key, value) {
-  if (!G.budgetPriority) G.budgetPriority = { training: 33, warPrep: 33, infra: 34 }
+  if (!G.budgetPriority) G.budgetPriority = { ...DEFAULT_ALLOCATION }
   G.budgetPriority[key] = Number(value)
+  // Normalise immediately so the displayed target is always the legal split
+  // the sim will actually ramp toward.
+  G.budgetPriority = normalizeAllocation(G.budgetPriority)
   rFi()
 }
 
