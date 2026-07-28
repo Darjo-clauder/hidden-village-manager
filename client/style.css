@@ -424,14 +424,52 @@ body::after{
   margin-bottom:var(--sp-2);
 }
 
+/* ══ ELEVATION ════════════════════════════════════════════════════════════
+   Every block in the game was the same flat 1px rectangle, so a card, a
+   secondary strip and a sunken well all carried identical visual weight and
+   the eye had nothing to sort. Three weights fix that, and they are kept
+   deliberately quiet — this is a dense management sim, not a phone app, so
+   the depth should be felt rather than seen.
+
+     .surf  raised — catches light on its top edge, drops a tight shadow
+     .well  recessed — pressed into the page instead of sitting on it
+     .strip secondary — no border at all, just an accent rule; recedes
+
+   .surf/.well add ONLY shadow, so the background and border already written
+   inline on the element keep winning. That makes elevation one dial here
+   rather than 76 markup edits, and leaves the colours untouched. */
+.surf{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.03),   /* lit top edge */
+    0 1px 2px rgba(0,0,0,.40);             /* contact shadow */
+}
+.well{
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.45);
+}
+/* Secondary strip — a readout that should sit *under* the cards in the
+   reading order. Loses its box entirely and keeps only an accent rule. */
+.strip{
+  display:flex;align-items:center;gap:var(--sp-3);
+  background:none;border:none;
+  border-left:2px solid var(--accent);
+  padding:var(--sp-2) var(--sp-3);
+  margin-bottom:var(--sp-3);
+}
+.strip:hover{background:rgba(255,255,255,.014)}
+
 /* ══ CARDS ════════════════════════════════════════════════════════════════ */
 .card{
   background:var(--surface);border:1px solid var(--border);
   padding:var(--sp-3);margin-bottom:var(--sp-2);cursor:pointer;
-  transition:border-color .12s,background .12s;
+  transition:border-color .12s,background .12s,box-shadow .12s;
   position:relative;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 1px 2px rgba(0,0,0,.40);
 }
-.card:hover{border-color:var(--accent-border);background:var(--surface-2)}
+/* Hover lifts the card a step rather than only recolouring its border. */
+.card:hover{
+  border-color:var(--accent-border);background:var(--surface-2);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 2px 5px rgba(0,0,0,.45);
+}
 .card-row{display:flex;align-items:center;gap:var(--sp-3);margin-bottom:var(--sp-1)}
 .card-name{font-size:var(--fs-lead);color:var(--text-hi);font-weight:600}
 .card-sub{font-size:var(--fs-small);color:var(--text-dim)}
@@ -465,7 +503,7 @@ body::after{
 
 /* ── Dashboard cards ── */
 .dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:14px}
-.dash-card{background:var(--surface);border:1px solid var(--border);padding:12px 14px}
+.dash-card{background:var(--surface);border:1px solid var(--border);padding:12px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 1px 2px rgba(0,0,0,.40)}
 .dash-card-title{font-size:var(--fs-body);color:var(--text-dim);margin-bottom:8px;font-weight:500}
 .dash-stat{font-size:22px;color:var(--text-hi);font-weight:600;line-height:1;margin-bottom:2px;font-family:'Courier New',monospace}
 .dash-stat-sub{font-size:var(--fs-body);color:var(--text-dim)}

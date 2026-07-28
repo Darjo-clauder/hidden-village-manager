@@ -54,7 +54,7 @@ export function rKageDev() {
         const maxed = v >= KAGE_ATTR_CAP
         const pct = Math.round((v / KAGE_ATTR_CAP) * 100)
         const bonus = Math.round(v * a.per * 100)
-        return `<div style="background:var(--surface);border:1px solid var(--border);padding:9px 11px">
+        return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:9px 11px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
             <span style="font-size:var(--fs-sub)">${a.icon}</span>
             <span style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold">${a.n}</span>

@@ -111,7 +111,7 @@ export function rFi() {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
 
     <!-- INCOME -->
-    <div style="background:var(--surface);border:1px solid var(--border);padding:12px">
+    <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:12px">
       <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--green);text-transform:uppercase;margin-bottom:8px">${tr('fin.incomeMonth')}</div>
       ${row('Village Revenue (tax base · rep ' + (G.reputation||0) + ')', '+' + fmt(villageRev), 'var(--green)')}
       ${row('Trade Routes (' + G.tradeRoutes.filter(r=>r.active).length + ' active)', '+' + fmt(trI), 'var(--green)')}
@@ -129,7 +129,7 @@ export function rFi() {
     </div>
 
     <!-- EXPENDITURE -->
-    <div style="background:var(--surface);border:1px solid var(--border);padding:12px">
+    <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:12px">
       <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--red);text-transform:uppercase;margin-bottom:8px">${tr('fin.expenditureMonth')}</div>
       ${row('Shinobi Wages (' + G.shinobi.length + ' active)', '-' + fmt(shinobiSal), 'var(--red)')}
       ${rankSal}
@@ -162,7 +162,7 @@ export function rFi() {
     </div>
 
     <!-- Transfer vs Wage budget summary -->
-    <div style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
+    <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
       <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">${tr('fin.budgetPools')}</div>
       <div style="display:flex;gap:16px">
         <div>
@@ -185,7 +185,7 @@ export function rFi() {
 
     <!-- History -->
     ${hist.length > 0 ? `
-    <div style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
+    <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
       <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">${tr('fin.history', { n: hist.length })}</div>
       ${hist.map(h => `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--sunken);font-size:var(--fs-small)">
         <span style="color:var(--border-hi)">Y${h.year}M${h.month}</span>
@@ -241,7 +241,7 @@ function _budgetPriorityHtml() {
     infra:    (fx) => `Maintenance ×${fx.maintMult.toFixed(2)}`,
   }
 
-  return `<div style="background:var(--surface);border:1px solid var(--border);padding:12px 14px;margin-bottom:14px">
+  return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:12px 14px;margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
       <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--gold);text-transform:uppercase">${tr('fin.budgetPriority')}</div>
       <div style="font-size:var(--fs-micro);color:${lag > 0 ? 'var(--orange)' : 'var(--green)'}">
@@ -314,7 +314,7 @@ function _projectionHtml(hist, netNow) {
   const months = []
   for (let i = 1; i <= 6; i++) months.push(Math.round(netNow + trend * i))
   const finalRyo = months.reduce((a,m) => a + m, G.ryo)
-  return `<div style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
+  return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
     <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--blue);text-transform:uppercase;margin-bottom:8px">6-Month Projection</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
       ${months.map((m,i) => `<div style="flex:1;min-width:60px;background:var(--sunken);border-radius:3px;padding:5px;text-align:center">
@@ -358,7 +358,7 @@ function _analyticsHtml() {
       </div>
     </div>`
 
-  return `<div style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
+  return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
     <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:10px">📊 Analytics Snapshot (last ${last.length} months)</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px">
       ${statBlock('Treasury', 'var(--gold)', ryoVals)}
@@ -418,7 +418,7 @@ function _yearEndHtml() {
   const reports = G.yearEndReports || []
   if (!reports.length) return ''
   const r = reports[reports.length - 1]
-  return `<div style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
+  return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
     <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--green);text-transform:uppercase;margin-bottom:8px">${tr('fin.report', { year: r.year })}</div>
     <div style="display:flex;gap:14px;margin-bottom:8px">
       <div><div style="font-size:var(--fs-micro);color:var(--text-dim)">Income</div><div style="font-size:var(--fs-lead);color:var(--green);font-weight:bold">${fmt(r.totalIncome)}</div></div>

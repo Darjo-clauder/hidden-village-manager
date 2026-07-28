@@ -70,7 +70,7 @@ export function rDep() {
     ${G.squads.map(sq => _squadDepthTable(sq)).join('')}
 
     <!-- Roster tier summary -->
-    <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);padding:13px">
+    <div class="surf" style="margin-top:16px;background:var(--surface);border:1px solid var(--border);padding:13px">
       <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">Full Roster — Tier Summary</div>
       ${tiers.map(t => `
         <div class="depth-tier" style="margin-bottom:8px">
@@ -94,7 +94,7 @@ export function rDep() {
     </div>
 
     <!-- Academy pipeline -->
-    <div style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-top:10px">
+    <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-top:10px">
       <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">Academy Pipeline → Initiate</div>
       <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:6px">
         ${(G.intakeClass||[]).length} students enrolled
@@ -121,7 +121,7 @@ function _squadDepthTable(sq) {
   const available = G.shinobi.filter(s => s.status === 'available' && !G.squads.some(q => q.id !== sq.id && q.members.includes(s.id)))
 
   return `
-    <div style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-bottom:10px">
+    <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-bottom:10px">
       <div style="font-size:var(--fs-body);color:var(--gold);font-weight:bold;margin-bottom:10px">${sq.n} — Depth Chart</div>
       <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
         ${SQUAD_ROLES.map(role => {

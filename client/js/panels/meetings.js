@@ -37,7 +37,7 @@ function _overviewTab() {
   return `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
       <!-- Dressing Room Harmony -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px">
+      <div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px">
         <div style="font-size:.8rem;color:var(--text-mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Dressing Room Harmony</div>
         <div style="font-size:2rem;color:${harmonyColor};font-weight:bold;margin-bottom:4px">${harmony}</div>
         <div style="background:var(--sunken);border-radius:3px;height:6px;overflow:hidden;margin-bottom:6px">
@@ -50,7 +50,7 @@ function _overviewTab() {
         </div>
       </div>
       <!-- Leadership Group -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px">
+      <div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px">
         <div style="font-size:.8rem;color:var(--text-mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Leadership Group</div>
         ${leaders.length === 0
           ? '<div style="color:var(--text-faint);font-size:.8rem">No senior shinobi yet.</div>'
@@ -115,7 +115,7 @@ function _overviewTab() {
           <span style="color:${stCol[p.status]};white-space:nowrap">${due}</span>
         </div>`
       }
-      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:16px">
+      return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:16px">
         <div style="font-size:.8rem;color:var(--text-mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">🤝 Promises Ledger${open.length ? ` — ${open.length} open` : ''}</div>
         ${open.map(row).join('') || '<div style="color:var(--text-faint);font-size:.75rem">No open promises.</div>'}
         ${recent.length ? `<div style="font-size:.68rem;color:var(--text-faint);margin-top:6px;text-transform:uppercase;letter-spacing:.05em">Recently resolved</div>${recent.map(row).join('')}` : ''}
@@ -179,7 +179,7 @@ function _overviewTab() {
     }
 
     <!-- Village Morale summary -->
-    <div style="margin-top:20px;background:var(--sunken);border:1px solid var(--border);border-radius:6px;padding:12px">
+    <div class="well" style="margin-top:20px;background:var(--sunken);border:1px solid var(--border);border-radius:6px;padding:12px">
       <div style="font-size:.8rem;color:var(--text-mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Individual Morale Overview</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px">
         ${(G.shinobi || []).slice(0, 12).map(s => {
@@ -299,7 +299,7 @@ function _awardsTab() {
       if (!s) return ''
       const outcomeColor = rv.outcome === 'exceeded' ? 'var(--green)' : rv.outcome === 'met' ? 'var(--orange)' : 'var(--red)'
       const outcomeLabel = rv.outcome === 'exceeded' ? 'Exceeded Expectations' : rv.outcome === 'met' ? 'Met Expectations' : 'Disappointed'
-      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:12px">
+      return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px;margin-bottom:12px">
         <div style="color:var(--gold-hi);font-weight:bold;margin-bottom:4px">${sn(s)} — Annual Review (Year ${rv.year})</div>
         <div style="font-size:.8rem;color:${outcomeColor};margin-bottom:10px">${outcomeLabel} · ${s.wins} mission wins this career</div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">

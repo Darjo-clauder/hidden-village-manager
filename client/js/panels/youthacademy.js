@@ -34,7 +34,7 @@ export function rYA() {
   el.innerHTML = `
     <h2 style="color:var(--gold);margin:0 0 16px">🎓 Youth Academy</h2>
 
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:16px;display:flex;gap:20px;flex-wrap:wrap">
+    <div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:16px;display:flex;gap:20px;flex-wrap:wrap">
       <div><span style="color:var(--text-dim);font-size:.8rem">Current Class</span><br><strong style="font-size:1.3rem;color:var(--gold-hi)">${students.length}</strong></div>
       <div><span style="color:var(--text-dim);font-size:.8rem">Next Intake</span><br><strong style="color:var(--gold)">April Y${nextIntakeYear}</strong></div>
       <div><span style="color:var(--text-dim);font-size:.8rem">Academy Level</span><br><strong style="color:var(--text-mid)">${G.upgrades?.academy || 0}</strong></div>
@@ -46,7 +46,7 @@ export function rYA() {
       const hist = (G.youthCupHistory || []).slice(-5).reverse()
       const held = hist[0]
       if (!hist.length) return `<div style="background:var(--sunken);border:1px solid var(--surface-3);border-radius:6px;padding:10px 12px;margin-bottom:16px;font-size:.78rem;color:var(--text-faint)">🎓 <b style="color:var(--text-mid)">Youth Cup</b> — the academy-age tournament runs every June. Enrol a class and field your brightest for a shot at the cup.</div>`
-      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:16px">
+      return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
           <span style="color:var(--gold);font-size:.82rem;text-transform:uppercase;letter-spacing:.08em">🎓 Youth Cup</span>
           <span style="display:flex;align-items:center;gap:8px;font-size:.78rem;color:${held.playerChampion ? 'var(--green)' : 'var(--text-dim)'}">
@@ -85,7 +85,7 @@ function _classTab(students, senseis) {
     }
 
     ${students.length > 0 ? `
-    <div style="margin-top:16px;background:var(--sunken);border:1px solid var(--border);border-radius:6px;padding:12px">
+    <div class="well" style="margin-top:16px;background:var(--sunken);border:1px solid var(--border);border-radius:6px;padding:12px">
       <h3 style="color:var(--text-mid);font-size:.82rem;text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px">Bulk Actions</h3>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <div style="font-size:.8rem;color:var(--text-dim)">Set all track:
@@ -176,7 +176,7 @@ function _recordsTab() {
   const keys = Object.keys(records)
   if (!keys.length) return '<div style="color:var(--text-faint);font-size:.85rem;padding:20px 0">No academy records set yet. Records are set when students graduate.</div>'
   return `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">
-    ${keys.map(k => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px">
+    ${keys.map(k => `<div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px">
       <div style="font-size:.72rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${k}</div>
       <div style="font-size:1.1rem;color:var(--gold);font-weight:bold;margin-bottom:2px">${records[k].value}</div>
       <div style="font-size:.72rem;color:var(--text-mid)">${records[k].name} — Year ${records[k].year}</div>

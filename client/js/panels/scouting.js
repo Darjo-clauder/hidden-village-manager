@@ -95,7 +95,7 @@ export function rSco() {
     <h2 style="color:var(--gold);margin:0 0 16px">🗺 Scouting Network</h2>
 
     <!-- Budget allocation -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:16px">
+    <div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:16px">
       <h3 style="color:var(--text-mid);font-size:.85rem;margin:0 0 8px;text-transform:uppercase;letter-spacing:.08em">Scouting Budget Allocation</h3>
       <div style="font-size:.72rem;color:var(--text-dim);margin-bottom:8px">Domestic boosts report frequency · Foreign boosts contact growth · Shadow boosts head-scout covert intel chance. Must total 100%.</div>
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
@@ -120,7 +120,7 @@ export function rSco() {
               const regionObj = REGIONS.find(r => r.id === scout.regionAssigned)
               const fatigueColor = (scout.fatigue || 0) >= 75 ? 'var(--red)' : (scout.fatigue || 0) >= 50 ? 'var(--orange)' : 'var(--green)'
               const contacts = scout.regionAssigned ? (scout.contacts?.[scout.regionAssigned] || 0) : 0
-              return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px">
+              return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px;margin-bottom:8px">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
                   <strong style="color:var(--gold-hi)">${scout.fn} ${scout.ln}</strong>
                   <span style="font-size:.75rem;color:var(--text-mid)">${scout.role === 'head_scout' ? '★ Head of Scouting' : 'Scout Veteran'} · R${scout.rating}</span>

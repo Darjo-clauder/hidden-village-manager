@@ -202,7 +202,7 @@ function _renderSealedCard(b) {
   const escapes = (b.escapeHistory || []).length
 
   return `
-    <div style="background:var(--surface);border:1px solid var(--border);padding:16px;margin-bottom:14px">
+    <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:16px;margin-bottom:14px">
       <!-- Header -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
         <div>
@@ -235,7 +235,7 @@ function _renderSealedCard(b) {
 
       <!-- Unique Ability -->
       ${data.uniqueAbility ? `
-        <div style="background:var(--surface-2);border:1px solid var(--border);padding:8px 12px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
+        <div class="surf" style="background:var(--surface-2);border:1px solid var(--border);padding:8px 12px;margin-bottom:12px;display:flex;align-items:center;gap:10px">
           <div style="flex:1">
             <div style="font-size:var(--fs-micro);letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:3px">Unique Ability</div>
             <div style="font-size:var(--fs-body);color:${stage >= data.uniqueAbility.stage ? 'var(--green)' : 'var(--text-dim)'}">
@@ -256,7 +256,7 @@ function _renderSealedCard(b) {
 
       <!-- Vessel -->
       ${jkS ? `
-        <div style="margin-bottom:12px;padding:10px;background:var(--surface-2);border:1px solid var(--border)">
+        <div class="surf" style="margin-bottom:12px;padding:10px;background:var(--surface-2);border:1px solid var(--border)">
           <div style="font-size:var(--fs-micro);letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px">Vessel</div>
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div>
@@ -289,7 +289,7 @@ function _renderSealedCard(b) {
           ` : ''}
         </div>
       ` : `
-        <div style="margin-bottom:12px;padding:10px;background:var(--surface-2);border:1px solid var(--border)">
+        <div class="surf" style="margin-bottom:12px;padding:10px;background:var(--surface-2);border:1px solid var(--border)">
           <div style="font-size:var(--fs-body);color:var(--orange)">No Vessel assigned. Assign from the Roster (click any shinobi → Vessel section).</div>
         </div>
       `}
@@ -426,7 +426,7 @@ function _renderPassives(passives) {
   const sealedWithJk = G.beasts.filter(b => b.sealed && b.jk)
 
   return `
-    <div style="background:var(--surface);border:1px solid var(--border);padding:14px;margin-bottom:14px">
+    <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:14px;margin-bottom:14px">
       <div style="font-size:var(--fs-micro);letter-spacing:2px;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px">Active Village Passives</div>
       ${sealedWithJk.length === 0 ? `<div style="color:var(--text-dim);font-size:var(--fs-body)">No vessel — no passive bonuses active.</div>` : `
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">
@@ -451,7 +451,7 @@ function _renderPassives(passives) {
       const stage = getSyncStage(b)
       const pv = data.passiveVillage || {}
       return `
-        <div style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:8px">
+        <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:8px">
           <div style="font-size:var(--fs-body);color:var(--text-hi);margin-bottom:6px;font-weight:bold">${b.n} (Stage ${stage}: ${SYNC_STAGES[stage].n})</div>
           <div style="font-size:var(--fs-small);color:var(--text-dim);line-height:1.8">
             ${Object.entries(pv).filter(([k,v]) => v && k !== 'wind').map(([k,v]) => `

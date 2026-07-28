@@ -96,7 +96,7 @@ function renderPipeline() {
       </div>
 
       <!-- Progress bar -->
-      <div style="background:var(--surface);border:1px solid var(--border);height:6px;border-radius:3px;margin-bottom:8px">
+      <div class="well" style="background:var(--surface);border:1px solid var(--border);height:6px;border-radius:3px;margin-bottom:8px">
         <div style="background:var(--gold);width:${pct}%;height:100%;border-radius:3px;transition:width 0.3s"></div>
       </div>
 

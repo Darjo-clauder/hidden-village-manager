@@ -106,7 +106,7 @@ function renderAgents() {
       const tier = standingTier(ag.standing)
       const clients = pool.filter(p => p.agentId === ag.id)
       const fee = effectiveFeePercent(ag.baseFeePercent, ag.standing)
-      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px">
+      return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
           <span style="color:var(--purple);font-weight:bold;font-size:.82rem">🤝 ${ag.name}</span>
           <span style="font-size:.72rem;color:${tier.color};border:1px solid ${tier.color};padding:1px 6px;border-radius:3px" title="${tier.desc}">${tier.label}</span>
@@ -257,7 +257,7 @@ function renderLoans(tm) {
       ? '<div style="color:var(--text-faint);font-size:.8rem;margin-bottom:16px">No shinobi currently on loan. Loan shinobi out to earn monthly fees.</div>'
       : lOut.map(lo => {
           const s = (G.shinobi || []).find(x => x.id === lo.shinobiId)
-          return s ? `<div style="background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:.8rem">
+          return s ? `<div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:.8rem">
             <div style="flex:1"><span style="color:var(--gold-hi)">${sn(s)}</span> <span style="color:var(--text-dim)">· ${RANKS[s.ri]}</span></div>
             <div style="color:var(--green)">+${fmt(lo.monthlyFee)}/mo</div>
             <div style="color:var(--gold)">${lo.monthsRemaining}mo left</div>
@@ -270,7 +270,7 @@ function renderLoans(tm) {
       ? '<div style="color:var(--text-faint);font-size:.8rem;margin-bottom:16px">No loan players. Bring in loan shinobi from the market to fill gaps — they cannot enter Adept Exams.</div>'
       : lIn.map(li => {
           const s = (G.shinobi || []).find(x => x.id === li.shinobiId)
-          return s ? `<div style="background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:.8rem">
+          return s ? `<div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:.8rem">
             <div style="flex:1"><span style="color:var(--gold-hi)">${sn(s)}</span> <span style="color:var(--text-dim)">· ${RANKS[s.ri]}</span> <span style="font-size:.68rem;color:var(--purple)">[LOAN]</span></div>
             <div style="color:var(--orange)">−${fmt(li.monthlyCost)}/mo</div>
             <div style="color:var(--gold)">${li.monthsRemaining}mo left</div>
@@ -278,7 +278,7 @@ function renderLoans(tm) {
         }).join('')
     }
     <!-- Send out loan form -->
-    <div style="background:var(--sunken);border:1px solid var(--border);border-radius:6px;padding:12px;margin-top:10px">
+    <div class="well" style="background:var(--sunken);border:1px solid var(--border);border-radius:6px;padding:12px;margin-top:10px">
       <div style="font-size:.8rem;color:var(--text-mid);margin-bottom:8px">${t("transfers.sendOnLoanHdr")}</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <select id="loan-out-shinobi" style="background:var(--surface);color:var(--gold-hi);border:1px solid var(--text-faint);border-radius:4px;padding:4px 8px;font-size:.78rem;flex:1">
@@ -341,7 +341,7 @@ function renderOffers(tm) {
   return `<div>
     ${offers.slice().reverse().map(o => {
       const statusColor = o.status === 'accepted' ? 'var(--green)' : o.status === 'rejected' ? 'var(--red)' : o.status === 'countered' ? 'var(--orange)' : 'var(--text-mid)'
-      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:.8rem">
+      return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:10px;font-size:.8rem">
         <div style="flex:1">
           <span style="color:var(--gold-hi)">${o.name}</span>
           <span style="color:var(--text-dim)"> — offered <strong style="color:var(--gold)">${fmt(o.amount)} ryo</strong></span>
@@ -362,7 +362,7 @@ function renderHistory(tm) {
   return `<div>${deals.slice().reverse().map(d => {
     const dirColor = d.direction === 'in' ? 'var(--green)' : 'var(--red)'
     const dirLabel = d.direction === 'in' ? '▶ IN' : '◀ OUT'
-    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:9px 12px;margin-bottom:5px;display:flex;align-items:center;gap:10px;font-size:.8rem">
+    return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:9px 12px;margin-bottom:5px;display:flex;align-items:center;gap:10px;font-size:.8rem">
       <div style="color:var(--text-faint);font-size:.72rem;min-width:70px">Yr${d.year}·M${d.month}</div>
       <div style="flex:1;color:var(--gold-hi)">${d.name}</div>
       <div style="color:${dirColor};font-size:.72rem;font-weight:bold">${dirLabel}</div>

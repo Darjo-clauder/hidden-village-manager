@@ -18,7 +18,7 @@ export function saveGameSlot(n) {
 
 function _saveSlotsCard() {
   const slots = listSlots()
-  return `<div style="background:var(--surface);border:1px solid var(--border);padding:10px 12px;margin-bottom:12px">
+  return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:10px 12px;margin-bottom:12px">
     <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">💾 Save Slots</div>
     ${slots.map(s => {
       const m = s.meta
@@ -39,7 +39,7 @@ function _populaceStrip() {
   if (sup == null) return ''
   const tier = supportTier(sup)
   const mult = revenueMult(sup)
-  return `<div title="Civilian support shifts gate revenue and can spark festivals or unrest" style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);padding:7px 12px;margin-bottom:12px">
+  return `<div class="strip" title="Civilian support shifts gate revenue and can spark festivals or unrest">
     <span style="font-size:var(--fs-lead)">🎏</span>
     <span style="font-size:var(--fs-body);color:${tier.color};font-weight:bold">Populace: ${tier.label}</span>
     <div style="flex:1;max-width:160px;background:var(--bg);height:5px;border-radius:3px;overflow:hidden"><div style="height:5px;width:${Math.round(sup)}%;background:${tier.color}"></div></div>
@@ -54,7 +54,7 @@ function _kageStrip() {
   const xpNext = xpForLevel(k.level)
   const xpPct = Math.min(100, Math.round((k.xp / xpNext) * 100))
   const path = k.path ? PATH_BY_ID[k.path] : null
-  return `<div onclick="sp('kagedev')" title="Open Warden Path" style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);padding:7px 12px;margin-bottom:12px;cursor:pointer">
+  return `<div class="strip" onclick="sp('kagedev')" title="Open Warden Path" style="cursor:pointer">
     <span style="font-size:var(--fs-lead);color:var(--accent);font-weight:bold">${G.kName || 'Warden'}</span>
     <span style="font-size:var(--fs-small);color:var(--text-dim)">Lvl ${k.level}${path ? ` · ${path.icon} ${path.n}` : ' · no path chosen'}</span>
     <div style="flex:1;max-width:160px;background:var(--bg);height:5px;border-radius:3px;overflow:hidden"><div style="height:5px;width:${xpPct}%;background:var(--accent)"></div></div>
@@ -257,7 +257,7 @@ export function rDash() {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
 
       <!-- At-risk alerts -->
-      <div style="background:var(--surface);border:1px solid var(--border);padding:13px">
+      <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:13px">
         <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.alerts')}</div>
         ${alerts.length === 0
           ? `<div style="font-size:var(--fs-body);color:var(--text-dim);padding:6px 0">${t('section.alerts.none')}</div>`
@@ -273,7 +273,7 @@ export function rDash() {
       </div>
 
       <!-- Upcoming calendar -->
-      <div style="background:var(--surface);border:1px solid var(--border);padding:13px">
+      <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:13px">
         <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.events')}</div>
         ${calendar.slice(0,6).map(e => `
           <div class="cal-item">
@@ -285,7 +285,7 @@ export function rDash() {
     </div>
 
     <!-- Monthly summary -->
-    <div style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-bottom:12px">
+    <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-bottom:12px">
       <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.lastMonth')}</div>
       ${recentLog.length === 0
         ? `<div style="font-size:var(--fs-body);color:var(--text-dim)">${t('section.lastMonth.none')}</div>`
@@ -298,7 +298,7 @@ export function rDash() {
 
     <!-- Active world events -->
     ${activeEvents.length > 0 ? `
-    <div style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-bottom:12px">
+    <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:13px;margin-bottom:12px">
       <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px">${t('section.worldEvents')}</div>
       ${activeEvents.map(n => `
         <div style="padding:5px 0;border-bottom:1px solid var(--border-dim);font-size:var(--fs-body);color:var(--blue)">${n.text || n.msg || ''}</div>

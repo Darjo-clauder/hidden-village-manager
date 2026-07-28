@@ -273,7 +273,7 @@ function _leverage() {
     ${villages.map(v => {
       const ctx = _leverageCtx(v)
       const suppressed = (v.demandsSuppressedUntil || 0) > now
-      return `<div style="background:var(--surface);border:1px solid var(--border);padding:10px;margin-bottom:8px">
+      return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:10px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <div style="font-size:var(--fs-body);color:var(--text-hi)">${v.ico || ''} ${v.n}</div>
           <div style="font-size:var(--fs-micro);color:${ctx.hasIntel ? 'var(--green)' : 'var(--text-dim)'}">

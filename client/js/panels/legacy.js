@@ -50,7 +50,7 @@ function _prestige() {
         Scout Slots: ${tier.scoutSlots} · Staff Tier: ${tier.staffTier} · Exam Host: ${tier.examHostEligible ? '✓ Eligible' : '✗ Not yet'}
       </div>
     </div>
-    ${G.worldReputationText ? `<div style="padding:8px 10px;border:1px solid var(--border);background:var(--bg);margin-bottom:10px;font-size:var(--fs-body);color:var(--text-dim);font-style:italic">"${G.worldReputationText}"</div>` : ''}
+    ${G.worldReputationText ? `<div class="well" style="padding:8px 10px;border:1px solid var(--border);background:var(--bg);margin-bottom:10px;font-size:var(--fs-body);color:var(--text-dim);font-style:italic">"${G.worldReputationText}"</div>` : ''}
     <div class="ke-card">
       <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">${tr("legacy.kageReputation")}</div>
       <div style="font-size:var(--fs-head);color:var(--gold);margin-bottom:6px">${repStars}</div>
@@ -122,7 +122,7 @@ function _hallOfFame() {
     <div style="font-size:var(--fs-body);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">🏆 Hall of Fame — ${hof.length} inducted</div>
     <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:10px">Exceptional careers, inducted on retirement or in death. Missions are the spine; S-ranks, tournament titles, and Youth Cup pedigree add to the legend.</div>
     <div style="display:grid;gap:6px">${hof.map(e => `
-      <div style="border:1px solid var(--border);background:var(--bg);padding:7px 9px">
+      <div class="well" style="border:1px solid var(--border);background:var(--bg);padding:7px 9px">
         <div style="display:flex;align-items:center;gap:6px">
           <span style="font-size:var(--fs-lead)">${e.how === 'fallen' ? '🕊' : '🏛'}</span>
           <span style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold;flex:1">${e.name}</span>
@@ -277,7 +277,7 @@ function _legacyReport() {
   ]
   const gradeColor = gs.grade === 'S' ? 'var(--red)' : gs.grade === 'A' ? 'var(--orange)' : gs.grade === 'B' ? 'var(--gold)' : gs.grade === 'C' ? 'var(--green)' : 'var(--text-faint)'
   return html + `<div>
-    <div style="text-align:center;padding:16px 0;margin-bottom:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px">
+    <div class="well" style="text-align:center;padding:16px 0;margin-bottom:12px;background:var(--bg);border:1px solid var(--border);border-radius:4px">
       <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:2px">Year ${gs.year} Legacy Grade</div>
       <div style="font-size:48px;font-weight:bold;color:${gradeColor}">${gs.grade}</div>
       <div style="font-size:var(--fs-lead);color:var(--text-dim)">${gs.overall}/100</div>

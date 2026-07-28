@@ -32,7 +32,7 @@ export function rLob() {
     </div>
 
     <!-- Invite link -->
-    <div style="background:var(--sunken);border:1px solid var(--border);padding:6px 8px;margin-bottom:10px;font-size:var(--fs-small);color:var(--text-dim)">
+    <div class="well" style="background:var(--sunken);border:1px solid var(--border);padding:6px 8px;margin-bottom:10px;font-size:var(--fs-small);color:var(--text-dim)">
       <span style="color:var(--gold)">Invite Link: </span>
       <span id="lob-invite" style="color:var(--text-hi);cursor:pointer;text-decoration:underline" onclick="copyInvite()">${inviteLink}</span>
     </div>

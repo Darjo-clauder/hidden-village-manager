@@ -84,7 +84,7 @@ function _festivalHtml() {
   const cost = festivalCost(held)
   const rw = festivalReward()
   const canHold = (G.ryo || 0) >= cost
-  return `<div style="border:1px solid var(--border);background:var(--bg);padding:8px 10px;margin-top:10px">
+  return `<div class="well" style="border:1px solid var(--border);background:var(--bg);padding:8px 10px;margin-top:10px">
     <div style="display:flex;align-items:center;gap:8px">
       <span style="font-size:var(--fs-head)">🎆</span>
       <div style="flex:1"><div style="font-size:var(--fs-body);color:var(--text-hi)">Grand Festival</div><div style="font-size:var(--fs-micro);color:var(--text-dim)">A lavish village-wide festival — +${rw.legend} legend, +${rw.morale} morale now. ${held ? `Held ${held}× · each costs more.` : 'Repeatable; cost rises each time.'}</div></div>
@@ -132,7 +132,7 @@ export function rUp() {
   const maint = _monthlyMaintenance()
   const defColor = def.total >= 50 ? 'var(--green)' : def.total >= 25 ? 'var(--gold)' : def.total > 0 ? 'var(--orange)' : 'var(--red)'
   const summaryHtml = `
-    <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:10px 13px;background:var(--surface);border:1px solid var(--border)">
+    <div class="surf" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:10px 13px;background:var(--surface);border:1px solid var(--border)">
       <div>
         <div style="font-size:var(--fs-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("upgrades.defenseRating")}</div>
         <div style="font-size:var(--fs-head);color:${defColor};font-family:'Courier New',monospace">${def.total}</div>

@@ -108,7 +108,7 @@ function _rosterTab() {
       const slots = roleDef.max
       const isFull = current.length >= slots
 
-      html += `<div style="border:1px solid var(--border);background:var(--surface);padding:11px;margin-bottom:7px">
+      html += `<div class="surf" style="border:1px solid var(--border);background:var(--surface);padding:11px;margin-bottom:7px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
           <div>
             <div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold">${roleDef.n} <span style="font-size:var(--fs-small);color:var(--text-dim)">(${current.length}/${slots})</span></div>
@@ -129,7 +129,7 @@ function _rosterTab() {
           const yearsServed = Math.floor((st.monthsServed || 0) / 12)
           const canBeAK = (st.monthsServed || 0) >= 12 && !isAsstKage && !(G.staff||[]).some(x => x.asstKage)
 
-          html += `<div style="border:1px solid var(--border);padding:8px;margin-top:6px;background:var(--sunken)" oncontextmenu="return staffCtx(event,'${st.id}')">
+          html += `<div class="well" style="border:1px solid var(--border);padding:8px;margin-top:6px;background:var(--sunken)" oncontextmenu="return staffCtx(event,'${st.id}')">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
               <div onmousemove="staffHover(event,'${st.id}')" onmouseleave="hideHoverPreview()">
                 <div style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold">${st.fn} ${st.ln}${isAsstKage ? ' <span style="color:var(--blue);font-size:var(--fs-small)">★ Asst. Warden</span>' : ''}</div>
@@ -198,7 +198,7 @@ function _legacyTab() {
   let html = `<div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:10px">${tr("staff.hallNote")}</div>`
   html += hof.map(entry => {
     const roleDef = STAFF_ROLES.find(r => r.id === entry.role)
-    return `<div style="border:1px solid var(--border);background:var(--surface);padding:11px;margin-bottom:8px">
+    return `<div class="surf" style="border:1px solid var(--border);background:var(--surface);padding:11px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>
           <div style="font-size:var(--fs-lead);color:var(--gold);font-weight:bold">${entry.fn} ${entry.ln}</div>

@@ -308,7 +308,7 @@ function _renderWarMuster(el, tabHtml) {
 
   if (!G.warSched) {
     return (el.innerHTML = tabHtml + recap +
-      `<div style="border:1px solid var(--border);background:var(--bg);padding:12px">
+      `<div class="well" style="border:1px solid var(--border);background:var(--bg);padding:12px">
         <div style="font-size:var(--fs-lead);color:var(--gold);margin-bottom:6px">🏯 Grand Tournament</div>
         <div style="font-size:var(--fs-body);color:var(--text-dim);line-height:1.5">The Grand Tournament is the annual clash of the great powers — fought by your <b>elite (Veteran and above)</b>, in squads, to the death. It is mustered each <b>Year-end (Month 12)</b>. Win the Adept Exams to graduate prospects into your tournament pool; the standings seed the bracket.</div>
         <div style="font-size:var(--fs-small);color:var(--text-faint);margin-top:8px">No tournament is mustering. The next Grand Tournament mobilizes at Month 12.</div>

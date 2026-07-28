@@ -80,7 +80,7 @@ export function rSq() {
   const el = document.getElementById('sql')
   if (!G.squads.length) { el.innerHTML = `<div style="color:var(--text-dim);font-size:var(--fs-body)">${t('squad.none')}</div>`; return }
   const _fit = _squadFitMatrix()
-  const _fitHtml = `<div style="background:var(--surface);border:1px solid var(--border);padding:10px 12px;margin-bottom:12px">
+  const _fitHtml = `<div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:10px 12px;margin-bottom:12px">
     <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">${t('squad.fitMatrix')}</div>
     ${heatmapHtml(_fit.rows, _fit.cols, _fit.matrix)}
     <div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:6px">Higher = better suited. Pair a squad with missions matching its strongest specialties.</div>

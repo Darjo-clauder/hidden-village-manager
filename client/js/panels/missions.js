@@ -61,7 +61,7 @@ export function rMissionInspector() {
   const el = document.getElementById('ms-inspector'); if (!el) return
   const m = (G.avM || []).find(x => x.id === ui.msSel && !x.sq)
   if (!m) {
-    el.innerHTML = `<div style="border:1px solid var(--border);background:var(--sunken);padding:14px;font-size:var(--fs-small);color:var(--text-faint);text-align:center;line-height:1.6">${tr('mission.inspector.empty')}</div>`
+    el.innerHTML = `<div class="well" style="border:1px solid var(--border);background:var(--sunken);padding:14px;font-size:var(--fs-small);color:var(--text-faint);text-align:center;line-height:1.6">${tr('mission.inspector.empty')}</div>`
     return
   }
   if (!ui.aApproach) ui.aApproach = 'balanced'
@@ -134,7 +134,7 @@ export function rMissionReport() {
       }).join('')}
     </div>
     ${r.quality ? `<div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:8px">Outcome: <b style="color:${r.succeeded ? 'var(--green)' : 'var(--red)'}">${QUALITY_LABEL[r.quality] || r.quality}</b>${r.margin != null ? ` · margin ${r.margin > 0 ? '+' : ''}${r.margin}` : ''}</div>` : ''}` : ''
-  el.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);padding:10px;margin-bottom:12px">
+  el.innerHTML = `<div class="well" style="background:var(--bg);border:1px solid var(--border);padding:10px;margin-bottom:12px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase">
         Last Mission Report — ${r.missionName} (${r.missionRk}-Rank) · ${r.succeeded?'<span style="color:var(--green)">SUCCESS</span>':'<span style="color:var(--red)">FAILURE</span>'}
@@ -356,19 +356,19 @@ function _offSeasonBlock() {
     </div>
 
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px">
-      <div style="background:var(--surface);padding:8px;border:1px solid var(--border);text-align:center">
+      <div class="surf" style="background:var(--surface);padding:8px;border:1px solid var(--border);text-align:center">
         <div style="font-size:var(--fs-sub);color:var(--green);font-weight:bold">${available}</div>
         <div style="font-size:var(--fs-micro);color:var(--text-faint)">Resting</div>
       </div>
-      <div style="background:var(--surface);padding:8px;border:1px solid var(--border);text-align:center">
+      <div class="surf" style="background:var(--surface);padding:8px;border:1px solid var(--border);text-align:center">
         <div style="font-size:var(--fs-sub);color:var(--orange);font-weight:bold">${onMission}</div>
         <div style="font-size:var(--fs-micro);color:var(--text-faint)">On mission</div>
       </div>
-      <div style="background:var(--surface);padding:8px;border:1px solid var(--border);text-align:center">
+      <div class="surf" style="background:var(--surface);padding:8px;border:1px solid var(--border);text-align:center">
         <div style="font-size:var(--fs-sub);color:${injured>0?'var(--red)':'var(--text-faint)'};font-weight:bold">${injured}</div>
         <div style="font-size:var(--fs-micro);color:var(--text-faint)">Injured</div>
       </div>
-      <div style="background:var(--surface);padding:8px;border:1px solid var(--border);text-align:center">
+      <div class="surf" style="background:var(--surface);padding:8px;border:1px solid var(--border);text-align:center">
         <div style="font-size:var(--fs-sub);color:${highFatigue>0?'var(--red-soft)':'var(--text-faint)'};font-weight:bold">${highFatigue}</div>
         <div style="font-size:var(--fs-micro);color:var(--text-faint)">High fatigue</div>
       </div>
@@ -653,7 +653,7 @@ export function rTemplates() {
       ${templates.map(t => {
         const rc = RANK_COLOR[t.baseDifficulty] || 'var(--text-mid)'
         return `
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px">
+          <div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
               <span style="font-size:.7rem;padding:1px 6px;border:1px solid ${rc};color:${rc}">${t.baseDifficulty}</span>
               <span style="color:var(--gold-hi);font-weight:bold">${t.name}</span>
@@ -695,7 +695,7 @@ export function rMissionLog() {
 
   // Match replay archive — re-watch recent matches on the animated board.
   const archive = G.matchArchive || []
-  const archiveHtml = archive.length ? `<div style="border:1px solid var(--border);background:var(--bg);padding:8px 10px;margin-bottom:12px">
+  const archiveHtml = archive.length ? `<div class="well" style="border:1px solid var(--border);background:var(--bg);padding:8px 10px;margin-bottom:12px">
     <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">📼 Match Replays</div>
     <div style="display:grid;gap:3px">
       ${archive.map((a, i) => {
@@ -726,7 +726,7 @@ export function rMissionLog() {
       const statusColor = e.success ? 'var(--green)' : 'var(--red)'
       const rankColor = e.rank === 'S' ? 'var(--gold)' : e.rank === 'A' ? 'var(--blue)' : e.rank === 'B' ? 'var(--green)' : 'var(--text-dim)'
       return `
-        <div style="border:1px solid var(--border);padding:8px;margin-bottom:6px;background:var(--surface)">
+        <div class="surf" style="border:1px solid var(--border);padding:8px;margin-bottom:6px;background:var(--surface)">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
             <div>
               <span style="font-size:var(--fs-small);color:${rankColor};font-weight:bold">${e.rank}-rank</span>

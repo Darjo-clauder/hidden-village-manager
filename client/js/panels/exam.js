@@ -61,7 +61,7 @@ function _seasonHistoryHtml() {
         const mvp = L.topWins[0]; const mis = L.topMissions[0]; const sr = L.topSRank[0]
         const finish = snap.playerStanding ? `#${snap.playerStanding}` : '—'
         const finCol = snap.playerStanding === 1 ? 'var(--gold)' : snap.playerStanding <= 3 ? 'var(--green)' : 'var(--text-dim)'
-        return `<div style="background:var(--bg);border:1px solid var(--border);border-left:2px solid ${finCol};padding:8px 10px">
+        return `<div class="well" style="background:var(--bg);border:1px solid var(--border);border-left:2px solid ${finCol};padding:8px 10px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
             <span style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold">Year ${y}</span>
             <span style="font-size:var(--fs-small);color:var(--text-dim)">Tier ${snap.prestige}</span>
@@ -124,7 +124,7 @@ function _seasonTab() {
   }
 
   // Structure overview — the year at a glance.
-  const overview = `<div style="background:var(--sunken);border:1px solid var(--border);padding:11px 13px;margin-bottom:12px">
+  const overview = `<div class="well" style="background:var(--sunken);border:1px solid var(--border);padding:11px 13px;margin-bottom:12px">
     <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:8px">The Shinobi Year</div>
     <div style="display:flex;gap:6px;align-items:stretch;flex-wrap:wrap;font-size:var(--fs-small)">
       ${[
@@ -141,7 +141,7 @@ function _seasonTab() {
   </div>`
 
   // Player fixture list — recent results + upcoming.
-  const fixtureList = `<div style="border:1px solid var(--border);background:var(--bg);padding:9px;margin-bottom:12px">
+  const fixtureList = `<div class="well" style="border:1px solid var(--border);background:var(--bg);padding:9px;margin-bottom:12px">
     <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">${t('season.fixtures', { village: playerName })}</div>
     <div style="display:grid;gap:2px">
       ${fixtures.map(f => {
@@ -175,7 +175,7 @@ function _exhibitionCard() {
   const cupTag = c => c === 'SF' ? '<span style="font-size:var(--fs-micro);border:1px solid var(--gold);color:var(--gold);padding:0 3px">🏆 SF</span>'
     : c === 'F' ? '<span style="font-size:var(--fs-micro);border:1px solid var(--gold);color:var(--gold);padding:0 3px">🏆 FINAL</span>' : ''
   const holder = inv ? `<div style="font-size:var(--fs-micro);color:${inv.champion === G.vName ? 'var(--green)' : 'var(--text-mid)'};margin-top:5px">🏆 Invitational holder (Y${inv.year}): <b>${inv.champion}</b>${inv.champion === G.vName ? ' — that’s you' : ` (you: ${inv.playerResult})`}</div>` : ''
-  return `<div style="border:1px solid var(--border);background:var(--bg);padding:9px;margin-bottom:12px">
+  return `<div class="well" style="border:1px solid var(--border);background:var(--bg);padding:9px;margin-bottom:12px">
     <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">🏮 Off-Season Slate — minor nations</div>
     <div style="display:grid;gap:2px">
       ${ex.map(e => `<div style="display:flex;align-items:center;gap:8px;font-size:var(--fs-small);padding:3px 6px">
@@ -347,7 +347,7 @@ function _seasonFixtureGrid(names, schedule, round, resultsByRound, playerName) 
       <span style="flex:1">${side(m.b)}</span>
     </div>`
   }
-  return `<div style="border:1px solid var(--border);background:var(--bg);padding:9px;margin-bottom:12px">
+  return `<div class="well" style="border:1px solid var(--border);background:var(--bg);padding:9px;margin-bottom:12px">
     <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">${t('season.leagueGrid')}</div>
     <div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
       ${schedule.map((rnd, r) => {
@@ -382,7 +382,7 @@ function _seasonStandingsCard() {
   // (the top seed's +10% combat edge in the deadly Grand Tournament), so the standings
   // show what league position is actually worth, not just bragging rights.
   const seedEdge = pos => total < 2 ? 0 : Math.round((1 - (pos - 1) / (total - 1)) * 10)
-  return `<div style="border:1px solid var(--border);background:var(--bg);padding:9px;margin-bottom:10px">
+  return `<div class="well" style="border:1px solid var(--border);background:var(--bg);padding:9px;margin-bottom:10px">
     <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">Season Standings — seeds the bracket</div>
     <table style="width:100%;border-collapse:collapse;font-size:var(--fs-small)">
       <thead><tr style="color:var(--text-dim);text-align:left"><th style="padding:1px 4px">#</th><th>Village</th><th style="text-align:center">W</th><th style="text-align:center">D</th><th style="text-align:center">L</th><th style="text-align:center" title="Goal difference">GD</th><th style="text-align:center">Pts</th><th style="text-align:center" title="Combat edge this seed earns in the Grand Tournament">Edge</th><th style="text-align:right;padding-right:4px">Form</th></tr></thead>
@@ -427,7 +427,7 @@ function _seasonResultsCard(round, resultsByRound, playerName) {
     </div>`
   }
   const playerInRound = rr.some(m => m.a === playerName || m.b === playerName)
-  return `<div style="border:1px solid var(--border);background:var(--bg);padding:9px;margin-bottom:12px">
+  return `<div class="well" style="border:1px solid var(--border);background:var(--bg);padding:9px;margin-bottom:12px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
       <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--gold);text-transform:uppercase">Matchday ${lastPlayed + 1} — Results</div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -915,7 +915,7 @@ function _renderSemifinalOverlay(duels, bye, field) {
     `<div style="font-size:var(--fs-body);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">${EXAM_STAGES[2]}</div>` +
     `<div style="display:grid;gap:6px">` +
     (duels.length ? duels.map(d => `
-      <div style="border:1px solid var(--border);padding:6px;background:var(--bg)">
+      <div class="well" style="border:1px solid var(--border);padding:6px;background:var(--bg)">
         <div style="font-size:var(--fs-body)">
           <span style="color:${d.winPlayer ? 'var(--gold)' : 'var(--green)'}">▲ ${d.winName}</span><span style="color:var(--text-faint)"> (${d.winVil})</span>
           <span style="color:var(--text-dim)"> def. </span>

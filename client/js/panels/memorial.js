@@ -12,7 +12,7 @@ export function rMem() {
   const kia     = G.memorial.filter(m => !m.transfer).length
   const totalWins = G.memorial.reduce((a, m) => a + (m.wins || 0), 0)
 
-  const summary = `<div style="display:flex;gap:18px;margin-bottom:14px;padding:10px 12px;background:var(--surface);border:1px solid var(--border)">
+  const summary = `<div class="surf" style="display:flex;gap:18px;margin-bottom:14px;padding:10px 12px;background:var(--surface);border:1px solid var(--border)">
     <div><div style="font-size:var(--fs-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("memorial.fallen")}</div><div style="font-size:15px;color:var(--red);font-family:'Courier New',monospace">${kia}</div></div>
     <div><div style="font-size:var(--fs-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("memorial.honored")}</div><div style="font-size:15px;color:var(--gold);font-family:'Courier New',monospace">${honored}</div></div>
     <div><div style="font-size:var(--fs-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("memorial.missionsServed")}</div><div style="font-size:15px;color:var(--green);font-family:'Courier New',monospace">${totalWins}</div></div>
