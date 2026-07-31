@@ -8,6 +8,7 @@ import { battleSequence, battleVerdict, spotlightRole, roleBeatFlavor } from '..
 import { BATTLE_CALLS } from '../../shared/utils/battleCalls.js'
 import { arenaFor } from '../../shared/constants/arenas.js'
 import { mountPitch, ROLE_TINT } from './pitchView.js'
+import { sfx } from './audio.js'
 import { MATCH_TACTICS, unitCompRead, beatDrain, staminaBand, finishEffects, resolveMatchPrefs, playerOfMatch } from '../../shared/utils/matchSim.js'
 import { buildPeriod, statsFrom, zoneControlFrom, tickerLine, ZONE_X, mulberry32 } from '../../shared/utils/matchEngine.js'
 import { TEMPO, tacticsForStyle, evalSituations, effectiveTactics } from '../../shared/constants/tactics.js'
@@ -570,6 +571,8 @@ function _revealBeat(seq, i) {
 function _revealOutcome(rep) {
   const ovp = document.getElementById('bv-overlay')
   if (ovp?.__pitch) ovp.__pitch.finish(_repResult(rep))
+  // Sting on the result — a champion run gets the bell, a loss the low block.
+  sfx(rep.kind === 'tournament' && rep.champion ? 'victory' : _repResult(rep) ? 'success' : 'fail')
   // Settle the condition sim: how the player paced the squad becomes real
   // fatigue/morale (once — replays reuse the locked result).
   let condFx = rep._condResult || null

@@ -1,5 +1,6 @@
 import { G } from './state.js'
 import { sp, cm, upUI, schEx, setNation, toggleColorblind, ntf, continueTurn } from './ui.js'
+import { initAudio, loadAudioPrefs, getAudioPrefs, setAudioPref, sfx, audioState, SFX_NAMES } from './audio.js'
 import { showSetup, selIcon, beginGame, restoreGame, restoreSlot, selScenario } from './setup.js'
 import { adv } from './adv.js'
 import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, setRehabPlan, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath, rosterSortBy, rosterToggleCol, rosterColMgr, rosterCtx, rosterHover } from './panels/roster.js'
@@ -96,6 +97,8 @@ function G_defShClear() { G.defSh = null; rDef() }
 
 // Expose all functions that are called from inline onclick handlers in the HTML
 Object.assign(window, {
+  // audio
+  initAudio, getAudioPrefs, setAudioPref, sfx, audioState, SFX_NAMES,
   // screens
   showSetup, showLobby, selIcon, beginGame, restoreGame, restoreSlot, selScenario, saveGameSlot,
   // room / lobby
@@ -200,3 +203,16 @@ function _a11yInit() {
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _a11yInit)
 else _a11yInit()
+
+// ── Audio ───────────────────────────────────────────────────────────────────
+// Levels are read at boot so the mixer is correct the moment it exists, but
+// browsers refuse to start an AudioContext outside a user gesture — so the
+// graph is built on the first real interaction and torn down never.
+loadAudioPrefs()
+function _audioKick() {
+  initAudio()
+  window.removeEventListener('pointerdown', _audioKick)
+  window.removeEventListener('keydown', _audioKick)
+}
+window.addEventListener('pointerdown', _audioKick)
+window.addEventListener('keydown', _audioKick)

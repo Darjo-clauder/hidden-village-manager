@@ -5,6 +5,7 @@ import { nationIdentity, isValidNation } from '../../shared/constants/nations.js
 import { schEx } from './state.js'
 import { t } from '../../shared/utils/i18n.js'
 import { clearCssVarCache } from './cssVar.js'
+import { sfx } from './audio.js'
 
 // Panel renderers
 import { rRo } from './panels/roster.js'
@@ -169,6 +170,7 @@ export function continueTurn() {
     ntf(t('turn.resolveFirst'))
     return
   }
+  sfx('turn')
   if (typeof window.endTurn === 'function') window.endTurn()
 }
 
@@ -209,11 +211,15 @@ function _applyNationTheme(nationId) {
   const ic = document.getElementById('sb-icon');  if (ic) ic.style.color = accent
 }
 
+let _lastPanel = null
+
 export function sp(id) {
   document.querySelectorAll('[id^="p-"]').forEach(p => p.style.display = 'none')
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'))
   const panel = document.getElementById('p-' + id)
   if (!panel) return
+  // Only sound a real change — sp() is also called programmatically on refresh.
+  if (id !== _lastPanel) { sfx('tab'); _lastPanel = id }
   panel.style.display = ''
   const nb = document.getElementById('nv-' + id)
   if (nb) nb.classList.add('active')
@@ -247,6 +253,7 @@ export function cm(id) {
 export function ntf(msg) {
   const n = document.getElementById('nf')
   if (!n) return
+  sfx('notify')
   n.textContent = msg
   n.classList.add('show')
   setTimeout(() => n.classList.remove('show'), 2800)
