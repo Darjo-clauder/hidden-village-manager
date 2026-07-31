@@ -8,6 +8,53 @@
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{transition-duration:.01ms !important;animation-duration:.01ms !important;animation-iteration-count:1 !important;scroll-behavior:auto !important}
 }
+/* Manual override from the options screen, for players whose OS preference
+   doesn't match what they want here. Mirrors the media query above. */
+html[data-reduce-motion="1"] *,
+html[data-reduce-motion="1"] *::before,
+html[data-reduce-motion="1"] *::after{
+  transition-duration:.01ms !important;animation-duration:.01ms !important;
+  animation-iteration-count:1 !important;scroll-behavior:auto !important;
+}
+
+/* ══ OPTIONS ══════════════════════════════════════════════════════════════ */
+/* Topbar icon button — quieter than .ab, sits beside the End Turn action. */
+.tb-icon-btn{
+  background:none;border:1px solid var(--border-hi);color:var(--text-dim);
+  font-family:inherit;font-size:var(--fs-lead);line-height:1;
+  padding:5px 9px;cursor:pointer;flex-shrink:0;
+  transition:border-color .12s,color .12s;
+}
+.tb-icon-btn:hover{border-color:var(--accent);color:var(--accent)}
+.set-group{margin-bottom:var(--sp-5)}
+.set-group:last-of-type{margin-bottom:var(--sp-3)}
+.set-row{
+  display:flex;align-items:center;gap:var(--sp-3);
+  padding:var(--sp-2) 0;border-bottom:1px solid var(--border-dim);
+}
+.set-row:last-child{border-bottom:none}
+.set-label{flex:1;font-size:var(--fs-body);color:var(--text-hi)}
+.set-hint{display:block;font-size:var(--fs-micro);color:var(--text-dim);margin-top:1px}
+.set-row input[type=range]{width:170px;accent-color:var(--accent);cursor:pointer}
+.set-val{
+  width:44px;text-align:right;font-size:var(--fs-small);color:var(--gold);
+  font-family:'Courier New',monospace;
+}
+/* Pill toggle — reads its state without needing a colour legend. */
+.set-toggle{
+  min-width:62px;padding:3px 10px;cursor:pointer;font-family:inherit;
+  font-size:var(--fs-micro);letter-spacing:var(--ls-caps);text-transform:uppercase;
+  background:transparent;border:1px solid var(--border-hi);color:var(--text-dim);
+  transition:border-color .12s,color .12s,background .12s;
+}
+.set-toggle.on{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+.set-toggle:hover{border-color:var(--accent-border)}
+.set-seg{display:flex;gap:4px}
+.set-seg button{
+  padding:3px 10px;cursor:pointer;font-family:inherit;font-size:var(--fs-micro);
+  background:transparent;border:1px solid var(--border-hi);color:var(--text-dim);
+}
+.set-seg button.on{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
 html,body{height:100%;overflow:hidden}
 body{
   font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
@@ -77,14 +124,18 @@ body{
      read as one flat grey mist: at that size nothing can be more important
      than anything else. 10px is the floor now, and each step is a legible
      jump, so hierarchy comes from the ramp instead of from bold tags. */
-  --fs-micro:  10px;  /* caps rubrics, footnotes — the floor */
-  --fs-small:  11px;  /* secondary detail beside a value */
-  --fs-body:   12px;  /* default running text */
-  --fs-lead:   13px;  /* emphasised rows, nav, card names */
-  --fs-sub:    15px;  /* card titles, sub-heads */
-  --fs-head:   18px;  /* panel titles */
-  --fs-title:  22px;  /* headline stat values */
-  --fs-display:28px;  /* screen-level display type */
+  /* --fs-scale is the player's text-size setting. Because every size in the
+     game resolves through this block, one multiplier rescales the entire UI
+     proportionally — hierarchy is preserved at any setting. */
+  --fs-scale:  1;
+  --fs-micro:  calc(10px * var(--fs-scale));  /* caps rubrics, footnotes — the floor */
+  --fs-small:  calc(11px * var(--fs-scale));  /* secondary detail beside a value */
+  --fs-body:   calc(12px * var(--fs-scale));  /* default running text */
+  --fs-lead:   calc(13px * var(--fs-scale));  /* emphasised rows, nav, card names */
+  --fs-sub:    calc(15px * var(--fs-scale));  /* card titles, sub-heads */
+  --fs-head:   calc(18px * var(--fs-scale));  /* panel titles */
+  --fs-title:  calc(22px * var(--fs-scale));  /* headline stat values */
+  --fs-display:calc(28px * var(--fs-scale));  /* screen-level display type */
   --ls-caps:   .14em;
 
   /* Spacing rhythm */
@@ -278,7 +329,8 @@ body::after{
 .hd-digest-h{font-size:var(--fs-micro);letter-spacing:2px;text-transform:uppercase;color:var(--accent,#c9a84c);margin-bottom:8px;display:flex;align-items:center;gap:6px}
 .hd-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border-dim,rgba(110,100,80,.12))}
 .hd-item:last-child{border-bottom:none}
-.hd-item-ico{font-size:var(--fs-lead);width:16px;text-align:center}
+/* Sized in em, not px, so it still fits its glyph at every text-size setting. */
+.hd-item-ico{font-size:var(--fs-lead);width:1.5em;flex-shrink:0;text-align:center}
 .hd-item-t{flex:1;font-size:var(--fs-body);color:var(--text-hi,#e8e0cc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hd-item-go{font-size:var(--fs-small);color:var(--text-dim,#7a7060);background:transparent;border:1px solid var(--border,#2e2a22);padding:2px 8px;cursor:pointer;border-radius:2px;flex-shrink:0}
 .hd-item-go:hover{color:var(--accent,#c9a84c);border-color:var(--accent-border,rgba(201,168,76,.3))}

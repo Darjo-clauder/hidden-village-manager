@@ -152,7 +152,7 @@ export function rWorldList() {
             const rel = getMinorRel(G.minorRelations, m.n)
             const tier = minorRelTier(rel)
             return `<div style="display:flex;align-items:center;gap:6px;margin-top:6px">
-              <span style="font-size:var(--fs-micro);color:var(--text-dim);width:48px">Standing</span>
+              <span style="font-size:var(--fs-micro);color:var(--text-dim);width:5.5em;flex-shrink:0">Standing</span>
               <div style="flex:1;height:4px;background:var(--sunken);border-radius:2px;overflow:hidden"><div style="width:${rel}%;height:100%;background:${tier.color}"></div></div>
               <span style="font-size:var(--fs-micro);color:${tier.color}">${tier.label}</span>
             </div>`

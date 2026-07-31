@@ -1,6 +1,7 @@
 import { G } from './state.js'
 import { sp, cm, upUI, schEx, setNation, toggleColorblind, ntf, continueTurn } from './ui.js'
 import { initAudio, loadAudioPrefs, getAudioPrefs, setAudioPref, sfx, audioState, SFX_NAMES } from './audio.js'
+import { openSettings, closeSettings, renderSettings, setVolume, toggleMute, toggleReduceMotion, setTextSize, loadDisplayPrefs, getDisplayPrefs, setDisplayPref } from './settings.js'
 import { showSetup, selIcon, beginGame, restoreGame, restoreSlot, selScenario } from './setup.js'
 import { adv } from './adv.js'
 import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, setRehabPlan, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath, rosterSortBy, rosterToggleCol, rosterColMgr, rosterCtx, rosterHover } from './panels/roster.js'
@@ -97,8 +98,9 @@ function G_defShClear() { G.defSh = null; rDef() }
 
 // Expose all functions that are called from inline onclick handlers in the HTML
 Object.assign(window, {
-  // audio
+  // audio + options
   initAudio, getAudioPrefs, setAudioPref, sfx, audioState, SFX_NAMES,
+  openSettings, closeSettings, renderSettings, setVolume, toggleMute, toggleReduceMotion, setTextSize, getDisplayPrefs, setDisplayPref,
   // screens
   showSetup, showLobby, selIcon, beginGame, restoreGame, restoreSlot, selScenario, saveGameSlot,
   // room / lobby
@@ -209,6 +211,7 @@ else _a11yInit()
 // browsers refuse to start an AudioContext outside a user gesture — so the
 // graph is built on the first real interaction and torn down never.
 loadAudioPrefs()
+loadDisplayPrefs()   // text scale + reduced motion, applied to <html> before first paint
 function _audioKick() {
   initAudio()
   window.removeEventListener('pointerdown', _audioKick)
