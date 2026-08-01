@@ -2,6 +2,11 @@ import { G, sn, fmt, clamp, addChronicle, addLegend, pk } from '../state.js'
 import { RANKS, PRESTIGE_TIERS, LEGACY_DECISIONS } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { dynastyProgress, computeDynastyGrade, inheritedBonuses, DYNASTY_YEARS } from '../../../shared/utils/dynasty.js'
+import { bankTenure, loadLegacy, previewStartingBonuses } from '../legacyStore.js'
+import { tierFor, nextTier } from '../../../shared/utils/legacy.js'
+
+/** Years served before stepping down voluntarily becomes available. */
+export const HANDOFF_MIN_YEARS = 8
 import { leagueLeaders } from '../../../shared/utils/seasonStats.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 
@@ -142,7 +147,8 @@ function _dynasty() {
   const { grade, score, breakdown } = computeDynastyGrade(G)
   const gradeColor = { S: 'var(--gold)', A: 'var(--blue)', B: 'var(--green)', C: 'var(--orange)', D: 'var(--text-dim)' }[grade] || 'var(--text-dim)'
   const bonuses = inheritedBonuses(grade)
-  const canHandoff = year >= DYNASTY_YEARS && !!G.successorId
+  const completedDynasty = year >= DYNASTY_YEARS
+  const canHandoff = year >= HANDOFF_MIN_YEARS && !!G.successorId
   const rows = [
     { label: 'Exam Promotions', value: dr.examWins || 0 },
     { label: 'Primals Sealed', value: G.beasts?.filter(b => b.sealed).length || 0 },
@@ -174,12 +180,19 @@ function _dynasty() {
         ${bonuses.map(b => `<div style="font-size:var(--fs-small);color:${gradeColor}">✦ ${b.desc}: ${typeof b.value === 'number' && b.value > 999 ? fmt(b.value) : b.value}${b.id.includes('ryo') ? ' ryo' : b.id.includes('rep') ? '' : ''}</div>`).join('')}
       ` : ''}
       ${canHandoff
-        ? `<div style="margin-top:10px"><button class="gb gb-g" onclick="triggerDynastyHandoff()" style="font-size:var(--fs-body);padding:6px 14px">⚡ Pass the Torch — Begin New Dynasty</button></div>`
-        : year >= DYNASTY_YEARS
-          ? `<div style="font-size:var(--fs-small);color:var(--red);margin-top:8px">Dynasty complete — designate a Successor first (Successor tab).</div>`
-          : `<div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:8px">${DYNASTY_YEARS - year} year${DYNASTY_YEARS - year !== 1 ? 's' : ''} remaining in this dynasty.</div>`
+        ? `<div style="margin-top:10px">
+             <button class="gb gb-g" onclick="triggerDynastyHandoff()" style="font-size:var(--fs-body);padding:6px 14px">⚡ Pass the Torch — ${completedDynasty ? 'Complete the Dynasty' : 'Step Down'}</button>
+             <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:4px">${completedDynasty
+               ? 'Full dynasty — banks legacy points AND leaves a one-time bequest to your successor.'
+               : `Stepping down early banks legacy points. Serve to Year ${DYNASTY_YEARS} to also leave a bequest.`}</div>
+           </div>`
+        : !G.successorId
+          ? `<div style="font-size:var(--fs-small);color:${year >= HANDOFF_MIN_YEARS ? 'var(--red)' : 'var(--text-dim)'};margin-top:8px">Designate a Successor to enable a handoff (Successor tab).</div>`
+          : `<div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:8px">${HANDOFF_MIN_YEARS - year} year${HANDOFF_MIN_YEARS - year !== 1 ? 's' : ''} until you may step down.</div>`
       }
     </div>
+
+    ${_legacyStandingCard()}
 
     <div style="font-size:var(--fs-body);color:var(--gold);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Dynasty Records — ${G.vName}</div>
     <div style="display:grid;gap:4px;margin-bottom:14px">
@@ -295,9 +308,58 @@ function _legacyReport() {
   </div>`
 }
 
+/**
+ * The lineage — what survives this run. Shown alongside the dynasty clock so
+ * the two timescales sit next to each other: this tenure, and the name behind it.
+ */
+function _legacyStandingCard() {
+  const store = loadLegacy()
+  const tier = tierFor(store.points)
+  const next = nextTier(store.points)
+  const { total, bequest } = previewStartingBonuses()
+  const past = [...(store.tenures || [])].reverse()
+
+  const END_LABEL = { completed: 'completed the dynasty', retired: 'stepped down', dismissed: 'dismissed' }
+
+  return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:10px 12px;margin-bottom:12px">
+    <div class="sect">The Lineage</div>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+      <span style="font-size:var(--fs-title);color:var(--gold);font-family:'Courier New',monospace">${store.points}</span>
+      <span style="font-size:var(--fs-body);color:var(--text-hi)">${tier.name}</span>
+      ${store.dynastiesCompleted ? `<span style="font-size:var(--fs-small);color:var(--text-dim)">· ${store.dynastiesCompleted} dynast${store.dynastiesCompleted === 1 ? 'y' : 'ies'} completed</span>` : ''}
+      ${store.bestGrade ? `<span style="font-size:var(--fs-small);color:var(--text-dim)">· best grade ${store.bestGrade}</span>` : ''}
+    </div>
+    ${next
+      ? `<div style="font-size:var(--fs-micro);color:var(--text-dim);margin-bottom:6px">${next.at - store.points} more legacy points → ${next.name}</div>`
+      : `<div style="font-size:var(--fs-micro);color:var(--gold-2);margin-bottom:6px">Highest standing reached.</div>`}
+    ${(total.ryo || total.legend || total.rep || total.monthly) ? `
+      <div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Your next Warden begins with</div>
+      <div style="font-size:var(--fs-small);color:var(--green)">
+        ${[total.ryo && `${fmt(total.ryo)} ryo`, total.legend && `${total.legend} legend`, total.rep && `${total.rep} reputation`, total.monthly && `${fmt(total.monthly)}/mo stipend`].filter(Boolean).join(' · ')}
+        ${bequest ? `<span style="color:var(--gold)"> (incl. ${bequest.grade}-grade bequest)</span>` : ''}
+      </div>` : `
+      <div style="font-size:var(--fs-small);color:var(--text-dim)">No legacy yet — conclude a tenure to leave one.</div>`}
+    ${past.length ? `
+      <div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin:8px 0 3px">Wardens before you</div>
+      ${past.slice(0, 6).map(t2 => `<div style="display:flex;gap:8px;font-size:var(--fs-small);color:var(--text-dim);padding:1px 0">
+        <span style="color:var(--text-hi);min-width:9em">${t2.wardenName}</span>
+        <span style="min-width:6em">${t2.vName}</span>
+        <span style="min-width:5em">${t2.yearsServed}yr · ${t2.grade}</span>
+        <span style="flex:1">${END_LABEL[t2.endedBy] || t2.endedBy}</span>
+        <span style="color:var(--gold)">+${t2.earned}</span>
+      </div>`).join('')}` : ''}
+  </div>`
+}
+
 export function triggerDynastyHandoff() {
-  if ((G.year || 1) < DYNASTY_YEARS) { ntf(tr('toast.legacy.handoffRequires', { year: DYNASTY_YEARS })); return }
+  const year = G.year || 1
+  // Handing over is available well before the full dynasty so that a short
+  // tenure is a real option, not a failure state -- but only reaching
+  // DYNASTY_YEARS counts as *completing* the dynasty, which is what arms the
+  // bequest. Stepping away early banks a smaller, still-compounding legacy.
+  if (year < HANDOFF_MIN_YEARS) { ntf(tr('toast.legacy.handoffRequires', { year: HANDOFF_MIN_YEARS })); return }
   if (!G.successorId) { ntf(tr('toast.legacy.designateFirst')); return }
+  const completed = year >= DYNASTY_YEARS
   const { grade, score } = computeDynastyGrade(G)
   const bonuses = inheritedBonuses(grade)
   const successor = G.shinobi?.find(x => x.id === G.successorId) || G.staff?.find(x => x.id === G.successorId)
@@ -309,15 +371,25 @@ export function triggerDynastyHandoff() {
     hallCount: (G.hallOfLegends || []).length,
   }
 
+  // Bank it to the cross-run store. THIS is what the old handoff never did --
+  // it wrote the record above and nothing ever read it, so a completed dynasty
+  // carried nothing into the next run.
+  const banked = bankTenure(G, completed ? 'completed' : 'retired')
+  G.dynastyHandoffRecord.earned = banked.record.earned
+  G.dynastyHandoffRecord.legacyTotal = banked.store.points
+
   addChronicle('Dynasty Handoff',
-    `${G.vName} dynasty concluded at Year ${G.year}. Grade ${grade} (${score}/130). ${successorName} takes leadership. Bonuses carry forward.`,
+    `${G.vName} ${completed ? 'dynasty concluded' : 'tenure ended'} at Year ${G.year}. Grade ${grade} (${score}/130). ${successorName} takes leadership.`,
     'milestone')
   aL(tr('toast.legacy.torchPassed', { name: successorName, grade }), 'good')
+  aL(`Legacy earned: ${banked.record.earned} points (${banked.store.points} total).`, 'good')
 
-  bonuses.forEach(b => {
-    const value = `${typeof b.value === 'number' && b.value > 999 ? fmt(b.value) : b.value}${b.id.includes('ryo') ? ' ryo' : ''}`
-    aL(tr('toast.legacy.inherited', { desc: b.desc, value }), 'good')
-  })
+  if (completed) {
+    bonuses.forEach(b => {
+      const value = `${typeof b.value === 'number' && b.value > 999 ? fmt(b.value) : b.value}${b.id.includes('ryo') ? ' ryo' : ''}`
+      aL(tr('toast.legacy.inherited', { desc: b.desc, value }), 'good')
+    })
+  }
 
   G.dynastyComplete = true
   upUI()

@@ -1,4 +1,5 @@
-import { G, spIcon, setSpIcon, initState, schEx, applyScenario } from './state.js'
+import { G, spIcon, setSpIcon, initState, schEx, applyScenario, fmt } from './state.js'
+import { applyLegacyToNewGame } from './legacyStore.js'
 import { VILLAGE_ICONS, START_SCENARIOS } from './constants.js'
 import { upUI, sp, aL } from './ui.js'
 import { initSocket, socket } from './socket.js'
@@ -131,6 +132,18 @@ function _startGame(vname, kname, icon, scenario = 'standard', savedState = null
     G.vIcon = icon
     seedPhase1(G)
     applyScenario(G, scenario)
+    // Inherited head start from previous tenures. Applied after the scenario so
+    // it stacks on top of the chosen starting position rather than being
+    // overwritten by it. Returns null on a true first run.
+    const inherited = applyLegacyToNewGame(G)
+    if (inherited) {
+      const parts = [
+        inherited.ryo && `${fmt(inherited.ryo)} ryo`,
+        inherited.legend && `${inherited.legend} legend`,
+        inherited.rep && `${inherited.rep} reputation`,
+      ].filter(Boolean).join(' · ')
+      aL(`The name carries: ${inherited.tier}${inherited.bequestGrade ? ` · ${inherited.bequestGrade}-grade bequest` : ''} — ${parts}.`, 'good')
+    }
     schEx()
   }
   markGameActive()

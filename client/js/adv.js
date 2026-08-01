@@ -42,6 +42,7 @@ import { villageRevenue } from '../../shared/utils/economy.js'
 import { resolveMission, qualityEffects, missionApproachMod } from '../../shared/utils/missionEngine.js'
 import { kageMod, kagePerk, addKageXp } from '../../shared/constants/kageDev.js'
 import { DYNASTY_YEARS, computeDynastyGrade } from '../../shared/utils/dynasty.js'
+import { bankTenure } from './legacyStore.js'
 import { bondMissionBonus, mentorGrowthBonus, kiaRipple, BOND_TYPES } from '../../shared/bonds/bondTypes.js'
 import { BM_MISSION_BY_ID, getUnderworldTier, discoveryChance, UNDERWORLD_TIERS } from '../../shared/constants/blackMarket.js'
 import { getClanPassives, CLANS, CLAN_CHAINS, availableClanChains } from '../../shared/constants/clans.js'
@@ -239,7 +240,11 @@ function computeDaimyoBonus() {
 
 function computeVillageRevenue() {
   const base = villageRevenue(G.reputation || 0, G.prestigeTier || 'D')
-  return Math.round(base * (G._citizenRevMult || 1))
+  // The family name pays a standing stipend once the lineage is established
+  // (cross-run legacy, see shared/utils/legacy.js). Flat, so it matters most
+  // early and fades into noise as the village grows -- a leg-up, not a crutch.
+  const stipend = G.legacyStipend || 0
+  return Math.round(base * (G._citizenRevMult || 1)) + stipend
 }
 
 function computeMaintenance() {
@@ -3843,7 +3848,8 @@ export function resolveNoConfidence(choice) {
     const { grade, score } = computeDynastyGrade(G)
     aL(tr('toast.adv.resign', { grade, score }), 'neutral')
     addChronicle('Warden Resigned', `${G.kN || 'The Warden'} stepped down after a no-confidence vote. Dynasty Grade: ${grade}.`, 'legend')
-    G.gameOver = { reason: 'resignation', grade, score, year: G.year }
+    const banked = bankTenure(G, 'dismissed')
+    G.gameOver = { reason: 'resignation', grade, score, year: G.year, legacy: banked.record, legacyTotal: banked.store.points }
     upUI(); return
   }
   // Fight the vote — costs ryo and morale, resets consecutive bad years counter
@@ -3859,7 +3865,8 @@ export function resolveNoConfidence(choice) {
     aL(tr('toast.adv.forcedResign'), 'bad')
     const { grade, score } = computeDynastyGrade(G)
     addChronicle('Warden Ousted', `${G.kN || 'The Warden'} was removed after losing a no-confidence vote. Dynasty Grade: ${grade}.`, 'legend')
-    G.gameOver = { reason: 'ousted', grade, score, year: G.year }
+    const banked = bankTenure(G, 'dismissed')
+    G.gameOver = { reason: 'ousted', grade, score, year: G.year, legacy: banked.record, legacyTotal: banked.store.points }
   }
   upUI()
 }
