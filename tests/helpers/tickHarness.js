@@ -103,6 +103,87 @@ export function findTextCorruption(G) {
 }
 
 /**
+ * Dispatch available shinobi onto available missions, the way a player would.
+ *
+ * This exists because of a genuinely alarming discovery: mission resolution —
+ * the largest block in adv(), the one that kills shinobi, writes the memorial,
+ * and feeds the mandate tracker — NEVER RAN in any test. It iterates `G.aM`,
+ * assignment is a player action, and the harness only ever advanced months.
+ * Twenty-four seeds across 1,152 simulated months produced zero KIA and zero
+ * injuries, because nobody was ever sent anywhere.
+ *
+ * Every characterisation snapshot taken before this was therefore blind to the
+ * single most consequential system in the tick.
+ *
+ * Mirrors panels/missions.js doA() rather than calling it, since that reaches
+ * into the DOM. Kept intentionally simple: take whoever is free, send them at
+ * whatever is on the board.
+ */
+export function autoAssignMissions(G, { max = 3 } = {}) {
+  const board = (G.avM || [])
+  if (!board.length) return 0
+  const free = (G.shinobi || []).filter(s => s.status === 'available')
+  let sent = 0
+  for (const m of board) {
+    if (sent >= max) break
+    const s = free[sent]
+    if (!s) break
+    s.status = 'mission'
+    s.missId = m.id
+    G.aM.push({
+      id: 'h' + (G.year * 100 + G.month) + '_' + sent,
+      missionId: m.id, assignedTo: s.id, squadId: null,
+      daysLeft: m.dur, isSquad: false, approach: 'balanced',
+    })
+    sent++
+  }
+  return sent
+}
+
+/**
+ * Which rare branches a run actually exercised.
+ *
+ * Four seeds were enough to catch a missing import in tick/finance.js the
+ * instant it ran, and NOT enough to catch two in tick/staff.js — those sat
+ * green because no seed happened to graduate a mentorship or form a mentor
+ * bond. Snapshots tell you a run's output changed; they say nothing about
+ * which paths produced it.
+ *
+ * This counts the events that only occur on uncommon branches, so coverage can
+ * be asserted rather than assumed. If a change makes shinobi unkillable or
+ * stops promotions firing, a test fails instead of a snapshot quietly shifting.
+ */
+export function branchProbe(G, prev = null) {
+  const kia = (G.memorial || []).filter(m => !m.transfer).length
+  const departures = (G.memorial || []).filter(m => m.transfer).length
+  const cur = {
+    kia,
+    departures,
+    injured: (G.shinobi || []).filter(s => s.status === 'injured').length,
+    traumatised: (G.shinobi || []).filter(s => s.traumaStatus).length,
+    enshrined: (G.hallOfLegends || []).length,
+    examWins: Number(G.dynastyRecords?.examWins) || 0,
+    bonded: (G.shinobi || []).filter(s => (s.bonds || []).length).length,
+    mentorships: (G.mentorships || []).length,
+    prospects: (G.prospects || []).length,
+    students: (G.intakeClass || []).length,
+    youthCups: (G.youthCupHistory || []).length,
+    sealedBeasts: (G.beasts || []).filter(b => b.sealed).length,
+    pacts: (G.villages || []).filter(v => v.pact).length,
+    chronicles: (G.chronicles || []).length,
+    brokeOnce: !!G._everBroke,
+    cleanYears: Number(G._cleanYears) || 0,
+  }
+  if (!prev) return cur
+  // Peak-tracking for anything that can go back down, so a transient injury
+  // that healed before the run ended still counts as having happened.
+  for (const k of ['injured', 'traumatised', 'bonded', 'mentorships']) {
+    cur[k] = Math.max(cur[k], prev[k] || 0)
+  }
+  return cur
+}
+
+/**
  * A compact, comparable fingerprint of simulation state. Used as a golden
  * value: refactoring the tick must not change what the same seed produces.
  */

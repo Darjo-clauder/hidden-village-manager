@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { seedRandom, fingerprint, clearBlockers } from './helpers/tickHarness.js'
+import { seedRandom, fingerprint, clearBlockers, autoAssignMissions } from './helpers/tickHarness.js'
 
 /**
  * CHARACTERISATION TEST — the safety net for refactoring adv().
@@ -47,7 +47,9 @@ function run(months, seed) {
     G.vName = 'Testfall'; G.kName = 'Probe'; G.vIcon = '🏯'
     const trail = []
     for (let i = 0; i < months; i++) {
-      clearBlockers(G)   // stand in for the player answering what holds the turn
+      clearBlockers(G)          // stand in for the player answering what holds the turn
+      autoAssignMissions(G)     // …and actually playing: without this, mission
+                                // resolution never executes at all
       adv()
       if ((i + 1) % 12 === 0) trail.push(fingerprint(G))
     }

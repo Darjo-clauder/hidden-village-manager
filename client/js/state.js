@@ -501,6 +501,38 @@ export function genStaffCandidates(roleId, count = 3) {
 }
 
 // Generate a prospect from a specific region, with stat ranges based on scout quality
+/**
+ * Fill in the roster-only fields a prospect or student never had.
+ *
+ * Prospects, academy students and acquired shinobi are built by different
+ * generators than `mS()`, and each is missing some of the counters the monthly
+ * tick assumes exist. When one is promoted onto the roster, the next tick runs
+ * `s.months++` on `undefined` and produces NaN — and because `NaN % 12 === 0`
+ * is never true, that shinobi then NEVER AGES and never qualifies for a service
+ * award. It is silent, permanent, and only reachable after the roster floor
+ * fires, which needs deaths to have thinned the roster first.
+ *
+ * This exact bug was already found once, on `salary`, and patched for that one
+ * field with a comment about poisoning the treasury. Rather than wait to
+ * discover the rest one at a time, normalise the whole record on the way in.
+ */
+export function normalizeRecruit(s) {
+  if (!s || typeof s !== 'object') return s
+  const NUMERIC = {
+    months: 0, wins: 0, winsB: 0, winsS: 0, streak: 0, injDays: 0,
+    workload: 0, consecutiveMissions: 0, traumaCount: 0, returningForm: 100,
+    monthsWaiting: 0, age: 16, ri: 0, potential: 50, salary: 500,
+  }
+  for (const [k, def] of Object.entries(NUMERIC)) {
+    if (!Number.isFinite(Number(s[k]))) s[k] = def
+  }
+  if (!Array.isArray(s.jutsu)) s.jutsu = []
+  if (!Array.isArray(s.bonds)) s.bonds = []
+  if (!s.stats || typeof s.stats !== 'object') s.stats = {}
+  if (s.status == null) s.status = 'available'
+  return s
+}
+
 export function genRegionProspect(regionId, scout) {
   const region = REGIONS.find(r => r.id === regionId)
   const p = mS(0)

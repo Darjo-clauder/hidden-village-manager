@@ -1,4 +1,4 @@
-import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice, computeMarketValue, mS, getMissionSpecBonus } from './state.js'
+import { G, ui, sPow, sqP, sn, rnd, pk, clamp, fmt, rfM, rfP, normalizeRecruit, KAGE_EVENTS, addChronicle, addLegend, genRegionProspect, genStudent, computeHarmony, genTransferPool, pDesc, genScoutNarrative, senseiStyle, genTrainingReport, revealDevCurve, getLeadershipGroup, addTrait, addRumor, addNotice, computeMarketValue, mS, getMissionSpecBonus } from './state.js'
 import { RANKS, RAID_POOL, MONTHS, JUTSU_LIST, WORLD_CHOICE_EVENTS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, FINANCE_TIERS, FINANCIAL_EVENTS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, REGIONS, DEV_TRACKS, INTENSITY_LEVELS, STAFF_ROLES, MEETING_TYPES, TRANSFER_WINDOWS, BINGO_TIERS, HARMONY_EVENTS, REGION_EVENTS, DEV_CURVES, GROUP_EVENTS, SERVICE_AWARDS, RUMOR_TEMPLATES, DAIMYO_OBJECTIVES, SPONSORSHIP_OFFERS, EXAM_FORMATS, LEGACY_DECISIONS, PRESTIGE_TIERS, DOCTRINE_BY_ID, WORLD_CLIMATES } from './constants.js'
 import { aL, ntf, upUI, schEx, cm } from './ui.js'
 import { tickBeast, applyBeastPairEffects, getBeastPassives, BEAST_DATA, getSyncStage, captureChance } from './beastEngine.js'
@@ -1233,7 +1233,9 @@ export function adv() {
       // 0.85× homegrown discount doesn't compute Math.round(undefined*0.85) === NaN,
       // which would poison the whole treasury (a summed s.salary).
       if (best.academyOrigin) { best.homegrown = true; best.salary = Math.round((best.salary || 500) * 0.85) }
-      if (!Number.isFinite(best.salary)) best.salary = 500
+      // …and every other roster counter a prospect never had. `months` was the
+      // next one to bite: undefined++ → NaN → the shinobi never ages again.
+      normalizeRecruit(best)
       G.shinobi.push(best)
       G.prospects = G.prospects.filter(x => x.id !== best.id)
       aL(sn(best) + ' signed on — the village needed them.', 'good')
@@ -3274,6 +3276,7 @@ export function resolveRivalOffer(offerId, accept) {
         G.shinobi = G.shinobi.filter(s => s.id !== mine.id)
         G.memorial.push({ name: sn(mine), rank: RANKS[mine.ri], clan: mine.clan, year: G.year, month: G.month, wins: mine.wins, lastWords: 'Transferred to ' + offer.rivalVillage + '.', transfer: true })
         theirs.homeVillage = G.vName; theirs.status = 'available'; theirs.salary = Math.round(sPow(theirs) * 6)
+        normalizeRecruit(theirs)   // rival rosters are built by a different generator
         G.shinobi.push(theirs)
         if (theirs.homeVillage !== G.vName) { const rv = G.villages.find(v => v.n === offer.rivalVillage); if (rv?.roster) rv.roster = rv.roster.filter(s => s.id !== theirs.id) }
         aL(tr('toast.adv.tradeCompleted', { name: offer.offeredName }), 'good')
