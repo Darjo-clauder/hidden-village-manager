@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
-  seedRandom, findNumericCorruption, findTextCorruption, fingerprint,
+  seedRandom, findNumericCorruption, findTextCorruption, fingerprint, clearBlockers,
 } from './helpers/tickHarness.js'
 
 // adv.js reaches the browser only through these four modules. Stubbing them
@@ -36,7 +36,7 @@ function runMonths(n, seed = 20260731) {
   try {
     initState()
     G.vName = 'Testfall'; G.kName = 'Probe'; G.vIcon = '🏯'
-    for (let i = 0; i < n; i++) adv()
+    for (let i = 0; i < n; i++) { clearBlockers(G); adv() }
     return fingerprint(G)
   } finally { restore() }
 }
@@ -59,13 +59,54 @@ describe('monthly tick — it runs at all', () => {
   })
 })
 
+describe('monthly tick — the turn gate', () => {
+  // The guard this covers exists because the QA harness for this project was
+  // itself driving the tick over unanswered decisions for weeks.
+  const blockers = [
+    ['pendingObligation', { villageName: 'Cragmoor', cost: 1000 }],
+    ['pendingQuickDecision', { id: 'q' }],
+    ['pendingChoiceEvent', { id: 'e' }],
+  ]
+
+  for (const [field, value] of blockers) {
+    it(`refuses to advance while ${field} is outstanding`, () => {
+      const restore = seedRandom(1234)
+      try {
+        initState()
+        G.vName = 'Testfall'; G.kName = 'Probe'
+        clearBlockers(G); adv()                 // one clean month first
+        const before = { year: G.year, month: G.month, ryo: G.ryo }
+        G[field] = value
+        const result = adv()
+        expect(result).toBe(false)
+        expect({ year: G.year, month: G.month, ryo: G.ryo }).toEqual(before)
+      } finally { restore() }
+    })
+  }
+
+  it('advances again once the blocker is answered', () => {
+    const restore = seedRandom(1234)
+    try {
+      initState()
+      G.vName = 'Testfall'; G.kName = 'Probe'
+      G.pendingObligation = { villageName: 'Cragmoor' }
+      const stuck = G.month
+      adv()
+      expect(G.month).toBe(stuck)
+      G.pendingObligation = null
+      adv()
+      expect(G.month).not.toBe(stuck)
+    } finally { restore() }
+  })
+})
+
 describe('monthly tick — numeric integrity', () => {
   it('produces no NaN or Infinity anywhere in state after 36 months', () => {
     const restore = seedRandom(4242)
     try {
       initState()
       G.vName = 'Testfall'; G.kName = 'Probe'
-      for (let i = 0; i < 36; i++) adv()
+      for (let i = 0; i < 36; i++) { clearBlockers(G); adv() }
       expect(findNumericCorruption(G)).toEqual([])
     } finally { restore() }
   })
@@ -86,7 +127,7 @@ describe('monthly tick — player-visible text', () => {
     try {
       initState()
       G.vName = 'Testfall'; G.kName = 'Probe'
-      for (let i = 0; i < 12; i++) adv()
+      for (let i = 0; i < 12; i++) { clearBlockers(G); adv() }
       // Guards the check below from silently passing over an empty array.
       expect(G.log.length).toBeGreaterThan(0)
     } finally { restore() }
@@ -97,7 +138,7 @@ describe('monthly tick — player-visible text', () => {
     try {
       initState()
       G.vName = 'Testfall'; G.kName = 'Probe'
-      for (let i = 0; i < 36; i++) adv()
+      for (let i = 0; i < 36; i++) { clearBlockers(G); adv() }
       expect(findTextCorruption(G)).toEqual([])
     } finally { restore() }
   })
@@ -130,7 +171,7 @@ describe('monthly tick — roster invariants', () => {
       initState()
       G.vName = 'Testfall'; G.kName = 'Probe'
       let min = Infinity
-      for (let i = 0; i < 60; i++) { adv(); min = Math.min(min, G.shinobi.length) }
+      for (let i = 0; i < 60; i++) { clearBlockers(G); adv(); min = Math.min(min, G.shinobi.length) }
       expect(min).toBeGreaterThan(0)
     } finally { restore() }
   })
@@ -140,7 +181,7 @@ describe('monthly tick — roster invariants', () => {
     try {
       initState()
       G.vName = 'Testfall'; G.kName = 'Probe'
-      for (let i = 0; i < 24; i++) adv()
+      for (let i = 0; i < 24; i++) { clearBlockers(G); adv() }
       for (const s of G.shinobi) {
         expect(s.id).toBeTruthy()
         expect(typeof s.fn).toBe('string')
@@ -155,7 +196,7 @@ describe('monthly tick — roster invariants', () => {
     try {
       initState()
       G.vName = 'Testfall'; G.kName = 'Probe'
-      for (let i = 0; i < 120; i++) adv()
+      for (let i = 0; i < 120; i++) { clearBlockers(G); adv() }
       expect(G.log.length).toBeLessThanOrEqual(200)
     } finally { restore() }
   })

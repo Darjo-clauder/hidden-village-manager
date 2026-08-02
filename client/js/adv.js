@@ -44,6 +44,8 @@ import { kageMod, kagePerk, addKageXp } from '../../shared/constants/kageDev.js'
 import { DYNASTY_YEARS, computeDynastyGrade } from '../../shared/utils/dynasty.js'
 import { bankTenure } from './legacyStore.js'
 import { syncAchievements } from './achievementsStore.js'
+import { turnBlocker } from '../../shared/utils/turnGate.js'
+import { dlog } from '../../shared/utils/debug.js'
 import { bondMissionBonus, mentorGrowthBonus, kiaRipple, BOND_TYPES } from '../../shared/bonds/bondTypes.js'
 import { BM_MISSION_BY_ID, getUnderworldTier, discoveryChance, UNDERWORLD_TIERS } from '../../shared/constants/blackMarket.js'
 import { getClanPassives, CLANS, CLAN_CHAINS, availableClanChains } from '../../shared/constants/clans.js'
@@ -660,6 +662,16 @@ export function activateBloodline(beastName) {
 }
 
 export function adv() {
+  // The month does not advance over an unanswered decision.
+  //
+  // This guard used to exist only in ui.js continueTurn(), which meant any
+  // other caller — endTurn(), an inline handler, a QA harness, a future
+  // server-driven tick — walked straight past an invoked pact or a council
+  // mandate and produced state the player was never shown. Both endTurn and
+  // adv are reachable from window, so the UI was never a real gate.
+  const _blocked = turnBlocker(G)
+  if (_blocked) { dlog('[adv] refused — ' + _blocked.id + ': ' + _blocked.label); return false }
+
   // Off-season phase: months 1–3 are recovery/prep. Flag used by UI.
   G.isOffSeason = G.month >= 1 && G.month <= 3
 

@@ -36,6 +36,27 @@ export function seedRandom(seed = 12345) {
   return () => { Math.random = real }
 }
 
+/**
+ * Stand in for a player answering whatever is holding the turn.
+ *
+ * adv() now refuses to run while a blocking decision is outstanding
+ * (shared/utils/turnGate.js). Before that guard existed this harness drove the
+ * tick straight over pending mandates, pact calls and world choices — which
+ * means the months it produced were ones no real player could have reached.
+ * Clearing them here is closer to a real playthrough than ignoring them was,
+ * though it does skip whatever effect answering would have had.
+ *
+ * Exams and wars need interactive play to resolve properly, so they are simply
+ * stood down; driving those end-to-end is a browser job, not a harness one.
+ */
+export function clearBlockers(G) {
+  G.pendingChoiceEvent = null
+  G.pendingObligation = null
+  G.pendingQuickDecision = null
+  G.examActive = false
+  G.warActive = false
+}
+
 /** Numeric fields that must stay finite for the simulation to be meaningful. */
 export const NUMERIC_INVARIANTS = [
   'ryo', 'reputation', 'legend', 'morale', 'year', 'month',

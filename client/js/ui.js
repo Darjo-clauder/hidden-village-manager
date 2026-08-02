@@ -6,6 +6,7 @@ import { schEx } from './state.js'
 import { t } from '../../shared/utils/i18n.js'
 import { clearCssVarCache } from './cssVar.js'
 import { sfx } from './audio.js'
+import { turnBlocker } from '../../shared/utils/turnGate.js'
 
 // Panel renderers
 import { rRo } from './panels/roster.js'
@@ -130,13 +131,11 @@ export function upUI() {
 // ── ContinueButton (FM24 spec) ─────────────────────────────────────────────────
 // Reflects pending actions: ready / pending (soft, inbox) / blocked (must resolve).
 function _pendingState() {
-  if (G.pendingChoiceEvent)   return { state: 'blocked', reason: 'worldchoice' }
-  // An ally has called on a pact. Blocking is the whole point — an obligation
-  // you can walk past is not an obligation.
-  if (G.pendingObligation)    return { state: 'blocked', reason: 'obligation' }
-  if (G.pendingQuickDecision) return { state: 'blocked', reason: 'inbox' }
-  if (G.examActive)           return { state: 'blocked', reason: 'exam' }
-  if (G.warActive)            return { state: 'blocked', reason: 'war' }
+  // Blocking conditions are defined once in shared/utils/turnGate.js and shared
+  // with adv() itself, so the UI and the simulation cannot disagree about
+  // whether a month may advance.
+  const blocker = turnBlocker(G)
+  if (blocker) return { state: 'blocked', reason: blocker.id }
   const n = (() => { try { return getInboxCount() } catch { return 0 } })()
   if (n > 0) return { state: 'pending', count: n }
   return { state: 'ready' }
