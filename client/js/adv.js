@@ -74,6 +74,7 @@ import { tickOffSeason } from './tick/offSeason.js'
 import { tickWorldPassives } from './tick/worldPassives.js'
 import { tickStaff } from './tick/staff.js'
 import { tickFinance } from './tick/finance.js'
+import { tickAlliances } from './tick/alliances.js'
 import { t as tr } from '../../shared/utils/i18n.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
@@ -1980,6 +1981,9 @@ export function adv() {
 
   // ── Finance: monthly snapshot, salary cap, year-end report ── see ./tick/finance.js
   tickFinance({ sb, season, sponsorshipIncome })
+  // ── Alliance pacts: payout, standing drift, and calls ── see ./tick/alliances.js
+  tickAlliances()
+
   // ── Diplomacy drift ──────────────────────────────────────────────────────
   G.villages.forEach(v => {
     if (Math.random() < 0.10) {

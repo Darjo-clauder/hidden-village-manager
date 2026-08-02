@@ -131,6 +131,9 @@ export function upUI() {
 // Reflects pending actions: ready / pending (soft, inbox) / blocked (must resolve).
 function _pendingState() {
   if (G.pendingChoiceEvent)   return { state: 'blocked', reason: 'worldchoice' }
+  // An ally has called on a pact. Blocking is the whole point — an obligation
+  // you can walk past is not an obligation.
+  if (G.pendingObligation)    return { state: 'blocked', reason: 'obligation' }
   if (G.pendingQuickDecision) return { state: 'blocked', reason: 'inbox' }
   if (G.examActive)           return { state: 'blocked', reason: 'exam' }
   if (G.warActive)            return { state: 'blocked', reason: 'war' }
@@ -166,6 +169,7 @@ export function continueTurn() {
   if (p.state === 'blocked') {
     if (p.reason === 'worldchoice' && typeof window.openWorldChoice === 'function') window.openWorldChoice()
     else if (p.reason === 'exam' || p.reason === 'war') sp('exam')
+    else if (p.reason === 'obligation') sp('kage')   // answer it where the pact lives
     else sp('inbox')
     ntf(t('turn.resolveFirst'))
     return

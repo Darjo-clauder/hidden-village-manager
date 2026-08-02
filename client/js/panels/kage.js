@@ -9,6 +9,8 @@ import { kageMod, kagePerk } from '../../../shared/constants/kageDev.js'
 import { identityFor, MATCH_STYLES } from '../../../shared/constants/villageIdentity.js'
 import { h2hLabel } from '../../../shared/utils/rivalry.js'
 import { opSuccessChance, opEffect, RIVAL_OP_COST } from '../../../shared/utils/rivalOps.js'
+import { PACT_TYPES, PACT_LIST, PACT_REL_MIN, canProposePact, newPact, pactBenefits, pactStandingTier } from '../../../shared/utils/alliances.js'
+import { answerObligation } from '../tick/alliances.js'
 
 export function rKa() {
   const el = document.getElementById('kgl')
@@ -28,7 +30,7 @@ export function rKa() {
     const derbyChip = isDerby ? `<span style="font-size:var(--fs-micro);border:1px solid var(--red);color:var(--red);padding:0 4px;margin-left:5px">🔥 DERBY RIVAL</span>` : ''
     const atLabel = h2hLabel(G.h2h, v.n)
     const h2hLine = atLabel ? `<div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:6px">⚔ League record vs you: <span style="color:var(--text-mid)">${atLabel}</span></div>` : ''
-    return `<div class="ke-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="font-size:20px">${v.ico}</div><div><div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold">${v.n}</div><div style="font-size:var(--fs-small);color:var(--text-dim)">${v.kageRank} ${v.kage} · <span style="color:${rc}">${v.rel > 60 ? 'Allied' : v.rel > 30 ? 'Neutral' : 'Hostile'}</span>${v.allied ? ' ✓ Allied' : ''}${derbyChip}</div></div></div>${idLine}${aceLine}${h2hLine}<div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><div style="font-size:var(--fs-micro);color:var(--text-dim);width:6.5em;flex-shrink:0;text-transform:uppercase;letter-spacing:1px">Relations</div><div class="bar" style="flex:1"><div class="fill" style="width:${v.rel}%;background:${rc}"></div></div><div style="font-size:var(--fs-body);color:var(--text-dim)">${v.rel}</div></div><div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><div style="font-size:var(--fs-micro);color:var(--text-dim);width:6.5em;flex-shrink:0;text-transform:uppercase;letter-spacing:1px">Strength</div><div class="bar" style="flex:1"><div class="fill" style="width:${Math.min(100,vs/2)}%;background:${strColor}"></div></div><div style="font-size:var(--fs-small);color:${strColor}">${strLabel} (${Math.round(vs)})</div></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="gb gb-b" onclick="sGift('${v.n}')" ${G.ryo < 5000 ? 'disabled' : ''}>Send gifts +10 (5k ryo)</button>${v.rel > 60 && !v.allied ? `<button class="gb gb-g" onclick="propAl('${v.n}')" ${G.ryo < 10000 ? 'disabled' : ''}>Propose alliance (10k)</button>` : ''}${v.rel < 60 && !v.allied ? `<button class="gb" onclick="demandTribute('${v.n}')" title="Strength-gated. Success extracts ryo; failure angers them.">Demand tribute</button>` : ''}${(v.threat || 0) > 0 ? `<button class="gb gb-b" onclick="appease('${v.n}')" ${G.ryo < 4000 ? 'disabled' : ''}>Appease −threat (4k)</button>` : ''}${v.rel < 30 ? `<button class="gb gb-r" onclick="rattle('${v.n}')">Rattle sabres</button>` : ''}<button class="gb" onclick="sabotageRival('${v.n}')" ${G.ryo < RIVAL_OP_COST ? 'disabled' : ''} title="Covert op (${fmt(RIVAL_OP_COST)} ryo): dent their strength so they slip in the league. Failure exposes you.">🗡 Disrupt (${fmt(RIVAL_OP_COST)})</button></div></div>`
+    return `<div class="ke-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div style="font-size:20px">${v.ico}</div><div><div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold">${v.n}</div><div style="font-size:var(--fs-small);color:var(--text-dim)">${v.kageRank} ${v.kage} · <span style="color:${rc}">${v.rel > 60 ? 'Allied' : v.rel > 30 ? 'Neutral' : 'Hostile'}</span>${v.pact ? ` · ${PACT_TYPES[v.pact.type]?.icon || ''} ${PACT_TYPES[v.pact.type]?.name || ''} (${pactStandingTier(v.pact.standing).label})` : v.allied ? ' ✓ Allied' : ''}${derbyChip}</div></div></div>${idLine}${aceLine}${h2hLine}<div style="display:flex;align-items:center;gap:7px;margin-bottom:3px"><div style="font-size:var(--fs-micro);color:var(--text-dim);width:6.5em;flex-shrink:0;text-transform:uppercase;letter-spacing:1px">Relations</div><div class="bar" style="flex:1"><div class="fill" style="width:${v.rel}%;background:${rc}"></div></div><div style="font-size:var(--fs-body);color:var(--text-dim)">${v.rel}</div></div><div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><div style="font-size:var(--fs-micro);color:var(--text-dim);width:6.5em;flex-shrink:0;text-transform:uppercase;letter-spacing:1px">Strength</div><div class="bar" style="flex:1"><div class="fill" style="width:${Math.min(100,vs/2)}%;background:${strColor}"></div></div><div style="font-size:var(--fs-small);color:${strColor}">${strLabel} (${Math.round(vs)})</div></div><div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"><button class="gb gb-b" onclick="sGift('${v.n}')" ${G.ryo < 5000 ? 'disabled' : ''}>Send gifts +10 (5k ryo)</button>${!v.pact && v.rel >= PACT_REL_MIN ? PACT_LIST.map(pt => `<button class="gb gb-g" onclick="proposePact('${v.n}','${pt.id}')" ${G.ryo < 10000 ? 'disabled' : ''} title="${pt.blurb}&#10;&#10;BENEFIT: ${pt.benefit}&#10;OBLIGATION: ${pt.obligation} (${pt.callCost})">${pt.icon} ${pt.name} (10k)</button>`).join('') : ''}${v.rel < 60 && !v.allied ? `<button class="gb" onclick="demandTribute('${v.n}')" title="Strength-gated. Success extracts ryo; failure angers them.">Demand tribute</button>` : ''}${(v.threat || 0) > 0 ? `<button class="gb gb-b" onclick="appease('${v.n}')" ${G.ryo < 4000 ? 'disabled' : ''}>Appease −threat (4k)</button>` : ''}${v.rel < 30 ? `<button class="gb gb-r" onclick="rattle('${v.n}')">Rattle sabres</button>` : ''}<button class="gb" onclick="sabotageRival('${v.n}')" ${G.ryo < RIVAL_OP_COST ? 'disabled' : ''} title="Covert op (${fmt(RIVAL_OP_COST)} ryo): dent their strength so they slip in the league. Failure exposes you.">🗡 Disrupt (${fmt(RIVAL_OP_COST)})</button></div></div>`
   }).join('')
   const standings = rankStandings(playerStr, (G.vName || 'Your Village'), G.villages)
   const standingsHtml = `<div class="ke-card" style="margin-bottom:14px">
@@ -40,7 +42,82 @@ export function rKa() {
   </div>`
   el.innerHTML = (ui.pKE
     ? `<div class="ke-card" style="border-color:var(--gold);margin-bottom:14px"><div style="font-size:var(--fs-body);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:8px">⚡ Warden Event</div><div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold;margin-bottom:5px">${ui.pKE.n}</div><div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:12px;line-height:1.5">${ui.pKE.desc}</div><div style="display:flex;flex-direction:column;gap:6px">${ui.pKE.choices.map((c, i) => `<button class="gb" onclick="resKE(${i})">${c.l}</button>`).join('')}</div></div>`
-    : '') + _rivalDemandHtml() + _noConfidenceHtml() + _mandateHtml() + _philosophyHtml() + standingsHtml + vH
+    : '') + _obligationHtml() + _pactSummaryHtml() + _rivalDemandHtml() + _noConfidenceHtml() + _mandateHtml() + _philosophyHtml() + standingsHtml + vH
+}
+
+/**
+ * A pact has been invoked. Rendered at the very top and blocking the turn,
+ * because the whole point of an obligation is that it interrupts you.
+ */
+function _obligationHtml() {
+  const ob = G.pendingObligation
+  if (!ob) return ''
+  const def = PACT_TYPES[ob.pactType]
+  const affordable = !ob.cost || G.ryo >= ob.cost
+  return `<div class="surf" style="background:var(--surface);border:1px solid var(--seal);border-left:3px solid var(--seal);padding:var(--sp-3);margin-bottom:var(--sp-3)">
+    <div style="font-size:var(--fs-micro);letter-spacing:var(--ls-caps);color:var(--seal-hi);text-transform:uppercase;margin-bottom:var(--sp-2)">${def?.icon || '🤝'} Pact Invoked</div>
+    <div style="font-size:var(--fs-sub);color:var(--text-hi);font-weight:600;margin-bottom:3px">${ob.label}</div>
+    <div style="font-size:var(--fs-body);color:var(--text-dim);line-height:1.5;margin-bottom:var(--sp-2)">${ob.body}</div>
+    <div style="font-size:var(--fs-small);color:var(--text-mid);margin-bottom:var(--sp-3)">
+      ${ob.cost > 0 ? `Cost to honour: <b style="color:${affordable ? 'var(--gold)' : 'var(--red)'}">${fmt(ob.cost)} ryo</b>` : ''}
+      ${ob.months ? `Cost to honour: <b style="color:var(--gold)">one shinobi for ${ob.months} months</b>` : ''}
+      · Refusing costs standing, and a pact that falls far enough is torn up.
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="gb gb-g" onclick="answerPact(true)" ${affordable ? '' : 'disabled'}>Honour the pact</button>
+      <button class="gb gb-r" onclick="answerPact(false)">Refuse</button>
+    </div>
+  </div>`
+}
+
+/** Standing of every live pact, so neglect is visible before it costs you. */
+function _pactSummaryHtml() {
+  const pacts = (G.villages || []).filter(v => v.pact)
+  if (!pacts.length) return ''
+  const ben = pactBenefits(G.villages)
+  const parts = [
+    ben.monthlyRyo && `${fmt(ben.monthlyRyo)} ryo/mo`,
+    ben.warBonus && `+${ben.warBonus} war strength`,
+    ben.examBonus && `+${ben.examBonus} exam preparation`,
+  ].filter(Boolean)
+  return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:var(--sp-3);margin-bottom:var(--sp-3)">
+    <div class="sect">Standing Pacts</div>
+    ${pacts.map(v => {
+      const p = v.pact, def = PACT_TYPES[p.type], tier = pactStandingTier(p.standing)
+      return `<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:var(--fs-small)">
+        <span style="min-width:1.4em">${def?.icon || '🤝'}</span>
+        <span style="color:var(--text-hi);min-width:9em">${v.n}</span>
+        <span style="color:var(--text-dim);min-width:10em">${def?.name || p.type}</span>
+        <span style="color:${tier.color};min-width:5em">${tier.label}</span>
+        <span style="color:var(--text-faint)">honoured ${p.honoured || 0} · refused ${p.refused || 0}</span>
+      </div>`
+    }).join('')}
+    ${parts.length ? `<div style="font-size:var(--fs-micro);color:var(--green);margin-top:var(--sp-2)">Currently worth: ${parts.join(' · ')}</div>` : ''}
+  </div>`
+}
+
+/** Answer a live pact call. Window-bound in main.js. */
+export function answerPact(accept) {
+  answerObligation(!!accept)
+  upUI()
+  rKa()
+}
+
+/** Propose a pact of a chosen type. */
+export function proposePact(villageName, typeId) {
+  const v = G.villages.find(x => x.n === villageName)
+  const gate = canProposePact(v)
+  if (!gate.ok) { ntf(gate.why); return }
+  const cost = Math.round(10000 * (kagePerk(G) === 'alliance' ? 0.7 : 1))
+  if (G.ryo < cost) { ntf(tr('toast.common.notEnoughRyo')); return }
+  G.ryo -= cost
+  v.rel = clamp(v.rel + 15 + Math.round(15 * kageMod(G, 'diplomacy')), 0, 100)
+  v.allied = true
+  v.pact = newPact(typeId, G.year, G.month)
+  const def = PACT_TYPES[v.pact.type]
+  aL(`${def.icon} ${def.name} signed with ${villageName} — ${fmt(cost)} ryo.`, 'good')
+  ntf(`${def.icon} ${def.name} with ${villageName}`)
+  upUI(); rKa()
 }
 
 // ── Rival-initiated demand (quarterly) ────────────────────────────────────────

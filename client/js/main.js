@@ -14,7 +14,7 @@ import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, negotiat
 import { logFilter, logSearch } from './panels/log.js'
 import { honorFallen } from './panels/memorial.js'
 import { rBe, lCap, beastTab, releaseVessel, resolveEscape, reinforceSeal, startBeastExtraction, advanceBeastExtraction, abortBeastExtraction } from './panels/beasts.js'
-import { rKa, resKE, sGift, propAl, rattle, sabotageRival, resNCV, setCoachingPhilosophy, payRivalDemand, refuseRivalDemand, demandTribute, appease } from './panels/kage.js'
+import { rKa, resKE, sGift, propAl, proposePact, answerPact, rattle, sabotageRival, resNCV, setCoachingPhilosophy, payRivalDemand, refuseRivalDemand, demandTribute, appease } from './panels/kage.js'
 import { rEx, tEC, startEx, runRound, quickFormExamCells } from './panels/exam.js'
 import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP, dipAccept, dipDecline } from './world.js'
 import { resolveChoiceEvent, resolveCouncilProposal, assignBlackMarket, resolveClanChain, establishSafehouse, assignDeepCoverOp, resolveWorldEventChoice, activateBloodline, resolvePressConference, resolveComplication, resolveRivalOffer, resolveQuickDecision, runTrainingCamp, gradeShinobi } from './adv.js'
@@ -133,7 +133,7 @@ Object.assign(window, {
   // beasts
   lCap, beastTab, releaseVessel, resolveEscape, reinforceSeal, startBeastExtraction, advanceBeastExtraction, abortBeastExtraction, activateBloodline,
   // kage
-  resKE, sGift, propAl, rattle, sabotageRival, resNCV, setCoachingPhilosophy,
+  resKE, sGift, propAl, proposePact, answerPact, rattle, sabotageRival, resNCV, setCoachingPhilosophy,
   payRivalDemand, refuseRivalDemand, demandTribute, appease,
   // exam
   tEC, startEx, runRound, schEx, quickFormExamCells,

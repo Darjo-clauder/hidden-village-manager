@@ -10,6 +10,7 @@ import { openBattleViewer } from '../liveBattle.js'
 import { arenaFor } from '../../../shared/constants/arenas.js'
 import { squadPower, seedEdge, survivalMult as _survivalMult, warMobilizeProb, warFrontProb, warCasualtyChance, duelScore } from '../../../shared/utils/stageMath.js'
 import { allocationEffects } from '../../../shared/utils/budgetRamp.js'
+import { pactBenefits } from '../../../shared/utils/alliances.js'
 
 /** Replay the player's run through the last Grand Tournament as a live bracket. */
 export function watchTournament() {
@@ -48,8 +49,16 @@ function _command() { return WAR_COMMANDS.find(c => c.id === (ui.warSt?.command 
 // Player squads follow command orders; rival banners fight to their village identity
 // (blitz mobilizes fast then fades, fortress holds the front, opportunist peaks late).
 function _cmdAdv(c, kind = 'early') {
-  if (c.isPlayer) return _command().adv + kageMod(G, 'tactics')
+  // Mutual Defence pacts pay out here: allied strength standing behind you is
+  // an edge in every war stage, scaled by how well you've kept the pact.
+  if (c.isPlayer) return _command().adv + kageMod(G, 'tactics') + _pactWarEdge()
   return identityStageAdv(identityFor(c.vRef?.n || '').style, kind)
+}
+
+/** Defence-pact contribution to war odds, as a small additive advantage. */
+function _pactWarEdge() {
+  const raw = pactBenefits(G.villages).warBonus
+  return raw > 0 ? Math.min(0.12, raw / 200) : 0
 }
 function _cmdKia(c, base) {
   if (!c.isPlayer) return base

@@ -10,6 +10,7 @@ import { openBattleViewer } from '../liveBattle.js'
 import { arenaFor } from '../../../shared/constants/arenas.js'
 import { squadPower, avgStat, seedEdge, examWrittenProb, examForestNavProb, examForestClashProb, examInjuryChance, examPromotionChance, packHarmonicCells, examCohesionGain, elementalHarmony, dreamPromotionBeat } from '../../../shared/utils/stageMath.js'
 import { isHostEligible, minHostBid, hostRevenue, genRivalHostBids, hostBidResolve } from '../../../shared/utils/hostBidding.js'
+import { pactBenefits } from '../../../shared/utils/alliances.js'
 
 /** Replay the player's most-recent league fixture as a live matchday. */
 export function watchMatchday() {
@@ -598,6 +599,14 @@ export function bidToHostExam() {
 function _squadPow(members, cohesion = 0) {
   return squadPower(members.map(s => sPow(s)), cohesion)
 }
+/**
+ * Training Accord payout: shared drills with an ally read as extra cohesion
+ * for the player's exam squads. Applied only to the player's own entries.
+ */
+function _playerSquadPow(members, cohesion = 0) {
+  const prep = pactBenefits(G.villages).examBonus || 0
+  return squadPower(members.map(s => sPow(s)), (cohesion || 0) + prep)
+}
 // A squad's elemental makeup — resolves a squad-id to its members' chakra natures.
 function _squadHarmony(sq) {
   const members = (sq?.members || []).map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
@@ -639,7 +648,7 @@ function _buildExamField() {
       const sq = G.squads.find(q => q.id === sqId); if (!sq) return null
       const members = (sq.members || []).map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
       if (!members.length) return null
-      return { id: sqId, name: sq.n, members, pow: _squadPow(members, sq.cohesion), isPlayer: true, seedBonus: seedBonus(G.vName), stageReached: 0 }
+      return { id: sqId, name: sq.n, members, pow: _playerSquadPow(members, sq.cohesion), isPlayer: true, seedBonus: seedBonus(G.vName), stageReached: 0 }
     }).filter(Boolean),
     out: [],
   }
