@@ -4,6 +4,8 @@ import { aL, ntf, upUI } from '../ui.js'
 import { dynastyProgress, computeDynastyGrade, inheritedBonuses, DYNASTY_YEARS } from '../../../shared/utils/dynasty.js'
 import { bankTenure, loadLegacy, previewStartingBonuses } from '../legacyStore.js'
 import { tierFor, nextTier } from '../../../shared/utils/legacy.js'
+import { loadAchievements } from '../achievementsStore.js'
+import { ACHIEVEMENTS, TIER_ORDER, achievementProgress } from '../../../shared/constants/achievements.js'
 
 /** Years served before stepping down voluntarily becomes available. */
 export const HANDOFF_MIN_YEARS = 8
@@ -15,8 +17,8 @@ window._legTab = 'prestige'
 export function rLeg() {
   const el = document.getElementById('legl')
   if (!el) return
-  const tabs = ['prestige', 'relations', 'hall', 'dynasty', 'successor', 'legacy', 'records']
-  const tabLabels = { prestige:'PRESTIGE', relations:'KAGE REL.', hall:'LEGENDS', dynasty:'DYNASTY', successor:'SUCCESSOR', legacy:'LEGACY', records:'RECORDS' }
+  const tabs = ['prestige', 'relations', 'hall', 'dynasty', 'successor', 'legacy', 'records', 'achievements']
+  const tabLabels = { prestige:'PRESTIGE', relations:'KAGE REL.', hall:'LEGENDS', dynasty:'DYNASTY', successor:'SUCCESSOR', legacy:'LEGACY', records:'RECORDS', achievements:'🏅 ACHIEVEMENTS' }
   el.innerHTML = `<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
     ${tabs.map(t => `<button class="btn${window._legTab === t ? ' act' : ''}" onclick="legTab('${t}')" style="font-size:var(--fs-body);padding:3px 8px">${tabLabels[t]}</button>`).join('')}
   </div>` + _legBody()
@@ -33,7 +35,57 @@ function _legBody() {
   if (t === 'successor') return _successor()
   if (t === 'legacy') return _legacyReport()
   if (t === 'records') return _records()
+  if (t === 'achievements') return _achievements()
   return ''
+}
+
+/**
+ * Achievement gallery. Locked entries stay fully legible — this is a checklist
+ * of things worth doing, so hiding them would defeat the point.
+ */
+function _achievements() {
+  const store = loadAchievements()
+  const have = new Set(store.unlocked || [])
+  const prog = achievementProgress(store.unlocked || [])
+  const TIER_COLOR = { bronze: '#b0763c', silver: '#9aa3ab', gold: 'var(--gold)' }
+
+  const card = a => {
+    const got = have.has(a.id)
+    const when = store.at?.[a.id]
+    const col = TIER_COLOR[a.tier] || 'var(--text-dim)'
+    return `<div class="${got ? 'surf' : ''}" style="display:flex;align-items:flex-start;gap:10px;padding:8px 10px;margin-bottom:5px;
+        background:${got ? 'var(--surface)' : 'transparent'};border:1px solid ${got ? col : 'var(--border-dim)'};opacity:${got ? 1 : 0.55}">
+      <span style="font-size:var(--fs-head);line-height:1;filter:${got ? 'none' : 'grayscale(1)'}">${a.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:var(--fs-body);color:${got ? 'var(--text-hi)' : 'var(--text-dim)'};font-weight:600">
+          ${a.name}
+          <span style="font-size:var(--fs-micro);color:${col};text-transform:uppercase;letter-spacing:1px;margin-left:6px">${a.tier}</span>
+        </div>
+        <div style="font-size:var(--fs-small);color:var(--text-dim)">${a.desc}</div>
+      </div>
+      <span style="font-size:var(--fs-micro);color:var(--text-faint);white-space:nowrap">
+        ${got ? (when ? `Y${when.year} M${when.month}` : 'Unlocked') : 'Locked'}
+      </span>
+    </div>`
+  }
+
+  const pct = Math.round((prog.unlocked / prog.total) * 100)
+  return `<div>
+    <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:10px 12px;margin-bottom:12px">
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+        <span style="font-size:var(--fs-title);color:var(--gold);font-family:'Courier New',monospace">${prog.unlocked}/${prog.total}</span>
+        <span style="font-size:var(--fs-body);color:var(--text-dim)">${pct}% complete</span>
+        <span style="margin-left:auto;font-size:var(--fs-small);color:var(--text-dim)">
+          ${TIER_ORDER.map(t => `<span style="color:${TIER_COLOR[t]}">${prog.byTier[t].unlocked}/${prog.byTier[t].total} ${t}</span>`).join(' · ')}
+        </span>
+      </div>
+      <div class="well" style="background:var(--sunken);border:1px solid var(--border);height:6px">
+        <div style="height:100%;width:${pct}%;background:var(--gold)"></div>
+      </div>
+      <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:6px">Achievements persist across every run and tenure.</div>
+    </div>
+    ${ACHIEVEMENTS.map(card).join('')}
+  </div>`
 }
 
 // ── Prestige & Warden Reputation ───────────────────────────────────────────────

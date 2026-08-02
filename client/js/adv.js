@@ -43,6 +43,7 @@ import { resolveMission, qualityEffects, missionApproachMod } from '../../shared
 import { kageMod, kagePerk, addKageXp } from '../../shared/constants/kageDev.js'
 import { DYNASTY_YEARS, computeDynastyGrade } from '../../shared/utils/dynasty.js'
 import { bankTenure } from './legacyStore.js'
+import { syncAchievements } from './achievementsStore.js'
 import { bondMissionBonus, mentorGrowthBonus, kiaRipple, BOND_TYPES } from '../../shared/bonds/bondTypes.js'
 import { BM_MISSION_BY_ID, getUnderworldTier, discoveryChance, UNDERWORLD_TIERS } from '../../shared/constants/blackMarket.js'
 import { getClanPassives, CLANS, CLAN_CHAINS, availableClanChains } from '../../shared/constants/clans.js'
@@ -1873,6 +1874,9 @@ export function adv() {
     aL(tr('toast.adv.councilMandate', { year: G.year, names }), 'ev')
     addChronicle('Council Mandate', `Year ${G.year} mandates: ${names}.`, 'event')
   }
+  // A year closed with nobody lost. Counted here because the KIA tally is
+  // per-year and resets each January ("Everyone Comes Home").
+  if (G.month === 12 && (G._mandateKIAThisYear || 0) === 0) G._cleanYears = (G._cleanYears || 0) + 1
   if (G.month === 12 && G.ownerMandate.ids.length) {
     const { results, delta } = evaluateMandates(G.ownerMandate.ids, G)
     const prev = G.ownerMandate.confidence
@@ -3129,6 +3133,9 @@ export function adv() {
       }
     }
   }
+  // Achievements last, so the month's results are already settled. Cheap once
+  // the set stops growing — every unlocked entry is skipped.
+  syncAchievements()
   upUI(); ntf(tr('toast.adv.monthAdvanced', { year: G.year, month: G.month }))
 }
 

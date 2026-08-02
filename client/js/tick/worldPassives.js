@@ -27,6 +27,10 @@ import { PROJECT_BY_ID, completedEffect } from '../../../shared/constants/presti
 export function tickWorldPassives(ctx) {
   const { monthDef, dp, cp } = ctx
 
+  // Latch: the village has been genuinely broke at least once. Read by the
+  // "From the Brink" achievement, which is only meaningful as a recovery.
+  if ((G.ryo || 0) < 1000) G._everBroke = true
+
   // ── Seasonal passive effects ────────────────────────────────────────────
   if (monthDef?.effects?.morale) G.morale = clamp(G.morale + monthDef.effects.morale, 0, 100)
   if (monthDef?.effects?.ryo) G.ryo = Math.max(0, G.ryo + monthDef.effects.ryo)
