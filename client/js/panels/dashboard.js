@@ -9,6 +9,7 @@ import { t } from '../../../shared/utils/i18n.js'
 import { supportTier, revenueMult } from '../../../shared/utils/populace.js'
 import { saveToSlot, listSlots } from '../save.js'
 import { aL, ntf } from '../ui.js'
+import { onboardingState, shouldShowOnboarding } from '../../../shared/utils/onboarding.js'
 
 // Manual save slots — write the current game to a slot or load another (R: save slots).
 export function saveGameSlot(n) {
@@ -83,6 +84,51 @@ function _decisionDigest() {
       <span class="hd-item-t">${it.title}</span>
       <button class="hd-item-go" onclick="sp('inbox')">${t('digest.go')}</button>
     </div>`).join('')}
+  </div>`
+}
+
+/**
+ * First-year guidance, grouped into three phases.
+ *
+ * The previous version disappeared at month 4 — before the player had ever met
+ * the council mandates that can dismiss them in December. This runs the whole
+ * first year, and the phase the player is currently working through is opened
+ * while the others collapse to a progress count, so a ten-step list doesn't
+ * read as a wall on turn one.
+ */
+function _onboardingCard() {
+  if (!shouldShowOnboarding(G)) return ''
+  const st = onboardingState(G)
+  const activePhase = st.next ? st.next.phase : null
+
+  const row = s => `
+    <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--border-dim)">
+      <span style="color:${s.ok ? 'var(--green)' : 'var(--text-faint)'};min-width:1.2em;margin-top:1px">${s.ok ? '✓' : '○'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:var(--fs-body);color:${s.ok ? 'var(--text-dim)' : 'var(--text-hi)'};text-decoration:${s.ok ? 'line-through' : 'none'}">${s.label}</div>
+        ${!s.ok ? `<div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:2px;line-height:1.5">${s.hint}</div>` : ''}
+      </div>
+      ${!s.ok ? `<button class="gb" style="font-size:var(--fs-micro);padding:2px 8px;white-space:nowrap" onclick="sp('${s.panel}')">Open ▸</button>` : ''}
+    </div>`
+
+  const phase = p => {
+    const open = p.id === activePhase
+    return `<div style="margin-bottom:${open ? 'var(--sp-3)' : 'var(--sp-1)'}">
+      <div style="display:flex;align-items:baseline;gap:8px">
+        <span style="font-size:var(--fs-micro);letter-spacing:var(--ls-caps);text-transform:uppercase;color:${open ? 'var(--accent)' : 'var(--text-dim)'}">${p.label}</span>
+        <span style="font-size:var(--fs-micro);color:var(--text-faint)">${p.done}/${p.total}</span>
+      </div>
+      ${open ? `<div style="font-size:var(--fs-micro);color:var(--text-dim);margin:2px 0 4px;font-style:italic">${p.blurb}</div>
+        ${p.steps.map(row).join('')}` : ''}
+    </div>`
+  }
+
+  return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);border-left:2px solid var(--accent);padding:var(--sp-3);margin-bottom:var(--sp-3)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-2)">
+      <div style="font-size:var(--fs-micro);letter-spacing:var(--ls-caps);color:var(--accent);text-transform:uppercase">Your First Year — ${st.done}/${st.total}</div>
+      <button class="gb" style="font-size:var(--fs-micro);padding:2px 8px" onclick="dismissOnboarding()">Dismiss</button>
+    </div>
+    ${st.byPhase.map(phase).join('')}
   </div>`
 }
 
@@ -305,33 +351,7 @@ export function rDash() {
       `).join('')}
     </div>` : ''}
 
-    <!-- First-run onboarding guide -->
-    ${(!G._onboardingDismissed && G.year === 1 && G.month <= 4) ? `
-    <div style="background:#0a1208;border:1px solid var(--green-bg);padding:14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--green);text-transform:uppercase">Getting Started</div>
-        <button onclick="dismissOnboarding()" style="font-size:var(--fs-micro);padding:2px 8px;background:transparent;color:#5a7050;border:1px solid var(--green-bg);cursor:pointer">Dismiss</button>
-      </div>
-      <div style="font-size:var(--fs-body);color:#7a9070;margin-bottom:10px">Your village is young. Here are the key actions for your first few months:</div>
-      <div style="display:grid;gap:6px">
-        ${[
-          { done: (G.shinobi||[]).some(s=>s.status==='mission'||s.wins>0), label: 'Assign a shinobi to a mission', tab: 'roster', hint: 'Open Roster → select a shinobi → assign a mission.' },
-          { done: (G.prospects||[]).length === 0 && (G.intakeClass||[]).length > 0, label: 'Recruit a prospect from the Academy', tab: 'academy', hint: 'Open Academy → click Recruit on a prospect.' },
-          { done: (G.staff||[]).some(s=>s.regionAssigned), label: 'Assign a scout to a region', tab: 'staff', hint: 'Open Staff → select your scout → assign a region.' },
-          { done: Object.keys(G.clanApproval||{}).length > 0 || (G.shinobi||[]).some(s=>s.clan), label: 'Check your clan standing', tab: 'clans', hint: 'Open Clans — see which bloodlines are active in your village.' },
-          { done: (G.tradeRoutes||[]).some(r=>r.active)||(G.contracts||[]).some(c=>c.active), label: 'Establish a trade route or contract', tab: 'finances', hint: 'Open Finances → activate a trade route to start earning income.' },
-          { done: (G.lifetimeMissions||0) >= 3, label: 'Mind your runway — you start at a deficit', tab: 'finances', hint: 'A young village spends more than its tax base earns. Run missions for ryo (or release a scout in Staff) before the treasury runs dry.' },
-        ].map(item => `
-          <div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #1a2818">
-            <div style="font-size:var(--fs-body);color:${item.done?'var(--green)':'#3a5030'};min-width:14px;margin-top:1px">${item.done?'✓':'○'}</div>
-            <div style="flex:1">
-              <div style="font-size:var(--fs-body);color:${item.done?'#5a7050':'#c9c0a8'};text-decoration:${item.done?'line-through':'none'}">${item.label}</div>
-              ${!item.done ? `<div style="font-size:var(--fs-micro);color:#4a5a40;margin-top:2px">${item.hint}</div>` : ''}
-            </div>
-            ${!item.done ? `<button onclick="sp('${item.tab}')" style="font-size:var(--fs-micro);padding:2px 6px;background:#0d1a0a;color:var(--green);border:1px solid var(--green-bg);cursor:pointer;white-space:nowrap">Open ▸</button>` : ''}
-          </div>`).join('')}
-      </div>
-    </div>` : ''}
+    ${_onboardingCard()}
 
     ${_saveSlotsCard()}
   `

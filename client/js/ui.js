@@ -220,6 +220,9 @@ export function sp(id) {
   if (!panel) return
   // Only sound a real change — sp() is also called programmatically on refresh.
   if (id !== _lastPanel) { sfx('tab'); _lastPanel = id }
+  // Which screens the player has actually opened. One map here serves every
+  // "go and look at this" onboarding step, instead of a flag per screen.
+  if (G) (G._visited = G._visited || {})[id] = true
   panel.style.display = ''
   const nb = document.getElementById('nv-' + id)
   if (nb) nb.classList.add('active')
