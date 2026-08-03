@@ -137,12 +137,24 @@ export function findTextCorruption(G) {
 export function autoAssignMissions(G, { max = 3 } = {}) {
   const board = (G.avM || [])
   if (!board.length) return 0
-  const free = (G.shinobi || []).filter(s => s.status === 'available')
+  // Power, matching sPow(): mean of the stat block.
+  const pow = s => {
+    const v = Object.values(s.stats || {})
+    return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0
+  }
+  // Strongest first, so a capable shinobi is matched to a demanding mission
+  // rather than wasted on a trivial one.
+  const free = (G.shinobi || []).filter(s => s.status === 'available').sort((a, b) => pow(b) - pow(a))
   let sent = 0
   for (const m of board) {
     if (sent >= max) break
-    const s = free[sent]
-    if (!s) break
+    // ELIGIBILITY. The real assign screen only offers shinobi who meet the
+    // mission's power requirement (`doA` is simply absent otherwise), so a
+    // harness that ignores it plays worse than any player can. Without this
+    // check the sweep ran a 66.8% failure rate while a driven browser game
+    // went 9-for-9 — and every economy figure measured on it was pessimistic.
+    const s = free.find(x => x.status === 'available' && (m.mp == null || pow(x) >= m.mp))
+    if (!s) continue
     s.status = 'mission'
     s.missId = m.id
     G.aM.push({

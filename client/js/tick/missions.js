@@ -34,7 +34,7 @@
 import { G, ui, clamp, fmt, sn, pk, rnd, mS, addTrait, addRumor, addNotice, addChronicle, addLegend,
          computeMarketValue, getMissionSpecBonus, getLeadershipGroup } from '../state.js'
 import { aL, ntf, upUI } from '../ui.js'
-import { resolveBattleCall, callBeatIndex } from '../../../shared/utils/battleCalls.js'
+import { resolveBattleCall, callBeatIndex, isSalvageable } from '../../../shared/utils/battleCalls.js'
 import { staminaStart, finishEffects, scrollOutcome } from '../../../shared/utils/matchSim.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { addNewsItem } from '../news.js'
@@ -486,20 +486,53 @@ function _buildMissionReport(sq, m, succeeded, mev, payout = 0) {
   const rep = { missionId: m.id, missionName: m.n, missionRk: m.rk, squadId: sq.id, squadName: sq.n, succeeded, year: G.year, month: G.month, scores,
     spec: m.spec || null,   // drives the animated pitch's mission layout (stealth compound, siege works...)
     phases: mev?.phases || null, quality: mev?.quality || null, margin: mev?.margin ?? null }
-  // R8 live-battle micro-call: let the player bet on the final beat during the viewer.
-  // The outcome is fixed; only the quality band + a small reward delta move. The
-  // closure (dropped on save, live-only by design) applies the deltas exactly once.
+  // Live-battle micro-call: the one moment the player is present for a result
+  // rather than reading it afterwards. A close DEFEAT can be salvaged into a win
+  // (see shared/utils/battleCalls.js for why the reverse is never allowed).
+  // The closure is live-only by design — dropped on save — and applies once.
   const bi = callBeatIndex(rep.phases)
   if (bi >= 0) {
     rep.baseQuality = rep.quality
-    rep.microCall = { beatIndex: bi, payout }
+    rep.microCall = { beatIndex: bi, payout, salvageable: isSalvageable(rep.succeeded, rep.margin) }
     rep.applyCall = call => {
       if (rep._callDone) return rep._callResult
-      const r = resolveBattleCall({ call, pivotalWon: !!rep.phases[bi].won, succeeded: rep.succeeded, baseQuality: rep.baseQuality })
+      const r = resolveBattleCall({
+        call, pivotalWon: !!rep.phases[bi].won,
+        succeeded: rep.succeeded, baseQuality: rep.baseQuality, margin: rep.margin,
+      })
       const bonusRyo = Math.round(payout * r.ryoMult)
       if (bonusRyo) G.ryo = Math.max(0, G.ryo + bonusRyo)
       if (r.moraleDelta) G.morale = clamp(G.morale + r.moraleDelta, 0, 100)
       if (r.legendDelta) addLegend(r.legendDelta)
+
+      // ── Salvage: pay what the victory would have paid ──────────────────────
+      // The defeat's costs are NOT unwound. Anyone wounded or lost in the
+      // earlier beats stays that way — the player rescued the objective, not
+      // the squad. Only the rewards withheld on failure are granted now.
+      if (r.flipped) {
+        // Base mission value only. `payout` is 0 on a failure, and the
+        // per-assignment ryo modifier lives on `am`, which is a forEach
+        // parameter at the call site and NOT in scope inside this function —
+        // the free-variable scanner does not do scope analysis, so it read
+        // `am` as declared and stayed quiet.
+        const salvageRyo = Math.round(m.ryo)
+        G.ryo += salvageRyo
+        G.reputation = clamp(G.reputation + m.rep, 0, 999)
+        recordMissionCommission(m.rk)
+        rep.succeeded = true
+        rep.salvaged = true
+        sq.wins = (sq.wins || 0) + 1
+        sq.losses = Math.max(0, (sq.losses || 0) - 1)
+        G._formThisMonth.wins++
+        if (G._formThisMonth.losses > 0) G._formThisMonth.losses--
+        aL(`${sq.n}: ${r.label} — "${m.n}" turned at the last. +${fmt(salvageRyo)} ryo, +${m.rep} reputation.`, 'good')
+        addChronicle('Snatched from Defeat', `${sq.n} salvaged "${m.n}" with a final push after the mission had been lost.`, 'milestone')
+        rep._callResult = { ...r, bonusRyo, salvageRyo }
+        rep._callDone = call
+        upUI()
+        return rep._callResult
+      }
+
       rep.quality = r.quality
       rep._callDone = call
       rep._callResult = { ...r, bonusRyo }

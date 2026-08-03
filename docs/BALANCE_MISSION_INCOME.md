@@ -89,6 +89,37 @@ harness, not the browser — see the methodology note below):
 
 Runaway cut from 19.35× to 4.51×, with idle play essentially untouched.
 
+### ⚠ CORRECTION (2026-08-03, later the same day)
+
+**The table above was measured on an instrument that played badly.** The
+harness assigned any free shinobi to any mission on the board, but the real
+assign screen only offers shinobi who meet the mission's power requirement —
+`doA` is simply absent otherwise. So the harness ran a **66.8% failure rate**
+while a driven browser game went **9-for-9**.
+
+Every figure above is therefore pessimistic. With eligibility respected:
+
+| arm | median ryo | vs idle | payroll | fail rate |
+|---|---:|---:|---:|---:|
+| idle, wages on | 144,582 | 1.00× | 22,020 | 0% |
+| active, wages off | 3,284,619 | 22.72× | 24,431 | 5.6% |
+| active, wages **on** | 902,597 | **6.24×** | 137,146 | 5.6% |
+
+**The conclusion holds — the mechanism still cuts the runaway by ~72%** (22.7×
+→ 6.2×, against 19.4× → 4.5× before) — but competent play lands at **6.24×,
+not 4.51×**. Reputation reaches 429 rather than 254, so the wage multiplier
+bites harder and payroll converges to ~137k, above even the A-tier salary cap.
+The mechanism self-corrects in the right direction: the better you play, the
+more standing costs you.
+
+Whether 6.24× is acceptable is a judgement call. It is a far better place than
+22.7×, and the lever (`STANDING_WAGE_MAX`) is a single constant if it wants
+tightening.
+
+**The lesson generalises:** a harness that plays worse than a player will make
+any economy look tighter than it is. Check that the harness respects the same
+gates the UI enforces before trusting a balance number from it.
+
 ### Two things the measurement changed about the design
 
 **The first sizing did almost nothing.** Reasoning from the revenue curve gave
