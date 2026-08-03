@@ -74,7 +74,55 @@ meta-loop.
 - Nothing here is a bug. The systems do what they were written to do; they were
   simply never measured together.
 
-## Options, not recommendations
+## RESOLVED — option 4 shipped (2026-08-03)
+
+Tyler chose option 4. `shared/utils/wageDemands.js` + a monthly review in
+`tick/people.js`. Measured across **20 seeds × 36 months** (deterministic
+harness, not the browser — see the methodology note below):
+
+| arm | median ryo | vs idle | payroll | bankrupt |
+|---|---:|---:|---:|---:|
+| idle, wages off | 159,085 | 1.00× | 21,198 | 3 |
+| idle, wages **on** | 144,582 | 0.91× | 22,020 | 1 |
+| active, wages off | 3,078,489 | 19.35× | 20,000 | 0 |
+| active, wages **on** | 717,821 | **4.51×** | 101,270 | 0 |
+
+Runaway cut from 19.35× to 4.51×, with idle play essentially untouched.
+
+### Two things the measurement changed about the design
+
+**The first sizing did almost nothing.** Reasoning from the revenue curve gave
+a multiplier of 2.2, which moved active wealth only 19.35× → 16.94×. Payroll
+starts from a much smaller base than revenue and is bounded by roster size,
+while revenue is not — so wages have to grow by a *larger multiple* than
+revenue does, not a smaller one. The final value (6) is empirical.
+
+**The naive version was regressive.** With no floor, a struggling village still
+fields ~22 shinobi and still has *some* reputation, so it paid the multiplier
+while earning almost nothing. At the ceiling that fixed runaway play, idle
+villages went bankrupt in **7 of 20 seeds**. `WAGE_REP_FLOOR = 60` fixes it
+completely: below the floor the multiplier is exactly 1, so the mechanism is
+invisible until a village is genuinely renowned. Idle bankruptcies actually
+fell (3 → 1) relative to the unmodified game.
+
+### Methodology note — the browser is the wrong instrument for this
+
+The original ~26× flag and the first attempt at verifying this fix were both
+single driven browser runs, and they are far too noisy: two idle runs on the
+same build finished at **+193,885 and −9,748**, differing only in which
+decisions came up. One run even showed *higher* wealth after wages were added.
+
+Use the seeded harness for economy work and the browser for "does it work at
+all". Both were needed here — the harness sized the constants, the browser
+confirmed the floor correctly suppresses any wage pressure in a young village
+(`_wageReview` is `null` at rep 11).
+
+**Not directly observed in-browser:** the review firing at high reputation.
+Browser driving could not reach rep 60 within tool limits. It is covered by the
+seeded sweep (active seeds reach rep 254 with payroll converging to ~101k) and
+by unit tests, but nobody has watched the toast appear in a live game.
+
+## Options as originally written, for the record
 
 Deliberately not tuned — this wants a design call, and any change should be
 re-measured with the same two-run method.

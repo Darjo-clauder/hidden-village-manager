@@ -16,9 +16,34 @@ import { aL, ntf } from '../ui.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { RANKS, RUMOR_TEMPLATES, SERVICE_AWARDS, GROUP_EVENTS, MEETING_TYPES } from '../constants.js'
 import { resolvePromise, isPastDue } from '../../../shared/utils/promises.js'
+import { reviewWages, WAGE_DRIFT_RATE } from '../../../shared/utils/wageDemands.js'
 import { pushNarrative } from './inbox.js'
 
 export function tickPeople() {
+  // ── Wage review — contracts drift toward what this village's standing costs ──
+  // Revenue scales with reputation; without this, payroll does not, and active
+  // play runs away with the economy (docs/BALANCE_MISSION_INCOME.md). Applied
+  // over the whole roster rather than at signing, because salaries are set from
+  // a dozen call sites and the standing roster is where the money is.
+  // Rate is overridable so the balance harness can A/B it across seeds; a
+  // single browser run is far too noisy to evaluate an economy change with.
+  const _wr = reviewWages(G.shinobi, G.reputation, G._wageDriftRate ?? WAGE_DRIFT_RATE, G._wageMax ?? undefined)
+  if (_wr.changes.length) {
+    const byId = new Map(_wr.changes.map(c => [c.id, c.to]))
+    G.shinobi.forEach(s => { if (byId.has(s.id)) s.salary = byId.get(s.id) })
+    G._wageReview = {
+      delta: _wr.delta, payroll: _wr.payrollAfter,
+      multiplier: +_wr.multiplier.toFixed(2), count: _wr.changes.length,
+      year: G.year, month: G.month,
+    }
+    // Only speak up when it is worth noticing — this runs every month.
+    if (_wr.delta >= 1500) {
+      aL(tr('toast.adv.wageReview', {
+        delta: fmt(_wr.delta), count: _wr.changes.length,
+      }) || `Wage review: payroll up ${fmt(_wr.delta)}/mo — your standing is raising what shinobi expect.`, 'warn')
+    }
+  } else G._wageReview = null
+
   // ── Individual morale, commitment & people management tick ────────────────
   if (!G.meetingQueue) G.meetingQueue = []
   if (!G.sellPressure) G.sellPressure = []
