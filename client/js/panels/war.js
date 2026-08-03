@@ -2,7 +2,7 @@ import { G, ui, sPow, sn, rnd, pk, clamp, fmt, addChronicle, addLegend } from '.
 import { RANKS } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { seedsFromTable } from '../../../shared/utils/season.js'
-import { queuePressConference, maybeInduct } from '../adv.js'
+import { queuePressConference, maybeInduct } from '../tick/missionHelpers.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { kageMod, kagePerk } from '../../../shared/constants/kageDev.js'
 import { identityFor, identityStageAdv } from '../../../shared/constants/villageIdentity.js'

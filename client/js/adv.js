@@ -78,6 +78,8 @@ import { tickStaff } from './tick/staff.js'
 import { tickFinance } from './tick/finance.js'
 import { tickAlliances } from './tick/alliances.js'
 import { tickAcademy } from './tick/academy.js'
+import { tickMissions } from './tick/missions.js'
+import { pushMissionLog, hasUniqueAbility, jkKIAImmune, pickInjuryType, applyInjury, applyTrauma, rollInjuryOnSuccess, addWorkload, fatiguePenalty, checkJutsu, tryFormBonds, maybeInduct, _bloodlineBonus, _formationMod, _formationRisk, _nationSuccessMod, _philosophySuccessMod, _philosophyKIAMod, _squadBondBonus, recordMissionCommission, queuePressConference } from './tick/missionHelpers.js'
 import { t as tr } from '../../shared/utils/i18n.js'
 
 function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
@@ -86,141 +88,17 @@ function currentSeason() { return MONTHS[G.month - 1]?.season || 'Spring' }
 // pushNarrative lives in ./tick/inbox.js (shared with extracted tick modules); imported above.
 
 // ── Mission log ────────────────────────────────────────────────────────────────
-function pushMissionLog(entry) {
-  if (!G.missionLog) G.missionLog = []
-  G.missionLog.push({ id: Math.random().toString(36).slice(2), ...entry, year: G.year, month: G.month })
-  if (G.missionLog.length > 30) G.missionLog.splice(0, G.missionLog.length - 30)
-  G.lifetimeMissions = (G.lifetimeMissions || 0) + 1
-}
 
 // ── Beast unique ability helpers ───────────────────────────────────────────────
 function getBeastForJK(shinobiId) {
   return G.beasts?.find(b => b.sealed && b.jk === shinobiId)
 }
-function hasUniqueAbility(shinobiId, beastName) {
-  const b = getBeastForJK(shinobiId)
-  if (!b || b.n !== beastName) return false
-  const data = BEAST_DATA[b.n]
-  if (!data?.uniqueAbility) return false
-  return getSyncStage(b) >= data.uniqueAbility.stage
-}
-function jkKIAImmune(s) {
-  const b = getBeastForJK(s.id); if (!b) return false
-  const data = BEAST_DATA[b.n]; if (!data?.uniqueAbility) return false
-  if (getSyncStage(b) < data.uniqueAbility.stage) return false
-  // Sakeru Sand Armor and Kureni Ninth Primal Mode both grant KIA immunity once per year
-  if (b.n !== 'Sakeru' && b.n !== 'Kureni') return false
-  if (!G._jkKIAImmuneYear) G._jkKIAImmuneYear = {}
-  if (G._jkKIAImmuneYear[b.n] === G.year) return false
-  G._jkKIAImmuneYear[b.n] = G.year
-  aL(tr('toast.adv.jkDeflect', { name: sn(s), beast: b.n, mode: b.n === 'Kureni' ? 'Ninth Primal Mode' : 'Sand Armor' }), 'good')
-  return true
-}
 
 // ── Injury helpers ─────────────────────────────────────────────────────────────
-function pickInjuryType(mRk) {
-  const pool = RANK_INJ_POOL[mRk] || ['muscle']
-  return INJURY_TYPES.find(t => t.id === pool[Math.floor(Math.random() * pool.length)])
-}
 
-function applyInjury(s, injType, hL, extraReduction = 0) {
-  const medics = (G.staff || []).filter(st => st.role === 'medical')
-  // R26: seasoned medics recover shinobi faster (level bonus on the base reduction).
-  const medReduction = medics.reduce((a, st) => a + 0.5 * staffLevelBonus(st.staffLevel), 0)
-  let dur = rnd(injType.minMo, injType.maxMo)
-  const resist = s.injuryResist ? 1 : 0  // R25: careful rehab leaves lingering resistance (one-shot)
-  dur = Math.max(1, Math.round(dur - (s.pers?.effect?.injReduct || 0) - hL - medReduction - extraReduction - resist))
-  s.injuryResist = 0
-  s.injDays = dur
-  s.injuryType = injType.id
-  s.status = 'injured'
-  s.missId = null
-  s.secondOpinionUsed = false
-  s.specialistTreated = false
 
-  // Track career injury count and history
-  s.injuryCount = (s.injuryCount || 0) + 1
-  if (!s.injuryHistory) s.injuryHistory = []
-  s.injuryHistory.push({ year: G.year, month: G.month, type: injType.id, typeName: injType.n, duration: dur, treatment: 'standard' })
 
-  // Injury-prone trait after 3+ career injuries
-  if (s.injuryCount >= 3 && addTrait(s, 'InjuryProne')) {
-    aL(tr('toast.adv.injuryProne', { name: sn(s), count: s.injuryCount }), 'warn')
-    addNotice(sn(s) + '\'s repeated injuries are becoming a pattern — scouts will take note.', 'warn')
-  }
 
-  if (injType.id === 'severe' && injType.statLoss && Math.random() < 0.3) {
-    const k = pk(['ninjutsu','taijutsu','speed','chakra'])
-    s.stats[k] = Math.max(5, s.stats[k] - rnd(1, 3))
-    aL(tr('toast.adv.permStatLoss', { name: sn(s) }), 'bad')
-  }
-  // Career-threatening injury personality evolution (severe, 3+ months)
-  if (injType.id === 'severe' && dur >= 3) {
-    if (s.pers?.n === 'Reckless' && Math.random() < 0.40) {
-      s.pers = { n:'Careful', cat:'pos', desc:'A serious injury changed everything. They now calculate before acting.', effect:{ riskMod:-0.10 } }
-      aL(tr('toast.adv.recklessBurnout', { name: sn(s) }), 'warn')
-      addNotice(sn(s) + ' is a changed shinobi after their injury.', 'neutral')
-    } else {
-      const roll = Math.random()
-      if (roll < 0.30) {
-        if (addTrait(s, 'Resilient')) aL(tr('toast.adv.resilientTrait', { name: sn(s) }), 'good')
-      } else if (roll < 0.50) {
-        if (addTrait(s, 'Fragile')) {
-          // Fragile: minor permanent stat reduction
-          const k = pk(['ninjutsu','taijutsu','speed'])
-          s.stats[k] = Math.max(5, s.stats[k] - 2)
-          aL(tr('toast.adv.fragileTrait', { name: sn(s) }), 'bad')
-        }
-      }
-    }
-  }
-
-  if (injType.trauma) {
-    applyTrauma(s)
-  }
-  // Long injury → returning form penalty
-  if (dur >= 3) {
-    s.returningForm = 60
-  }
-}
-
-function applyTrauma(s) {
-  s.traumaCount = (s.traumaCount || 0) + 1
-  s.traumaStatus = pk(TRAUMA_TRAITS)
-  s.traumaMonths = rnd(2, 6)
-  // Stat penalty while traumatised
-  Object.keys(s.stats).forEach(k => { s.stats[k] = Math.max(5, s.stats[k] - 2) })
-  G.morale = clamp(G.morale - 5, 0, 100)
-  aL(tr('toast.adv.trauma', { name: sn(s), status: s.traumaStatus }), 'warn')
-  addChronicle('Psychological Trauma', sn(s) + ' developed a ' + s.traumaStatus + ' personality after traumatic events.', 'shinobi')
-}
-
-function rollInjuryOnSuccess(s, m, hL, injDayReduction = 0) {
-  let chance = RANK_INJ_CHANCE[m.rk] || 0.02
-  if ((s.age || 0) >= 40) chance += 0.08
-  if ((s.consecutiveMissions || 0) >= 2) chance += 0.10
-  if (G.morale < 40) chance += 0.05
-  const medCount = (G.staff || []).filter(st => st.role === 'medical').length
-  chance = clamp(chance - medCount * 0.03, 0, 0.90)
-  if (s.pers?.effect?.riskMod) chance += s.pers.effect.riskMod
-  if (Math.random() < chance) {
-    const injType = pickInjuryType(m.rk)
-    if (injType) {
-      applyInjury(s, injType, hL, injDayReduction)
-      aL(tr('toast.adv.missionInjury', { name: sn(s), injury: injType.n, mission: m.n }), 'warn')
-    }
-  }
-}
-
-function addWorkload(s, mRk) {
-  s.workload = clamp((s.workload || 0) + (RANK_WORKLOAD[mRk] || 10), 0, 100)
-  s.fatigue = clamp((s.fatigue || 0) + ({ S: 25, A: 18, B: 12, C: 8, D: 4 }[mRk] || 8), 0, 100)
-  s.consecutiveMissions = (s.consecutiveMissions || 0) + 1
-}
-function fatiguePenalty(s) {
-  const f = s.fatigue || 0
-  return f >= 80 ? -0.15 : f >= 60 ? -0.09 : f >= 40 ? -0.04 : 0
-}
 export function gradeShinobi(s) {
   const pow = sPow(s)
   const pot = Math.max(1, s.potential || 50)
@@ -238,13 +116,6 @@ export function gradeShinobi(s) {
 }
 
 
-export function recordMissionCommission(rank) {
-  if (!G.finances) return
-  if (!G.finances.missionCommissions) G.finances.missionCommissions = { D:0,C:0,B:0,A:0,S:0 }
-  G.finances.missionCommissions[rank] = (G.finances.missionCommissions[rank] || 0) + 1
-  const commission = MISSION_COMMISSION[rank] || 0
-  G.ryo += commission
-}
 
 export function recordScoutCost(amount) {
   if (!G.finances) return
@@ -294,55 +165,8 @@ export function recordExamFee(amount) {
 }
 
 // ── Jutsu unlock check ─────────────────────────────────────────────────────
-function checkJutsu(s) {
-  if (!s.jutsu) s.jutsu = []
-  const eligible = JUTSU_LIST.filter(j => {
-    if (s.jutsu.includes(j.id)) return false
-    if (j.clan && s.clan !== j.clan) return false
-    if (j.req.winsB && (s.winsB || 0) < j.req.winsB) return false
-    if (j.req.winsS && (s.winsS || 0) < j.req.winsS) return false
-    if (j.req.wins && s.wins < j.req.wins) return false
-    if (j.req.prodigy && !s.prodigy) return false
-    return true
-  })
-  if (eligible.length) {
-    const j = eligible[Math.floor(Math.random() * eligible.length)]
-    s.jutsu.push(j.id)
-    aL(tr('toast.adv.learnedJutsu', { name: sn(s), jutsu: j.n, tier: j.tier, desc: j.desc }), 'good')
-    addChronicle('Jutsu Mastered', sn(s) + ' learned ' + j.n + '.', 'shinobi')
-    addLegend(j.tier === 'rare' ? 10 : j.tier === 'uncommon' ? 5 : 2)
-  }
-}
 
 // ── Bond formation ─────────────────────────────────────────────────────────
-function tryFormBonds(sq) {
-  if (!sq) return
-  const members = sq.members.map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
-  const wins = sq.wins || 0
-  if (wins < 5) return
-  // Try to form bonds between pairs
-  for (let i = 0; i < members.length; i++) {
-    for (let j = i + 1; j < members.length; j++) {
-      const a = members[i], b = members[j]
-      if (!a.bonds) a.bonds = []
-      if (!b.bonds) b.bonds = []
-      const alreadyBonded = a.bonds.some(bnd => bnd.otherId === b.id)
-      if (alreadyBonded) continue
-      if (Math.random() > 0.20) continue // 20% chance per qualifying check
-      let type = 'Brothers-in-Arms'
-      if (Math.abs(a.ri - b.ri) >= 2) type = 'Mentor/Student'
-      if (a.rivalId === b.id || b.rivalId === a.id) type = 'Rivals'
-      if (a.darkMoment && b.darkMoment) type = 'Battle-Scarred'
-      a.bonds.push({ otherId: b.id, type, formed: { year: G.year, month: G.month } })
-      b.bonds.push({ otherId: a.id, type, formed: { year: G.year, month: G.month } })
-      aL(tr('toast.adv.bondFormed', { a: sn(a), b: sn(b), type }), 'good')
-      addChronicle('Bond Formed', sn(a) + ' and ' + sn(b) + ' are now ' + type + ' after ' + wins + ' missions together.', 'shinobi')
-      addNotice(type === 'Rivals'
-        ? sn(a) + ' and ' + sn(b) + ' have become rivals — sparks are flying in the training grounds.'
-        : sn(a) + ' and ' + sn(b) + ' are now ' + type + ' after fighting side by side.', type === 'Rivals' ? 'warn' : 'good')
-    }
-  }
-}
 
 // ── Age-based stat decline ─────────────────────────────────────────────────
 function applyAgeDecline(s) {
@@ -600,48 +424,14 @@ export function staffBonus() {
 }
 
 // ── Bloodline active layer (v2, behind G._ff_bloodlineActive — returns 0 when flag off) ──
-function _bloodlineBonus(memberIds) {
-  if (!G._ff_bloodlineActive) return 0
-  const active = (G.beasts || []).filter(b =>
-    b.sealed && b.jk && memberIds.includes(b.jk) && (b.activeUntil || 0) > G.month)
-  const anyDebuffed = (G.shinobi || []).some(s =>
-    memberIds.includes(s.id) && (s._blDebuffUntil || 0) > G.month)
-  if (!active.length && !anyDebuffed) return 0
-  return netBloodlineMod(active.map(() => ({ multiplier: BLOODLINE_MULTIPLIER })), anyDebuffed)
-}
 
 // #8 Tactical formation (flag-gated; 0 when off or no formation set)
-function _formationMod(sq) {
-  if (!G._ff_tacticalFormation || !sq.formation) return 0
-  return formationMods(sq.formation).successMod
-}
-function _formationRisk(sq) {
-  if (!G._ff_tacticalFormation || !sq.formation) return 0
-  return formationMods(sq.formation).riskMod
-}
 
 // Nation identity success modifier (flag-gated; 0 when off or neutral nation)
-function _nationSuccessMod() {
-  if (!G._ff_nationHud) return 0
-  return nationMods(G.nationId).successMod
-}
 
 // Hall of Fame — induct a departing shinobi (retirement/death) if their career
 // clears the threshold. Idempotent per shinobi. Returns the entry or null.
-export function maybeInduct(s, how) {
-  if (!s || !isHofWorthy(s)) return null
-  G.hallOfFame = G.hallOfFame || []
-  if (G.hallOfFame.some(e => e.id === s.id)) return null
-  const entry = buildHofEntry(s, how, G.year)
-  G.hallOfFame.push(entry)
-  addChronicle('Hall of Fame — ' + entry.name, `${entry.name} is inducted into the Hall of Fame (${entry.reason}).`, 'milestone')
-  aL(tr('toast.adv.hofInducted', { name: entry.name, reason: entry.reason }), 'good')
-  addLegend(3)
-  return entry
-}
 
-function _philosophySuccessMod() { return getPhilosophyMods(G).missionSuccess }
-function _philosophyKIAMod()     { return getPhilosophyMods(G).kiaRisk }
 
 export function activateBloodline(beastName) {
   if (!G._ff_bloodlineActive) return
@@ -1278,400 +1068,9 @@ export function adv() {
   })
   G.pendingComplications = G.pendingComplications.filter(pc => !pc.applied && ((G.year * 12 + G.month) - (pc.created.year * 12 + pc.created.month)) < 3)
 
-  // ── Mission resolution ──────────────────────────────────────────────────
-  const beastPassives = getBeastPassives(G)
-  G._beastMissionLuck = beastPassives.missionLuck
-  G.aM.forEach(am => am.daysLeft--)
-  // Monthly mission form — accrued from real outcomes, fed into the league matchday.
-  G._formThisMonth = { wins: 0, losses: 0, marginSum: 0 }
-  G.aM.filter(am => am.daysLeft <= 0).forEach(am => {
-    if (am.isScout) {
-      const scout = G.shinobi.find(x => x.id === am.assignedTo)
-      if (scout) { scout.status = 'available'; scout.missId = null }
-      const prospect = G.prospects.find(x => x.id === am.scoutTargetId)
-      if (prospect) {
-        const waited = prospect.monthsWaiting || 0
-        const degraded = waited >= 6
-        if (degraded) {
-          const decay = Math.min(20, (waited - 5) * 4)
-          prospect.potential = Math.max(45, prospect.potential - decay)
-        }
-        prospect.scouted = true
-        aL(tr('toast.adv.intelConfirmed', { name: sn(prospect), potential: prospect.potential, suffix: degraded ? ' ⚠ degraded.' : '.' }), degraded ? 'warn' : 'good')
-        ntf(prospect.fn + '\'s potential revealed' + (degraded ? ' (degraded!)' : '') + '!')
-      } else {
-        aL(tr('toast.adv.prospectMovedOn'), 'neutral')
-      }
-      return
-    }
-    if (am.isBeastCapture) {
-      const b = G.beasts.find(x => x.n === am.beastName), s = G.shinobi.find(x => x.id === am.assignedTo)
-      if (!b || !s) return
-      const ok = Math.random() < captureChance(sPow(s), b.pow)
-      s.status = 'available'; s.missId = null
-      if (ok) {
-        b.sealed = true
-        aL(b.n + ' captured! Assign a Vessel.', 'good'); ntf(b.n + ' sealed!')
-        addChronicle('Beast Captured', b.n + ' was sealed by our forces.', 'legend')
-        addLegend(20)
-      } else {
-        aL(sn(s) + ' failed to capture ' + b.n + '.', 'bad')
-        if (Math.random() < 0.3) { s.injDays = rnd(1, 3); s.status = 'injured' }
-      }
-      return
-    }
-
-    const m = G.avM.find(x => x.id === am.missionId); if (!m) return
-
-    if (am.isSquad) {
-      const sq = G.squads.find(q => q.id === am.squadId); if (!sq) return
-      if (!sq.wins) sq.wins = 0
-      if (!sq.losses) sq.losses = 0
-      if (!sq.kills) sq.kills = 0
-      if (!sq.fallen) sq.fallen = []
-      const syn = sqSynergy(sq, G.shinobi)
-      const rawPw = sqP(sq) + (G.shinobi.find(s => s.id === sq.leaderId)?.pers.n === 'Charismatic' ? 5 : 0)
-      // Bond bonus
-      const bondBonus = _squadBondBonus(sq)
-      const pw = Math.round(rawPw * syn.powerMult)
-      const anbuBon = (m.rk === 'S' || m.rk === 'A') ? sb.anbuMissionBonus : 0
-      const rB2 = roleBonus(sq)
-      // Pair chemistry bonus: +0.02 per proven pair (5+ missions together), max +0.06
-      const chemBonus = Math.min(0.06, (() => {
-        if (!G.pairChemistryLog) return 0
-        let b = 0
-        const mIds = sq.members
-        for (let a = 0; a < mIds.length; a++)
-          for (let c = a + 1; c < mIds.length; c++) {
-            const key = [mIds[a], mIds[c]].sort().join('_')
-            if ((G.pairChemistryLog[key] || 0) >= 5) b += 0.02
-          }
-        return b
-      })())
-      // Tactical prep modifier (Phase 4)
-      // #8 merge: when this squad has a formation set, it OVERRIDES global prep-mode (no double-count)
-      const _fOverride = G._ff_tacticalFormation && !!sq.formation
-      const prepMod = _fOverride ? 0 : (G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0)
-      const prepRiskMod = _fOverride ? 0 : (G.missionPrepMode === 'aggressive' ? 0.04 : G.missionPrepMode === 'cautious' ? -0.03 : 0)
-      const _appMod = missionApproachMod(am.approach, m.spec)  // tactical approach vs mission spec
-      const sqJutsuMod = sq.members.reduce((acc, id) => {
-        const ms = G.shinobi.find(x => x.id === id); if (!ms) return acc
-        const jb = jutsuLoadoutBonus(ms, JUTSU_LIST)
-        return acc + jb.successMod * 0.5 + jb.powerMod * 0.25
-      }, 0)
-      const sqBondMod = sq.members.reduce((acc, id) => {
-        const ms = G.shinobi.find(x => x.id === id); if (!ms) return acc
-        return acc + bondMissionBonus(ms, G.shinobi).successMod * 0.5
-      }, 0)
-      const sqDeclineMod = sq.members.reduce((acc, id) => {
-        const ms = G.shinobi.find(x => x.id === id); if (!ms) return acc
-        ensureCareerFields(ms)
-        return acc + (ms.declineMod || 0) * 0.5  // half-weight per member so one declining vet doesn't cripple a squad
-      }, 0)
-      const sqFatigueMod = sq.members.reduce((acc, id) => { const mb = G.shinobi.find(x => x.id === id); return acc + (mb ? fatiguePenalty(mb) : 0) }, 0) / Math.max(1, sq.members.length)
-      const sqGrindMod = grindMod(sq.consecutiveDeployMonths || 0)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod() + (am._scMod || 0) + sqFatigueMod + sqGrindMod + _appMod.sc - _appMod.risk - (am._riskMod || 0) + kageMod(G, 'command'), 0.1, successCeiling(m.rk))
-
-      const _mev = resolveMission(sc)
-      const _mq = qualityEffects(_mev.quality)
-      G._formThisMonth.marginSum += _mev.margin
-      if (_mev.success) {
-        G._formThisMonth.wins++
-        const _bonusRyo = Math.round(m.ryo * _mq.ryoMult * (1 + (am._ryoMod || 0)))
-        G.ryo += _bonusRyo; G.reputation = clamp(G.reputation + m.rep, 0, 999); G.morale = clamp(G.morale + 3 + _mq.morale, 0, 100)
-        const prevCohesion = sq.cohesion ?? 0
-        sq.cohesion = Math.min(100, prevCohesion + rnd(3, 7))
-        sq.wins++
-        recordMissionCommission(m.rk)
-        sq.members.forEach(id => {
-          const s = G.shinobi.find(x => x.id === id); if (!s) return
-          addWorkload(s, m.rk)
-          s.missId = null; s.wins++; s.streak = (s.streak || 0) + 1
-          s._seasonWins = (s._seasonWins || 0) + 1
-          s._seasonMissions = (s._seasonMissions || 0) + 1
-          s.status = 'available'
-          rollInjuryOnSuccess(s, m, hL, dp.injDayReduction)  // may flip back to 'injured'
-          if (m.rk === 'B' || m.rk === 'C') s.winsB = (s.winsB || 0) + 1
-          if (m.rk === 'S') {
-            s.winsS = (s.winsS || 0) + 1; s._seasonSRankWins = (s._seasonSRankWins || 0) + 1
-            if (s.winsS === 1) {
-              aL(tr('toast.adv.firstSrank', { name: sn(s) }), 'good')
-              G.narrativeInbox = G.narrativeInbox || []
-              G.narrativeInbox.push({ id: Math.random().toString(36).slice(2), type: 'milestone', tag: 'career', title: `First S-Rank: ${sn(s)}`, body: `${sn(s)} has cleared their first S-rank mission. This is the moment careers are made of.`, year: G.year, month: G.month })
-            }
-          }
-          checkJutsu(s)
-        })
-        // Pair chemistry tracking
-        if (!G.pairChemistryLog) G.pairChemistryLog = {}
-        const mIds = sq.members
-        for (let a = 0; a < mIds.length; a++) {
-          for (let b = a + 1; b < mIds.length; b++) {
-            const key = [mIds[a], mIds[b]].sort().join('_')
-            G.pairChemistryLog[key] = (G.pairChemistryLog[key] || 0) + 1
-            if (G.pairChemistryLog[key] === 5) {
-              const sA = G.shinobi.find(x => x.id === mIds[a]), sB = G.shinobi.find(x => x.id === mIds[b])
-              if (sA && sB) aL(tr('toast.adv.fieldChemistry', { a: sn(sA), b: sn(sB) }), 'good')
-            }
-          }
-        }
-        const _sqSuccessNarr = pickSquadNarrative(m.rk, 'success', sq.n)
-        const _sqTag = _mev.quality === 'decisive' ? '⚔ Decisive victory — ' : ''
-        aL(_sqTag + sq.n + ' completed "' + m.n + '" — +' + fmt(_bonusRyo) + ' ryo. ' + _sqSuccessNarr, 'good')
-        pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: _bonusRyo, rep: m.rep, chainName: m.chainName || null, narrative: _sqSuccessNarr, quality: _mev.quality })
-        addLegend((m.rk === 'S' ? 15 : m.rk === 'A' ? 8 : m.rk === 'B' ? 3 : 1) + _mq.legend)
-        // Narrative Pillar 1&2: confidence + memory + blurb
-        recordPlayerTactic(G.rivalTendencies, m.rk, _mev.quality, true)
-        G.villages.forEach(v => observePlayerTactic(v, m.rk, true))
-        const _sqActorIds = sq.members.slice()
-        sq.members.forEach(id => {
-          const s = G.shinobi.find(x => x.id === id); if (!s) return
-          updateConfidence(s, _mev.quality, { isLeader: s.id === sq.leaderId })
-          if (_mev.quality === 'decisive') {
-            addMemory(s, 'mission_triumph', m.id || m.n, { year: G.year, month: G.month })
-            if (s.wins === 10 || s.wins === 25) setEmotionalState(s, 'triumphant')
-          } else if (_mev.quality === 'narrow') {
-            addMemory(s, 'mission_triumph', m.id || m.n, { year: G.year, month: G.month }, 0.3)
-          }
-        })
-        if (_mev.quality === 'decisive') pushNarrative(genMissionBlurb(sq.n, sq.members.length > 0 ? (G.shinobi.find(x => x.id === sq.members[0])?.ri ?? 2) : 2, m.n, 'decisive'), _sqActorIds)
-        // Post-mission contribution scores (Phase 4)
-        G.lastMissionReport = _buildMissionReport(sq, m, true, _mev, _bonusRyo)
-        G._battleReportFresh = true   // arms the auto-watch viewer for this turn
-        // Squad identity unlock at cohesion 75
-        if (sq.cohesion >= 75 && !sq.identity) {
-          const taken = G.squads.filter(q => q.identity).map(q => q.identity.title)
-          const available = SQUAD_IDENTITIES.filter(i => !taken.includes(i.title))
-          if (available.length) {
-            sq.identity = available[Math.floor(Math.random() * available.length)]
-            aL(sq.n + ' has forged an unbreakable bond — now known as "' + sq.identity.title + '"!', 'good')
-            ntf(sq.n + ': ' + sq.identity.title)
-            addChronicle('Squad Identity', sq.n + ' earned the title "' + sq.identity.title + '".', 'squad')
-            addLegend(20)
-          }
-        }
-        // Try bond formation after 5 squad wins
-        if (sq.wins >= 5) tryFormBonds(sq)
-        // #11 Pairwise support events (flag-gated): one bonded pair may share a vignette
-        if (G._ff_supportEvents) {
-          const ids = sq.members
-          let fired = false
-          for (let a = 0; a < ids.length && !fired; a++) {
-            const sA = G.shinobi.find(x => x.id === ids[a]); if (!sA) continue
-            for (const bnd of (sA.bonds || [])) {
-              if (!ids.includes(bnd.otherId) || Math.random() >= 0.25) continue
-              const ev = pickSupportEvent(bnd.type); if (!ev) continue
-              const sB = G.shinobi.find(x => x.id === bnd.otherId); if (!sB) continue
-              if (ev.moraleMod) {
-                sA.indMorale = clamp((sA.indMorale || 70) + ev.moraleMod, 0, 100)
-                sB.indMorale = clamp((sB.indMorale || 70) + ev.moraleMod, 0, 100)
-              }
-              aL(tr('toast.adv.bondEvent', { text: ev.text.replace('{a}', sn(sA)).replace('{b}', sn(sB)) }), 'good')
-              fired = true; break
-            }
-          }
-        }
-      } else {
-        G._formThisMonth.losses++
-        const hasPr = sq.members.some(id => G.shinobi.find(s => s.id === id)?.pers.n === 'Protective')
-        const kR = clamp((hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08) + dp.kiaRiskMod + _formationRisk(sq) + _philosophyKIAMod(), 0.005, 0.15)
-        let hadKIA = false
-        const survivorIds = []
-        sq.members.forEach(id => {
-          const s = G.shinobi.find(x => x.id === id); if (!s) return
-          s.streak = 0
-          addWorkload(s, m.rk)
-          if (!hasPr && Math.random() < kR && !jkKIAImmune(s)) {
-            const lastWords = pk(LAST_WORDS_POOL)
-            aL(sn(s) + ' KIA on "' + m.n + '". ' + lastWords, 'bad')
-            sq.fallen.push({ name: sn(s), rank: RANKS[s.ri], mission: m.n, year: G.year, month: G.month })
-            if (s.wins >= 50) { addChronicle('Fallen Veteran', sn(s) + ' died on "' + m.n + '" after ' + s.wins + ' missions.', 'shinobi'); addLegend(10) }
-            maybeInduct(s, 'fallen'); G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
-            pushNarrative(genKIABlurb(sn(s), s.ri, m.n))
-            G.shinobi = G.shinobi.filter(x => x.id !== s.id)
-            hadKIA = true; sq.kills++
-            G._mandateKIAThisYear = (G._mandateKIAThisYear || 0) + 1
-            if (!G.pendingPress) queuePressConference('kia')
-          } else {
-            const injType = pickInjuryType(m.rk)
-            if (injType) applyInjury(s, injType, hL, dp.injDayReduction)
-            survivorIds.push(s.id)
-          }
-        })
-        // Survivors who witnessed KIA may develop trauma + grudges + memories
-        if (hadKIA) {
-          const fallen = sq.fallen[sq.fallen.length - 1]
-          survivorIds.forEach(id => {
-            const survivor = G.shinobi.find(x => x.id === id)
-            if (!survivor) return
-            if (Math.random() < 0.5) applyTrauma(survivor)
-            updateConfidence(survivor, _mev.quality, { hadKIA: true })
-            addMemory(survivor, 'witness_kia', m.id || m.n, { year: G.year, month: G.month })
-            setEmotionalState(survivor, 'grieving')
-            // Bonded shinobi form a grudge against the rival village that caused the loss
-            const wasBonded = fallen && (survivor.bonds || []).some(b => b.otherId === sq.fallen.find(f => f.name === fallen.name)?.id)
-            if (wasBonded && G.villages.length) {
-              const antagonist = pk(G.villages)
-              formGrudge(survivor, antagonist.n, antagonist.n, 'kia_partner', { year: G.year, month: G.month })
-              const quote = getArchetypeQuote(survivor)
-              if (fallen) pushNarrative(genGrudgeBlurb(survivor.fn + ' ' + survivor.ln, fallen.name, 'Fallen Comrade', 3), [survivor.id])
-              aL(tr('toast.adv.lastWords', { quote, name: sn(survivor) }), 'warn')
-            }
-          })
-        } else {
-          survivorIds.forEach(id => {
-            const survivor = G.shinobi.find(x => x.id === id)
-            if (!survivor) return
-            updateConfidence(survivor, _mev.quality)
-            if (_mev.quality === 'disaster') addMemory(survivor, 'mission_disaster', m.id || m.n, { year: G.year, month: G.month })
-          })
-        }
-        sq.cohesion = Math.max(0, (sq.cohesion ?? 0) + (hadKIA ? -15 : -4) - grindCohesionPenalty(sq.consecutiveDeployMonths || 0))
-        sq.losses++
-        const _sqFailNarr = pickSquadNarrative(m.rk, 'failure', sq.n)
-        const _sqFailTag = _mev.quality === 'disaster' ? '💥 Disaster — ' : ''
-        aL(_sqFailTag + '"' + m.n + '" squad mission failed. ' + _sqFailNarr, 'bad')
-        recordPlayerTactic(G.rivalTendencies, m.rk, _mev.quality, true)
-        G.villages.forEach(v => observePlayerTactic(v, m.rk, true))
-        if (_mev.quality === 'disaster') pushNarrative(genMissionBlurb(sq.n, 2, m.n, 'disaster'))
-        pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, narrative: _sqFailNarr, quality: _mev.quality })
-        G.morale = clamp(G.morale - 5 + _mq.morale, 0, 100)
-        G.lastMissionReport = _buildMissionReport(sq, m, false, _mev)
-        G._battleReportFresh = true   // arms the auto-watch viewer for this turn
-      }
-    } else {
-      const s = G.shinobi.find(x => x.id === am.assignedTo); if (!s) return
-      const pw = sPow(s), rM = s.pers.effect.riskMod || 0, sM = pw < m.mp ? (s.pers.effect.sucMod || 0) : 0, sB = s.pers.effect.soloBonus || 0
-      const soloFormMod = ((s.returningForm || 100) < 100) ? ((s.returningForm - 100) / 500) : 0
-      const soloAnbuBon = (m.rk === 'S' || m.rk === 'A') ? sb.anbuMissionBonus : 0
-      const beastLuck = G._beastMissionLuck || 0
-      ensureCareerFields(s)
-      const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
-      const _soloAppMod = missionApproachMod(am.approach, m.spec)  // tactical approach vs mission spec
-      const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
-      const bMB = bondMissionBonus(s, G.shinobi)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0) + fatiguePenalty(s) + getMissionSpecBonus(s, m) + _soloAppMod.sc - _soloAppMod.risk - (am._riskMod || 0) + kageMod(G, 'command'), 0.08, successCeiling(m.rk))
-      const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
-
-      addWorkload(s, m.rk)
-      // Hanaku Lucky Scales: failed mission becomes marginal success once per month
-      const chomeiActive = hasUniqueAbility(s.id, 'Hanaku') && !G._hanakuLuckyUsed
-      const rollResult = Math.random()
-      const missionPassed = rollResult < sc || (rollResult >= sc && chomeiActive && (() => { G._hanakuLuckyUsed = true; aL(tr('toast.adv.hanakuLucky', { name: sn(s) }), 'good'); return true })())
-      const _mev = resolveMission(sc, Math.random, { success: missionPassed })
-      const _mq = qualityEffects(_mev.quality)
-      G._formThisMonth.marginSum += _mev.margin
-      if (missionPassed) G._formThisMonth.wins++; else G._formThisMonth.losses++
-      if (missionPassed) {
-        const _bonusRyo = Math.round(m.ryo * _mq.ryoMult * (1 + (am._ryoMod || 0)))
-        G.ryo += _bonusRyo; G.reputation = clamp(G.reputation + m.rep + rB, 0, 999); G.morale = clamp(G.morale + 2 + _mq.morale, 0, 100)
-        recordMissionCommission(m.rk)
-        s.missId = null; s.wins++; s.streak = (s.streak || 0) + 1
-        s._seasonWins = (s._seasonWins || 0) + 1
-        s._seasonMissions = (s._seasonMissions || 0) + 1
-        s.status = 'available'
-        if (m.rk === 'B' || m.rk === 'C') s.winsB = (s.winsB || 0) + 1
-        if (m.rk === 'S') { s.winsS = (s.winsS || 0) + 1 }
-        checkJutsu(s)
-        const _soloSuccNarr = pickNarrative(m.rk, 'success', sn(s), s.pers.n, { wins: s.wins, streak: s.streak, season })
-        const _soloTag = _mev.quality === 'decisive' ? '⚔ Decisive — ' : ''
-        aL(_soloTag + sn(s) + ' completed "' + m.n + '" — +' + fmt(_bonusRyo) + ' ryo. ' + _soloSuccNarr, 'good')
-        pushMissionLog({ missionName: m.n, rank: m.rk, success: true, ryo: _bonusRyo, rep: m.rep + rB, chainName: m.chainName || null, narrative: _soloSuccNarr, quality: _mev.quality })
-        updateConfidence(s, _mev.quality)
-        if (_mev.quality === 'decisive') addMemory(s, 'mission_triumph', m.id || m.n, { year: G.year, month: G.month })
-        else if (_mev.quality === 'narrow') addMemory(s, 'mission_triumph', m.id || m.n, { year: G.year, month: G.month }, 0.3)
-        recordPlayerTactic(G.rivalTendencies, m.rk, _mev.quality, false)
-        G.villages.forEach(v => observePlayerTactic(v, m.rk, false))
-        addLegend((m.rk === 'S' ? 12 : m.rk === 'A' ? 6 : m.rk === 'B' ? 2 : 1) + _mq.legend)
-        if (m.rk === 'S') addChronicle('S-Rank Completed', sn(s) + ' completed the S-rank mission "' + m.n + '".', 'legend')
-        if (m.chainId) advanceChain(G, m.id, true)
-        // Career milestone notices
-        const MILESTONES = [10, 25, 50, 100]
-        if (MILESTONES.includes(s.wins)) {
-          const flavour = s.wins >= 100 ? 'A living legend.' : s.wins >= 50 ? 'Half a century of service.' : s.wins >= 25 ? 'Battle-hardened veteran.' : 'A solid foundation built.'
-          s._milestoneNotice = `${s.wins} missions completed (${s.winsS||0} S-rank). ${flavour}`
-          addChronicle(`${s.wins}-Mission Milestone`, `${sn(s)} reaches ${s.wins} missions. ${flavour}`, 'shinobi')
-        } else {
-          s._milestoneNotice = null
-        }
-        rollInjuryOnSuccess(s, m, hL, dp.injDayReduction)
-        // R8+: solo missions get the live viewer + micro-call too (single-member squad shim).
-        G.lastMissionReport = _buildMissionReport({ id: 'solo_' + s.id, n: sn(s), members: [s.id] }, m, true, _mev, _bonusRyo)
-      } else {
-        s.streak = 0
-        s._seasonMissions = (s._seasonMissions || 0) + 1
-        const kR = clamp((hL >= 2 ? 0.02 : hL >= 1 ? 0.04 : 0.08) + dp.kiaRiskMod + _philosophyKIAMod(), 0.005, 0.15)
-        if (Math.random() < kR && !jkKIAImmune(s)) {
-          const lastWords = pk(LAST_WORDS_POOL)
-          aL(sn(s) + ' KIA on "' + m.n + '". ' + lastWords, 'bad')
-          maybeInduct(s, 'fallen'); G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
-          pushNarrative(genKIABlurb(sn(s), s.ri, m.n))
-          if (s.wins >= 50) addChronicle('Fallen Veteran', sn(s) + ' died on "' + m.n + '" after ' + s.wins + ' missions. ' + lastWords, 'shinobi')
-          G._mandateKIAThisYear = (G._mandateKIAThisYear || 0) + 1
-          const ripple = kiaRipple(s.id, G.shinobi.filter(x => x.id !== s.id))
-          ripple.forEach(r => {
-            const affected = G.shinobi.find(x => x.id === r.shinobiId)
-            if (affected) { affected.morale = clamp((affected.morale || 50) + r.delta, 0, 100); aL(tr('toast.adv.shakenByLoss', { name: sn(affected), fallen: sn(s) }), 'bad') }
-          })
-          G.shinobi = G.shinobi.filter(x => x.id !== s.id)
-          G.reputation = clamp(G.reputation - 5, 0, 999)
-        } else {
-          if (m.rk === 'S' && !s.darkMoment) {
-            s.darkMoment = pk(DARK_MOMENT_POOL)
-            aL(sn(s) + ' failed the S-rank and carries something new. "' + s.darkMoment + '"', 'warn')
-          }
-          const injType = pickInjuryType(m.rk)
-          if (injType) {
-            applyInjury(s, injType, hL, dp.injDayReduction)
-            aL(tr('toast.adv.missionFailedInjury', { mission: m.n, name: sn(s), injury: injType.n, days: s.injDays, narrative: pickNarrative(m.rk, 'failure', sn(s), s.pers.n, { wins: s.wins, streak: s.streak, season }) }), 'bad')
-          }
-          // Re-injury risk for those returning from long absence
-          if ((s.returningForm || 100) < 80 && Math.random() < 0.20) {
-            aL(sn(s) + ' re-injured themselves — too soon to return to active duty.', 'warn')
-          }
-          // R8+: a surviving solo shinobi's failed mission is watchable too.
-          G.lastMissionReport = _buildMissionReport({ id: 'solo_' + s.id, n: sn(s), members: [s.id] }, m, false, _mev, 0)
-        }
-        updateConfidence(s, _mev.quality)
-        addMemory(s, 'mission_disaster', m.id || m.n, { year: G.year, month: G.month })
-        if (_mev.quality === 'disaster') {
-          setEmotionalState(s, 'fearful')
-          // Aftermath inbox item — gives the player narrative context on the failure
-          G.narrativeInbox.push({
-            id: Math.random().toString(36).slice(2),
-            title: 'Debrief: ' + m.n,
-            body: sn(s) + ' returned from "' + m.n + '" with nothing to show. ' +
-              (m.rk === 'S' ? 'The Daimyo will want answers.' : m.rk === 'A' ? 'The village felt the setback.' : 'Morale has taken a hit.'),
-            tag: 'mission', link: 'missions', priority: 2,
-            year: G.year, month: G.month, actorIds: [s.id],
-          })
-        }
-        // Costly/failed: recovery op spawns on costly (30%) or any other failure (10%)
-        const _recoveryChance = _mev.quality === 'costly' ? 0.30 : 0.10
-        if (!m.isFollowUp && Math.random() < _recoveryChance) {
-          G.avM.push({
-            ...m,
-            id: Math.random().toString(36).slice(2),
-            n: '[Recovery] ' + m.n,
-            ryo: Math.round(m.ryo * 0.55),
-            rep: Math.max(1, Math.ceil(m.rep / 2)),
-            risk: Math.max(0.05, m.risk - 0.08),
-            dur: Math.max(1, m.dur - 1),
-            expiresMonth: (G.month || 1) + 2,
-            addedYear: G.year || 1,
-            isFollowUp: true,
-          })
-          aL(tr('toast.adv.recoveryOp'), 'neutral')
-        }
-        recordPlayerTactic(G.rivalTendencies, m.rk, _mev.quality, false)
-        G.villages.forEach(v => observePlayerTactic(v, m.rk, false))
-        pushMissionLog({ missionName: m.n, rank: m.rk, success: false, ryo: 0, rep: 0, chainName: m.chainName || null, quality: _mev.quality })
-        G.morale = clamp(G.morale - 3 + _mq.morale, 0, 100)
-        if (m.chainId) advanceChain(G, m.id, false)
-      }
-    }
-  })
-  G.aM = G.aM.filter(am => am.daysLeft > 0)
+  // ── Mission resolution — injuries, death, reports ── see ./tick/missions.js
+  //    Runs AFTER worldPassives and the roster floor by design; see that file.
+  tickMissions({ hL, dp, sb, iB, cp, clP, shP, season })
 
   // ── Raid system ──────────────────────────────────────────────────────────
   if (G.raid && !G.raid.resolved) { if (G.raidW <= 0) resRaid(); else G.raidW-- }
@@ -2902,21 +2301,6 @@ export function adv() {
 }
 
 // ── Bond bonus for squad missions ────────────────────────────────────────
-function _squadBondBonus(sq) {
-  let bonus = 0
-  const members = sq.members.map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
-  members.forEach(m => {
-    if (!m.bonds) return
-    m.bonds.forEach(bnd => {
-      if (sq.members.includes(bnd.otherId)) {
-        if (bnd.type === 'Brothers-in-Arms') bonus += 0.03
-        else if (bnd.type === 'Mentor/Student') bonus += 0.04
-        else if (bnd.type === 'Rivals') bonus += 0.02
-      }
-    })
-  })
-  return Math.min(bonus, 0.12) // cap at +12%
-}
 
 export function resRaid() {
   if (!G.raid || G.raid.resolved) return
@@ -2949,89 +2333,6 @@ export function resRaid() {
 }
 
 // ── Post-mission contribution scorer (Phase 4) ────────────────────────────────
-function _buildMissionReport(sq, m, succeeded, mev, payout = 0) {
-  const ROLE_PRIMARY = { vanguard:'taijutsu', support:'ninjutsu', intel:'stealth', medical:'chakra', flex:null }
-  const ROLE_SECONDARY = { vanguard:'speed', support:'chakra', intel:'intelligence', medical:'intelligence', flex:null }
-  const scores = sq.members.map(id => {
-    const s = G.shinobi.find(x => x.id === id)
-    if (!s) return null
-    const roleId = s.squadRole || 'flex'
-    const p1 = ROLE_PRIMARY[roleId], p2 = ROLE_SECONDARY[roleId]
-    const statVal = p1 ? ((s.stats[p1] || 0) * 0.65 + (s.stats[p2] || 0) * 0.35) : (Object.values(s.stats).reduce((a,b)=>a+b,0)/6)
-    // Normalize vs mission rank baseline
-    const baseline = { D:20, C:30, B:45, A:60, S:75 }[m.rk] || 40
-    const ratio = statVal / baseline
-    const grade = ratio >= 1.3 ? 'A' : ratio >= 1.0 ? 'B' : ratio >= 0.75 ? 'C' : 'D'
-    const detail = grade === 'A' ? 'Exceptional' : grade === 'B' ? 'Solid' : grade === 'C' ? 'Below par' : 'Poor showing'
-    return { id: s.id, name: sn(s), role: roleId, grade, detail, statVal: Math.round(statVal), element: s.element || null }
-  }).filter(Boolean)
-  const rep = { missionId: m.id, missionName: m.n, missionRk: m.rk, squadId: sq.id, squadName: sq.n, succeeded, year: G.year, month: G.month, scores,
-    spec: m.spec || null,   // drives the animated pitch's mission layout (stealth compound, siege works...)
-    phases: mev?.phases || null, quality: mev?.quality || null, margin: mev?.margin ?? null }
-  // R8 live-battle micro-call: let the player bet on the final beat during the viewer.
-  // The outcome is fixed; only the quality band + a small reward delta move. The
-  // closure (dropped on save, live-only by design) applies the deltas exactly once.
-  const bi = callBeatIndex(rep.phases)
-  if (bi >= 0) {
-    rep.baseQuality = rep.quality
-    rep.microCall = { beatIndex: bi, payout }
-    rep.applyCall = call => {
-      if (rep._callDone) return rep._callResult
-      const r = resolveBattleCall({ call, pivotalWon: !!rep.phases[bi].won, succeeded: rep.succeeded, baseQuality: rep.baseQuality })
-      const bonusRyo = Math.round(payout * r.ryoMult)
-      if (bonusRyo) G.ryo = Math.max(0, G.ryo + bonusRyo)
-      if (r.moraleDelta) G.morale = clamp(G.morale + r.moraleDelta, 0, 100)
-      if (r.legendDelta) addLegend(r.legendDelta)
-      rep.quality = r.quality
-      rep._callDone = call
-      rep._callResult = { ...r, bonusRyo }
-      const tone = r.kind === 'clutch' ? 'good' : r.kind === 'overcommit' ? 'warn' : 'info'
-      aL(`${sq.n}: ${r.label} — ${r.note}${bonusRyo ? ` (${bonusRyo > 0 ? '+' : ''}${fmt(bonusRyo)} ryo)` : ''}`, tone)
-      upUI()
-      return rep._callResult
-    }
-  }
-  // Match-condition layer: each member enters the viewer with stamina from their
-  // REAL condition (chakra reserves, carried fatigue). The touchline-tactic sim
-  // drains it beat by beat; how they finish becomes real post-match fatigue and
-  // morale via applyCondition (live-only closure, same pattern as applyCall).
-  rep.matchStamina = sq.members.map(id => {
-    const s = G.shinobi.find(x => x.id === id)
-    if (!s) return null
-    return { id: s.id, name: sn(s), role: s.squadRole || 'flex', stamina: staminaStart({ chakra: s.stats?.chakra || 30, workload: s.workload || 0 }) }
-  }).filter(Boolean)
-  rep.applyCondition = avgStamina => {
-    if (rep._condDone) return rep._condResult
-    const fx = finishEffects(avgStamina)
-    if (fx.workloadDelta) sq.members.forEach(id => { const s = G.shinobi.find(x => x.id === id); if (s) s.workload = clamp((s.workload || 0) + fx.workloadDelta, 0, 100) })
-    if (fx.moraleDelta) G.morale = clamp(G.morale + fx.moraleDelta, 0, 100)
-    rep._condDone = true
-    rep._condResult = fx
-    if (fx.id !== 'worked') aL(`${sq.n}: ${fx.label} — ${fx.note}`, fx.id === 'fresh' ? 'good' : 'warn')
-    upUI()
-    return fx
-  }
-  // Capture-the-scroll: the objective token on the board is a real bonus. Hold it
-  // (win more exchanges than lost) → an intel bounty. Side reward only; the
-  // mission's win/loss is untouched. Applied once by the viewer at the finish.
-  rep.applyScroll = () => {
-    if (rep._scrollDone) return rep._scrollResult
-    const won = (rep.phases || []).filter(p => p.won).length
-    const lost = (rep.phases || []).length - won
-    const r = scrollOutcome({ beatsWon: won, beatsLost: lost, rank: m.rk })
-    if (r.held) {
-      G.ryo = Math.max(0, G.ryo + r.ryo)
-      if (r.legend) addLegend(r.legend)
-      if (r.morale) G.morale = clamp(G.morale + r.morale, 0, 100)
-      aL(`${sq.n}: 📜 ${r.note}`, 'good')
-    }
-    rep._scrollDone = true
-    rep._scrollResult = r
-    upUI()
-    return r
-  }
-  return rep
-}
 
 // ── Phase 4 tick functions ─────────────────────────────────────────────────────
 
@@ -3163,35 +2464,6 @@ export function resolveNoConfidence(choice) {
 
 // ── Press Conference ─────────────────────────────────────────────────────────
 
-export function queuePressConference(triggerId, ctx = {}) {
-  if (G.pendingPress) return  // one at a time
-  const q = hydrateQuestion(triggerId, ctx)
-  if (!q) return
-
-  // Auto-build ctx from live state when not supplied
-  if (!ctx.rivalName && G.villages && G.villages.length) {
-    const antagV = G.villages.reduce((a, b) => ((b.grudgeTicks || 0) > (a.grudgeTicks || 0) ? b : a), G.villages[0])
-    if ((antagV.grudgeTicks || 0) > 0) ctx.rivalName = antagV.n
-  }
-
-  const _journo = pickJournalist()
-  G.pendingPress = {
-    id: q.id, trigger: triggerId,
-    question: q.question, intro: q.intro,
-    followUp: q.followUp || null,
-    availableTones: q.availableTones || ['confident', 'humble', 'dismissive'],
-    rivalName: ctx.rivalName || null,
-    journalistId: _journo.id,
-  }
-  G.inbox = G.inbox || []
-  G.inbox.unshift({
-    id: 'press_' + triggerId + '_' + G.year + '_' + G.month,
-    cat: 'press', subject: 'Press Conference Request',
-    body: q.intro + '\n\n"' + q.question + '"',
-    year: G.year, month: G.month, action: 'press', pressId: q.id, read: false,
-  })
-  ntf(tr('toast.adv.pressRequested'))
-}
 
 export function resolvePressConference(toneId, calloutVillage) {
   const p = G.pendingPress; if (!p) return

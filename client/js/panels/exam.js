@@ -80,7 +80,7 @@ function _seasonHistoryHtml() {
 import { tblSort, tblToggleSort, tblHeaderHtml, tblSortRows } from '../uikit.js'
 import { kageMod } from '../../../shared/constants/kageDev.js'
 import { renderWar } from './war.js'
-import { queuePressConference } from '../adv.js'
+import { queuePressConference } from '../tick/missionHelpers.js'
 
 window._exTab = 'exam'
 
