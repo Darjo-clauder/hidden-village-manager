@@ -93,12 +93,17 @@ match engine exists and is genuinely good. It is just wired to be a cutscene.
 
 ### 3.2 The year has a hollow middle
 
-Months 8, 9 and 11 have no scheduled event whatsoever. The calendar is
-front-and-back-loaded: 12 things in January, 8 in December, nothing in late
-summer. FM has no dead weeks — there is always a fixture three days out.
+> **Partly wrong, corrected in §5B.** I counted month-gated branches in the
+> tick, which misses the world calendar entirely — it fires from a data lookup.
+> Months 2/4/6/8/10/12 already had an event each. The genuinely empty months
+> were **9 and 11**, both now filled (`db88b11`). The shape of the complaint
+> stood; the specific months did not. Worth leaving visible as a reminder that
+> "grep for `G.month ===`" is not the same as "read the calendar".
 
-A player in month 9 assigns three missions and presses End Turn. That is the
-whole month.
+The calendar is front-and-back-loaded: 12 things in January, 8 in December.
+A player in an empty month assigns three missions and presses End Turn — that
+is the whole month. FM has no dead weeks; there is always a fixture three days
+out.
 
 ### 3.3 A nine-fixture league cannot carry a season narrative
 
@@ -136,7 +141,7 @@ game leans into consequence and memory, not match fidelity.
 
 Not started — this is a design call, same as the economy one.
 
-**A. Let the player affect an outcome while watching it.** DONE () —
+**A. Let the player affect an outcome while watching it.** DONE (`4712aa6`) —
 the micro-call can now salvage a close defeat. Loss→win only; a win is never
 reversed, because that would retroactively kill someone.
 
@@ -148,13 +153,19 @@ contest the loop is missing. Small code change, large felt change. Risk: it
 invalidates the "outcome is pre-decided" guarantee the whole viewer was built
 on, so archive/replay paths need care.
 
-**B. Fill the empty months.** DONE — see below. NOTE: this analysis originally
-said months 8, 9 and 11 were empty. That was wrong. World events fire via a
-data lookup (), not a  branch, so counting
-branches missed them entirely — months 2/4/6/8/10/12 already had one. The truly
-empty months were the odd pair **9 and 11**, now filled with "The Displaced"
-(month 9, following the Shadow War's onset) and "The Draw" (month 11, the
-tournament seeding). Every month from 8 to 12 now has an anchor.
+**B. Fill the empty months.** DONE (`db88b11`).
+
+**Correction to §3.2 above:** this analysis claimed months 8, 9 and 11 were
+empty. Month 8 was not. World events fire through a data lookup
+(`getEventForMonth`), not a `G.month ===` branch, so counting branches missed
+the entire world calendar — months 2/4/6/8/10/12 already had one each. The
+genuinely empty months were the odd pair, **9 and 11**.
+
+Both are now filled, using the existing calendar so they inherit advance
+notice, the choice UI and history: **The Displaced** (M9, placed right after
+the Shadow War's onset so it reads as that conflict's consequence) and **The
+Draw** (M11, tournament seeding, one month before the tournament tests it).
+Every month from 8 to 12 now has an anchor.
 
 **C. Double league resolution.** Two matchdays a month, or fixtures through the
 off-season, taking a season to ~18–24 games so form and slumps can exist. Also
