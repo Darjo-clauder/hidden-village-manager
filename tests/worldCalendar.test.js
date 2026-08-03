@@ -8,13 +8,19 @@ import {
 } from '../shared/constants/worldCalendar.js'
 
 describe('WORLD_EVENTS', () => {
-  it('has 6 events', () => {
-    expect(WORLD_EVENTS).toHaveLength(6)
+  it('schedules every event in a real month', () => {
+    // Asserted against the data rather than a hardcoded count, so adding an
+    // event to fill an empty month does not fail a test that was only counting.
+    expect(WORLD_EVENTS.length).toBeGreaterThanOrEqual(6)
+    for (const e of WORLD_EVENTS) {
+      expect(e.month, e.id).toBeGreaterThanOrEqual(1)
+      expect(e.month, e.id).toBeLessThanOrEqual(12)
+    }
   })
 
   it('all events have unique months', () => {
     const months = WORLD_EVENTS.map(e => e.month)
-    expect(new Set(months).size).toBe(6)
+    expect(new Set(months).size).toBe(WORLD_EVENTS.length)
   })
 
   it('all events have 3 choices', () => {
@@ -110,5 +116,51 @@ describe('resolveWorldEvent', () => {
     expect(outcome.success).toBe(true)
     expect(outcome.rep).toBe(skip.rep)
     expect(outcome.rep).toBeLessThan(0)
+  })
+})
+
+// ── Every month must have something to do ──────────────────────────────────
+describe('calendar coverage', () => {
+  it('leaves no month of the back half empty', () => {
+    // Months 9 and 11 previously had NOTHING scheduled anywhere in the game —
+    // no world event, no competition, no review. A player there assigned
+    // missions and pressed End Turn. See docs/LOOP_ANALYSIS_2026-08-03.md.
+    for (const m of [8, 9, 10, 11, 12]) {
+      expect(getEventForMonth(m), `month ${m} has no world event`).toBeTruthy()
+    }
+  })
+
+  it('schedules at most one event per month', () => {
+    const byMonth = {}
+    for (const e of WORLD_EVENTS) byMonth[e.month] = (byMonth[e.month] || 0) + 1
+    for (const [m, n] of Object.entries(byMonth)) expect(n, `month ${m}`).toBe(1)
+  })
+
+  it('gives every event a real choice with a stated trade-off', () => {
+    for (const e of WORLD_EVENTS) {
+      expect(e.choices.length, e.id).toBeGreaterThanOrEqual(3)
+      for (const c of e.choices) {
+        expect(c.label, `${e.id}/${c.id}`).toBeTruthy()
+        expect(c.desc, `${e.id}/${c.id}`).toBeTruthy()
+      }
+      // Not every option can be strictly better than the others.
+      const free = e.choices.filter(c => (c.ryo || 0) >= 0 && (c.rep || 0) >= 0 && (c.morale || 0) >= 0 && !c.risk)
+      expect(free.length, `${e.id} has a dominant no-cost option`).toBeLessThan(e.choices.length)
+    }
+  })
+
+  it('warns a month ahead for the new events too', () => {
+    expect(getUpcomingEvent(8).id).toBe('refugee_season')
+    expect(getUpcomingEvent(10).id).toBe('tournament_draw')
+  })
+
+  it('resolves the new events like any other', () => {
+    for (const id of ['refugee_season', 'tournament_draw']) {
+      const ev = WE_BY_ID[id]
+      for (const c of ev.choices) {
+        const r = resolveWorldEvent(id, c.id, () => 0.99)   // no risk failure
+        expect(r.success, `${id}/${c.id}`).toBe(true)
+      }
+    }
   })
 })

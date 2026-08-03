@@ -136,7 +136,11 @@ game leans into consequence and memory, not match fidelity.
 
 Not started — this is a design call, same as the economy one.
 
-**A. Let the player affect an outcome while watching it.** (highest impact)
+**A. Let the player affect an outcome while watching it.** DONE () —
+the micro-call can now salvage a close defeat. Loss→win only; a win is never
+reversed, because that would retroactively kill someone.
+
+_Original note:_
 The viewer and the micro-call already exist; the call is simply forbidden from
 mattering. Letting it swing win/loss on close results — say, when the margin is
 inside some band — converts our best-looking system from a cutscene into the
@@ -144,9 +148,13 @@ contest the loop is missing. Small code change, large felt change. Risk: it
 invalidates the "outcome is pre-decided" guarantee the whole viewer was built
 on, so archive/replay paths need care.
 
-**B. Fill months 8, 9 and 11.** A recurring monthly contest of *some* kind so no
-month is empty. Cheapest structural fix; the content already exists in adjacent
-systems (raids, rival ops, exhibitions) and just needs scheduling.
+**B. Fill the empty months.** DONE — see below. NOTE: this analysis originally
+said months 8, 9 and 11 were empty. That was wrong. World events fire via a
+data lookup (), not a  branch, so counting
+branches missed them entirely — months 2/4/6/8/10/12 already had one. The truly
+empty months were the odd pair **9 and 11**, now filled with "The Displaced"
+(month 9, following the Shadow War's onset) and "The Draw" (month 11, the
+tournament seeding). Every month from 8 to 12 now has an anchor.
 
 **C. Double league resolution.** Two matchdays a month, or fixtures through the
 off-season, taking a season to ~18–24 games so form and slumps can exist. Also
