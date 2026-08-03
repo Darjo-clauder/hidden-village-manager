@@ -1,10 +1,41 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-08-03 · **HEAD:** `9b37f14` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 1213 passing / 96 files
+**Last updated:** 2026-08-03 · **HEAD:** `ee0fb94` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 1225 passing / 96 files
 
 ---
 
-> ## ⚑ START HERE — STEAM-READINESS ARC (2026-07-31 → 08-03, `cdffed6` → `2a28d35`)
+> ## ⚑ GAMEPLAY LOOP PASS (2026-08-03, `a4cf1fc` → `ee0fb94`)
+>
+> After the Steam-readiness arc closed, the question moved from "does it work" to "is the loop worth playing". `docs/LOOP_ANALYSIS_2026-08-03.md` compares our loop against the genre, measured from the tick rather than asserted.
+>
+> **The finding that reframes everything: our payoff events were replays, not contests.** The battle viewer was documented as *"pure presentation over engine-decided results"*, and the micro-call swung the quality band but never win/loss. The player committed at assignment, the tick decided, and a handsome animation narrated a fixed outcome. That is why the game still read as *"pick a dial → wait → read a report"* after four depth passes: every pass added **inputs**, none added **presence**. We had already built the hard part — hex arena, possession sim, tactics, overlays — and wired it as a cutscene.
+>
+> ### Shipped
+>
+> - **Micro-call can salvage a close defeat** (`4712aa6`). Loss→win only, when the margin was one beat, the player committed reserves, and the final contested beat was won. **A win is NEVER reversed** — that would retroactively kill someone the player was told survived. A salvage does not undo the defeat's cost either: anyone wounded or lost stays that way. You rescue the objective, not the squad.
+> - **The two genuinely empty months are filled** (`db88b11`). *The Displaced* (M9, placed after the Shadow War's onset so it reads as consequence) and *The Draw* (M11, tournament seeding, tested a month later by the tournament). Uses the existing world calendar, so they inherit advance notice, the choice UI and history.
+>
+> ### ⚠ THE HARNESS WAS PLAYING WORSE THAN A PLAYER — this invalidated a published number
+>
+> Hunting for a salvageable defeat in a driven game turned up **9 missions out of 9 succeeding**, against a harness failure rate of **66.8%**. Cause: `autoAssignMissions` sent any free shinobi at any mission, while the real assign screen only offers shinobi meeting the mission's power requirement (`doA` is simply absent otherwise).
+>
+> Every economy figure measured on it was therefore pessimistic. With eligibility respected, competent play sits at **6.24× idle, not the 4.51× published in `f7ef39f`** (wages off: 22.72×). The wage mechanism still cuts the runaway ~72% and self-corrects harder under good play — reputation reaches 429, payroll converges to ~137k, above even the A-tier cap. **The conclusion held; the number did not.**
+>
+> **Before trusting any balance number from the harness, check it respects the same gates the UI enforces.**
+>
+> ### Still open from the loop analysis — design calls, not tasks
+>
+> - **C. Double league resolution.** ~9 fixtures a season is too small a sample for form, slumps or a title race to read as narrative.
+> - **D. Per-match matchday decisions.** `G.matchdayTactic` is a single persisted dial, set once and inherited monthly — the set-and-forget shape the depth pass existed to remove.
+> - **E. Lean into consequence instead.** Accept low event frequency and invest in memory — the Crusader Kings path. **Worth deciding deliberately rather than by default, because it points at a different game from C/D.**
+>
+> The analysis argues our genre position is not "FM with ninjas" but a sports-management skeleton carrying a CK-style narrative layer — death and permanence, cross-run legacy, village construction, a chronicle/memorial memory layer. The strongest version leans into consequence, not match fidelity.
+>
+> **Salvage frequency, for judgement later:** a competent player fails ~5.6% of missions and ~42% of failures are salvageable, so roughly **1 in 43 missions** — and only for players who watch rather than auto-resolve. Special, or too rare to notice? Decide after playing it.
+
+---
+
+> ## ⚑ STEAM-READINESS ARC (2026-07-31 → 08-03, `cdffed6` → `2a28d35`)
 >
 > Began as "the UI still feels weak", became a full audit (`docs/AUDIT_2026-07-31.md`) and then its entire recommended order. **Every hard *code* blocker for a Steam release is now closed.** Tyler is handling Steam Direct, code signing and the store page himself.
 >
@@ -47,7 +78,9 @@
 >
 > Active play was reaching **19.35× idle wealth** and widening, with "Thriving" from early year 2. The cause was **not** mission payouts: missions are the *reputation* faucet, and `villageRevenue()` pays `min(rep,200)×400`, so a village merely at the soft cap earns 102,000 against a fresh village's 26,000.
 >
-> Tyler chose option 4. `shared/utils/wageDemands.js` pulls contracts toward a standing-adjusted rate each month — **19.35× → 4.51×**, with idle play untouched (0.91×) and *fewer* bankruptcies than before (3 → 1). Full method and numbers in `docs/BALANCE_MISSION_INCOME.md`.
+> Tyler chose option 4. `shared/utils/wageDemands.js` pulls contracts toward a standing-adjusted rate each month, with idle play untouched (0.91×) and *fewer* bankruptcies than before (3 → 1). Full method and numbers in `docs/BALANCE_MISSION_INCOME.md`.
+>
+> **The figures first published here (19.35× → 4.51×) were measured on a harness that played badly — see the loop-pass block above. Corrected: 22.72× → 6.24× under competent play.**
 >
 > Two things the measurement overturned, both worth internalising:
 > - **Reasoning from the revenue curve gave the wrong size.** A multiplier of 2.2 moved 19.35× to only 16.94×. Payroll is bounded by roster size and revenue is not, so wages must grow by a *larger* multiple than revenue. Shipped value is 6, empirical.
