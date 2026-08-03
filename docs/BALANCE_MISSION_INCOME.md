@@ -117,10 +117,17 @@ all". Both were needed here — the harness sized the constants, the browser
 confirmed the floor correctly suppresses any wage pressure in a young village
 (`_wageReview` is `null` at rep 11).
 
-**Not directly observed in-browser:** the review firing at high reputation.
-Browser driving could not reach rep 60 within tool limits. It is covered by the
-seeded sweep (active seeds reach rep 254 with payroll converging to ~101k) and
-by unit tests, but nobody has watched the toast appear in a live game.
+**Since verified in-browser** (`2f700be`). Driving to reputation 60 was too
+slow, so the state was constructed instead — reputation raised in the save and
+restored through the real load path. The review fired correctly at rep 150:
+23 contracts adjusted at multiplier 4.94.
+
+Watching it also found a bug the tests could not see: the message used
+`tr(key) || fallback`, and `t()` returns the KEY when it has no entry — a truthy
+string — so the player was shown the literal text "toast.adv.wageReview". The
+corruption detector now flags any message that is entirely a dotted key, and the
+tick harness initialises the locale so the suites exercise the string path the
+player actually gets rather than one where every key is unresolved.
 
 ## Options as originally written, for the record
 
