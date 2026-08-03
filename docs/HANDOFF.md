@@ -1,6 +1,57 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-07-20 · **HEAD:** `462aa07` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 1047 passing / 87 files
+**Last updated:** 2026-08-03 · **HEAD:** `2a28d35` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 1189 passing / 95 files
+
+---
+
+> ## ⚑ START HERE — STEAM-READINESS ARC (2026-07-31 → 08-03, `cdffed6` → `2a28d35`)
+>
+> Began as "the UI still feels weak", became a full audit (`docs/AUDIT_2026-07-31.md`) and then its entire recommended order. **Every hard *code* blocker for a Steam release is now closed.** Tyler is handling Steam Direct, code signing and the store page himself.
+>
+> ### Read these five gotchas before doing any browser QA
+>
+> Each one cost real time, and two of them caused me to *report verified work that wasn't*.
+>
+> 1. **`continueTurn()` does not reliably advance months.** It refuses while a decision is pending and routes to the inbox. I twice claimed "N months driven" when the game never left Y1. **Drive turns with `window.endTurn()`**, and resolve blockers between them.
+> 2. **Port 3000 serves `dist/`.** Run `npm run build` before every browser check or you are verifying stale code.
+> 3. **A hidden Browser pane reports viewport 0×0**, so every element "overflows" its zero-width parent — this produced 78 phantom overflow hits. `resize_window` to 1280×800 first. Screenshots still time out entirely unless the pane is *displayed*; all QA in this arc was DOM/pixel assertion.
+> 4. **Green tests do not mean a lifted block is closed.** Use the free-variable scan (procedure below). It caught latent crashes in five of the ten extractions.
+> 5. **Inherited/earned reputation is MULTIPLICATIVE on income.** `villageRevenue()` scales with rep, so any flat rep grant compounds. Bit twice: once in the legacy bequest, once as the main-loop balance finding.
+>
+> ### What shipped
+>
+> - **UI (`cdffed6`, `0ede7e5`)** — the earlier overhaul migrated *colour* onto tokens but left typography: 1,396 inline font-sizes, ~950 of them at 6–9px. Rebuilt as an 8-step ramp with a 10px floor, 1,554 declarations migrated. Then elevation: `.surf`/`.well`/`.strip` add **only** `box-shadow`, so inline bg/border still win — one dial instead of 76 markup rewrites.
+> - **Audio (`6e6446a`)** — the game was silent. `client/js/audio.js`: master/music/sfx buses, lazy `AudioContext` on first gesture. All 11 effects are **synthesised at runtime** (filtered-noise woodblock, Karplus-Strong pluck, two-operator FM bell, over a pentatonic set) — nothing to ship or license. Music bus is wired but deliberately empty.
+> - **Options (`f61d7ea`)** — none existed. `--fs-scale` multiplies the whole type ramp, so text size rescales the UI *proportionally* and hierarchy survives; verified clean at 0.9 and 1.3 across all 31 panels.
+> - **Legacy meta-loop (`f86bc09`)** — the audit's headline finding. `dynasty.js` defined a 30-year arc and `inheritedBonuses`, but the handoff wrote `G.dynastyHandoffRecord` and **nothing ever read it**. Per Tyler's "a mix of both": tenure **legacy points** (capped tiers, compounding, dismissal still pays 0.4×) plus a one-time **bequest** for completing 30 years. Handoff gate dropped 30yr → 8yr or short arcs aren't playable. Store: `hvm_legacy_v1`, deliberately separate from the save.
+> - **Achievements (`0ab9649`)** — 30, almost all reading state the sim already keeps. Store: `hvm_achievements_v1`. Survives a new game.
+> - **Onboarding (`1b4d0dd`)** — the old card vanished at month 4, *before* the player ever met the council mandates that dismiss them. Now runs the full first year in three phases.
+> - **Alliances with obligations (`cfa7e57`)** — the depth flagship. `v.allied` was a boolean that did nothing. Three pact types with live benefits (war odds / monthly ryo / exam cohesion) scaled by standing, and **calls that block the turn**. Refuse twice and the ally dissolves it.
+>
+> ### Engineering — the part that changed how this codebase is worked on
+>
+> - **Client test net (`b3009a8`)** — `client/` had *zero* coverage. `adv.js` reaches the browser through only four modules (`ui`, `socket`, `news`, `legacyStore`); stub those and the whole tick runs in plain node, no jsdom. Plus **characterisation snapshots** that pin sim output for fixed seeds.
+> - **Turn gate (`368398f`)** — "you cannot advance over an unanswered decision" lived only in `ui.js`. `shared/utils/turnGate.js` now defines it once; `adv()` refuses and returns `false`. Regenerating the snapshots revealed the old ones were a *crippled* sim: the quick-decision generator is gated on `!G.pendingQuickDecision`, so once the harness hit one and never answered it, **no further decisions ever spawned**.
+> - **Sweep coverage (`c515689`)** — 24 seeds × 48 months, asserting invariants on every seed and that rare branches actually fire. First run reported **zero KIA across 1,152 months**: mission resolution iterates `G.aM`, assignment is a player action, and the harness only advanced months. **The largest block in the tick had never executed in any test.** Fixed, and it immediately exposed a NaN: `s.months++` on a promoted prospect → `undefined++` → NaN → since `NaN % 12 === 0` is never true, **that shinobi never ages again**. `state.js` gained `normalizeRecruit()`.
+> - **`adv()` broken up (`36d9451`, `8a1a90a`, `d495185`, `6b29093`)** — **3,791 → 2,163 lines (−43%)** across ten tick modules. Snapshots byte-identical through every extraction.
+>
+> **Extraction procedure — every step earned by a failure:**
+> 1. contiguous blocks only.
+> 2. leak-check **top-level** `const`/`let` only — nested declarations are already scoped, and counting them made mission resolution look 70× worse than it was.
+> 3. pass `adv()`'s preamble locals as explicit ctx; never recompute (that drifts).
+> 4. run the free-variable scan. **(a)** do *not* filter to exported symbols — private `adv.js` helpers have no export and vanish from the report; **(b)** resolve each name to the source *`adv.js` used*, never a name search (`clamp` exists in both `state.js` and `stageMath.js`); **(c)** grep every *other* importer of `adv.js`, especially `panels/` — `war.js` and `exam.js` broke the **build** while all tests passed.
+> 5. `npm test` — snapshots must be byte-identical.
+> 6. **Copy lifted text verbatim.** A hand-written `getBeastForJK` returned `null` where the original returned `undefined`.
+>
+> ### Open, and deliberately not actioned
+>
+> **`docs/BALANCE_MISSION_INCOME.md`** — verified in a driven game: active play reaches **3.5× idle at year 1, 7.5× at year 2, and widening**, ~100k/month late, "Thriving" from early Y2. Cause is **not** mission payouts: missions are the *reputation* faucet, and `villageRevenue()` pays `min(rep,200)×400`. A village merely at the soft cap earns 102,000 against a fresh village's 26,000. Five options documented with trade-offs — this is a design call for Tyler.
+>
+> Note also: **every "the lean start is tight" validation in this project's history, including the 2026-06-25 economy overhaul, was measured without mission resolution ever executing.**
+>
+> Still non-code: Steam Direct fee, code signing, store page, key art. Localization remains P0/P1 only (~28 panels unextracted).
+
+---
 
 > **DEPTH PASS + VISUAL OVERHAUL (2026-07-20, `b4cad87`→`462aa07`, 5 commits).** User: all four flagged-bland systems plus a visual overhaul. Plan written first to `docs/DEPTH_PASS_2026-07-19.md` (diagnosis: the July-02 EXPANSION_ROUTES pass is ~fully shipped but added *passive texture* — modifiers, cards, read-only data — so four systems still read as "pick a dial once → wait → read a report"). Four depth milestones then the visual pass, each committed + browser-verified separately:
 >
