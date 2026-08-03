@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-08-03 · **HEAD:** `afa176b` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 1189 passing / 95 files
+**Last updated:** 2026-08-03 · **HEAD:** `9b37f14` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 1213 passing / 96 files
 
 ---
 
