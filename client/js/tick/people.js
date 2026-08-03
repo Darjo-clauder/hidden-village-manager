@@ -37,10 +37,13 @@ export function tickPeople() {
       year: G.year, month: G.month,
     }
     // Only speak up when it is worth noticing — this runs every month.
+    //
+    // Written as a plain string, not tr(). `tr()` returns the KEY when a key is
+    // missing, and a key is truthy, so the `tr(...) || fallback` idiom silently
+    // logged the literal text "toast.adv.wageReview" to the player. Caught only
+    // by watching a live game; the seeded tests were happy.
     if (_wr.delta >= 1500) {
-      aL(tr('toast.adv.wageReview', {
-        delta: fmt(_wr.delta), count: _wr.changes.length,
-      }) || `Wage review: payroll up ${fmt(_wr.delta)}/mo — your standing is raising what shinobi expect.`, 'warn')
+      aL(`Wage review: payroll up ${fmt(_wr.delta)}/mo across ${_wr.changes.length} contracts — your standing is raising what shinobi expect.`, 'warn')
     }
   } else G._wageReview = null
 

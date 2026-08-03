@@ -39,6 +39,7 @@ vi.mock('../client/js/legacyStore.js', () => ({
 
 const { G, initState } = await import('../client/js/state.js')
 const { adv } = await import('../client/js/adv.js')
+await (await import('./helpers/tickHarness.js')).initLocale()   // t() returns raw keys otherwise
 
 function run(months, seed) {
   const restore = seedRandom(seed)

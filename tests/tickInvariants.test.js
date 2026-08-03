@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
-  seedRandom, findNumericCorruption, findTextCorruption, fingerprint, clearBlockers, autoAssignMissions,
+  seedRandom, findNumericCorruption, findTextCorruption, fingerprint, clearBlockers, autoAssignMissions, isLeakedI18nKey,
 } from './helpers/tickHarness.js'
 
 // adv.js reaches the browser only through these four modules. Stubbing them
@@ -29,6 +29,7 @@ vi.mock('../client/js/legacyStore.js', () => ({
 
 const { G, initState } = await import('../client/js/state.js')
 const { adv } = await import('../client/js/adv.js')
+await (await import('./helpers/tickHarness.js')).initLocale()   // t() returns raw keys otherwise
 
 /** Fresh seeded game, then N months of simulation. */
 function runMonths(n, seed = 20260731) {
@@ -151,6 +152,12 @@ describe('harness self-check', () => {
     expect(findNumericCorruption({ ok: 3, s: 'fine' })).toEqual([])
     expect(findTextCorruption({ log: [{ msg: 'undefined has joined' }] })).toHaveLength(1)
     expect(findTextCorruption({ log: [{ msg: 'all well' }] })).toEqual([])
+    // Untranslated key leak — the exact bug that shipped in the wage review.
+    expect(findTextCorruption({ log: [{ msg: 'toast.adv.wageReview' }] })).toHaveLength(1)
+    expect(isLeakedI18nKey('toast.adv.wageReview')).toBe(true)
+    // …without firing on ordinary prose that contains a full stop.
+    expect(isLeakedI18nKey('The village endured. Barely.')).toBe(false)
+    expect(findTextCorruption({ log: [{ msg: 'Wage review: payroll up 7,141/mo.' }] })).toEqual([])
   })
 
   it('the fingerprint reflects roster progression', () => {

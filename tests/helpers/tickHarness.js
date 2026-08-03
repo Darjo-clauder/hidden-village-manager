@@ -88,12 +88,27 @@ export function findNumericCorruption(G, { maxDepth = 3 } = {}) {
   return bad
 }
 
-/** Text fields that leaked an undefined/NaN into player-visible copy. */
+/**
+ * An untranslated i18n key that reached the player.
+ *
+ * `t()` returns the KEY when it has no entry, and a key is a truthy string — so
+ * the idiom `t('some.key', …) || 'fallback'` silently logs "some.key" instead of
+ * the fallback. That shipped once, in the wage review, and no test noticed
+ * because the detector below only looked for undefined/NaN. A leaked key is the
+ * WHOLE message, so an exact match is enough and won't fire on prose that
+ * happens to contain a dot.
+ */
+export function isLeakedI18nKey(s) {
+  return typeof s === 'string' && /^[a-z][\w]*(\.[\w]+)+$/.test(s.trim())
+}
+
+/** Text fields that leaked an undefined/NaN/raw key into player-visible copy. */
 export function findTextCorruption(G) {
   const bad = []
   const check = (s, where) => {
     if (typeof s !== 'string') return
     if (/\bundefined\b|\bNaN\b|\[object Object\]/.test(s)) bad.push(`${where}: ${s.slice(0, 90)}`)
+    else if (isLeakedI18nKey(s)) bad.push(`${where}: untranslated key "${s.trim()}"`)
   }
   ;(G.log || []).forEach((e, i) => check(e.msg, `log[${i}]`))
   ;(G.noticeboard || []).forEach((n, i) => { check(n.text, `notice[${i}]`); check(n.title, `notice[${i}].title`) })
@@ -204,4 +219,20 @@ export function fingerprint(G) {
     power: (G.shinobi || []).reduce(
       (a, s) => a + Object.values(s.stats || {}).reduce((x, y) => x + (Number(y) || 0), 0), 0),
   }
+}
+
+/**
+ * Initialise the string table the way main.js does at boot.
+ *
+ * Without this `t()` returns its key for every lookup, because the locale is
+ * only registered in main.js — which the harness does not import. That made the
+ * leaked-key detector below report ~20 phantom failures the first time it ran,
+ * all of them keys that are present in en.js and resolve perfectly in the real
+ * game. Tests must exercise the string path the player actually gets.
+ */
+export async function initLocale() {
+  const { registerLocale, setLocale } = await import('../../shared/utils/i18n.js')
+  const { en } = await import('../../shared/i18n/en.js')
+  registerLocale('en', en)
+  setLocale('en')
 }
