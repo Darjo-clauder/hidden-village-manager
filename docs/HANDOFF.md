@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-08-03 · **HEAD:** `2a28d35` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 1189 passing / 95 files
+**Last updated:** 2026-08-03 · **HEAD:** `afa176b` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 1189 passing / 95 files
 
 ---
 
@@ -43,13 +43,33 @@
 > 5. `npm test` — snapshots must be byte-identical.
 > 6. **Copy lifted text verbatim.** A hand-written `getBeastForJK` returned `null` where the original returned `undefined`.
 >
-> ### Open, and deliberately not actioned
+> ### Economy rebalance — measured, then fixed (`f7ef39f`, `afa176b`)
 >
-> **`docs/BALANCE_MISSION_INCOME.md`** — verified in a driven game: active play reaches **3.5× idle at year 1, 7.5× at year 2, and widening**, ~100k/month late, "Thriving" from early Y2. Cause is **not** mission payouts: missions are the *reputation* faucet, and `villageRevenue()` pays `min(rep,200)×400`. A village merely at the soft cap earns 102,000 against a fresh village's 26,000. Five options documented with trade-offs — this is a design call for Tyler.
+> Active play was reaching **19.35× idle wealth** and widening, with "Thriving" from early year 2. The cause was **not** mission payouts: missions are the *reputation* faucet, and `villageRevenue()` pays `min(rep,200)×400`, so a village merely at the soft cap earns 102,000 against a fresh village's 26,000.
+>
+> Tyler chose option 4. `shared/utils/wageDemands.js` pulls contracts toward a standing-adjusted rate each month — **19.35× → 4.51×**, with idle play untouched (0.91×) and *fewer* bankruptcies than before (3 → 1). Full method and numbers in `docs/BALANCE_MISSION_INCOME.md`.
+>
+> Two things the measurement overturned, both worth internalising:
+> - **Reasoning from the revenue curve gave the wrong size.** A multiplier of 2.2 moved 19.35× to only 16.94×. Payroll is bounded by roster size and revenue is not, so wages must grow by a *larger* multiple than revenue. Shipped value is 6, empirical.
+> - **The naive version was regressive.** A poor village still fields ~22 shinobi with some reputation, so it paid while earning nothing — at the ceiling that fixed active play, idle villages went bankrupt in 7 of 20 seeds. `WAGE_REP_FLOOR = 60` makes the multiplier exactly 1 below it.
+>
+> **THE BROWSER IS THE WRONG INSTRUMENT FOR ECONOMY WORK.** Two idle runs on the same build finished at **+193,885 and −9,748** on decision luck alone, and one run showed *higher* wealth after wages were added. Size constants on the seeded harness (20 seeds × 36 months, median); use the browser only for "does it work at all".
 >
 > Note also: **every "the lean start is tight" validation in this project's history, including the 2026-06-25 economy overhaul, was measured without mission resolution ever executing.**
 >
-> Still non-code: Steam Direct fee, code signing, store page, key art. Localization remains P0/P1 only (~28 panels unextracted).
+> ### Desktop build — CURRENT as of 2026-08-03
+>
+> Rebuilt at `afa176b` and **installed** to `C:\Users\Tyler\AppData\Local\Hidden Village Manager`. It had been frozen at 2026-07-03, i.e. 92 commits and an entire visual overhaul behind. `npm run tauri build` produces `app.exe` plus MSI and NSIS installers under `src-tauri/target/release/bundle/`.
+>
+> - Prepend `$env:USERPROFILE\.cargo\bin` to PATH per shell — cargo is not auto-added.
+> - **Verify the bundle via `dist/`, not the exe.** Tauri compresses embedded assets, so a byte search of `app.exe` returns false negatives, and the minifier renames internal identifiers. Check user-facing *strings*.
+> - The desktop app keeps its **own save data**, separate from the browser.
+>
+> ### Open
+>
+> Non-code only: Steam Direct fee, code signing, store page, key art. Localization remains P0/P1 (~28 panels unextracted).
+>
+> Also still true: **nobody has visually reviewed the type ramp or the elevation pass.** Both were verified by DOM and computed-style assertion because the Browser pane never composites here. The desktop build is now the obvious place to actually look at them.
 
 ---
 
