@@ -20,6 +20,8 @@ import { initSeasonTable, playMatchday, seasonPressNotice, playerFixture, sorted
 import { identityFor } from '../../../shared/constants/villageIdentity.js'
 import { tacticMod } from '../../../shared/constants/matchdayTactics.js'
 import { updateH2H, pickDerbyRival } from '../../../shared/utils/rivalry.js'
+import { vendettaBonus, vendettaCarriers, settleOneDeath, vengeanceBeat, unsettledCount } from '../../../shared/utils/legacyMemory.js'
+import { addMemory } from '../../../shared/utils/memorySystem.js'
 import { pushNarrative } from './inbox.js'
 import { queuePressConference } from './missionHelpers.js'
 
@@ -28,9 +30,30 @@ export function tickSeason(ctx) {
   // ── Season league table — the regular-season spine that seeds the exam ────
   {
     const playerName = G.vName
-    const names = [playerName, ...G.villages.map(v => v.n)]
+    // Deduplicated, because the league table is keyed by name. A duplicate would
+    // make the size check below fail forever and rebuild the season every tick,
+    // freezing the standings for the whole run. setup.js prevents the collision
+    // at its source; this keeps a save that already has one from staying broken.
+    const names = [...new Set([playerName, ...G.villages.map(v => v.n)])]
     if (!G.season || !G.season.table || Object.keys(G.season.table).length !== names.length) {
       G.season = { year: G.year, round: 0, table: initSeasonTable(names), lastResults: [] }
+    }
+    // ── Roll the league year over with the calendar year ────────────────────
+    // The season used to be reset ONLY by the Adept Exam's completion handler,
+    // which is a player action — skip the exam and the table simply accumulated
+    // forever. That was survivable while `round` climbed without limit
+    // (roundPairings wraps), but a 22-round season has an END, so without this
+    // the league would play eleven months and then stop for good. A league year
+    // ends when the year does.
+    if (G.season.year !== G.year) {
+      G.seasonHistory = G.seasonHistory || []
+      if (!G.seasonHistory.some(h => h.year === G.season.year)) {
+        const final = sortedTable(G.season.table)
+        G.seasonHistory.push({ year: G.season.year, champion: final[0]?.name || null, table: final })
+        if (G.seasonHistory.length > 12) G.seasonHistory.shift()
+      }
+      G.season = { year: G.year, round: 0, table: initSeasonTable(names), lastResults: [] }
+      G.matchdayTactics = {}          // picks are per-round; a new season renumbers them
     }
     // Real mission form feeds the player's matchday — a good month on missions
     // makes you likelier to win your league fixture (±2 effective strength per net phase-margin).
@@ -63,8 +86,12 @@ export function tickSeason(ctx) {
       const _round = G.season.round
       const _fx = playerFixture(names, _round, playerName)
       const _tMod = _fx ? tacticMod(G.matchdayTactics[_round] || 'standard', identityFor(_fx.opp).style) : 0
+      // Vendetta: your people fight harder against the village that buried their
+      // squadmates. Capped at +10% — a thumb on the scale, not a substitute for
+      // a good roster.
+      const _vMod = _fx ? vendettaBonus(G.shinobi, _fx.opp) : 0
       const strOf = name => name === playerName
-        ? Math.max(10, Math.round(((G._playerStrength || 50) + formBonus) * (1 + _tMod)))
+        ? Math.max(10, Math.round(((G._playerStrength || 50) + formBonus) * (1 + _tMod + _vMod)))
         : ((G.villages.find(v => v.n === name)?.strength) || 50)
       playMatchday(G.season, names, strOf, Math.random, styleOf)
       delete G.matchdayTactics[_round]   // consumed — never inherited by a later fixture
@@ -112,11 +139,42 @@ export function tickSeason(ctx) {
  * Called once per matchday (not once per month) — with two fixtures a month the
  * old read of `lastResults` after the loop would have silently dropped one.
  */
+/**
+ * A win over a village that owes you blood answers ONE of its deaths.
+ *
+ * This is the payoff the whole legacy-memory layer exists for: a shinobi killed
+ * in year two comes back by name in year nine, because the people who walked off
+ * that mission are still on the roster and still remember. One death per win
+ * means a village that took six of yours owes you a six-year arc, not a single
+ * cathartic afternoon.
+ *
+ * The carriers get a permanent positive memory of it — 'avenged' is itself a
+ * defining moment, so the debt AND its answer both stay on the record.
+ */
+function _settleVendetta(oppName) {
+  if (!G.vendettas || !unsettledCount(G.vendettas, oppName)) return
+  const carriers = vendettaCarriers(G.shinobi, oppName)
+  if (!carriers.length) return           // nobody left who remembers — no payoff
+  const fallen = settleOneDeath(G.vendettas, oppName)
+  if (!fallen) return
+  const when = { year: G.year, month: G.month }
+  const beat = vengeanceBeat(fallen, oppName, when, carriers.slice(0, 2).map(sn))
+  carriers.forEach(s => {
+    addMemory(s, 'avenged', 'vendetta:' + oppName, when)
+    s.indMorale = clamp((s.indMorale || 70) + 6, 0, 100)
+  })
+  pushNarrative({ title: beat.title, body: beat.body, tag: 'vendetta' }, carriers.map(s => s.id))
+  addChronicle(beat.title, beat.body, 'shinobi')
+  addLegend(3)
+  aL(`⚑ ${fallen.name} answered — ${oppName} beaten.`, 'good')
+}
+
 function _applyPlayerResult(playerName) {
   const m = (G.season.lastResults || []).find(x => x.a === playerName || x.b === playerName)
   if (!m) return
   updateH2H(G.h2h, playerName, m)
   const opp = m.a === playerName ? m.b : m.a
+  if (m.winner === playerName) _settleVendetta(opp)
   if (opp !== G.derbyRival) return
   const ps = m.a === playerName ? m.scoreA : m.scoreB
   const os = m.a === playerName ? m.scoreB : m.scoreA

@@ -1,6 +1,6 @@
 import { G, spIcon, setSpIcon, initState, schEx, applyScenario, fmt } from './state.js'
 import { applyLegacyToNewGame } from './legacyStore.js'
-import { VILLAGE_ICONS, START_SCENARIOS } from './constants.js'
+import { VILLAGE_ICONS, START_SCENARIOS, RIVAL_VILLAGE_POOL } from './constants.js'
 import { upUI, sp, aL } from './ui.js'
 import { initSocket, socket } from './socket.js'
 import { t } from '../../shared/utils/i18n.js'
@@ -130,6 +130,19 @@ function _startGame(vname, kname, icon, scenario = 'standard', savedState = null
     G.vName = vname
     G.kName = kname
     G.vIcon = icon
+    // The rival pool is generated before the player names their village, so a
+    // player who picks a name already in RIVAL_VILLAGE_POOL ends up sharing it
+    // with a rival. That is not cosmetic: the league table is KEYED BY NAME, so
+    // six villages collapse to five rows, the table-size guard in tickSeason
+    // never matches, and the season is silently rebuilt from scratch every
+    // single tick — the standings never advance for the whole run. Rename the
+    // rival, since the player's choice wins.
+    ;(G.villages || []).forEach((v, i) => {
+      if (v.n !== G.vName) return
+      const taken = new Set([G.vName, ...G.villages.map(x => x.n)])
+      const alt = RIVAL_VILLAGE_POOL.map(p => p.n).find(n => !taken.has(n))
+      v.n = alt || `${v.n} of the ${['North', 'South', 'East', 'West'][i % 4]}`
+    })
     seedPhase1(G)
     applyScenario(G, scenario)
     // Inherited head start from previous tenures. Applied after the scenario so

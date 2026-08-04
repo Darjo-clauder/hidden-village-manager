@@ -32,6 +32,7 @@ export function rMem() {
             <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">${m.rank}${m.clan ? ' · ' + m.clan + ' Clan' : ''} · Fell Y${m.year} ${monthName}</div>
             ${m.transfer ? '' : `<div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">Mission: "${m.mission || '—'}" · Wins: ${m.wins || 0}</div>`}
             ${m.lastWords ? `<div style="font-size:var(--fs-small);color:var(--red);margin-top:4px;font-style:italic">${m.lastWords}</div>` : ''}
+            ${_carriedBy(m.name)}
           </div>
           ${!m.transfer && !isHonored
             ? `<button class="gb" style="font-size:var(--fs-micro);padding:3px 8px;flex-shrink:0" onclick="honorFallen('${key.replace(/'/g, '')}')">Honor ✦</button>`
@@ -39,6 +40,31 @@ export function rMem() {
         </div>
       </div>`
     }).join('')
+}
+
+/**
+ * Who on the current roster still carries this name, and whether the village
+ * that took them has answered for it yet.
+ *
+ * The memorial used to be a closed book — a list of the dead with no line back
+ * into the living game. This is that line: the wall now tells you that four
+ * shinobi still on your books walked off the mission that killed this person,
+ * that they hold a specific village responsible, and whether the debt is paid.
+ */
+function _carriedBy(name) {
+  if (!name) return ''
+  const carriers = (G.shinobi || []).filter(s => (s.vendettas || []).some(v => v.lost.includes(name)))
+  if (!carriers.length) return ''
+  const village = carriers[0].vendettas.find(v => v.lost.includes(name)).village
+  const ledger = G.vendettas?.[village]
+  const entry = (ledger?.deaths || []).find(d => d.name === name)
+  const status = entry?.settled
+    ? `<span style="color:var(--green)">answered</span>`
+    : `<span style="color:var(--red)">unanswered</span>`
+  const who = carriers.map(s => s.fn + ' ' + s.ln).slice(0, 3).join(', ')
+  const more = carriers.length > 3 ? ` +${carriers.length - 3} more` : ''
+  return `<div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:4px;padding-left:7px;border-left:2px solid var(--red)">
+    ⚑ Still carried by ${who}${more} — against <span style="color:var(--text-mid)">${village}</span>, ${status}.</div>`
 }
 
 export function honorFallen(key) {

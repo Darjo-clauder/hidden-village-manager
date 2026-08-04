@@ -69,6 +69,7 @@ import { updateConfidence, confidenceMod, formGrudge, grudgePenalty, pairChemist
 import { genMissionBlurb, genKIABlurb, genRankUpBlurb, genBondBlurb, genGrudgeBlurb } from '../../shared/utils/narrativeEngine.js'
 import { recordPlayerTactic, rivalScPenalty, observePlayerTactic } from '../../shared/utils/adaptiveAI.js'
 import { addMemory, decayMemories, memoryMoraleMod, memoryStateBlurb } from '../../shared/utils/memorySystem.js'
+import { recordVendettaDeath, addVendetta, blameFor } from '../../shared/utils/legacyMemory.js'
 import { tickMentorships } from '../../shared/utils/mentorship.js'
 import { pushNarrative } from './tick/inbox.js'
 import { tickRivalSim, tickRivalGMMoves } from './tick/rivals.js'
@@ -912,7 +913,13 @@ export function adv() {
     const _climateRaid = Math.max(0, 1 + ((G.worldClimate?.raidMod) || 0))  // calm halves, volatile near-doubles
     if (Math.random() < (0.12 + aggressiveBonus) * _climateRaid) {
       const ev = pk(RAID_POOL), warn = G.upgrades.intel >= 2 ? 2 : G.upgrades.intel >= 1 ? 1 : 0
-      G.raid = { ...ev, resolved: false }; G.raidW = warn
+      // Name whose raid this is. Aggressive villages already drive the raid rate
+      // above, so one of them is the natural instigator — and unlike a mission, a
+      // raid on your own walls has a real attacker, which makes any death here
+      // the most legible vendetta in the game. Chosen deterministically (worst
+      // relation first) so this adds no RNG draw to the tick.
+      const _inst = blameFor(aggressiveV.length ? aggressiveV : G.villages)
+      G.raid = { ...ev, resolved: false, instigator: _inst?.n || null }; G.raidW = warn
       aL(tr('toast.adv.threat', { name: ev.n, arrival: warn > 0 ? 'Arrives in ' + warn + 'm.' : 'Arriving now!' }), 'warn')
       if (warn === 0) resRaid()
     }
@@ -1892,6 +1899,19 @@ export function resRaid() {
       if (hL < 1 && Math.random() < 0.2) {
         maybeInduct(def, 'fallen'); G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(def), rank: ['Initiate','Adept','Veteran','Shadow','S-Rank'][def.ri], clan: def.clan, mission: 'Village Defense', year: G.year, month: G.month, wins: def.wins, lastWords: '"The village... I held the line."' })
         aL(sn(def) + ' fell defending the village.', 'bad')
+        // The one death in the game with an unambiguous killer: the whole roster
+        // watched the walls, so the whole roster carries it.
+        const _rWhen = { year: G.year, month: G.month }
+        const _rBlame = G.raid.instigator || blameFor(G.villages)?.n
+        if (_rBlame) {
+          G.vendettas = G.vendettas || {}
+          recordVendettaDeath(G.vendettas, _rBlame, { name: sn(def), rank: RANKS[def.ri], mission: 'Village Defense' }, _rWhen)
+          G.shinobi.filter(s => s.id !== def.id).forEach(s => {
+            addMemory(s, 'witness_kia', 'village_defense', _rWhen)
+            addVendetta(s, _rBlame, sn(def), _rWhen)
+          })
+          addNotice(`${sn(def)} died holding the wall against ${_rBlame}. The village will not let that stand.`, 'warn')
+        }
         G.shinobi = G.shinobi.filter(s => s.id !== def.id)
       } else {
         def.injDays = rnd(1, 3); def.status = 'injured'; def.missId = null

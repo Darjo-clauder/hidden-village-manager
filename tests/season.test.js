@@ -201,6 +201,19 @@ describe('season table', () => {
     expect(upcomingFixtures(NAMES, SEASON_ROUNDS - 1, 4, 'You').every(f => f.round < SEASON_ROUNDS)).toBe(true)
   })
 
+  it('a duplicate village name does not silently shrink the table', () => {
+    // A player who names their village after one already in the rival pool used
+    // to collapse two rows into one. The table is keyed by name, so the size
+    // guard in tickSeason then mismatched on EVERY tick and rebuilt the season
+    // from scratch — the standings never advanced for the entire run.
+    const dupes = ['You', 'Kazegakure', 'You']
+    const deduped = [...new Set(dupes)]
+    const table = initSeasonTable(deduped)
+    expect(Object.keys(table)).toHaveLength(deduped.length)
+    // The invariant the tick relies on: keys === names it was built from.
+    expect(Object.keys(initSeasonTable(NAMES))).toHaveLength(NAMES.length)
+  })
+
   it('recordMatch awards win/draw/loss points correctly', () => {
     const t = initSeasonTable(['A', 'B'])
     recordMatch(t, 'A', 'B', { winner: 'a', sa: 60, sb: 40 })

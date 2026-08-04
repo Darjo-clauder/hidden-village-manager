@@ -386,11 +386,11 @@ function buildItems() {
   // ── Narrative inbox (Pillars 1–3 blurbs) ─────────────────────────────────
   const TAG_ICONS = { success: '⚔', failure: '💥', kia: '🪦', injury: '🏥', transfer: '📜',
                       bond: '🤝', grudge: '⚡', promotion: '🎖', war: '🔥', exam: '🏟',
-                      prestige: '✨', intel: '🕵', 'default': 'ℹ' }
+                      prestige: '✨', intel: '🕵', vendetta: '⚑', 'default': 'ℹ' }
   const TAG_CAT   = { success: 'Chronicle', failure: 'Chronicle', kia: 'Chronicle',
                       injury: 'Injuries', transfer: 'Transfers', bond: 'Bonds', grudge: 'Tensions',
                       promotion: 'People', war: 'Chronicle', exam: 'Chronicle',
-                      prestige: 'Legacy', intel: 'Intel', 'default': 'Chronicle' }
+                      prestige: 'Legacy', intel: 'Intel', vendetta: 'Legacy', 'default': 'Chronicle' }
   ;(G.narrativeInbox || []).filter(n => !n.dismissed).forEach(n => {
     // ── Mission complication ────────────────────────────────────────────
     if (n.type === 'complication') {

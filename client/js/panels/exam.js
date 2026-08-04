@@ -5,6 +5,7 @@ import { initSeasonTable, sortedTable, seedsFromTable, seasonSchedule, teamFixtu
 import { identityFor, MATCH_STYLES, identityStageAdv } from '../../../shared/constants/villageIdentity.js'
 import { MATCHDAY_TACTICS, tacticRead, TACTIC_STRONG_MOD, TACTIC_WEAK_MOD } from '../../../shared/constants/matchdayTactics.js'
 import { h2hLabel } from '../../../shared/utils/rivalry.js'
+import { vendettaLabel, vendettaCarriers, vendettaBonus } from '../../../shared/utils/legacyMemory.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { openBattleViewer } from '../liveBattle.js'
 import { arenaFor } from '../../../shared/constants/arenas.js'
@@ -300,6 +301,13 @@ function _matchPreviewCard(names, schedule, round, resultsByRound, playerName, e
       ${formRow(p.opp + ' form', p.oppForm)}
       <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:1px">⚔ Head-to-head: <span style="color:var(--text-mid)">${h2hTxt}</span>${allTime ? ` · <span style="color:var(--text-mid)">${allTime}</span>` : ''}</div>
       ${(() => { const ace = (G.villages || []).find(v => v.n === p.opp)?.aces?.[0]; return ace ? `<div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:1px">⭐ Their ace: <span style="color:var(--text-hi)">${ace.name}</span> <span style="color:var(--text-faint)">(Pwr ${ace.pow})</span></div>` : '' })()}
+      ${(() => {
+        const lbl = vendettaLabel(G.vendettas, p.opp)
+        if (!lbl) return ''
+        const carriers = vendettaCarriers(G.shinobi, p.opp)
+        const bonus = Math.round(vendettaBonus(G.shinobi, p.opp) * 100)
+        return `<div style="font-size:var(--fs-micro);color:var(--red);margin-top:2px">${lbl}${carriers.length ? ` <span style="color:var(--text-mid)">${carriers.length} still carry it${bonus ? ` — +${bonus}%` : ''}</span>` : ' <span style="color:var(--text-faint)">nobody left who remembers</span>'}</div>`
+      })()}
       ${p.stakes.length ? `<div style="font-size:var(--fs-micro);color:var(--gold);margin-top:2px">At stake: ${p.stakes.join(' · ')}</div>` : ''}
     </div>
     ${_tacticPicker(p.opp, round)}
@@ -1089,7 +1097,10 @@ function _runFinals(field, biasMod) {
   if (woundedCount > 0) aL(t('toast.exam.wounded', { n: woundedCount }), 'warn')
 
   // The exam was the playoff — archive the final season table and start a fresh season.
-  if (G.season?.table) {
+  // The tick also rolls the season over at the calendar year boundary, so guard
+  // against archiving the same year twice (which would put a duplicate, partial
+  // table into the history the Season Review reads).
+  if (G.season?.table && !(G.seasonHistory || []).some(h => h.year === G.year)) {
     G.seasonHistory = G.seasonHistory || []
     G.seasonHistory.push({ year: G.year, champion: champ?.name || null, table: sortedTable(G.season.table) })
     const names = [G.vName, ...(G.villages || []).map(v => v.n)]

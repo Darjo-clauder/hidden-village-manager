@@ -14,6 +14,8 @@
  * Pure — no G references.
  */
 
+import { isPermanentType, SCAR_FLOOR } from './legacyMemory.js'
+
 // ── Memory type definitions ────────────────────────────────────────────────
 
 export const MEMORY_TYPES = {
@@ -31,6 +33,7 @@ export const MEMORY_TYPES = {
   prestige_rise:    { label: 'Village Prestige Rise', tau: 18, valence: 'positive',  baseIntensity: 0.40 },
   grudge_escalated: { label: 'Grudge Escalated',      tau: 20, valence: 'negative',  baseIntensity: 0.60 },
   reconciled:       { label: 'Reconciliation',        tau: 24, valence: 'positive',  baseIntensity: 0.65 },
+  avenged:          { label: 'A Debt Answered',        tau: 36, valence: 'positive',  baseIntensity: 0.85 },
 }
 
 export const MEMORY_TYPE_IDS = Object.keys(MEMORY_TYPES)
@@ -70,7 +73,14 @@ export function createMemory(type, source, when, intensityOverride) {
 export function addMemory(s, type, source, when, intensityOverride) {
   if (!s.memories) s.memories = []
   s.memories.push(createMemory(type, source, when, intensityOverride))
-  if (s.memories.length > 20) s.memories.splice(0, s.memories.length - 20)
+  // Cap the list by dropping the oldest ORDINARY memories first. Evicting by
+  // raw age would quietly delete the defining moments — a long career's worth of
+  // routine mission triumphs would push out the day a squadmate died.
+  while (s.memories.length > 20) {
+    const i = s.memories.findIndex(m => !isPermanentType(m.type))
+    if (i < 0) break                       // all permanent: keep them all
+    s.memories.splice(i, 1)
+  }
 }
 
 /**
@@ -80,14 +90,23 @@ export function addMemory(s, type, source, when, intensityOverride) {
  *
  * Decay model: intensity *= e^(−monthsElapsed / tau)
  *
+ * Defining moments (PERMANENT_MEMORY_TYPES — watching a comrade die, betrayal,
+ * a war-hero turn, a debt answered) decay the same way but bottom out at
+ * SCAR_FLOOR and are never pruned. Without this a shinobi has a mood and no
+ * history: three years on, the record of the worst day of their life is simply
+ * gone. The wound closes to a scar; the scar stays for the career.
+ *
  * @param {object} s               shinobi
  * @param {number} monthsElapsed   typically 1 (called each adv tick)
  */
 export function decayMemories(s, monthsElapsed = 1) {
   if (!s.memories || s.memories.length === 0) return
   s.memories = s.memories
-    .map(m => ({ ...m, intensity: m.intensity * Math.exp(-monthsElapsed / m.tau) }))
-    .filter(m => m.intensity >= 0.05)
+    .map(m => {
+      const decayed = m.intensity * Math.exp(-monthsElapsed / m.tau)
+      return { ...m, intensity: isPermanentType(m.type) ? Math.max(SCAR_FLOOR, decayed) : decayed }
+    })
+    .filter(m => isPermanentType(m.type) || m.intensity >= 0.05)
 }
 
 /**
@@ -105,13 +124,20 @@ export function dominantMemoryValence(s) {
 /**
  * Returns a morale modifier (flat integer) driven by the shinobi's memory state.
  * Range roughly −6 to +4 per month.
+ *
+ * A permanent memory only counts for the part of its intensity ABOVE the scar
+ * floor. Fresh grief bites as hard as it ever did and then stops taxing them:
+ * the alternative is that surviving three deaths brands a veteran with a
+ * permanent −6/month they can never work off, which makes exactly the
+ * long-serving characters this system exists to create unplayable.
  */
 export function memoryMoraleMod(s) {
   if (!s.memories || s.memories.length === 0) return 0
   let score = 0
   for (const m of s.memories) {
     const w = m.valence === 'positive' ? 1 : m.valence === 'trauma' ? -2 : -1
-    score += w * m.intensity
+    const active = isPermanentType(m.type) ? Math.max(0, m.intensity - SCAR_FLOOR) : m.intensity
+    score += w * active
   }
   return Math.max(-6, Math.min(4, Math.round(score * 4)))
 }

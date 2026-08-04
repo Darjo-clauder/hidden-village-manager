@@ -64,6 +64,7 @@ import { grindMod, grindCohesionPenalty } from '../../../shared/utils/squadCaden
 import { jutsuLoadoutBonus } from '../../../shared/jutsu/loadout.js'
 import { kageMod } from '../../../shared/constants/kageDev.js'
 import { addMemory } from '../../../shared/utils/memorySystem.js'
+import { recordVendettaDeath, addVendetta, blameFor, mournersFor } from '../../../shared/utils/legacyMemory.js'
 import { sPow, sqP } from '../state.js'
 
 /** @param {{ hL:number, dp:object, sb:object, iB:number, cp:object, clP:object, shP:object, season:string }} ctx */
@@ -275,7 +276,7 @@ export function tickMissions(ctx) {
           if (!hasPr && Math.random() < kR && !jkKIAImmune(s)) {
             const lastWords = pk(LAST_WORDS_POOL)
             aL(sn(s) + ' KIA on "' + m.n + '". ' + lastWords, 'bad')
-            sq.fallen.push({ name: sn(s), rank: RANKS[s.ri], mission: m.n, year: G.year, month: G.month })
+            sq.fallen.push({ id: s.id, name: sn(s), rank: RANKS[s.ri], mission: m.n, year: G.year, month: G.month })
             if (s.wins >= 50) { addChronicle('Fallen Veteran', sn(s) + ' died on "' + m.n + '" after ' + s.wins + ' missions.', 'shinobi'); addLegend(10) }
             maybeInduct(s, 'fallen'); G._kiaThisMonth = (G._kiaThisMonth || 0) + 1; G.memorial.push({ name: sn(s), rank: RANKS[s.ri], clan: s.clan, mission: m.n, year: G.year, month: G.month, wins: s.wins, lastWords })
             pushNarrative(genKIABlurb(sn(s), s.ri, m.n))
@@ -292,23 +293,40 @@ export function tickMissions(ctx) {
         // Survivors who witnessed KIA may develop trauma + grudges + memories
         if (hadKIA) {
           const fallen = sq.fallen[sq.fallen.length - 1]
+          const when = { year: G.year, month: G.month }
+          // Whose hand was in this. Missions carry no explicit antagonist, so the
+          // village the player is on worst terms with is named — which reads far
+          // better than the old random pick, and gives the grudge somewhere real
+          // to point. (Lowest relation; ties broken by strength.)
+          const antagonist = blameFor(G.villages)
+          if (antagonist && fallen) {
+            G.vendettas = G.vendettas || {}
+            recordVendettaDeath(G.vendettas, antagonist.n, fallen, when)
+          }
           survivorIds.forEach(id => {
             const survivor = G.shinobi.find(x => x.id === id)
             if (!survivor) return
             if (Math.random() < 0.5) applyTrauma(survivor)
             updateConfidence(survivor, _mev.quality, { hadKIA: true })
-            addMemory(survivor, 'witness_kia', m.id || m.n, { year: G.year, month: G.month })
+            addMemory(survivor, 'witness_kia', m.id || m.n, when)
             setEmotionalState(survivor, 'grieving')
-            // Bonded shinobi form a grudge against the rival village that caused the loss
-            const wasBonded = fallen && (survivor.bonds || []).some(b => b.otherId === sq.fallen.find(f => f.name === fallen.name)?.id)
-            if (wasBonded && G.villages.length) {
-              const antagonist = pk(G.villages)
-              formGrudge(survivor, antagonist.n, antagonist.n, 'kia_partner', { year: G.year, month: G.month })
-              const quote = getArchetypeQuote(survivor)
-              if (fallen) pushNarrative(genGrudgeBlurb(survivor.fn + ' ' + survivor.ln, fallen.name, 'Fallen Comrade', 3), [survivor.id])
-              aL(tr('toast.adv.lastWords', { quote, name: sn(survivor) }), 'warn')
+            if (!antagonist || !fallen) return
+            // Everyone who walked off that mission carries it. This used to be
+            // gated on `wasBonded`, which compared a bond's otherId against
+            // sq.fallen entries that carried NO id — always undefined, always
+            // false. The whole branch had never once run. Bonded survivors now
+            // take it twice as hard instead of being the only ones who feel it.
+            const bonded = (survivor.bonds || []).some(b => b.otherId === fallen.id)
+            addVendetta(survivor, antagonist.n, fallen.name, when, bonded ? 2 : 1)
+            if (bonded) {
+              formGrudge(survivor, antagonist.n, antagonist.n, 'kia_partner', when)
+              pushNarrative(genGrudgeBlurb(survivor.fn + ' ' + survivor.ln, fallen.name, 'Fallen Comrade', 3), [survivor.id])
+              aL(tr('toast.adv.lastWords', { quote: getArchetypeQuote(survivor), name: sn(survivor) }), 'warn')
             }
           })
+          if (antagonist && fallen) {
+            addNotice(`${fallen.name} will not be forgotten. The squad holds ${antagonist.n} responsible.`, 'warn')
+          }
         } else {
           survivorIds.forEach(id => {
             const survivor = G.shinobi.find(x => x.id === id)
@@ -399,10 +417,25 @@ export function tickMissions(ctx) {
           pushNarrative(genKIABlurb(sn(s), s.ri, m.n))
           if (s.wins >= 50) addChronicle('Fallen Veteran', sn(s) + ' died on "' + m.n + '" after ' + s.wins + ' missions. ' + lastWords, 'shinobi')
           G._mandateKIAThisYear = (G._mandateKIAThisYear || 0) + 1
+          // A solo death has no squad to carry it, so the bond ripple decides who
+          // does: the people the ripple actually reaches are the ones who were
+          // close enough to take it personally.
+          const _soloWhen = { year: G.year, month: G.month }
+          const _soloBlame = blameFor(G.villages)
+          if (_soloBlame) {
+            G.vendettas = G.vendettas || {}
+            recordVendettaDeath(G.vendettas, _soloBlame.n, { name: sn(s), rank: RANKS[s.ri], mission: m.n }, _soloWhen)
+          }
           const ripple = kiaRipple(s.id, G.shinobi.filter(x => x.id !== s.id))
           ripple.forEach(r => {
             const affected = G.shinobi.find(x => x.id === r.shinobiId)
             if (affected) { affected.morale = clamp((affected.morale || 50) + r.delta, 0, 100); aL(tr('toast.adv.shakenByLoss', { name: sn(affected), fallen: sn(s) }), 'bad') }
+          })
+          const _soloName = sn(s)
+          const _mourners = mournersFor(s.id, G.shinobi.filter(x => x.id !== s.id), G.squads, ripple.map(r => r.shinobiId))
+          _mourners.forEach(mn => {
+            addMemory(mn, 'squad_kia', m.id || m.n, _soloWhen)
+            if (_soloBlame) addVendetta(mn, _soloBlame.n, _soloName, _soloWhen)
           })
           G.shinobi = G.shinobi.filter(x => x.id !== s.id)
           G.reputation = clamp(G.reputation - 5, 0, 999)
