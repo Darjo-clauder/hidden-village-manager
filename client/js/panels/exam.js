@@ -1,7 +1,7 @@
 import { G, ui, sPow, rnd, sn, pk, clamp, fmt, addChronicle, addLegend, computeMarketValue } from '../state.js'
 import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS, INJURY_TYPES } from '../constants.js'
 import { aL, ntf, upUI, schEx } from '../ui.js'
-import { initSeasonTable, sortedTable, seedsFromTable, seasonSchedule, teamFixtures, teamForm, seasonState, matchPreview, matchToBeats } from '../../../shared/utils/season.js'
+import { initSeasonTable, sortedTable, seedsFromTable, seasonSchedule, teamFixtures, teamForm, seasonState, matchPreview, matchToBeats, upcomingFixtures, SEASON_ROUNDS, MATCHDAYS_PER_MONTH } from '../../../shared/utils/season.js'
 import { identityFor, MATCH_STYLES, identityStageAdv } from '../../../shared/constants/villageIdentity.js'
 import { MATCHDAY_TACTICS, tacticRead, TACTIC_STRONG_MOD, TACTIC_WEAK_MOD } from '../../../shared/constants/matchdayTactics.js'
 import { h2hLabel } from '../../../shared/utils/rivalry.js'
@@ -115,7 +115,7 @@ function _seasonTab() {
     return review + `<div style="color:var(--text-dim);font-size:var(--fs-body);padding:14px 0">The season begins in Month 4. Fixtures and standings will appear here.</div>`
   }
   const round = G.season.round || 0
-  const schedule = seasonSchedule(names, 11)
+  const schedule = seasonSchedule(names, SEASON_ROUNDS)
   const fixtures = teamFixtures(schedule, playerName)
   const resultsByRound = G.season.resultsByRound || {}
   const resultFor = r => {
@@ -131,7 +131,7 @@ function _seasonTab() {
       ${[
         ['🎓 Academy Intake', 'M4', 'Prospects enter the system'],
         ['⚔ Adept Exam', 'M4 / M10', 'Little league — develop initiate → adept'],
-        ['📅 Season Matchdays', 'All year', 'Monthly fixtures build the standings'],
+        ['📅 Season Matchdays', 'All year', 'Two fixtures a month build the standings'],
         ['🏆 Grand Tournament', 'M12', 'The deadly year-end playoff, seeded by standings'],
       ].map(([t, when, d], i) => `<div style="flex:1;min-width:120px;border:1px solid var(--surface-3);border-left:2px solid var(--gold);padding:7px 9px">
         <div style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold">${t}</div>
@@ -163,7 +163,7 @@ function _seasonTab() {
   </div>`
 
   const banner = _titleRaceBanner(playerName, round, schedule.length)
-  const preview = _matchPreviewCard(names, schedule, round, resultsByRound, playerName)
+  const preview = _matchPreviewCards(names, schedule, round, resultsByRound, playerName)
   return banner + overview + _exhibitionCard() + preview + _seasonResultsCard(round, resultsByRound, playerName) + _seasonStandingsCard() + fixtureList + _seasonFixtureGrid(names, schedule, round, resultsByRound, playerName)
 }
 
@@ -264,10 +264,24 @@ function _seasonReviewCard(playerName) {
   </div>`
 }
 
-// Match build-up card (M2) — the player's next fixture with full context.
-function _matchPreviewCard(names, schedule, round, resultsByRound, playerName) {
+/**
+ * Match build-up for every fixture the coming tick will resolve — two a month.
+ *
+ * Each gets its own build-up card and its own tactic picker, because the pick is
+ * per-fixture now: two opponents a month means two reads, not one dial you set
+ * in year one and never touch again.
+ */
+function _matchPreviewCards(names, schedule, round, resultsByRound, playerName) {
+  const fx = upcomingFixtures(names, round, MATCHDAYS_PER_MONTH, playerName)
+  if (!fx.length) return `<div style="border:1px dashed var(--border);background:var(--bg);padding:9px;margin-bottom:12px;font-size:var(--fs-small);color:var(--text-dim)">Bye — no fixture for you this month.</div>`
+  const label = fx.length > 1 ? (i) => ` <span style="color:var(--text-faint)">(${i + 1} of ${fx.length} this month)</span>` : () => ''
+  return fx.map((f, i) => _matchPreviewCard(names, schedule, f.round, resultsByRound, playerName, label(i))).join('')
+}
+
+// Match build-up card (M2) — one upcoming fixture with full context.
+function _matchPreviewCard(names, schedule, round, resultsByRound, playerName, extraLabel = '') {
   const p = matchPreview(G.season.table, resultsByRound, schedule, playerName, round)
-  if (!p) return `<div style="border:1px dashed var(--border);background:var(--bg);padding:9px;margin-bottom:12px;font-size:var(--fs-small);color:var(--text-dim)">Bye round — no fixture this matchday.</div>`
+  if (!p) return ''
   const pip = r => { const c = { W: 'var(--green)', D: 'var(--gold)', L: 'var(--red)' }[r]; return `<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${c};margin-left:2px"></span>` }
   const formRow = (label, form) => `<div style="display:flex;align-items:center;gap:6px;font-size:var(--fs-micro);color:var(--text-dim)"><span style="width:54px">${label}</span>${form.length ? form.map(pip).join('') : '<span style="color:var(--border-hi)">no games yet</span>'}</div>`
   const h2hTxt = (p.h2h.w + p.h2h.d + p.h2h.l) ? `${p.h2h.w}W–${p.h2h.d}D–${p.h2h.l}L this season` : 'first meeting this season'
@@ -275,7 +289,7 @@ function _matchPreviewCard(names, schedule, round, resultsByRound, playerName) {
   const isDerby = p.opp === G.derbyRival
   return `<div style="border:1px solid ${isDerby ? 'var(--red)' : 'var(--gold)'};background:var(--sunken);padding:11px 13px;margin-bottom:12px">
     ${isDerby ? `<div style="text-align:center;font-size:var(--fs-body);letter-spacing:3px;color:var(--red);font-weight:bold;margin-bottom:6px">🔥 DERBY MATCH 🔥</div>` : ''}
-    <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:7px">▸ Next Matchday — Round ${round + 1}</div>
+    <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:7px">▸ Next Matchday — Round ${round + 1}${extraLabel}</div>
     <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:9px">
       <div style="flex:1;text-align:right"><div style="font-size:var(--fs-lead);color:var(--gold);font-weight:bold">${playerName}</div><div style="font-size:var(--fs-micro);color:var(--text-dim)">${p.playerPos}${p.playerPos===1?'st':p.playerPos===2?'nd':p.playerPos===3?'rd':'th'} place</div></div>
       <div style="font-size:var(--fs-small);color:var(--text-dim);text-align:center">${p.home ? 'vs' : '@'}<div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:2px">${p.home ? 'home' : 'away'}</div></div>
@@ -288,15 +302,16 @@ function _matchPreviewCard(names, schedule, round, resultsByRound, playerName) {
       ${(() => { const ace = (G.villages || []).find(v => v.n === p.opp)?.aces?.[0]; return ace ? `<div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:1px">⭐ Their ace: <span style="color:var(--text-hi)">${ace.name}</span> <span style="color:var(--text-faint)">(Pwr ${ace.pow})</span></div>` : '' })()}
       ${p.stakes.length ? `<div style="font-size:var(--fs-micro);color:var(--gold);margin-top:2px">At stake: ${p.stakes.join(' · ')}</div>` : ''}
     </div>
-    ${_tacticPicker(p.opp)}
+    ${_tacticPicker(p.opp, round)}
   </div>`
 }
 
-// Matchday tactic picker — the monthly counter-play against the opponent's identity.
-function _tacticPicker(oppName) {
+// Matchday tactic picker — the counter-play against THIS fixture's opponent.
+// Keyed by round: the pick applies to one match and is consumed when it plays.
+function _tacticPicker(oppName, round) {
   const idn = identityFor(oppName)
   const st = MATCH_STYLES[idn.style] || MATCH_STYLES.balanced
-  const cur = G.matchdayTactic || 'standard'
+  const cur = (G.matchdayTactics || {})[round] || 'standard'
   const readCol = { strong: 'var(--green)', weak: 'var(--red)', neutral: 'var(--text-dim)' }
   const readTxt = { strong: `+${Math.round(TACTIC_STRONG_MOD * 100)}%`, weak: `${Math.round(TACTIC_WEAK_MOD * 100)}%`, neutral: '—' }
   return `<div style="border-top:1px solid var(--surface-3);margin-top:7px;padding-top:7px">
@@ -305,7 +320,7 @@ function _tacticPicker(oppName) {
       ${MATCHDAY_TACTICS.map(t => {
         const read = tacticRead(t.id, idn.style)
         const sel = t.id === cur
-        return `<button onclick="setMatchdayTactic('${t.id}')" title="${t.desc}"
+        return `<button onclick="setMatchdayTactic(${round},'${t.id}')" title="${t.desc}"
           style="flex:1;min-width:76px;padding:5px 6px;cursor:pointer;font-size:var(--fs-small);text-align:center;
                  background:${sel ? 'rgba(201,168,76,.12)' : 'var(--bg)'};
                  border:1px solid ${sel ? 'var(--gold)' : 'var(--border)'};color:${sel ? 'var(--gold)' : 'var(--text-mid)'}">
@@ -317,9 +332,10 @@ function _tacticPicker(oppName) {
   </div>`
 }
 
-/** Set the persistent matchday tactic (window-exposed). */
-export function setMatchdayTactic(id) {
-  G.matchdayTactic = id
+/** Set the tactic for one upcoming round (window-exposed). Consumed when it plays. */
+export function setMatchdayTactic(round, id) {
+  G.matchdayTactics = G.matchdayTactics || {}
+  G.matchdayTactics[round] = id
   rEx()
 }
 

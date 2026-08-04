@@ -12,6 +12,18 @@ import { styleParams } from '../constants/villageIdentity.js'
 export const SEASON_PTS = { win: 3, draw: 1, loss: 0 }
 const BYE = '__BYE__'
 
+/**
+ * Matchdays resolved per monthly tick, and the season's round count.
+ *
+ * The league used to play one fixture a month — ~9 games a season with a bye or
+ * two, far too small a sample for form, a slump or a title race to read as
+ * anything. Two matchdays a month takes a season to 22 rounds (~18 fixtures for
+ * a five-village league), which is enough for a run of results to mean
+ * something. Both constants live here so the tick and the panel agree.
+ */
+export const MATCHDAYS_PER_MONTH = 2
+export const SEASON_ROUNDS = 22
+
 /** Build an empty table keyed by village name. */
 export function initSeasonTable(names) {
   const table = {}
@@ -22,12 +34,17 @@ export function initSeasonTable(names) {
 /**
  * Circle-method round-robin pairings for a given round index.
  * Every village faces each other exactly once across (n-1) rounds, then repeats.
+ *
+ * Each repeat of the cycle swaps the pair order, so the second cycle is the
+ * reverse leg of the first: a 22-round season is a proper home-and-away
+ * double round-robin rather than the same fixture played four times at home.
  */
 export function roundPairings(names, round) {
   const arr = names.slice()
   if (arr.length % 2 === 1) arr.push(BYE)
   const n = arr.length
   if (n < 2) return []
+  const cycle = Math.floor(((round % (2 * (n - 1))) + 2 * (n - 1)) % (2 * (n - 1)) / (n - 1))
   const r = ((round % (n - 1)) + (n - 1)) % (n - 1)
   const fixed = arr[0]
   const rest = arr.slice(1)
@@ -36,9 +53,36 @@ export function roundPairings(names, round) {
   const pairs = []
   for (let i = 0; i < n / 2; i++) {
     const a = order[i], b = order[n - 1 - i]
-    if (a !== BYE && b !== BYE) pairs.push([a, b])
+    if (a !== BYE && b !== BYE) pairs.push(cycle === 1 ? [b, a] : [a, b])
   }
   return pairs
+}
+
+/**
+ * The player's fixture in a given round: { round, opp, home } or null on a bye.
+ * The tick and the tactic picker both need this, and they must agree exactly —
+ * a mismatch would let the player counter an opponent they never face.
+ */
+export function playerFixture(names, round, playerName) {
+  for (const [a, b] of roundPairings(names, round)) {
+    if (a === playerName) return { round, opp: b, home: true }
+    if (b === playerName) return { round, opp: a, home: false }
+  }
+  return null
+}
+
+/**
+ * The player's next `count` fixtures from `fromRound` inclusive, skipping byes.
+ * Feeds the per-matchday tactic pickers — the player decides for every fixture
+ * the coming tick will resolve, not for a single persistent default.
+ */
+export function upcomingFixtures(names, fromRound, count, playerName, maxRound = SEASON_ROUNDS) {
+  const out = []
+  for (let r = fromRound; r < fromRound + count && r < maxRound; r++) {
+    const fx = playerFixture(names, r, playerName)
+    if (fx) out.push(fx)
+  }
+  return out
 }
 
 /**

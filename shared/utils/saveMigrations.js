@@ -12,7 +12,7 @@
  * Pure helpers; no G access. Unit-tested.
  */
 
-export const SAVE_VERSION = 2
+export const SAVE_VERSION = 3
 
 // migrations[v] upgrades a save FROM v-1 TO v. Keyed by target version.
 export const MIGRATIONS = {
@@ -24,6 +24,17 @@ export const MIGRATIONS = {
     arrays.forEach(k => { if (!Array.isArray(s[k])) s[k] = [] })
     const maps = ['minorRelations', 'journalistRel', 'h2h']
     maps.forEach(k => { if (!s[k] || typeof s[k] !== 'object') s[k] = {} })
+  },
+
+  // v2 → v3: matchday tactics went from ONE persisted default (`matchdayTactic`)
+  // to a per-round map (`matchdayTactics`), and the league doubled to two
+  // fixtures a month. The stale scalar is dropped rather than carried forward —
+  // inheriting it would restore exactly the set-and-forget behaviour the change
+  // removed. Also seeds the vendetta ledger the legacy-memory layer reads.
+  3: (s) => {
+    delete s.matchdayTactic
+    if (!s.matchdayTactics || typeof s.matchdayTactics !== 'object') s.matchdayTactics = {}
+    if (!s.vendettas || typeof s.vendettas !== 'object') s.vendettas = {}
   },
 }
 

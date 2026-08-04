@@ -4,6 +4,7 @@ import {
   sortedTable, seedsFromTable, playMatchday, SEASON_PTS,
   seasonSchedule, teamFixtures, seasonPressNotice, styledScore, teamForm,
   seasonState, matchPreview, matchToBeats,
+  playerFixture, upcomingFixtures, SEASON_ROUNDS, MATCHDAYS_PER_MONTH,
 } from '../shared/utils/season.js'
 import { withSeed } from './helpers/rng.js'
 
@@ -153,6 +154,51 @@ describe('season table', () => {
     roundPairings(NAMES, 0).forEach(([a, b]) => expect(a).not.toBe(b))
     // 5 villages → 2 matches per round (one sits out)
     expect(roundPairings(NAMES, 0)).toHaveLength(2)
+  })
+
+  it('the second cycle is the reverse leg — same pairing, sides swapped', () => {
+    const cycle = NAMES.length          // 5 names pad to 6 → a cycle is 5 rounds
+    for (let r = 0; r < cycle; r++) {
+      const first = roundPairings(NAMES, r)
+      const second = roundPairings(NAMES, r + cycle)
+      expect(second).toEqual(first.map(([a, b]) => [b, a]))
+    }
+    // ...and the third cycle returns to the original orientation.
+    expect(roundPairings(NAMES, 2 * cycle)).toEqual(roundPairings(NAMES, 0))
+  })
+
+  it('a full season gives the player home and away against everyone', () => {
+    const sched = seasonSchedule(NAMES, SEASON_ROUNDS)
+    const fx = teamFixtures(sched, 'You')
+    const homeOpps = new Set(fx.filter(f => f.home).map(f => f.opp))
+    const awayOpps = new Set(fx.filter(f => !f.home).map(f => f.opp))
+    NAMES.filter(n => n !== 'You').forEach(opp => {
+      expect(homeOpps.has(opp)).toBe(true)
+      expect(awayOpps.has(opp)).toBe(true)
+    })
+    // 22 rounds in a 5-village league: ~18 fixtures, enough for form to read.
+    expect(fx.length).toBeGreaterThanOrEqual(17)
+  })
+
+  it('playerFixture agrees with the schedule, and returns null on a bye', () => {
+    const sched = seasonSchedule(NAMES, SEASON_ROUNDS)
+    let byes = 0
+    for (let r = 0; r < SEASON_ROUNDS; r++) {
+      const fx = playerFixture(NAMES, r, 'You')
+      const inRound = sched[r].find(m => m.a === 'You' || m.b === 'You')
+      if (!fx) { byes++; expect(inRound).toBeUndefined(); continue }
+      expect(fx.opp).toBe(inRound.a === 'You' ? inRound.b : inRound.a)
+      expect(fx.home).toBe(inRound.a === 'You')
+    }
+    expect(byes).toBeGreaterThan(0)   // odd field → the player does sit some out
+  })
+
+  it('upcomingFixtures returns only the rounds the coming tick will play', () => {
+    const up = upcomingFixtures(NAMES, 0, MATCHDAYS_PER_MONTH, 'You')
+    expect(up.length).toBeLessThanOrEqual(MATCHDAYS_PER_MONTH)
+    up.forEach(f => { expect(f.round).toBeGreaterThanOrEqual(0); expect(f.round).toBeLessThan(MATCHDAYS_PER_MONTH) })
+    // never runs past the end of the season
+    expect(upcomingFixtures(NAMES, SEASON_ROUNDS - 1, 4, 'You').every(f => f.round < SEASON_ROUNDS)).toBe(true)
   })
 
   it('recordMatch awards win/draw/loss points correctly', () => {

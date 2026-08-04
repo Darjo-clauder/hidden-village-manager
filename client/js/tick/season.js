@@ -16,7 +16,7 @@ import { G, clamp, sn, pk, rnd, fmt, addNotice, addChronicle, addLegend } from '
 import { aL, ntf } from '../ui.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { addNewsItem } from '../news.js'
-import { initSeasonTable, playMatchday, seasonPressNotice, roundPairings, sortedTable, simMatch, styledScore } from '../../../shared/utils/season.js'
+import { initSeasonTable, playMatchday, seasonPressNotice, playerFixture, sortedTable, simMatch, styledScore, MATCHDAYS_PER_MONTH, SEASON_ROUNDS } from '../../../shared/utils/season.js'
 import { identityFor } from '../../../shared/constants/villageIdentity.js'
 import { tacticMod } from '../../../shared/constants/matchdayTactics.js'
 import { updateH2H, pickDerbyRival } from '../../../shared/utils/rivalry.js'
@@ -37,24 +37,12 @@ export function tickSeason(ctx) {
     const form = G._formThisMonth || { marginSum: 0 }
     const formBonus = clamp(form.marginSum * 2, -20, 20)
     G._seasonFormBonus = formBonus  // surfaced in UI
-    // Matchday tactic (player pick, persists monthly): a good read on this
-    // fixture's opponent style swings the player's effective strength ±.
-    const _pairs = roundPairings(names, G.season.round)
-    const _myFx = _pairs.find(([a, b]) => a === playerName || b === playerName)
-    const _myOpp = _myFx ? (_myFx[0] === playerName ? _myFx[1] : _myFx[0]) : null
-    const _tMod = _myOpp ? tacticMod(G.matchdayTactic || 'standard', identityFor(_myOpp).style) : 0
-    const strOf = name => name === playerName
-      ? Math.max(10, Math.round(((G._playerStrength || 50) + formBonus) * (1 + _tMod)))
-      : ((G.villages.find(v => v.n === name)?.strength) || 50)
     // Matchday styles: rivals play to their village identity; the player's style
     // follows their coaching philosophy (aggressive→blitz, defensive→fortress).
     const _philStyle = { aggressive: 'blitz', defensive: 'fortress' }[G.coachingPhilosophy] || 'balanced'
     const styleOf = name => name === playerName ? _philStyle : identityFor(name).style
-    playMatchday(G.season, names, strOf, Math.random, styleOf)
 
-    // ── Rivalry: all-time head-to-head + the derby fixture ───────────────────
-    // Each January the most hostile rival becomes the year's derby; derby
-    // results swing morale/reputation beyond the points and feed the press.
+    // ── Derby designation — named each January, before the month's fixtures ──
     if (G.month === 1 || !G.derbyRival) {
       const dv = pickDerbyRival(G.villages, G.derbyRival)
       if (dv && dv.n !== G.derbyRival) {
@@ -64,25 +52,23 @@ export function tickSeason(ctx) {
       } else if (dv) G.derbyRival = dv.n
     }
     G.h2h = G.h2h || {}
-    const _myMatch = (G.season.lastResults || []).find(m => m.a === playerName || m.b === playerName)
-    if (_myMatch) {
-      updateH2H(G.h2h, playerName, _myMatch)
-      const _mOpp = _myMatch.a === playerName ? _myMatch.b : _myMatch.a
-      if (_mOpp === G.derbyRival) {
-        const _dps = _myMatch.a === playerName ? _myMatch.scoreA : _myMatch.scoreB
-        const _dos = _myMatch.a === playerName ? _myMatch.scoreB : _myMatch.scoreA
-        if (_myMatch.winner === playerName) {
-          G.morale = clamp(G.morale + 3, 0, 100)
-          G.reputation = clamp(G.reputation + 2, 0, 999)
-          aL(tr('toast.adv.derbyWin', { village: _mOpp, ps: _dps, os: _dos }), 'good')
-        } else if (_myMatch.winner) {
-          G.morale = clamp(G.morale - 3, 0, 100)
-          aL(tr('toast.adv.derbyLoss', { village: _mOpp, ps: _dps, os: _dos }), 'bad')
-          if (!G.pendingPress && Math.random() < 0.3) queuePressConference('rivalry_heat', { rivalName: _mOpp })
-        } else {
-          aL(tr('toast.adv.derbyDraw', { village: _mOpp, ps: _dps, os: _dos }), 'neutral')
-        }
-      }
+    G.matchdayTactics = G.matchdayTactics || {}
+
+    // ── The month's matchdays ────────────────────────────────────────────────
+    // Two fixtures a month, each resolved against its own opponent with its own
+    // tactic pick. The pick is per-ROUND (G.matchdayTactics[round]) rather than a
+    // persisted default, so matchday is a read of the fixture in front of you; an
+    // unset round simply plays Standard, which carries no swing either way.
+    for (let md = 0; md < MATCHDAYS_PER_MONTH && G.season.round < SEASON_ROUNDS; md++) {
+      const _round = G.season.round
+      const _fx = playerFixture(names, _round, playerName)
+      const _tMod = _fx ? tacticMod(G.matchdayTactics[_round] || 'standard', identityFor(_fx.opp).style) : 0
+      const strOf = name => name === playerName
+        ? Math.max(10, Math.round(((G._playerStrength || 50) + formBonus) * (1 + _tMod)))
+        : ((G.villages.find(v => v.n === name)?.strength) || 50)
+      playMatchday(G.season, names, strOf, Math.random, styleOf)
+      delete G.matchdayTactics[_round]   // consumed — never inherited by a later fixture
+      _applyPlayerResult(playerName)
     }
 
     // Track monthly form streak for press triggers
@@ -100,17 +86,49 @@ export function tickSeason(ctx) {
     // Mid-season pressure: standings-driven noticeboard items (title race / slump /
     // council heat). Throttled to once every 2 months, and never repeats the same
     // kind back-to-back, so it reads as narrative beats rather than spam.
-    const _notice = seasonPressNotice(G.season.table, playerName, G.season.round, 11)
-    if (_notice && G.month - (G._lastSeasonPressMonth || -99) >= 2 && _notice.kind !== G._lastSeasonPressKind) {
+    // Throttle on an ABSOLUTE month index: comparing G.month alone went negative
+    // across the year boundary (Jan 1 − Nov 11 = −10), which permanently
+    // suppressed standings notices from the first year-end onward.
+    const _absMonth = G.year * 12 + G.month
+    const _notice = seasonPressNotice(G.season.table, playerName, G.season.round, SEASON_ROUNDS)
+    if (_notice && _absMonth - (G._lastSeasonPressMonth || -99) >= 2 && _notice.kind !== G._lastSeasonPressKind) {
       G.noticeboard = G.noticeboard || []
       G.noticeboard.unshift({
         id: 'seasonpress_' + G.year + '_' + G.month,
         cat: 'Standings', icon: _notice.icon, priority: _notice.priority,
         title: _notice.title, body: _notice.body, dismissed: false,
       })
-      G._lastSeasonPressMonth = G.month
+      G._lastSeasonPressMonth = _absMonth
       G._lastSeasonPressKind = _notice.kind
       ntf(tr('toast.adv.noticeNtf', { title: _notice.title }))
     }
+  }
+}
+
+/**
+ * Fold the just-played matchday's player result into the all-time head-to-head
+ * ledger, and pay out the derby swing when the fixture was the derby.
+ *
+ * Called once per matchday (not once per month) — with two fixtures a month the
+ * old read of `lastResults` after the loop would have silently dropped one.
+ */
+function _applyPlayerResult(playerName) {
+  const m = (G.season.lastResults || []).find(x => x.a === playerName || x.b === playerName)
+  if (!m) return
+  updateH2H(G.h2h, playerName, m)
+  const opp = m.a === playerName ? m.b : m.a
+  if (opp !== G.derbyRival) return
+  const ps = m.a === playerName ? m.scoreA : m.scoreB
+  const os = m.a === playerName ? m.scoreB : m.scoreA
+  if (m.winner === playerName) {
+    G.morale = clamp(G.morale + 3, 0, 100)
+    G.reputation = clamp(G.reputation + 2, 0, 999)
+    aL(tr('toast.adv.derbyWin', { village: opp, ps, os }), 'good')
+  } else if (m.winner) {
+    G.morale = clamp(G.morale - 3, 0, 100)
+    aL(tr('toast.adv.derbyLoss', { village: opp, ps, os }), 'bad')
+    if (!G.pendingPress && Math.random() < 0.3) queuePressConference('rivalry_heat', { rivalName: opp })
+  } else {
+    aL(tr('toast.adv.derbyDraw', { village: opp, ps, os }), 'neutral')
   }
 }
