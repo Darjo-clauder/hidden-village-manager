@@ -1,6 +1,43 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-08-03 · **HEAD:** `ee0fb94` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 1225 passing / 96 files
+**Last updated:** 2026-08-04 · **HEAD:** `4378b39` (committed, **not yet pushed**) · **Branch:** `master` · **Tests:** 1255 passing / 98 files
+
+---
+
+> ## ⚑ C/D/E — THE LOOP OPTIONS ARE ALL SHIPPED (2026-08-04, `46b8210` → `4378b39`)
+>
+> The three open design calls from `LOOP_ANALYSIS_2026-08-03.md` are done. C and D landed together because they fight each other otherwise; E is the strategically distinctive one and is the bigger change.
+>
+> ### C + D — the league is a competition now (`46b8210`)
+>
+> - **Two matchdays a month** (`MATCHDAYS_PER_MONTH`) across a **22-round season**. A five-village league went from ~9 fixtures to ~18–22, which is the sample form and a title race actually need. `roundPairings` swaps sides on alternate cycles, so it is a real home-and-away double round-robin instead of the same fixture played four times at home.
+> - **The tactic is per-fixture** (`G.matchdayTactics[round]`), consumed when the match plays. `G.matchdayTactic` — one dial, set in year one, inherited forever — is gone. Verified live that the month's two opponents genuinely want *different* answers (Counter +8% into one, Control +8% into the next). An unset round plays Standard, which swings nothing: forgetting costs you the edge, it does not punish you.
+>
+> ### E — legacy memory: the dead keep acting on the living (`4378b39`)
+>
+> `shared/utils/legacyMemory.js`. **Some things do not fade** — the rule the memory system did not have. Heavy memories become *defining moments*: floored at `SCAR_FLOOR`, never pruned, and only taxing morale for the part above the floor (a permanent −6/mo would make veterans unplayable). **Vendettas** name the village blamed for a death; carriers fight harder against them (+2%/intensity, cap +10%); a win answers **one** death, oldest first, with a beat naming the dead. Six deaths is a six-win arc.
+>
+> **This is why C mattered first** — ~18 fixtures a season is what makes the payoff land often enough to feel.
+>
+> ### ⚠ FOUR PRE-EXISTING BUGS, one of which froze whole runs
+>
+> 1. **A player village name colliding with a generated rival FROZE THE ENTIRE LEAGUE.** The table is keyed by name → six villages made five rows → the size guard in `tickSeason` mismatched *every tick* → the season was rebuilt from scratch forever and standings never advanced. Hit live by naming a village "Emberfall" when a rival already was. Fixed at source (rival renamed in `setup.js`) **and** defensively in the tick (dedupe), so existing saves recover.
+> 2. **The grudge-on-comrade-death branch had never once executed** — gated on `wasBonded`, comparing a bond's `otherId` against `sq.fallen` records that carried **no `id`**. Always undefined, always false. It also blamed a *uniformly random* village.
+> 3. **The season only reset when the Adept Exam completed** — a player action. Skip the exam and the table accumulated forever. Harmless while `round` climbed without limit; fatal once a season has an end. A league year now ends when the year does.
+> 4. **A solo death left nobody carrying it** unless the dead held a formal bond — and solo missions are how most shinobi die.
+>
+> ### The lesson worth keeping
+>
+> **Bugs 2 and 4 were invisible to unit tests and visible immediately when the real tick ran.** Bug 2's code was correct, plausible, and simply never called. `tests/legacyMemoryIntegration.test.js` exists for this: it drives the real tick across 12 seeds until real shinobi die, then asserts the consequences landed. **When you add a system that reacts to a rare event, write the integration test that forces the event — a green unit suite proves the function works, not that anything calls it.**
+>
+> Also: `autoAssignMissions` in the harness **only dispatches solo missions**, so the squad-death path is not covered by the sweep. Worth fixing if you touch squad resolution.
+>
+> ### Open / next
+>
+> - **Not pushed.** `git push` + mirror ff still to do.
+> - The season-review "Year N in Review" now has a second archive path (the tick's year rollover). Both guard against double-archiving the same year, but the exam path is the only one that records the *champion* properly — worth a look if reviews read oddly.
+> - Vendetta payoff is **league-only**. War and the exam both have real named opponents and would be natural places to let it pay off too.
+> - Nobody has visually reviewed any of this (see the Browser-pane note below) — all UI verified by DOM assertion.
 
 ---
 
