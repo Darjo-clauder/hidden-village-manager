@@ -1,6 +1,32 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-08-04 · **HEAD:** `4378b39` (committed, **not yet pushed**) · **Branch:** `master` · **Tests:** 1255 passing / 98 files
+**Last updated:** 2026-08-04 · **HEAD:** `53b2e8a` (committed, **not yet pushed**) · **Branch:** `master` · **Tests:** 1292 passing / 100 files
+
+---
+
+> ## ⚑ DEPTH COVERAGE + COMBINED ELEMENTS (2026-08-04, `df7910c` → `53b2e8a`)
+>
+> ### The harness was blind to whole subsystems (`df7910c`)
+>
+> `tests/depthCoverage.test.js` asks a different question from `tickSweep`: not "does the tick survive" but **"of everything we wrote, how much ever reaches the player?"** Building it exposed that the harness itself was the limiting factor.
+>
+> `autoAssignMissions` only ever dispatched **solo** missions, and nothing ever signed a prospect. Over 1,200 simulated months that meant: **zero bonds ever formed** (`tryFormBonds` is squad-only), the squad-KIA branch never ran, **A- and S-rank missions were never assigned** (their power requirement is written for a *squad's* combined power — best solo power was 62 against a median A-rank requirement of 86), so `winsS` stayed 0 and four jutsu were unreachable; and the prospect pool sat permanently full, so `rfP` had no room to create new prospects and its prodigy roll almost never ran.
+>
+> Two new helpers fix it: **`autoSquadMissions`** and **`autoSignProspects`**. Use them in any new sweep — `autoAssignMissions` alone leaves you blind in exactly the places bugs have historically hidden.
+>
+> **Standing finding, still open:** three of the five rare jutsu (`mangekyou`, `tenseigan`, `kotoamatsukami`) need `prodigy: true` **and** one clan in seventeen. Measured end to end: ~1 prodigy per 4,000 prospects. Across 8 seeds × 240 months *and* 16 × 120, **not one was ever learned**. The other two rare jutsu (`wins: 50`) are merely long-tail — they appear reliably around year ten. Fixing this is a design call (raise the rate, drop the clan lock, or add a second unlock path). Also noted: **"Careful" is a 16th personality** created by trauma evolution in `missionHelpers.js` that is not in `PERSONALITIES`, so anything iterating that constant misses it.
+>
+> ### Combined elements (`53b2e8a`)
+>
+> `shared/constants/combinedElements.js`. Ten combinations — one per unordered pair of the five base elements, so the set is complete and no pair dead-ends. Names are plain English; **this build is IP-neutral and stays that way.**
+>
+> **Three acquisition paths, and that is the whole design point.** The rare-jutsu finding above proved a single rare roll produces content nobody sees, so: `innate` (small roll at generation), `clan` (six major clans predisposed), `awakened` (earnable — enough chakra, enough career, and a ~6× better chance in a month where they survived a disaster or watched a squadmate die). Measured over 16 seeds × 120 months: **54 holders, all ten combinations seen, split awakened 54% / innate 26% / clan 20%** — about one per three village-years.
+>
+> Mechanically: +3% on any mission, +6% on the two specs it suits, **averaged across a squad** so stacking cannot run away, plus a +5% edge into the base element it counters. Each unlocks a **signature technique** at a rank threshold, learned the moment the rank is met rather than rolled against the other nineteen.
+>
+> **⚠ `ALL_JUTSU`, not `JUTSU_LIST`.** Signatures live in the shared module, not `JUTSU_LIST`. `client/js/constants.js` exports `ALL_JUTSU = [...JUTSU_LIST, ...COMBINED_SIGNATURES]`. **Any lookup over a shinobi's `jutsu` array must use `ALL_JUTSU`** — with `JUTSU_LIST` a signature silently vanishes from the dossier and stops paying its loadout bonus.
+>
+> `depthCoverage` now asserts all ten reach a roster, all three paths fire, and signatures are earned — the standard the rare jutsu failed.
 
 ---
 
