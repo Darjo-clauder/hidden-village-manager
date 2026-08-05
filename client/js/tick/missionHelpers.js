@@ -18,6 +18,7 @@
 import { G, clamp, sn, pk, rnd, fmt, addTrait, addChronicle, addLegend, addNotice, getLeadershipGroup } from '../state.js'
 import { aL, ntf } from '../ui.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
+import { combinedOf, signatureUnlocked } from '../../../shared/constants/combinedElements.js'
 import { RANKS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, JUTSU_LIST, MISSION_COMMISSION } from '../constants.js'
 import { hydrateQuestion } from '../../../shared/utils/pressConference.js'
 import { pickJournalist } from '../../../shared/constants/journalists.js'
@@ -176,6 +177,19 @@ export function fatiguePenalty(s) {
 
 export function checkJutsu(s) {
   if (!s.jutsu) s.jutsu = []
+  // A combined element's signature is learned the moment the rank threshold is
+  // met — not rolled against everything else in the pool. It is the whole point
+  // of having the element, and burying it in a random draw against nineteen
+  // other techniques is how you get content nobody sees (see the rare-tier
+  // finding in tests/depthCoverage.test.js).
+  const _combined = combinedOf(s)
+  if (_combined && signatureUnlocked(s) && !s.jutsu.includes(_combined.signature.id)) {
+    s.jutsu.push(_combined.signature.id)
+    aL(`${_combined.icon} ${sn(s)} mastered ${_combined.signature.n} — the signature of ${_combined.name}.`, 'good')
+    addChronicle('Signature Technique', `${sn(s)} mastered ${_combined.signature.n}. ${_combined.signature.desc}`, 'shinobi')
+    addLegend(12)
+    return
+  }
   const eligible = JUTSU_LIST.filter(j => {
     if (s.jutsu.includes(j.id)) return false
     if (j.clan && s.clan !== j.clan) return false

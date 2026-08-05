@@ -6,6 +6,7 @@ import {
 import { ARCHETYPE_POOL } from '../../shared/utils/personality.js'
 import { newKageDev } from '../../shared/constants/kageDev.js'
 import { identityFor, rollIntensity, applyIdentityBias, nationTalent, elementAffinityFor } from '../../shared/constants/villageIdentity.js'
+import { rollInnate, CLAN_PREDISPOSITION } from '../../shared/constants/combinedElements.js'
 import { MINOR_NATIONS, pickMinorNation, applyMinorOrigin, getMinorRel, minorFeeMult } from '../../shared/constants/minorNations.js'
 import { effectiveFeePercent } from '../../shared/utils/agentRelations.js'
 
@@ -49,6 +50,10 @@ export function mS(ri = 0) {
   // same shape as the great villages' nationTalent bias.
   const _affinity = (origin ? elementAffinityFor(origin) : G.vElement) || null
   const _element = _affinity && Math.random() < 0.6 ? _affinity : pk(ELEMENTS)
+  // Combined element (two natures at once). Rolled here for the innate and clan
+  // paths; the third path — awakening in the field — happens in the tick. See
+  // shared/constants/combinedElements.js for why there are three ways in.
+  const _combined = rollInnate({ element: _element, clan: clan?.n || null })
   return {
     id: Math.random().toString(36).slice(2), fn: pk(FNAMES), ln: pk(LNAMES),
     clan: clan?.n || null, trait: clan?.t || null, spec: pk(SPECS), age, ri,
@@ -57,6 +62,8 @@ export function mS(ri = 0) {
     salary: sal, months: 0, wins: 0, winsB: 0, winsS: 0, streak: 0,
     pers: p, backstory: pk(BACKSTORIES), archetype: pk(ARCHETYPES),
     element: _element, quirk: pk(QUIRKS), dream: pk(DREAMS),
+    combinedElement: _combined?.id || null,
+    combinedSource: _combined ? (CLAN_PREDISPOSITION[clan?.n] === _combined.id ? 'clan' : 'innate') : null,
     scouted: false, monthsWaiting: 0, rivalId: null, origin, jk: null,
     darkMoment: null, jutsu: [], bonds: [], prodigy: false, familyId: null, mentor: null,
     workload: 0, consecutiveMissions: 0, traumaStatus: null, traumaCount: 0, returningForm: 100,

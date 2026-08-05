@@ -1,3 +1,4 @@
+import { COMBINED_SIGNATURES } from '../../shared/constants/combinedElements.js'
 export const CLANS=[{n:'Kageha',t:'Kagan',b:{ninjutsu:14,genjutsu:12}},{n:'Shiromi',t:'Hakugan',b:{taijutsu:14,chakra:8}},{n:'Kagero',t:'Shadow Weave',b:{intelligence:16,ninjutsu:5}},{n:'Tsuchida',t:'Body Expansion',b:{taijutsu:12,chakra:8}},{n:'Tamashii',t:'Soul Touch',b:{genjutsu:14,intelligence:10}},{n:'Okamura',t:'Pack Fang',b:{taijutsu:12,speed:12}},{n:'Mushiba',t:'Hive Bond',b:{intelligence:12,genjutsu:8}},{n:'Kusari',t:'Chain Seal',b:{chakra:22,ninjutsu:10}},{n:'Mori',t:'Forest Birth',b:{chakra:18,ninjutsu:14}}]
 export const RANKS=['Initiate','Adept','Veteran','Shadow','Legend']
 export const RKC=['rk-g','rk-c','rk-j','rk-a','rk-s']
@@ -648,3 +649,13 @@ export const DAIMYO_BONUS = [
   { at:250, amount:5000,  label:'War-Renowned Village' },
   { at:100, amount:2000,  label:'Rising Village' },
 ]
+
+/**
+ * Every technique a shinobi can actually hold, including the combined-element
+ * signatures. Those live in shared/constants/combinedElements.js because their
+ * eligibility is the element rather than a win count, but they are shaped like
+ * JUTSU_LIST entries so loadout maths and the dossier read them unchanged.
+ * Lookups over a shinobi's `jutsu` array must use THIS, not JUTSU_LIST, or a
+ * signature silently vanishes from the UI and stops paying its bonus.
+ */
+export const ALL_JUTSU = [...JUTSU_LIST, ...COMBINED_SIGNATURES]

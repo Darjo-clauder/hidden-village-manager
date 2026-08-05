@@ -47,6 +47,7 @@ const { PERSONALITIES, ELEMENTS, JUTSU_LIST } = await import('../client/js/const
 const { CLANS } = await import('../shared/constants/clans.js')
 const { NARRATIVE_ARCHETYPES } = await import('../shared/utils/personality.js')
 const { definingMoments } = await import('../shared/utils/legacyMemory.js')
+const { COMBINED_ELEMENTS } = await import('../shared/constants/combinedElements.js')
 await (await import('./helpers/tickHarness.js')).initLocale()
 
 // A decade, because several pipelines only open up late: the `wins: 50` rare
@@ -60,6 +61,7 @@ const census = {
   personality: new Set(), element: new Set(), clan: new Set(), archetype: new Set(),
   quirk: new Set(), dream: new Set(), jutsu: new Set(), trait: new Set(),
   persElement: new Set(), clanElement: new Set(), persArchetype: new Set(),
+  combined: new Set(), combinedSource: new Set(), signature: new Set(),
 }
 /** Mechanics that must actually trigger, not merely exist. */
 const fired = {
@@ -81,7 +83,14 @@ function observe(G) {
     if (p && e) census.persElement.add(p + '|' + e)
     if (c && e) census.clanElement.add(c + '|' + e)
     if (p && a) census.persArchetype.add(p + '|' + a)
-    for (const j of s.jutsu || []) census.jutsu.add(j)
+    if (s.combinedElement) {
+      census.combined.add(s.combinedElement)
+      if (s.combinedSource) census.combinedSource.add(s.combinedSource)
+    }
+    for (const j of s.jutsu || []) {
+      census.jutsu.add(j)
+      if (j.startsWith('ce_')) census.signature.add(j)
+    }
     for (const t of s.traits || []) census.trait.add(typeof t === 'string' ? t : t?.n)
     if ((s.jutsu || []).length) fired.jutsuLearned++
     if (c && CLAN_BY_NAME[c]?.passive) fired.bloodlinePassive++
@@ -197,6 +206,26 @@ describe(`depth coverage — ${SEEDS} seeds x ${MONTHS} months`, () => {
   it('the social layer engages under ordinary play', () => {
     expect(fired.bond, 'no bonds formed').toBeGreaterThan(0)
     expect(fired.injury, 'nobody was ever injured').toBeGreaterThan(0)
+  })
+
+  /**
+   * The combined-element layer, held to the standard the rare jutsu failed.
+   *
+   * This is the whole reason it has three acquisition paths instead of one rare
+   * roll: the depth sweep had just proved that a ~1-in-4,000 roll behind a clan
+   * gate produces content no player ever sees. If any of these start failing,
+   * the layer has drifted back toward being decoration.
+   */
+  it('every one of the ten combinations reaches a real roster', () => {
+    expect(missing(COMBINED_ELEMENTS.map(c => c.id), census.combined)).toEqual([])
+  })
+
+  it('all three acquisition paths actually fire', () => {
+    expect(missing(['innate', 'clan', 'awakened'], census.combinedSource)).toEqual([])
+  })
+
+  it('signature techniques are earned, not merely defined', () => {
+    expect(census.signature.size, 'no signature technique was ever mastered').toBeGreaterThan(0)
   })
 
   it('reports the full census, so dead content shows up in the diff', () => {

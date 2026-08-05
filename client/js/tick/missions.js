@@ -38,7 +38,7 @@ import { resolveBattleCall, callBeatIndex, isSalvageable } from '../../../shared
 import { staminaStart, finishEffects, scrollOutcome } from '../../../shared/utils/matchSim.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { addNewsItem } from '../news.js'
-import { RANKS, MONTHS, JUTSU_LIST, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, BINGO_TIERS, MISSION_COMMISSION, DOCTRINE_BY_ID } from '../constants.js'
+import { RANKS, MONTHS, JUTSU_LIST, ALL_JUTSU, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, BINGO_TIERS, MISSION_COMMISSION, DOCTRINE_BY_ID } from '../constants.js'
 import { pushNarrative } from './inbox.js'
 import { pushMissionLog, hasUniqueAbility, jkKIAImmune, pickInjuryType, applyInjury, applyTrauma,
          rollInjuryOnSuccess, addWorkload, fatiguePenalty, checkJutsu, tryFormBonds, maybeInduct,
@@ -65,6 +65,7 @@ import { jutsuLoadoutBonus } from '../../../shared/jutsu/loadout.js'
 import { kageMod } from '../../../shared/constants/kageDev.js'
 import { addMemory } from '../../../shared/utils/memorySystem.js'
 import { recordVendettaDeath, addVendetta, blameFor, mournersFor } from '../../../shared/utils/legacyMemory.js'
+import { combinedMissionMod, squadCombinedMod, combinedOf } from '../../../shared/constants/combinedElements.js'
 import { sPow, sqP } from '../state.js'
 
 /** @param {{ hL:number, dp:object, sb:object, iB:number, cp:object, clP:object, shP:object, season:string }} ctx */
@@ -148,7 +149,7 @@ export function tickMissions(ctx) {
       const _appMod = missionApproachMod(am.approach, m.spec)  // tactical approach vs mission spec
       const sqJutsuMod = sq.members.reduce((acc, id) => {
         const ms = G.shinobi.find(x => x.id === id); if (!ms) return acc
-        const jb = jutsuLoadoutBonus(ms, JUTSU_LIST)
+        const jb = jutsuLoadoutBonus(ms, ALL_JUTSU)
         return acc + jb.successMod * 0.5 + jb.powerMod * 0.25
       }, 0)
       const sqBondMod = sq.members.reduce((acc, id) => {
@@ -162,7 +163,7 @@ export function tickMissions(ctx) {
       }, 0)
       const sqFatigueMod = sq.members.reduce((acc, id) => { const mb = G.shinobi.find(x => x.id === id); return acc + (mb ? fatiguePenalty(mb) : 0) }, 0) / Math.max(1, sq.members.length)
       const sqGrindMod = grindMod(sq.consecutiveDeployMonths || 0)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod() + (am._scMod || 0) + sqFatigueMod + sqGrindMod + _appMod.sc - _appMod.risk - (am._riskMod || 0) + kageMod(G, 'command'), 0.1, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + squadCombinedMod(sq.members.map(id => G.shinobi.find(x => x.id === id)), m) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod() + (am._scMod || 0) + sqFatigueMod + sqGrindMod + _appMod.sc - _appMod.risk - (am._riskMod || 0) + kageMod(G, 'command'), 0.1, successCeiling(m.rk))
 
       const _mev = resolveMission(sc)
       const _mq = qualityEffects(_mev.quality)
@@ -310,6 +311,7 @@ export function tickMissions(ctx) {
             updateConfidence(survivor, _mev.quality, { hadKIA: true })
             addMemory(survivor, 'witness_kia', m.id || m.n, when)
             setEmotionalState(survivor, 'grieving')
+            survivor._awakenCrisis = true   // read by tick/shinobi.js next month
             if (!antagonist || !fallen) return
             // Everyone who walked off that mission carries it. This used to be
             // gated on `wasBonded`, which compared a bond's otherId against
@@ -332,7 +334,10 @@ export function tickMissions(ctx) {
             const survivor = G.shinobi.find(x => x.id === id)
             if (!survivor) return
             updateConfidence(survivor, _mev.quality)
-            if (_mev.quality === 'disaster') addMemory(survivor, 'mission_disaster', m.id || m.n, { year: G.year, month: G.month })
+            if (_mev.quality === 'disaster') {
+              addMemory(survivor, 'mission_disaster', m.id || m.n, { year: G.year, month: G.month })
+              survivor._awakenCrisis = true
+            }
           })
         }
         sq.cohesion = Math.max(0, (sq.cohesion ?? 0) + (hadKIA ? -15 : -4) - grindCohesionPenalty(sq.consecutiveDeployMonths || 0))
@@ -357,9 +362,9 @@ export function tickMissions(ctx) {
       ensureCareerFields(s)
       const soloPrepMod = G.missionPrepMode === 'aggressive' ? 0.08 : G.missionPrepMode === 'cautious' ? -0.06 : 0
       const _soloAppMod = missionApproachMod(am.approach, m.spec)  // tactical approach vs mission spec
-      const jLB = jutsuLoadoutBonus(s, JUTSU_LIST)
+      const jLB = jutsuLoadoutBonus(s, ALL_JUTSU)
       const bMB = bondMissionBonus(s, G.shinobi)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0) + fatiguePenalty(s) + getMissionSpecBonus(s, m) + _soloAppMod.sc - _soloAppMod.risk - (am._riskMod || 0) + kageMod(G, 'command'), 0.08, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + combinedMissionMod(s, m) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0) + fatiguePenalty(s) + getMissionSpecBonus(s, m) + _soloAppMod.sc - _soloAppMod.risk - (am._riskMod || 0) + kageMod(G, 'command'), 0.08, successCeiling(m.rk))
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)
@@ -514,7 +519,10 @@ function _buildMissionReport(sq, m, succeeded, mev, payout = 0) {
     const ratio = statVal / baseline
     const grade = ratio >= 1.3 ? 'A' : ratio >= 1.0 ? 'B' : ratio >= 0.75 ? 'C' : 'D'
     const detail = grade === 'A' ? 'Exceptional' : grade === 'B' ? 'Solid' : grade === 'C' ? 'Below par' : 'Poor showing'
-    return { id: s.id, name: sn(s), role: roleId, grade, detail, statVal: Math.round(statVal), element: s.element || null }
+    // A combined element wins over the base one here: it drives the battle
+    // viewer's projectile colour and glyph, and seeing Rime on the pitch rather
+    // than plain Water is most of the point of having it.
+    return { id: s.id, name: sn(s), role: roleId, grade, detail, statVal: Math.round(statVal), element: combinedOf(s)?.name || s.element || null }
   }).filter(Boolean)
   const rep = { missionId: m.id, missionName: m.n, missionRk: m.rk, squadId: sq.id, squadName: sq.n, succeeded, year: G.year, month: G.month, scores,
     spec: m.spec || null,   // drives the animated pitch's mission layout (stealth compound, siege works...)

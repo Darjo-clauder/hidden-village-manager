@@ -18,6 +18,7 @@
  */
 
 import { cssVar } from './cssVar.js'
+import { COMBINED_ELEMENTS } from '../../shared/constants/combinedElements.js'
 
 const W = 400, H = 250            // internal canvas resolution (CSS scales it)
 const R_SHINOBI = 7               // circle radius
@@ -43,7 +44,12 @@ export const ELEMENT_FX = {
   Earth:     { color: '#c9a86a', glyph: '⛰' },
   Lightning: { color: '#e0d060', glyph: '⚡' },
 }
-function _elemFx(el) { return ELEMENT_FX[el] || { color: cssVar('--gold'), glyph: '✦' } }
+// Combined elements throw their own colour and glyph, so a Rime user reads
+// differently from the Water user standing next to them.
+export const COMBINED_FX = Object.fromEntries(
+  COMBINED_ELEMENTS.map(c => [c.name, { color: c.color, glyph: c.icon }]))
+
+function _elemFx(el) { return COMBINED_FX[el] || ELEMENT_FX[el] || { color: cssVar('--gold'), glyph: '✦' } }
 
 // Deterministic per-index jitter so formations look organic but stable.
 function _jit(i, salt = 0) { const s = Math.sin(i * 127.1 + salt * 311.7) * 43758.5453; return (s - Math.floor(s)) - 0.5 }

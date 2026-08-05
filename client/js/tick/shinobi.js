@@ -27,6 +27,7 @@ import { mentorGrowthBonus } from '../../../shared/bonds/bondTypes.js'
 import { opportunityGrowthMod } from '../../../shared/utils/depthPressure.js'
 import { kageMod } from '../../../shared/constants/kageDev.js'
 import { checkJutsu, applyInjury, pickInjuryType, maybeInduct } from './missionHelpers.js'
+import { awakeningOdds, signatureUnlocked } from '../../../shared/constants/combinedElements.js'
 import { pushNarrative } from './inbox.js'
 
 // Lifted from adv.js with the block that calls it; it had no other caller.
@@ -206,5 +207,43 @@ export function tickShinobi(ctx) {
       pushNarrative(genRankUpBlurb(sn(s), s.ri))
       addLegend(s.ri * 3)
     }
+
+    // ── Combined-element awakening ──────────────────────────────────────────
+    // The earnable path. Everything else about a shinobi's chakra nature is
+    // fixed at birth; this is the one thing a career can add to it. Odds jump
+    // sharply in a month where they came through something bad, so the moment
+    // tends to attach itself to a story the player already remembers.
+    maybeAwaken(s)
   })
+}
+
+/**
+ * Roll a shinobi's chance to awaken a second chakra nature this month.
+ *
+ * `_awakenCrisis` is set by mission resolution when this shinobi survived a
+ * disaster or watched a squadmate die — it is cleared here, so it only ever
+ * counts for the month it happened in.
+ */
+function maybeAwaken(s) {
+  const crisis = !!s._awakenCrisis
+  s._awakenCrisis = false
+  const { eligible, chance, combined } = awakeningOdds(s, { crisis })
+  if (!eligible || Math.random() >= chance) return
+  s.combinedElement = combined.id
+  s.combinedSource = 'awakened'
+  const how = crisis
+    ? `Pushed past the edge of what they had, ${sn(s)} came back with something new.`
+    : `Years of ${s.element} work finally opened into something else.`
+  aL(`${combined.icon} ${sn(s)} awakened ${combined.name} — ${combined.parents.join(' + ')}!`, 'good')
+  addChronicle(`Awakening — ${combined.name}`,
+    `${how} ${combined.name}: ${combined.blurb}`, 'shinobi')
+  pushNarrative({
+    title: `${combined.icon} ${sn(s)} awakens ${combined.name}`,
+    body: `${how} ${combined.blurb}`,
+    tag: 'awakening',
+  }, [s.id])
+  addLegend(8)
+  addNotice(`${sn(s)} now carries ${combined.name}. ${signatureUnlocked(s)
+    ? `Their signature technique, ${combined.signature.n}, is available.`
+    : `${combined.signature.n} unlocks at ${RANKS[combined.signature.minRi]}.`}`, 'good')
 }
