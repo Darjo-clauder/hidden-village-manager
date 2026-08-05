@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-08-04 · **HEAD:** `53b2e8a` (committed, **not yet pushed**) · **Branch:** `master` · **Tests:** 1292 passing / 100 files
+**Last updated:** 2026-08-04 · **HEAD:** `a04b122` (committed + pushed to origin) · **Branch:** `master` · **Tests:** 1292 passing / 100 files
 
 ---
 
@@ -60,7 +60,7 @@
 >
 > ### Open / next
 >
-> - **Not pushed.** `git push` + mirror ff still to do.
+> - Pushed to `origin/master` (`a04b122`). **The mirror was NOT fast-forwarded** — earlier sessions did that as a separate step, but no second remote is configured in this clone (`origin` only), so whatever the mirror is, it lives outside this working copy.
 > - The season-review "Year N in Review" now has a second archive path (the tick's year rollover). Both guard against double-archiving the same year, but the exam path is the only one that records the *champion* properly — worth a look if reviews read oddly.
 > - Vendetta payoff is **league-only**. War and the exam both have real named opponents and would be natural places to let it pay off too.
 > - Nobody has visually reviewed any of this (see the Browser-pane note below) — all UI verified by DOM assertion.
