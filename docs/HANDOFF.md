@@ -1,6 +1,36 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-08-04 · **HEAD:** `a04b122` (committed + pushed to origin) · **Branch:** `master` · **Tests:** 1292 passing / 100 files
+**Last updated:** 2026-08-04 · **HEAD:** `79bd096` (see PINNED section for open calls) · **Branch:** `master` · **Tests:** 1303 passing / 101 files
+
+---
+
+> ## 📌 PINNED — DECIDED LATER, NOT FORGOTTEN
+>
+> Three things Tyler has explicitly deferred. **None is a bug and none blocks anything** — they are open judgement calls, parked on purpose. The measurements are recorded here so nobody has to re-derive them; that was the expensive part.
+>
+> **1. `--text-faint` is dim.** It sits at **2.25–2.36:1** against the backdrops it actually renders on, across ~354 real text nodes — below WCAG AA on any reading. Whether that is atmosphere or eye strain is a taste call that wants human eyes. Measured alternatives, same backdrops:
+>
+> | value | on `--bg` | on `--surface` |
+> |---|---|---|
+> | `#544c42` (current) | 2.36 | 2.25 |
+> | `#6a6054` | 3.23 | 3.09 |
+> | `#7a7060` (= `--text-dim`, would collapse two tokens) | 4.09 | 3.90 |
+>
+> **2. The elevation pass is effectively invisible.** Measured, not impressionistic: on a near-black palette a *dark* shadow cannot separate anything, because there is nothing darker to cast onto.
+>
+> | | contrast |
+> |---|---|
+> | `.surf` contact shadow vs page | **1.02** |
+> | `.well` inset shadow | **1.05** |
+> | `.surf` white-3% top hairline | 1.06 |
+> | the plain 1px `--border` already on those cards | **1.31** |
+> | raise hairline to white 8% / 12% | 1.21 / 1.38 |
+>
+> 1.00 is literally no difference — the border already outscores the whole shadow layer about **6:1**. If this gets picked up, the fix direction is *lighter edges*, not darker shadows.
+>
+> **3. Nobody has still actually LOOKED at the type ramp or the elevation.** Everything above is DOM and computed-style measurement. The desktop build is current and installed (`C:\Users\Tyler\AppData\Local\Hidden Village Manager`) and is the place to do it — the Browser pane here never composites, so screenshots are not available to an agent.
+>
+> Two corrections to earlier handoff text, both found by that audit: **`.strip` computing `box-shadow: none` is correct** (its device is a `border-left` accent rule — the older "all three add only box-shadow" line was imprecise), and **`--red` is fine at 4.07:1** on the page background; the one bad reading came from red text on a red-tinted banner, which is a few specific elements rather than a token problem.
 
 ---
 
