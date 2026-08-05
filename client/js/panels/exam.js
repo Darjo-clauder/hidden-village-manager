@@ -138,7 +138,7 @@ function _seasonTab() {
         <div style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold">${t}</div>
         <div style="font-size:var(--fs-micro);color:var(--gold);margin:2px 0">${when}</div>
         <div style="font-size:var(--fs-micro);color:var(--text-dim);line-height:1.4">${d}</div>
-      </div>${i < 3 ? '<div style="align-self:center;color:var(--border-hi);font-size:var(--fs-lead)">→</div>' : ''}`).join('')}
+      </div>${i < 3 ? '<div style="align-self:center;color:var(--text-faint);font-size:var(--fs-lead)">→</div>' : ''}`).join('')}
     </div>
   </div>`
 
@@ -157,7 +157,7 @@ function _seasonTab() {
           <span style="flex:1;color:var(--text-hi)">${f.opp}</span>
           ${done ? `<span style="color:${resCol};font-weight:bold;width:16px;text-align:center">${res || '·'}</span>`
                  : next ? '<span style="color:var(--gold);font-size:var(--fs-micro)">NEXT ▸</span>'
-                 : '<span style="color:var(--border-hi);font-size:var(--fs-micro)">upcoming</span>'}
+                 : '<span style="color:var(--text-faint);font-size:var(--fs-micro)">upcoming</span>'}
         </div>`
       }).join('')}
     </div>
@@ -284,7 +284,7 @@ function _matchPreviewCard(names, schedule, round, resultsByRound, playerName, e
   const p = matchPreview(G.season.table, resultsByRound, schedule, playerName, round)
   if (!p) return ''
   const pip = r => { const c = { W: 'var(--green)', D: 'var(--gold)', L: 'var(--red)' }[r]; return `<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${c};margin-left:2px"></span>` }
-  const formRow = (label, form) => `<div style="display:flex;align-items:center;gap:6px;font-size:var(--fs-micro);color:var(--text-dim)"><span style="width:54px">${label}</span>${form.length ? form.map(pip).join('') : '<span style="color:var(--border-hi)">no games yet</span>'}</div>`
+  const formRow = (label, form) => `<div style="display:flex;align-items:center;gap:6px;font-size:var(--fs-micro);color:var(--text-dim)"><span style="width:54px">${label}</span>${form.length ? form.map(pip).join('') : '<span style="color:var(--text-faint)">no games yet</span>'}</div>`
   const h2hTxt = (p.h2h.w + p.h2h.d + p.h2h.l) ? `${p.h2h.w}W–${p.h2h.d}D–${p.h2h.l}L this season` : 'first meeting this season'
   const allTime = h2hLabel(G.h2h, p.opp)
   const isDerby = p.opp === G.derbyRival
@@ -368,7 +368,7 @@ function _seasonFixtureGrid(names, schedule, round, resultsByRound, playerName) 
     }
     return `<div style="display:flex;align-items:center;gap:5px;font-size:var(--fs-small);padding:2px 6px;background:${(m.a === playerName || m.b === playerName) ? 'rgba(201,168,76,.06)' : 'transparent'}">
       <span style="flex:1;text-align:right">${side(m.a)}</span>
-      <span style="color:var(--border-hi);width:12px;text-align:center">${played ? (w === null ? '=' : '·') : 'v'}</span>
+      <span style="color:var(--text-faint);width:12px;text-align:center">${played ? (w === null ? '=' : '·') : 'v'}</span>
       <span style="flex:1">${side(m.b)}</span>
     </div>`
   }
@@ -377,10 +377,10 @@ function _seasonFixtureGrid(names, schedule, round, resultsByRound, playerName) 
     <div style="display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
       ${schedule.map((rnd, r) => {
         const state = r < round ? 'done' : r === round ? 'now' : 'next'
-        const tag = state === 'now' ? '<span style="color:var(--gold);font-size:var(--fs-micro)">◂ NOW</span>' : state === 'done' ? '<span style="color:var(--border-hi);font-size:var(--fs-micro)">played</span>' : '<span style="color:var(--border-hi);font-size:var(--fs-micro)">upcoming</span>'
+        const tag = state === 'now' ? '<span style="color:var(--gold);font-size:var(--fs-micro)">◂ NOW</span>' : state === 'done' ? '<span style="color:var(--text-faint);font-size:var(--fs-micro)">played</span>' : '<span style="color:var(--text-faint);font-size:var(--fs-micro)">upcoming</span>'
         return `<div style="border:1px solid ${state === 'now' ? 'var(--gold)' : 'var(--border-dim)'};border-left:2px solid ${state === 'now' ? 'var(--gold)' : 'var(--surface-3)'};padding:4px 0 5px">
           <div style="display:flex;justify-content:space-between;align-items:center;padding:0 6px 3px;font-size:var(--fs-micro);color:var(--text-dim);letter-spacing:1px">ROUND ${r + 1} ${tag}</div>
-          ${rnd.length ? rnd.map(m => cell(m, r)).join('') : '<div style="font-size:var(--fs-micro);color:var(--border-hi);padding:2px 6px">— bye round —</div>'}
+          ${rnd.length ? rnd.map(m => cell(m, r)).join('') : '<div style="font-size:var(--fs-micro);color:var(--text-faint);padding:2px 6px">— bye round —</div>'}
         </div>`
       }).join('')}
     </div>
@@ -390,7 +390,7 @@ function _seasonFixtureGrid(names, schedule, round, resultsByRound, playerName) 
 
 // Small colored form guide — last-5 W/D/L as pips, oldest→newest.
 function _formPips(form) {
-  if (!form.length) return '<span style="color:var(--border-hi);font-size:var(--fs-micro)">—</span>'
+  if (!form.length) return '<span style="color:var(--text-faint);font-size:var(--fs-micro)">—</span>'
   const col = { W: 'var(--green)', D: 'var(--gold)', L: 'var(--red)' }
   return form.map(r => `<span title="${r}" style="display:inline-block;width:9px;height:9px;line-height:9px;margin-left:2px;border-radius:2px;background:${col[r]};color:var(--bg);font-size:var(--fs-micro);text-align:center;font-weight:bold">${r}</span>`).join('')
 }
@@ -1281,7 +1281,7 @@ function _leadersTab() {
     </tr>`).join('')}</tbody>
   </table>`
   return `<div>
-    <div style="font-size:var(--fs-micro);color:var(--border-hi);margin-bottom:4px">League leaders — click a column to sort</div>
+    <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-bottom:4px">League leaders — click a column to sort</div>
     ${leaderTable}
     ${G.seasonAwards && Object.keys(G.seasonAwards).length ? (() => {
       const lastYear = Math.max(...Object.keys(G.seasonAwards).map(Number))

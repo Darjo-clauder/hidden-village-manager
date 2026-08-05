@@ -188,7 +188,7 @@ export function rFi() {
     <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-bottom:14px">
       <div style="font-size:var(--fs-small);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px">${tr('fin.history', { n: hist.length })}</div>
       ${hist.map(h => `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--sunken);font-size:var(--fs-small)">
-        <span style="color:var(--border-hi)">Y${h.year}M${h.month}</span>
+        <span style="color:var(--text-faint)">Y${h.year}M${h.month}</span>
         <span style="color:var(--text-dim)">+${fmt(h.totalIncome)} income</span>
         <span style="color:var(--text-dim)">-${fmt(h.totalExpend)} exp</span>
         <span style="color:${h.net>=0?'var(--green)':'var(--red)'};font-weight:bold">${h.net>=0?'+':''}${fmt(h.net)}</span>
@@ -305,7 +305,7 @@ function _capHtml(payroll) {
     </div>
     ${cs.overBy > 0 ? `<div style="font-size:var(--fs-small);color:var(--red-soft);margin-top:4px">Over cap by ${fmt(cs.overBy)} ryo → luxury tax: <b>-${fmt(cs.luxuryTax)}/mo</b></div>` : ''}
     ${cs.hardBlock ? `<div style="font-size:var(--fs-small);color:var(--red);margin-top:4px;font-weight:bold">⛔ Hard cap exceeded — new signings blocked until payroll drops below ${fmt(Math.round(cs.cap * 1.30))}.</div>` : ''}
-    ${nextCap ? `<div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:4px">Raise prestige to ${nextTier} to unlock ${fmt(nextCap)} cap.</div>` : ''}
+    ${nextCap ? `<div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:4px">Raise prestige to ${nextTier} to unlock ${fmt(nextCap)} cap.</div>` : ''}
   </div>`
 }
 
@@ -367,7 +367,7 @@ function _analyticsHtml() {
       ${statBlock('Morale', 'var(--green)', morVals)}
       ${statBlock('Legend', 'var(--orange)', legVals)}
     </div>
-    <div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:6px">Min / Current / Max over period. Updates each month.</div>
+    <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:6px">Min / Current / Max over period. Updates each month.</div>
   </div>`
 }
 

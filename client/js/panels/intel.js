@@ -99,7 +99,7 @@ function _threats() {
           </div>
           ${recon ? `<div style="font-size:var(--fs-small);color:var(--accent);margin-top:5px">👁 Intel: ~${recon.data.rosterSize} shinobi, economy ${recon.data.economyLevel}/5</div>` : ''}
           ${deep  ? `<div style="font-size:var(--fs-small);color:var(--accent);margin-top:2px">🕵 Defense ${deep.data.defenseRating}/20 · ${deep.data.activeSquads} active squads</div>` : ''}
-          ${!recon && !deep ? `<div style="font-size:var(--fs-small);color:var(--border);margin-top:5px;font-style:italic">No field data — dispatch Shadow to reveal</div>` : ''}
+          ${!recon && !deep ? `<div style="font-size:var(--fs-small);color:var(--text-faint);margin-top:5px;font-style:italic">No field data — dispatch Shadow to reveal</div>` : ''}
         </div>`
       }).join('')}
     </div>
@@ -131,7 +131,7 @@ function _dossiers() {
         </div>
         ${v.allied ? '<div style="font-size:var(--fs-small);color:var(--green);margin-bottom:3px">✓ Allied</div>' : ''}
         ${v.threat ? `<div style="font-size:var(--fs-small);color:var(--red);margin-bottom:3px">⚠ Threat: ${v.threat}</div>` : ''}
-        ${recon ? `<div style="font-size:var(--fs-small);color:var(--gold);margin-bottom:2px">👁 Recon: Roster ~${recon.data.rosterSize}, Econ ${recon.data.economyLevel}/5 <span style="color:var(--text-faint)">(exp M${recon.expiresMonth % 12 || 12})</span></div>` : '<div style="font-size:var(--fs-small);color:var(--border-hi);margin-bottom:2px">👁 No recon data</div>'}
+        ${recon ? `<div style="font-size:var(--fs-small);color:var(--gold);margin-bottom:2px">👁 Recon: Roster ~${recon.data.rosterSize}, Econ ${recon.data.economyLevel}/5 <span style="color:var(--text-faint)">(exp M${recon.expiresMonth % 12 || 12})</span></div>` : '<div style="font-size:var(--fs-small);color:var(--text-faint);margin-bottom:2px">👁 No recon data</div>'}
         ${deep ? `<div style="font-size:var(--fs-small);color:var(--gold);margin-bottom:2px">🕵 Defense ${deep.data.defenseRating}/20, ${deep.data.activeSquads} squads active</div>` : ''}
         ${assn ? `<div style="font-size:var(--fs-small);color:var(--red-soft);margin-bottom:2px">💀 Warden rating ${assn.data.kageRating}/20 — weakness: ${assn.data.weaknesses}</div>` : ''}
         <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">

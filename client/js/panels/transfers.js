@@ -97,7 +97,7 @@ export function rTr() {
 function renderAgents() {
   const agents = (G.agents || []).slice().sort((a, b) => (b.standing ?? 50) - (a.standing ?? 50))
   if (!agents.length) {
-    return `<div style="color:var(--text-faint);text-align:center;padding:40px;font-size:.85rem">No agents known yet.<br><span style="color:var(--border-hi);font-size:.8rem">Agents surface once high-rank talent (A-rank+) appears on the market.</span></div>`
+    return `<div style="color:var(--text-faint);text-align:center;padding:40px;font-size:.85rem">No agents known yet.<br><span style="color:var(--text-faint);font-size:.8rem">Agents surface once high-rank talent (A-rank+) appears on the market.</span></div>`
   }
   const pool = G.transferMarket?.pool || []
   return `<div style="font-size:.78rem;color:var(--text-dim);margin-bottom:10px">Standing rises when you sign their clients, falls when you poach, lowball, or renege. Trusted agents tip you off first on their other clients.</div>
@@ -128,7 +128,7 @@ function renderMarket(tm, judgeLevel) {
   if (pool.length === 0 && !tm.windowOpen) {
     return `<div style="color:var(--text-faint);text-align:center;padding:40px;font-size:.85rem">
       No transfer market pool active.<br>
-      <span style="color:var(--border-hi);font-size:.8rem">Windows open Month 3 (Spring) and Month 9 (Autumn).<br>Free agents and missing-nin may appear outside windows via scout contacts.</span>
+      <span style="color:var(--text-faint);font-size:.8rem">Windows open Month 3 (Spring) and Month 9 (Autumn).<br>Free agents and missing-nin may appear outside windows via scout contacts.</span>
     </div>`
   }
   if (pool.length === 0) {
@@ -140,7 +140,7 @@ function renderMarket(tm, judgeLevel) {
   const sortBar = `<div style="display:flex;gap:5px;align-items:center;margin-bottom:10px;font-size:var(--fs-small);color:var(--text-faint)">
     <span style="text-transform:uppercase;letter-spacing:1px">${t("transfers.sort")}</span>
     ${_TR_SORTS.map(s => { const a = sort.key === s.key; return `<button class="tbl-colbtn"${a ? ' style="color:var(--accent);border-color:var(--accent-border)"' : ''} onclick="trSort('${s.key}')">${s.label}${a ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}</button>` }).join('')}
-    <span style="margin-left:auto;color:var(--border-hi)">right-click a card for actions</span>
+    <span style="margin-left:auto;color:var(--text-faint)">right-click a card for actions</span>
   </div>`
   return sortBar + `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px">
     ${sorted.map(p => marketCard(p, judgeLevel)).join('')}
@@ -191,7 +191,7 @@ function marketCard(p, judgeLevel) {
     })() : ''}
     ${p.sellOnClause ? `<div style="font-size:.7rem;color:var(--orange);margin-bottom:6px">📜 Sell-on clause: ${p.sellOnClause.percent}% of any future sale owed to ${p.sellOnClause.village}</div>` : ''}
     ${(p.pursuedByVillages||[]).length ? `<div style="font-size:.7rem;color:var(--text-dim);margin-bottom:6px">Previously pursued by: ${p.pursuedByVillages.join(', ')}</div>` : ''}
-    ${showMatrix ? `<div style="margin-bottom:8px;line-height:1.8">${matTraits}</div>` : judgeLevel < 6 ? `<div style="font-size:.7rem;color:var(--border-hi);margin-bottom:8px">Staff personality judgment too low to read character.</div>` : ''}
+    ${showMatrix ? `<div style="margin-bottom:8px;line-height:1.8">${matTraits}</div>` : judgeLevel < 6 ? `<div style="font-size:.7rem;color:var(--text-faint);margin-bottom:8px">Staff personality judgment too low to read character.</div>` : ''}
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
       <span style="font-size:.8rem;color:var(--gold);font-weight:bold">${fmt(p.askingFee)} ryo</span>
       ${!signable ? `<span style="font-size:.7rem;color:var(--red)">${t("transfers.insufficientFunds")}</span>` : ''}

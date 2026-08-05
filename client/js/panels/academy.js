@@ -220,7 +220,7 @@ function _scoutHistoryHtml(p) {
   const best = p.bestConfidence || latest.confidence
   const qualColor = best >= 80 ? 'var(--gold)' : best >= 65 ? 'var(--blue)' : best >= 50 ? 'var(--blue-hi)' : 'var(--text-dim)'
   const qualLabel = best >= 80 ? 'Elite' : best >= 65 ? 'Detailed' : best >= 50 ? 'General' : 'Impression'
-  return `<div style="margin-top:4px;font-size:7.5px;color:var(--text-faint)">
+  return `<div style="margin-top:4px;font-size:var(--fs-micro);color:var(--text-faint)">
     ${history.length} report${history.length > 1 ? 's' : ''} ·
     Best: <span style="color:${qualColor}">${qualLabel} (${best}%)</span>
     ${p.conflictingRanges?.length ? ' · <span style="color:var(--red-soft)">⚠ conflicting reads</span>' : ''}
@@ -329,7 +329,7 @@ export function rAc() {
           ${currentSensei ? `<div style="font-size:var(--fs-small);color:var(--gold);margin-top:2px">Sensei: ${sn(currentSensei)}</div>` : ''}
         </div>
         ${p.ri === undefined || p.ri === null
-          ? `<span class="rk" style="color:var(--text-dim);border-color:var(--border)">Prospect</span>`
+          ? `<span class="rk" style="color:var(--text-dim);border-color:var(--text-faint)">Prospect</span>`
           : `<span class="rk ${RKC[p.ri]}">${RANKS[p.ri]}</span>`}
       </div>
       <div style="font-size:var(--fs-small);color:var(--text-dim);font-style:italic;margin-bottom:7px;line-height:1.5">${archFlavorTrunc}</div>
@@ -340,7 +340,7 @@ export function rAc() {
           Pwr <span style="color:var(--text-hi)">${sPow(p)}</span>
           &nbsp;·&nbsp;
           Pot <span style="color:${potColor}">${isScoutSourced && p.potRange && !p.potRange.exact ? p.potRange.lo + '–' + p.potRange.hi + '?' : potText}</span>
-          ${p.scouted ? '' : isScoutSourced ? '' : '<span style="color:var(--border-hi);font-size:var(--fs-micro)"> (unverified)</span>'}
+          ${p.scouted ? '' : isScoutSourced ? '' : '<span style="color:var(--text-faint);font-size:var(--fs-micro)"> (unverified)</span>'}
         </div>
       </div>
       ${_trainingPlanHtml(p)}

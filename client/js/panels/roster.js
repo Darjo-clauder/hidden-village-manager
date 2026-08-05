@@ -73,8 +73,8 @@ function _clanBar() {
   return `<div style="background:var(--sunken);border:1px solid var(--accent-border);padding:8px 10px;margin-bottom:10px">
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:${tier?'4px':'0'}">
       <span style="font-size:var(--fs-micro);letter-spacing:1px;color:var(--text-faint);text-transform:uppercase">${tr('roster.clanComposition')}</span>
-      ${ranked.slice(0, 5).map(([n, c]) => `<span style="font-size:var(--fs-small);color:var(--text-mid)">${n} <b style="color:var(--text-hi)">${c}</b></span>`).join('<span style="color:var(--border);font-size:var(--fs-small)"> · </span>')}
-      ${ranked.length > 5 ? `<span style="font-size:var(--fs-small);color:var(--border-hi)">+${ranked.length - 5} more</span>` : ''}
+      ${ranked.slice(0, 5).map(([n, c]) => `<span style="font-size:var(--fs-small);color:var(--text-mid)">${n} <b style="color:var(--text-hi)">${c}</b></span>`).join('<span style="color:var(--text-faint);font-size:var(--fs-small)"> · </span>')}
+      ${ranked.length > 5 ? `<span style="font-size:var(--fs-small);color:var(--text-faint)">+${ranked.length - 5} more</span>` : ''}
     </div>
     ${tier ? `<div style="font-size:var(--fs-small);color:${tier.col}">▲ ${topClan} at <b>${tier.label}</b> threshold (${topCount} members) — monthly passive bonus active</div>` : ''}
   </div>`
@@ -96,7 +96,7 @@ function _devPathSelector(s) {
         <span style="font-size:var(--fs-lead)">${p.icon}</span>
         <div style="flex:1">
           <div style="font-size:var(--fs-small);color:${cur===p.id?'var(--accent)':'#a09080'};font-weight:${cur===p.id?'bold':'normal'}">${p.label}</div>
-          <div style="font-size:var(--fs-micro);color:var(--border-hi)">${p.desc}</div>
+          <div style="font-size:var(--fs-micro);color:var(--text-faint)">${p.desc}</div>
         </div>
         ${cur===p.id?`<span style="font-size:var(--fs-body);color:var(--accent)">✓</span>`:''}
       </div>`).join('')}
@@ -226,7 +226,7 @@ export function rRo() {
             ${tblColumnManagerHtml('roster', COLS, 'rosterToggleCol')}
           </div>
         </div>
-        <div style="font-size:var(--fs-micro);color:var(--border-hi);margin-bottom:4px">Click a column to sort · right-click a shinobi for actions</div>
+        <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-bottom:4px">Click a column to sort · right-click a shinobi for actions</div>
         <table style="width:100%;border-collapse:collapse">
           <thead>
             <tr style="background:#0a0908;border-bottom:1px solid var(--border)">${tblHeaderHtml(_visCols, _sort, 'rosterSortBy')}</tr>
@@ -238,7 +238,7 @@ export function rRo() {
       <!-- Right: active assignments + selected dossier -->
       <div>
         <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">
-          Active Assignments <span style="color:var(--border-hi)">— ${active.length}/${G.shinobi.length}</span>
+          Active Assignments <span style="color:var(--text-faint)">— ${active.length}/${G.shinobi.length}</span>
         </div>
         ${assignedHtml}
         <div id="ros-detail"></div>
@@ -383,7 +383,7 @@ export function oDos(id) {
   const jutsuHtml = knownJutsu.length
     ? `<div style="margin-bottom:10px">
         <div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">
-          Jutsu Loadout <span style="color:var(--border-hi);font-size:var(--fs-micro)">(${loadout.length}/${LOADOUT_MAX} active)</span>
+          Jutsu Loadout <span style="color:var(--text-faint);font-size:var(--fs-micro)">(${loadout.length}/${LOADOUT_MAX} active)</span>
           ${jlb.powerMod > 0 || jlb.successMod > 0 ? `<span style="color:var(--green);font-size:var(--fs-micro);margin-left:6px">+${Math.round((jlb.powerMod*0.5+jlb.successMod)*100)}% mission</span>` : ''}
         </div>
         ${knownJutsu.map(j => {
@@ -398,7 +398,7 @@ export function oDos(id) {
                 ${active ? '✓ Active' : canAdd ? '+ Equip' : '— Full'}
               </button>
             </div>
-            <div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:1px">${bonusStr} · ${j.desc}</div>
+            <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:1px">${bonusStr} · ${j.desc}</div>
           </div>`
         }).join('')}
       </div>`
@@ -473,7 +473,7 @@ export function oDos(id) {
       <div style="flex:1">${workloadBar}</div>
       <div style="font-size:var(--fs-small);color:${wColor};min-width:28px;text-align:right">${workload}%</div>
     </div>
-    <div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:2px">High workload (60%+) increases injury risk.</div>
+    <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:2px">High workload (60%+) increases injury risk.</div>
     ${(s.consecutiveMissions||0) >= 2 ? `<div style="font-size:var(--fs-micro);color:var(--orange);margin-top:2px">⚠ ${s.consecutiveMissions} consecutive missions — overuse risk +10%</div>` : ''}
     ${(() => { const f = s.fatigue||0; const fc = f >= 80 ? 'var(--red)' : f >= 60 ? 'var(--red-soft)' : f >= 40 ? 'var(--orange)' : 'var(--text-faint)'; return `<div style="display:flex;align-items:center;gap:8px;margin-top:5px"><div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;width:60px">Fatigue</div><div style="flex:1;background:var(--border-dim);height:4px;border-radius:2px;overflow:hidden"><div style="width:${f}%;height:100%;background:${fc};transition:width .3s"></div></div><div style="font-size:var(--fs-small);color:${fc};min-width:28px;text-align:right">${f}%</div></div>${f >= 40 ? `<div style="font-size:var(--fs-micro);color:${fc};margin-top:2px">${f >= 80 ? '⚠ Exhausted — mission penalty −15%' : f >= 60 ? '⚠ Very tired — mission penalty −9%' : 'Fatigued — mission penalty −4%'}</div>` : ''}` })()}
   </div>
@@ -482,13 +482,13 @@ export function oDos(id) {
     ${s.injuryHistory.slice().reverse().slice(0,6).map(h => {
       const tDef = INJURY_TYPES.find(t => t.id === h.type)
       return `<div style="display:flex;gap:6px;font-size:var(--fs-small);margin-bottom:3px;align-items:baseline">
-        <span style="color:var(--border-hi);min-width:50px">Yr${h.year}·M${h.month}</span>
+        <span style="color:var(--text-faint);min-width:50px">Yr${h.year}·M${h.month}</span>
         <span style="color:${tDef?.color||'var(--red-soft)'}">${h.typeName||h.type}</span>
         <span style="color:var(--text-dim)">${h.duration}mo</span>
         ${h.treatment !== 'standard' ? `<span style="color:var(--blue);font-size:var(--fs-micro)">[${h.treatment}]</span>` : ''}
       </div>`
     }).join('')}
-    ${s.injuryHistory.length > 6 ? `<div style="font-size:var(--fs-micro);color:var(--border-hi)">+${s.injuryHistory.length-6} earlier entries</div>` : ''}
+    ${s.injuryHistory.length > 6 ? `<div style="font-size:var(--fs-micro);color:var(--text-faint)">+${s.injuryHistory.length-6} earlier entries</div>` : ''}
   </div>` : ''}`
   // Personality matrix section
   const judgeLevel = personalityJudge()
@@ -502,7 +502,7 @@ export function oDos(id) {
       const color = judgeLevel < 6 ? 'var(--border-hi)' : val >= 13 ? 'var(--green)' : val >= 8 ? 'var(--text-mid)' : 'var(--red-soft)'
       return `<div style="display:flex;gap:6px;font-size:var(--fs-small);margin-bottom:3px"><span style="color:var(--text-dim);width:80px;text-transform:capitalize">${k}</span><span style="color:${color}">${desc}</span></div>`
     }).join('')}
-    ${judgeLevel < 6 ? '<div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:4px">Hire a Council Advisor or Head Sensei to read character more accurately.</div>' : ''}
+    ${judgeLevel < 6 ? '<div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:4px">Hire a Council Advisor or Head Sensei to read character more accurately.</div>' : ''}
   </div>`
   // Evolved traits (gained through events, not fixed at creation)
   const evolvedHtml = (s.traits || []).length
@@ -563,7 +563,7 @@ export function oDos(id) {
     <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">Field Management</div>
 
     <div style="margin-bottom:8px">
-      <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:4px">Training Focus <span style="color:var(--border-hi)">(+1–3 stat/month, +12% workload)</span></div>
+      <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:4px">Training Focus <span style="color:var(--text-faint)">(+1–3 stat/month, +12% workload)</span></div>
       <select onchange="setTrainingFocus('${s.id}',this.value)" style="background:var(--sunken);border:1px solid var(--border-hi);color:var(--text-hi);font-size:var(--fs-small);padding:3px 6px;width:100%">
         <option value="" ${!s.trainingFocus?'selected':''}>— None —</option>
         ${STAT_OPTIONS.map(st => `<option value="${st}" ${s.trainingFocus===st?'selected':''}>${st.charAt(0).toUpperCase()+st.slice(1)}</option>`).join('')}
@@ -572,7 +572,7 @@ export function oDos(id) {
 
     <div style="margin-bottom:8px;display:flex;align-items:center;gap:10px">
       <div>
-        <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:3px">Rest Month <span style="color:var(--border-hi)">(skip deployment, −30% workload)</span></div>
+        <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:3px">Rest Month <span style="color:var(--text-faint)">(skip deployment, −30% workload)</span></div>
         <button onclick="toggleRestMonth('${s.id}')" style="font-size:var(--fs-small);padding:3px 10px;background:${s.restMonth?'var(--green-bg)':'var(--sunken)'};border:1px solid ${s.restMonth?'var(--green)':'var(--border-hi)'};color:${s.restMonth?'var(--green)':'var(--text-dim)'};cursor:pointer">
           ${s.restMonth ? '✓ Resting' : '○ Set Rest'}
         </button>
@@ -662,7 +662,7 @@ export function oDos(id) {
   </div>`
 
   const careerInjHtml = (s.injuryHistory||[]).length > 0
-    ? `<div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Injury History</div>${s.injuryHistory.slice().reverse().slice(0,5).map(h => { const tDef = INJURY_TYPES.find(t => t.id === h.type); return `<div style="display:flex;gap:6px;font-size:var(--fs-small);margin-bottom:3px;align-items:baseline"><span style="color:var(--border-hi);min-width:50px">Yr${h.year}·M${h.month}</span><span style="color:${tDef?.color||'var(--red-soft)'}">${h.typeName||h.type}</span><span style="color:var(--text-dim)">${h.duration}mo</span>${h.treatment !== 'standard' ? `<span style="color:var(--blue);font-size:var(--fs-micro)">[${h.treatment}]</span>` : ''}</div>` }).join('')}</div>`
+    ? `<div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Injury History</div>${s.injuryHistory.slice().reverse().slice(0,5).map(h => { const tDef = INJURY_TYPES.find(t => t.id === h.type); return `<div style="display:flex;gap:6px;font-size:var(--fs-small);margin-bottom:3px;align-items:baseline"><span style="color:var(--text-faint);min-width:50px">Yr${h.year}·M${h.month}</span><span style="color:${tDef?.color||'var(--red-soft)'}">${h.typeName||h.type}</span><span style="color:var(--text-dim)">${h.duration}mo</span>${h.treatment !== 'standard' ? `<span style="color:var(--blue);font-size:var(--fs-micro)">[${h.treatment}]</span>` : ''}</div>` }).join('')}</div>`
     : ''
   const traumaHistHtml = (s.traumaHistory||[]).length
     ? `<div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Trauma History</div>${s.traumaHistory.map(t => `<div style="font-size:var(--fs-small);color:var(--purple);margin-bottom:3px;padding:4px 7px;border-left:2px solid var(--purple)">${t.year !== undefined ? `Yr${t.year}·M${t.month}: ` : ''}${t.type||String(t)}</div>`).join('')}</div>`
@@ -712,7 +712,7 @@ export function oDos(id) {
         : _canStudent && _eligMentors.length
           ? `<div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:4px">Request mentorship from:</div>` +
             `<div style="display:flex;flex-wrap:wrap;gap:4px">${_eligMentors.map(x => `<button class="gb" style="font-size:var(--fs-micro);padding:2px 7px" onclick="assignMentor('${x.id}','${s.id}')">${x.fn} ${x.ln}</button>`).join('')}</div>`
-          : `<div style="font-size:var(--fs-small);color:var(--border-hi)">No mentorship available right now.</div>`
+          : `<div style="font-size:var(--fs-small);color:var(--text-faint)">No mentorship available right now.</div>`
     ) + `</div>`
 
   const _activityHtml = (s.activityLog || []).length
@@ -720,7 +720,7 @@ export function oDos(id) {
     : ''
   const careerHtml = `${arcHtml}${memoryHtml}${legacyHtml}${mentorHtml}${_activityHtml}<div style="margin-bottom:12px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Mission Record</div><div style="display:flex;gap:10px;flex-wrap:wrap"><div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:8px 12px;flex:1;min-width:70px;text-align:center"><div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold">${s.wins||0}</div><div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;margin-top:2px">Total</div></div><div style="background:var(--surface);border:1px solid #c9a84c33;padding:8px 12px;flex:1;min-width:70px;text-align:center"><div style="font-size:var(--fs-lead);color:var(--gold);font-weight:bold">${s.winsS||0}</div><div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;margin-top:2px">S-Rank</div></div><div style="background:var(--surface);border:1px solid #87ceeb33;padding:8px 12px;flex:1;min-width:70px;text-align:center"><div style="font-size:var(--fs-lead);color:var(--blue);font-weight:bold">${s.winsB||0}</div><div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;margin-top:2px">B/C-Rank</div></div></div></div>${traumaHistHtml}${darkHtml}${bondsHtml}${careerInjHtml}`
   const profileHtml = phase4Html +
-    `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div style="font-size:var(--fs-sub);color:var(--text-hi);font-weight:bold">${sn(s)}</div><div style="font-size:var(--fs-body);color:var(--text-dim);margin-top:2px">${RANKS[s.ri]} · ${s.clan ? s.clan + ' Clan' : s.spec} · Age ${s.age}${s.prodigy ? ' · <span style="color:var(--gold)">✦ Prodigy</span>' : ''}${s.homegrown ? ' · <span style="color:var(--green)">🌱 Homegrown</span>' : ''}</div><div style="font-size:var(--fs-body);margin-top:3px">Ability ${_starsHtml(sPow(s))}<span style="color:var(--border-hi);margin:0 5px">·</span>Potential ${_starsHtml(_potential(s))}<span style="color:var(--border-hi);margin:0 5px">·</span><span style="font-size:var(--fs-small);color:var(--text-dim)">Pwr <b style="color:var(--text-hi)">${sPow(s)}</b></span></div>${jkB ? `<div style="font-size:var(--fs-body);color:var(--gold);margin-top:2px">Vessel of ${jkB.n} (${jkB.tails} tails)</div>` : ''}${sq ? `<div style="font-size:var(--fs-body);color:var(--purple);margin-top:2px">Member of ${sq.n}</div>` : ''}</div><span class="rk ${RKC[s.ri]}" style="font-size:var(--fs-body)">${RANKS[s.ri]}</span></div><div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Stats</div><div class="sg">${sBars(s)}</div></div>${injuryHtml}${moraleCommitHtml}<div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Personality</div><span class="trait-tag ${pCl(s.pers)}">${s.pers.n}</span>${s.narrativeArchetype ? `<span style="margin-left:6px;font-size:var(--fs-micro);color:var(--purple);text-transform:uppercase;letter-spacing:1px;padding:2px 6px;border:1px solid #cc7fb855">${s.narrativeArchetype.replace('_',' ')}</span>` : ''}${s.confidence !== undefined ? `<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;font-size:var(--fs-micro);color:var(--text-dim);margin-bottom:2px"><span>Confidence</span><span style="color:${s.confidence>=70?'var(--green)':s.confidence<=30?'var(--red)':'var(--text)'}">${s.confidence}/100</span></div><div class="well" style="background:var(--surface);border:1px solid var(--border);height:4px;border-radius:2px"><div style="background:${s.confidence>=70?'var(--green)':s.confidence<=30?'var(--red)':'var(--gold)'};width:${s.confidence}%;height:100%;border-radius:2px"></div></div></div>` : ''}<div style="font-size:var(--fs-body);color:var(--text-dim);margin-top:5px">${s.pers.desc}</div></div>${pmHtml}${evolvedHtml}<div>${s.archetype ? `<div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Archetype</div><div style="font-size:var(--fs-body);color:var(--purple);margin-bottom:3px">${s.archetype.n}</div><div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:10px;font-style:italic">${s.archetype.flavor}</div>` : ''}</div>${darkHtml}${jutsuHtml}${bondsHtml}<div><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Background</div><div class="dossier">${s.backstory}</div>${(s.element||s.quirk||s.dream)?`<div style="margin-top:7px;font-size:var(--fs-small);color:var(--text-dim);line-height:1.8">${s.element?`<div>Chakra nature: <span style="color:var(--gold)">${s.element}</span></div>`:''}${_combinedDossier(s)}${s.nationArchetype?`<div>School: <span style="color:var(--green)">${s.nationArchetype}</span></div>`:''}${s.quirk?`<div>Quirk: <span style="color:var(--text);font-style:italic">${s.quirk}</span></div>`:''}${s.dream?`<div>Dream: <span style="color:var(--purple);font-style:italic">“${s.dream}”</span></div>`:''}</div>`:''}</div><div style="margin-top:10px;display:flex;gap:10px;font-size:var(--fs-body);color:var(--text-dim);flex-wrap:wrap"><span>Power: <b style="color:var(--text-hi)">${sPow(s)}</b></span><span>Potential: <b style="color:var(--gold)">${s.scouted === false ? '???' : s.potential}</b></span><span>Wins: <b style="color:var(--green)">${s.wins}</b></span><span>Streak: <b style="color:${(s.streak||0)>=3?'var(--gold)':'var(--text-dim)'}">${s.streak||0}</b></span><span>Grade: <b style="color:${dosGrade.color}">${dosGrade.label}</b></span><span>Market Value: <b style="color:var(--orange)">${fmt(marketVal)}</b></span></div>${s.status === 'available' && !jkB && G.beasts.some(b => b.sealed && !b.jk) ? `<div style="margin-top:10px"><div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:6px">Assign as Vessel:</div>${G.beasts.filter(b => b.sealed && !b.jk).map(b => `<button class="gb gb-g" onclick="mkJK('${s.id}','${b.n}')" style="margin-right:5px">Seal ${b.n} ►</button>`).join('')}</div>` : ''}`
+    `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div style="font-size:var(--fs-sub);color:var(--text-hi);font-weight:bold">${sn(s)}</div><div style="font-size:var(--fs-body);color:var(--text-dim);margin-top:2px">${RANKS[s.ri]} · ${s.clan ? s.clan + ' Clan' : s.spec} · Age ${s.age}${s.prodigy ? ' · <span style="color:var(--gold)">✦ Prodigy</span>' : ''}${s.homegrown ? ' · <span style="color:var(--green)">🌱 Homegrown</span>' : ''}</div><div style="font-size:var(--fs-body);margin-top:3px">Ability ${_starsHtml(sPow(s))}<span style="color:var(--text-faint);margin:0 5px">·</span>Potential ${_starsHtml(_potential(s))}<span style="color:var(--text-faint);margin:0 5px">·</span><span style="font-size:var(--fs-small);color:var(--text-dim)">Pwr <b style="color:var(--text-hi)">${sPow(s)}</b></span></div>${jkB ? `<div style="font-size:var(--fs-body);color:var(--gold);margin-top:2px">Vessel of ${jkB.n} (${jkB.tails} tails)</div>` : ''}${sq ? `<div style="font-size:var(--fs-body);color:var(--purple);margin-top:2px">Member of ${sq.n}</div>` : ''}</div><span class="rk ${RKC[s.ri]}" style="font-size:var(--fs-body)">${RANKS[s.ri]}</span></div><div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Stats</div><div class="sg">${sBars(s)}</div></div>${injuryHtml}${moraleCommitHtml}<div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Personality</div><span class="trait-tag ${pCl(s.pers)}">${s.pers.n}</span>${s.narrativeArchetype ? `<span style="margin-left:6px;font-size:var(--fs-micro);color:var(--purple);text-transform:uppercase;letter-spacing:1px;padding:2px 6px;border:1px solid #cc7fb855">${s.narrativeArchetype.replace('_',' ')}</span>` : ''}${s.confidence !== undefined ? `<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;font-size:var(--fs-micro);color:var(--text-dim);margin-bottom:2px"><span>Confidence</span><span style="color:${s.confidence>=70?'var(--green)':s.confidence<=30?'var(--red)':'var(--text)'}">${s.confidence}/100</span></div><div class="well" style="background:var(--surface);border:1px solid var(--border);height:4px;border-radius:2px"><div style="background:${s.confidence>=70?'var(--green)':s.confidence<=30?'var(--red)':'var(--gold)'};width:${s.confidence}%;height:100%;border-radius:2px"></div></div></div>` : ''}<div style="font-size:var(--fs-body);color:var(--text-dim);margin-top:5px">${s.pers.desc}</div></div>${pmHtml}${evolvedHtml}<div>${s.archetype ? `<div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Archetype</div><div style="font-size:var(--fs-body);color:var(--purple);margin-bottom:3px">${s.archetype.n}</div><div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:10px;font-style:italic">${s.archetype.flavor}</div>` : ''}</div>${darkHtml}${jutsuHtml}${bondsHtml}<div><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Background</div><div class="dossier">${s.backstory}</div>${(s.element||s.quirk||s.dream)?`<div style="margin-top:7px;font-size:var(--fs-small);color:var(--text-dim);line-height:1.8">${s.element?`<div>Chakra nature: <span style="color:var(--gold)">${s.element}</span></div>`:''}${_combinedDossier(s)}${s.nationArchetype?`<div>School: <span style="color:var(--green)">${s.nationArchetype}</span></div>`:''}${s.quirk?`<div>Quirk: <span style="color:var(--text);font-style:italic">${s.quirk}</span></div>`:''}${s.dream?`<div>Dream: <span style="color:var(--purple);font-style:italic">“${s.dream}”</span></div>`:''}</div>`:''}</div><div style="margin-top:10px;display:flex;gap:10px;font-size:var(--fs-body);color:var(--text-dim);flex-wrap:wrap"><span>Power: <b style="color:var(--text-hi)">${sPow(s)}</b></span><span>Potential: <b style="color:var(--gold)">${s.scouted === false ? '???' : s.potential}</b></span><span>Wins: <b style="color:var(--green)">${s.wins}</b></span><span>Streak: <b style="color:${(s.streak||0)>=3?'var(--gold)':'var(--text-dim)'}">${s.streak||0}</b></span><span>Grade: <b style="color:${dosGrade.color}">${dosGrade.label}</b></span><span>Market Value: <b style="color:var(--orange)">${fmt(marketVal)}</b></span></div>${s.status === 'available' && !jkB && G.beasts.some(b => b.sealed && !b.jk) ? `<div style="margin-top:10px"><div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:6px">Assign as Vessel:</div>${G.beasts.filter(b => b.sealed && !b.jk).map(b => `<button class="gb gb-g" onclick="mkJK('${s.id}','${b.n}')" style="margin-right:5px">Seal ${b.n} ►</button>`).join('')}</div>` : ''}`
   document.getElementById('dos-c').innerHTML = `<div style="display:flex;gap:6px;margin-bottom:12px"><button class="tab${dosActiveTab==='profile'?' active':''}" onclick="dosTab('profile')">Profile</button><button class="tab${dosActiveTab==='career'?' active':''}" onclick="dosTab('career')">Career</button></div><div style="${dosActiveTab==='career'?'display:none':''}">${profileHtml}</div><div style="${dosActiveTab==='profile'?'display:none':''}">${careerHtml}</div>`
   document.getElementById('ov-dossier').classList.add('open')
 }

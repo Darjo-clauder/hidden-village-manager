@@ -69,7 +69,7 @@ export function rClans() {
         ${clP.kiaRiskMod     ? `<span style="color:var(--green)">${(clP.kiaRiskMod*100).toFixed(1)}% KIA risk</span>` : ''}
         ${clP.anbuSuccessBonus ? `<span style="color:var(--green)">+${(clP.anbuSuccessBonus*100).toFixed(0)}% Shadow</span>` : ''}
         ${clP.scoutConfidenceBonus ? `<span style="color:var(--green)">+${(clP.scoutConfidenceBonus*100).toFixed(0)}% scouting</span>` : ''}
-        ${!activeClanIds.size ? `<span style="color:var(--border-hi)">${t("clans.noMembers")}</span>` : ''}
+        ${!activeClanIds.size ? `<span style="color:var(--text-faint)">${t("clans.noMembers")}</span>` : ''}
       </div>
     </div>
     <div style="display:grid;gap:10px">

@@ -214,14 +214,14 @@ function _webTab() {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
       <div>
         <div style="font-size:.78rem;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Bonds (${positive.length})</div>
-        ${positive.length === 0 ? '<div style="color:var(--border-hi);font-size:.8rem">None yet.</div>' : positive.map(e => `
+        ${positive.length === 0 ? '<div style="color:var(--text-faint);font-size:.8rem">None yet.</div>' : positive.map(e => `
           <div style="background:#13201a;border:1px solid var(--green-bg);border-radius:5px;padding:7px 10px;margin-bottom:6px;font-size:.8rem">
             <span style="color:var(--gold-hi)">${e.aName}</span> <span style="color:var(--green)">↔ ${e.type} ↔</span> <span style="color:var(--gold-hi)">${e.bName}</span>
           </div>`).join('')}
       </div>
       <div>
         <div style="font-size:.78rem;color:var(--red-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Rivalries (${negative.length})</div>
-        ${negative.length === 0 ? '<div style="color:var(--border-hi);font-size:.8rem">None yet.</div>' : negative.map(e => `
+        ${negative.length === 0 ? '<div style="color:var(--text-faint);font-size:.8rem">None yet.</div>' : negative.map(e => `
           <div style="background:#201313;border:1px solid #3a2a2a;border-radius:5px;padding:7px 10px;margin-bottom:6px;font-size:.8rem">
             <span style="color:var(--gold-hi)">${e.aName}</span> <span style="color:var(--red-soft)">⚡ Rivals ⚡</span> <span style="color:var(--gold-hi)">${e.bName}</span>
           </div>`).join('')}

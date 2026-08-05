@@ -24,7 +24,7 @@ export function rKageDev() {
       <div style="flex:1;background:var(--bg);height:6px;border-radius:3px;overflow:hidden"><div style="height:6px;width:${xpPct}%;background:var(--accent);transition:width .3s"></div></div>
       <span style="font-size:var(--fs-small);color:var(--text-dim);font-family:var(--font-num,'Courier New',monospace)">${k.xp} / ${xpNext}</span>
     </div>
-    <div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:5px">Earn XP each month by completing missions, promoting at the Adept Exam, and surviving the Nation War.</div>
+    <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:5px">Earn XP each month by completing missions, promoting at the Adept Exam, and surviving the Nation War.</div>
   </div>`
 
   // ── Path selection (one-time) ──────────────────────────────────────────────

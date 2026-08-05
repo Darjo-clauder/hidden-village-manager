@@ -83,7 +83,7 @@ export function rSafehouses() {
 
     <div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">${t("safehouses.deepCover")}</div>
     ${active.length === 0
-      ? `<div style="font-size:var(--fs-small);color:var(--border-hi)">${t("safehouses.establishFirst")}</div>`
+      ? `<div style="font-size:var(--fs-small);color:var(--text-faint)">${t("safehouses.establishFirst")}</div>`
       : `<div style="display:grid;gap:8px">
         ${DEEP_COVER_OPS.map(op => {
           const eligible = available.filter(s => (s.ri || 0) >= op.reqRi)

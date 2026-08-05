@@ -60,7 +60,7 @@ function _kageStrip() {
     <span style="font-size:var(--fs-small);color:var(--text-dim)">Lvl ${k.level}${path ? ` · ${path.icon} ${path.n}` : ' · no path chosen'}</span>
     <div style="flex:1;max-width:160px;background:var(--bg);height:5px;border-radius:3px;overflow:hidden"><div style="height:5px;width:${xpPct}%;background:var(--accent)"></div></div>
     <span style="font-size:var(--fs-micro);color:var(--text-faint);font-family:var(--font-num,'Courier New',monospace)">${k.xp}/${xpNext} XP</span>
-    ${k.points > 0 ? `<span style="font-size:var(--fs-small);color:var(--green);margin-left:auto">● ${k.points} point${k.points !== 1 ? 's' : ''} to spend ▸</span>` : '<span style="font-size:var(--fs-small);color:var(--border-hi);margin-left:auto">Warden Path ▸</span>'}
+    ${k.points > 0 ? `<span style="font-size:var(--fs-small);color:var(--green);margin-left:auto">● ${k.points} point${k.points !== 1 ? 's' : ''} to spend ▸</span>` : '<span style="font-size:var(--fs-small);color:var(--text-faint);margin-left:auto">Warden Path ▸</span>'}
   </div>`
 }
 

@@ -578,7 +578,7 @@ function renderThreadsPanel(threads) {
           <div style="padding:5px 8px;border-left:2px solid var(--surface-3);margin-bottom:4px">
             <div style="font-size:var(--fs-small);color:var(--text)">${n.title}</div>
             <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">${n.body}</div>
-            <div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:1px">Y${n.year}·M${n.month}</div>
+            <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:1px">Y${n.year}·M${n.month}</div>
           </div>`).join('')
       : ''
 

@@ -40,7 +40,7 @@ function _squadConditionPreview(sq) {
       <b style="color:${band.color}">${avg} · ${band.label}</b>
       <span style="margin-left:auto">${bars}</span>
     </div>
-    ${tags ? `<div style="display:flex;gap:4px;flex-wrap:wrap">${tags}</div>` : '<span style="color:var(--border-hi)">No composition bonuses — a plain trio.</span>'}
+    ${tags ? `<div style="display:flex;gap:4px;flex-wrap:wrap">${tags}</div>` : '<span style="color:var(--text-faint)">No composition bonuses — a plain trio.</span>'}
   </div>`
 }
 
@@ -83,7 +83,7 @@ export function rSq() {
   const _fitHtml = `<div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:10px 12px;margin-bottom:12px">
     <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">${t('squad.fitMatrix')}</div>
     ${heatmapHtml(_fit.rows, _fit.cols, _fit.matrix)}
-    <div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:6px">Higher = better suited. Pair a squad with missions matching its strongest specialties.</div>
+    <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:6px">Higher = better suited. Pair a squad with missions matching its strongest specialties.</div>
   </div>`
   el.innerHTML = _fitHtml + G.squads.map(sq => {
     const mbs = sq.members.map(id => G.shinobi.find(s => s.id === id)).filter(Boolean)
@@ -196,7 +196,7 @@ export function rSynPrev() {
   if (all.length < 2) { el.innerHTML = ''; return }
   const fakeSq = { id: '_prev', members: all, leaderId: ui.csL, cohesion: 0 }
   const syn = sqSynergy(fakeSq, G.shinobi)
-  if (!syn.bonuses.length) { el.innerHTML = `<div style="font-size:var(--fs-small);color:var(--border-hi)">${t('squad.noSynergy')}</div>`; return }
+  if (!syn.bonuses.length) { el.innerHTML = `<div style="font-size:var(--fs-small);color:var(--text-faint)">${t('squad.noSynergy')}</div>`; return }
   el.innerHTML = `<div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">${t('squad.synergyPreview')}</div>` +
     syn.bonuses.map(b =>
       `<div style="margin-bottom:4px"><span style="font-size:var(--fs-small);color:${b.color};font-weight:bold">${b.label}</span><div style="font-size:var(--fs-small);color:var(--text-dim)">${b.desc}</div></div>`
@@ -241,7 +241,7 @@ export function oSqA(sqId) {
   if (rB.injReduction  > 0) bonusLines.push(`−${Math.round(rB.injReduction*100*0.5)}% injury severity`)
   const bonusHtml = (bonusLines.length
     ? `<div style="font-size:var(--fs-micro);color:var(--green);margin-top:3px">⚔ Depth chart bonuses: ${bonusLines.join(' · ')}</div>`
-    : `<div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:3px">${t('squad.noDepthBonuses')}</div>`)
+    : `<div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:3px">${t('squad.noDepthBonuses')}</div>`)
     + _squadConditionPreview(sq)
 
   document.getElementById('msa-t').textContent = 'Assign ' + sq.n + ' (power ' + pw + ')'

@@ -77,7 +77,7 @@ function _classTab(students, senseis) {
     ${students.length === 0
       ? `<div style="color:var(--text-faint);text-align:center;padding:40px;font-size:.9rem">
           No students currently enrolled.<br>
-          <span style="font-size:.8rem;color:var(--border-hi)">Annual intake happens every April. Advance through April to enroll a new class.</span>
+          <span style="font-size:.8rem;color:var(--text-faint)">Annual intake happens every April. Advance through April to enroll a new class.</span>
         </div>`
       : `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">
           ${students.map(student => studentCard(student, senseis)).join('')}

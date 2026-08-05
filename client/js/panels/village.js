@@ -88,7 +88,7 @@ export function rVi() {
           const lv = G.upgrades[u.id] || 0
           const max = u.levels.length - 1
           return `<span style="color:${lv >= max ? 'var(--green)' : lv > 0 ? 'var(--gold)' : 'var(--text-faint)'}">${u.n} ${lv}/${max}</span>`
-        }).join('<span style="color:var(--border)">·</span>')}
+        }).join('<span style="color:var(--text-faint)">·</span>')}
       </div>
       <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:6px">Districts: ${builtDistricts} built${buildingD ? ` · ⚒ ${buildingD.id} (${buildingD.buildMonthsLeft}mo)` : ''}</div>
       <div style="margin-top:8px">${jump('upgrades', tr('nav.upgrades'))}</div>

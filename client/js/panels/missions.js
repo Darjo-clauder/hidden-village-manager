@@ -105,7 +105,7 @@ export function rTacticalPrep() {
       <div onclick="setMissionPrep('${m.id}')" style="flex:1;padding:7px 8px;border:1px solid ${mode===m.id?m.color:'var(--border)'};background:${mode===m.id?'rgba(0,0,0,.4)':'transparent'};cursor:pointer;text-align:center">
         <div style="font-size:var(--fs-lead);margin-bottom:2px">${m.icon}</div>
         <div style="font-size:var(--fs-small);color:${mode===m.id?m.color:'var(--text-dim)'};font-weight:${mode===m.id?'bold':'normal'}">${m.label}</div>
-        <div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:2px">${m.desc}</div>
+        <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:2px">${m.desc}</div>
       </div>`).join('')}
   </div>`
 }
@@ -292,12 +292,12 @@ export function rSoloM() {
     : ''
 
   const civilianSection = civilian.length === 0 ? '' : `
-    <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--border-hi);text-transform:uppercase;margin:14px 0 6px">${tr('mission.civilianContracts')}</div>
+    <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-faint);text-transform:uppercase;margin:14px 0 6px">${tr('mission.civilianContracts')}</div>
     <div style="opacity:0.7">${civilian.map(_mCard).join('')}</div>`
 
   const aspirationalSection = aspirational.length === 0 ? '' : `
     <details style="margin-top:14px">
-      <summary style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--border-hi);text-transform:uppercase;cursor:pointer;user-select:none">
+      <summary style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-faint);text-transform:uppercase;cursor:pointer;user-select:none">
         Future Ops — ${aspirational.length} mission${aspirational.length>1?'s':''} (need more power)
       </summary>
       <div style="opacity:0.45;margin-top:8px">${aspirational.map(_mCard).join('')}</div>
@@ -522,7 +522,7 @@ export function rChains() {
       }).join('')
 
   const completedHtml = completed.length === 0
-    ? '<div style="font-size:var(--fs-body);color:var(--border-hi)">No completed chains yet.</div>'
+    ? '<div style="font-size:var(--fs-body);color:var(--text-faint)">No completed chains yet.</div>'
     : completed.map(chain => {
         const bonusRyo = chain.state ? Math.round(chain.state.ryoAccumulated * 0.5) : 0
         return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-left:2px solid var(--green);margin-bottom:4px">
@@ -530,7 +530,7 @@ export function rChains() {
             <div style="font-size:var(--fs-small);color:var(--green)">✓ ${chain.n}</div>
             ${bonusRyo > 0 ? `<div style="font-size:var(--fs-micro);color:var(--gold)">${fmt(bonusRyo)} ryo chain bonus paid</div>` : ''}
           </div>
-          <div style="font-size:var(--fs-micro);color:var(--border-hi)">Y${chain.completedYear}·M${chain.completedMonth||'?'}</div>
+          <div style="font-size:var(--fs-micro);color:var(--text-faint)">Y${chain.completedYear}·M${chain.completedMonth||'?'}</div>
         </div>`
       }).join('')
 

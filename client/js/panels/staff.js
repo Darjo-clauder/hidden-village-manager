@@ -119,7 +119,7 @@ function _rosterTab() {
         </div>`
 
       if (current.length === 0) {
-        html += `<div style="font-size:var(--fs-small);color:var(--border-hi);font-style:italic;padding:4px 0">— Vacant —</div>`
+        html += `<div style="font-size:var(--fs-small);color:var(--text-faint);font-style:italic;padding:4px 0">— Vacant —</div>`
       } else {
         current.forEach(st => {
           const statEntries = Object.entries(st.stats || {})
@@ -148,7 +148,7 @@ function _rosterTab() {
             </div>
             <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px">
               ${statEntries.map(([k, v]) => `<div style="text-align:center;background:var(--bg);padding:3px">
-                <div style="font-size:var(--fs-micro);color:var(--border-hi);text-transform:uppercase;letter-spacing:1px;margin-bottom:1px">${k.slice(0,5)}</div>
+                <div style="font-size:var(--fs-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-bottom:1px">${k.slice(0,5)}</div>
                 <div style="font-size:var(--fs-lead);color:${v>=15?'var(--gold)':v>=10?'var(--green)':'var(--text-dim)'};font-weight:bold">${v}</div>
               </div>`).join('')}
             </div>
@@ -164,7 +164,7 @@ function _rosterTab() {
     <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:8px">Shinobi with 20+ wins can transition to a staff role upon retirement.</div>`
   const eligible = G.shinobi.filter(s => s.wins >= 20 && s.ri >= 2)
   if (eligible.length === 0) {
-    html += `<div style="font-size:var(--fs-small);color:var(--border-hi);font-style:italic">No eligible shinobi — requires Veteran+ with 20+ wins.</div>`
+    html += `<div style="font-size:var(--fs-small);color:var(--text-faint);font-style:italic">No eligible shinobi — requires Veteran+ with 20+ wins.</div>`
   } else {
     eligible.forEach(s => {
       html += `<div style="border:1px solid var(--border);padding:8px;margin-bottom:5px;display:flex;justify-content:space-between;align-items:center">
@@ -183,7 +183,7 @@ function _rosterTab() {
     html += `<div class="pt" style="margin-top:14px">${tr("staff.akDecisions")}</div>
       <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:6px">${tr("staff.akAutonomous")}</div>`
     html += akLog.slice(0, 8).map(entry =>
-      `<div style="font-size:var(--fs-small);color:var(--text-dim);border-left:2px solid var(--border);padding:4px 8px;margin-bottom:4px"><span style="color:var(--border-hi)">Yr${entry.year}·M${entry.month}</span> ${entry.text}</div>`
+      `<div style="font-size:var(--fs-small);color:var(--text-dim);border-left:2px solid var(--border);padding:4px 8px;margin-bottom:4px"><span style="color:var(--text-faint)">Yr${entry.year}·M${entry.month}</span> ${entry.text}</div>`
     ).join('')
   }
 
@@ -203,7 +203,7 @@ function _legacyTab() {
         <div>
           <div style="font-size:var(--fs-lead);color:var(--gold);font-weight:bold">${entry.fn} ${entry.ln}</div>
           <div style="font-size:var(--fs-body);color:var(--text-dim);margin-top:2px">${roleDef?.n || entry.role} · ${entry.yearsServed} years of service · Peak Rating ${entry.peakRating}</div>
-          <div style="font-size:var(--fs-small);color:var(--border-hi);margin-top:2px">Inducted Year ${entry.year}${entry.fromShinobi ? ' · Transitioned from active duty' : ''}</div>
+          <div style="font-size:var(--fs-small);color:var(--text-faint);margin-top:2px">Inducted Year ${entry.year}${entry.fromShinobi ? ' · Transitioned from active duty' : ''}</div>
         </div>
         <div style="font-size:var(--fs-sub);color:var(--gold)">⭐</div>
       </div>
@@ -245,7 +245,7 @@ function _renderHireCandidates() {
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-bottom:7px">
         ${statEntries.map(([k,v]) => `<div style="text-align:center;background:var(--sunken);padding:3px">
-          <div style="font-size:var(--fs-micro);color:var(--border-hi);text-transform:uppercase">${k.slice(0,5)}</div>
+          <div style="font-size:var(--fs-micro);color:var(--text-faint);text-transform:uppercase">${k.slice(0,5)}</div>
           <div style="font-size:var(--fs-body);color:${v>=15?'var(--gold)':v>=10?'var(--green)':'var(--text-dim)'};font-weight:bold">${v}</div>
         </div>`).join('')}
       </div>

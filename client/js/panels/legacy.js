@@ -117,7 +117,7 @@ function _prestige() {
     ${PRESTIGE_TIERS.map(t => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--surface)">
       <span style="font-size:var(--fs-lead);color:${t.color};width:20px;font-weight:bold">${t.id}</span>
       <span style="font-size:var(--fs-body);color:var(--text-dim);flex:1">${t.n.split('— ')[1] || t.n}</span>
-      <span style="font-size:var(--fs-body);color:var(--border-hi)">≥${t.min} legend</span>
+      <span style="font-size:var(--fs-body);color:var(--text-faint)">≥${t.min} legend</span>
       ${G.prestigeTier === t.id ? '<span style="font-size:var(--fs-small);color:var(--gold)">← current</span>' : ''}
     </div>`).join('')}
   </div>`
@@ -144,7 +144,7 @@ function _kageRelations() {
         </div>
         ${bar(k.rep)}
         <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:5px">${desc(k.rep)}</div>
-        ${k.lastEvent ? `<div style="font-size:var(--fs-micro);color:var(--border-hi);margin-top:3px">Last: ${k.lastEvent}</div>` : ''}
+        ${k.lastEvent ? `<div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:3px">Last: ${k.lastEvent}</div>` : ''}
       </div>`).join('')}
     </div>
   </div>`
@@ -158,7 +158,7 @@ function _hall() {
     <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:8px">Shinobi who served 10+ years, earned 100+ missions, and reached A-rank are enshrined here. Each legend provides a passive monthly bonus.</div>
     <div style="font-size:var(--fs-body);color:var(--gold);margin-bottom:12px">Current passive bonus: +${fmt(bonus)} ryo/month (${hall.length} enshrined)</div>
     <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:8px">Eligibility: 120+ months served · 100+ mission wins · A-rank (ri≥3)</div>
-    ${hall.length === 0 ? '<div style="color:var(--border-hi);font-size:var(--fs-lead);padding:16px 0">No legends enshrined yet. Long-serving A-rank shinobi are automatically enshrined upon retirement.</div>' :
+    ${hall.length === 0 ? '<div style="color:var(--text-faint);font-size:var(--fs-lead);padding:16px 0">No legends enshrined yet. Long-serving A-rank shinobi are automatically enshrined upon retirement.</div>' :
       `<div style="display:grid;gap:8px">${hall.map(l => `
         <div class="ke-card">
           <div style="font-size:var(--fs-lead);color:var(--gold);margin-bottom:4px">🏛 ${l.name}</div>
