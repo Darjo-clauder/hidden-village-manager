@@ -208,11 +208,17 @@ export const JUTSU_LIST=[
   {id:'sagemode',     n:'Sage Sensing Mode',          tier:'uncommon',statKey:'intelligence', clan:null,        req:{winsS:1},  bonus:{successMod:0.08},              desc:'Feel the chakra of all things within range.'},
   {id:'earthwall',    n:'Earth Wall Barrier',         tier:'uncommon',statKey:'ninjutsu',     clan:null,        req:{winsB:20}, bonus:{powerMod:0.08},                desc:'Stone rises at a gesture. Let them break against it.'},
   {id:'waterdragon',  n:'Water Dragon Blast',         tier:'uncommon',statKey:'ninjutsu',     clan:null,        req:{winsB:20}, bonus:{powerMod:0.08},                desc:'The river bends to your will.'},
-  // Rare — prodigy graduates or 50+ lifetime wins
-  {id:'mangekyou',    n:'Crimson Kagan',              tier:'rare',    statKey:'genjutsu',     clan:'Kageha',    req:{prodigy:true}, bonus:{powerMod:0.18,successMod:0.08}, desc:'The eyes of sacrifice. Unmatched visual power.'},
-  {id:'tenseigan',    n:'Ascendant Eye',              tier:'rare',    statKey:'chakra',       clan:'Shiromi',   req:{prodigy:true}, bonus:{powerMod:0.15,successMod:0.10}, desc:'The awakened bloodline eye. Dominion over all chakra.'},
+  // Rare — prodigy graduates or a long career. The three prodigy-gated eyes
+  // also carry `altReq`: a second, independent way in. Measured over 16 seeds x
+  // 180 months, 0 of 52 Kageha and 0 of 44 Shiromi ever reached winsS>=3, and
+  // no prodigy of either clan ever reached a roster at all — so the prodigy gate
+  // alone made these dead text. 35 career wins is reached by roughly one clan
+  // member in six, which with the clan lock still leaves them rarer than the
+  // two `wins:50` rares below (those have no clan requirement at all).
+  {id:'mangekyou',    n:'Crimson Kagan',              tier:'rare',    statKey:'genjutsu',     clan:'Kageha',    req:{prodigy:true}, altReq:{wins:35}, bonus:{powerMod:0.18,successMod:0.08}, desc:'The eyes of sacrifice. Unmatched visual power.'},
+  {id:'tenseigan',    n:'Ascendant Eye',              tier:'rare',    statKey:'chakra',       clan:'Shiromi',   req:{prodigy:true}, altReq:{wins:35}, bonus:{powerMod:0.15,successMod:0.10}, desc:'The awakened bloodline eye. Dominion over all chakra.'},
   {id:'eightgates',   n:'Eightfold Limit Break',      tier:'rare',    statKey:'taijutsu',     clan:null,        req:{wins:50},  bonus:{powerMod:0.20},                desc:'Beyond mortal limits. The body is the jutsu.'},
-  {id:'kotoamatsukami',n:'Supreme Conviction',        tier:'rare',    statKey:'genjutsu',     clan:'Kageha',    req:{prodigy:true}, bonus:{successMod:0.15},           desc:'The highest illusion. The victim never even knows.'},
+  {id:'kotoamatsukami',n:'Supreme Conviction',        tier:'rare',    statKey:'genjutsu',     clan:'Kageha',    req:{prodigy:true}, altReq:{wins:35}, bonus:{successMod:0.15},           desc:'The highest illusion. The victim never even knows.'},
   {id:'adamantine',   n:'Sacred Binding Chains',      tier:'rare',    statKey:'chakra',       clan:'Kusari',      req:{wins:50},  bonus:{powerMod:0.15,successMod:0.05}, desc:'Chains that bind gods. Nothing escapes them.'},
 ]
 

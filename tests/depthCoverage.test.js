@@ -164,21 +164,17 @@ describe(`depth coverage — ${SEEDS} seeds x ${MONTHS} months`, () => {
   })
 
   /**
-   * KNOWN GAP, reported rather than asserted, because the fix is a design call.
-   *
-   * The other three rare jutsu (mangekyou / tenseigan / kotoamatsukami — the
-   * top-tier bloodline eyes) need `prodigy: true` AND membership of one
-   * specific clan. Measured end to end: roughly one prodigy reaches a roster
-   * per 4,000 prospects, and it must then be 1 of 17 clans. Across 8 seeds x
-   * 240 months and 16 seeds x 120 months, not one was ever learned.
-   *
-   * This asserts only that the requirement is still shaped the way the finding
-   * describes, so that if someone loosens it the stale note gets caught.
+   * The former dead tier. These three needed `prodigy: true` AND one clan in
+   * seventeen, and were never learned once across 160 village-years. They now
+   * carry `altReq` — a long career in the right clan reaches the same place.
+   * If this starts failing, that second path has drifted out of reach again.
    */
-  it('documents the prodigy-gated rare jutsu as effectively unreachable', () => {
-    const prodigyGated = JUTSU_LIST.filter(j => j.tier === 'rare' && j.req.prodigy)
-    expect(prodigyGated.length).toBe(3)
-    expect(prodigyGated.every(j => !!j.clan), 'all three are also clan-locked').toBe(true)
+  it('the prodigy-gated rare jutsu are reachable through their alt path', () => {
+    const gated = JUTSU_LIST.filter(j => j.tier === 'rare' && j.req.prodigy)
+    expect(gated.length).toBe(3)
+    expect(gated.every(j => j.altReq), 'a prodigy-gated jutsu lost its second way in').toBe(true)
+    const learned = gated.filter(j => census.jutsu.has(j.id))
+    expect(learned.length, `none of ${gated.map(j => j.id).join('/')} was learned`).toBeGreaterThan(0)
   })
 
   it('generic (clanless) jutsu are reachable by anyone', () => {

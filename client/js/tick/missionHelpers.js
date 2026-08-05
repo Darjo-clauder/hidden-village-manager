@@ -19,6 +19,7 @@ import { G, clamp, sn, pk, rnd, fmt, addTrait, addChronicle, addLegend, addNotic
 import { aL, ntf } from '../ui.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { combinedOf, signatureUnlocked } from '../../../shared/constants/combinedElements.js'
+import { eligibleJutsu } from '../../../shared/jutsu/eligibility.js'
 import { RANKS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, JUTSU_LIST, MISSION_COMMISSION } from '../constants.js'
 import { hydrateQuestion } from '../../../shared/utils/pressConference.js'
 import { pickJournalist } from '../../../shared/constants/journalists.js'
@@ -190,15 +191,9 @@ export function checkJutsu(s) {
     addLegend(12)
     return
   }
-  const eligible = JUTSU_LIST.filter(j => {
-    if (s.jutsu.includes(j.id)) return false
-    if (j.clan && s.clan !== j.clan) return false
-    if (j.req.winsB && (s.winsB || 0) < j.req.winsB) return false
-    if (j.req.winsS && (s.winsS || 0) < j.req.winsS) return false
-    if (j.req.wins && s.wins < j.req.wins) return false
-    if (j.req.prodigy && !s.prodigy) return false
-    return true
-  })
+  // Eligibility lives in shared/jutsu/eligibility.js so it can be tested
+  // directly and so a jutsu can offer a second way in via `altReq`.
+  const eligible = eligibleJutsu(s, JUTSU_LIST)
   if (eligible.length) {
     const j = eligible[Math.floor(Math.random() * eligible.length)]
     s.jutsu.push(j.id)
