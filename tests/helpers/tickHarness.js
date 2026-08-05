@@ -168,6 +168,108 @@ export function autoAssignMissions(G, { max = 3 } = {}) {
 }
 
 /**
+ * Sign academy prospects, the way a player continually does.
+ *
+ * WHY THIS MATTERS MORE THAN IT LOOKS. `rfP()` tops the prospect pool back up to
+ * a cap and only rolls the 1%-prodigy chance on prospects that are NEW that
+ * month. A harness that never signs anyone leaves the pool permanently full, so
+ * `toAdd` is 0 almost every month, almost no new prospects are created, and the
+ * roll barely ever runs. Measured: ONE prodigy across 2,343 prospects and 1,200
+ * simulated months — and `prodigy` gates three of the five rare jutsu, so that
+ * whole tier was invisible to every automated test we had.
+ *
+ * The pool is also where academy intake, region scouting and minor-nation
+ * prodigies land, so a stagnant pool freezes several pipelines at once.
+ *
+ * Mirrors panels/academy.js recruitProspect() — spread the prospect, mark it
+ * available — without the DOM or the ryo prompt.
+ */
+export function autoSignProspects(G, { max = 1, minRyo = 2000 } = {}) {
+  let signed = 0
+  while (signed < max && (G.prospects || []).length && G.ryo >= minRyo) {
+    // Best potential first, as a player would.
+    const p = [...G.prospects].sort((a, b) => (b.potential || 0) - (a.potential || 0))[0]
+    if (!p) break
+    G.ryo -= minRyo
+    // Same numeric guards normalizeRecruit() applies, inlined rather than
+    // imported: this helper is deliberately dependency-free so it can load
+    // before the vi.mock calls that stand in for the browser modules.
+    const recruited = { ...p, status: 'available' }
+    for (const k of ['months', 'wins', 'winsB', 'winsS', 'streak', 'injDays', 'workload', 'monthsWaiting']) {
+      if (!Number.isFinite(Number(recruited[k]))) recruited[k] = 0
+    }
+    if (!Array.isArray(recruited.jutsu)) recruited.jutsu = []
+    if (!Array.isArray(recruited.bonds)) recruited.bonds = []
+    if (recruited.academyOrigin) recruited.homegrown = true
+    G.shinobi.push(recruited)
+    G.prospects = G.prospects.filter(x => x.id !== p.id)
+    signed++
+  }
+  return signed
+}
+
+/**
+ * Keep squads staffed and send them out.
+ *
+ * The other half of the blind spot. `autoAssignMissions` only ever dispatched
+ * SOLO missions (`isSquad: false`), so across every sweep we had:
+ *   - the squad KIA branch never ran (the branch that writes sq.fallen, forms
+ *     vendettas and drives the memorial),
+ *   - `tryFormBonds` never ran, so ZERO bonds formed in 1,200 months,
+ *   - A- and S-rank missions were never assigned, because their power
+ *     requirement (median 86 and 135) is written for a SQUAD's combined power
+ *     and no single shinobi clears it — which in turn made the four `winsS`
+ *     jutsu unreachable.
+ *
+ * Squad power is the sum of member power, matching sqP().
+ */
+export function autoSquadMissions(G, { squads = 2, size = 3, max = 2 } = {}) {
+  const pow = s => {
+    const v = Object.values(s.stats || {})
+    return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0
+  }
+  G.squads = G.squads || []
+  // Top up to `squads` squads of `size`, from whoever is free.
+  while (G.squads.length < squads) {
+    G.squads.push({
+      id: 'hsq' + G.squads.length + '_' + Math.floor(Math.random() * 1e6),
+      n: 'Harness Squad ' + (G.squads.length + 1),
+      members: [], cohesion: 50, fallen: [], wins: 0, losses: 0, kills: 0,
+    })
+  }
+  const inSquad = new Set(G.squads.flatMap(q => q.members))
+  for (const sq of G.squads) {
+    sq.members = sq.members.filter(id => (G.shinobi || []).some(s => s.id === id))
+    for (const s of G.shinobi || []) {
+      if (sq.members.length >= size) break
+      if (s.status !== 'available' || inSquad.has(s.id)) continue
+      sq.members.push(s.id); inSquad.add(s.id)
+    }
+  }
+  let sent = 0
+  for (const sq of G.squads) {
+    if (sent >= max) break
+    const members = sq.members.map(id => (G.shinobi || []).find(s => s.id === id)).filter(Boolean)
+    if (members.length < size || members.some(s => s.status !== 'available')) continue
+    const power = members.reduce((a, s) => a + pow(s), 0)
+    // Hardest mission this squad actually qualifies for — the point is to reach
+    // the A/S board that solo dispatch can never touch.
+    const m = (G.avM || [])
+      .filter(x => x.mp == null || power >= x.mp)
+      .sort((a, b) => (b.mp || 0) - (a.mp || 0))[0]
+    if (!m) continue
+    members.forEach(s => { s.status = 'mission'; s.missId = m.id })
+    G.aM.push({
+      id: 'hs' + (G.year * 100 + G.month) + '_' + sent,
+      missionId: m.id, assignedTo: null, squadId: sq.id,
+      daysLeft: m.dur, isSquad: true, approach: 'balanced',
+    })
+    sent++
+  }
+  return sent
+}
+
+/**
  * Which rare branches a run actually exercised.
  *
  * Four seeds were enough to catch a missing import in tick/finance.js the
