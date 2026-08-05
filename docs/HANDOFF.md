@@ -60,7 +60,15 @@
 >
 > ### Open / next
 >
-> - Pushed to `origin/master` (`a04b122`). **The mirror was NOT fast-forwarded** — earlier sessions did that as a separate step, but no second remote is configured in this clone (`origin` only), so whatever the mirror is, it lives outside this working copy.
+> - Pushed to `origin/master` and the mirror is fast-forwarded — all three on `0b23a0f`.
+>
+> **WHERE THE MIRROR ACTUALLY IS:** `C:\Users\Tyler\hidden-village-manager` — a *second clone*, not a remote. That is why `git remote -v` in this working copy shows only `origin` and there is nothing here to push to; the "mirror ff'd" step in older entries means going to that folder and fast-forwarding it. **Fetch before trusting its `git status`** — its remote-tracking ref goes stale, so it reported "up to date" while sitting seven commits behind. To sync it:
+>
+> ```
+> cd /c/Users/Tyler/hidden-village-manager && git fetch origin && git merge --ff-only origin/master
+> ```
+>
+> Check `git rev-list --left-right --count HEAD...origin/master` first: if it is ever *ahead*, it has unique work and is not a mirror any more — stop and look before merging.
 > - The season-review "Year N in Review" now has a second archive path (the tick's year rollover). Both guard against double-archiving the same year, but the exam path is the only one that records the *champion* properly — worth a look if reviews read oddly.
 > - Vendetta payoff is **league-only**. War and the exam both have real named opponents and would be natural places to let it pay off too.
 > - Nobody has visually reviewed any of this (see the Browser-pane note below) — all UI verified by DOM assertion.
