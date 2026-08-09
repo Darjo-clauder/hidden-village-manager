@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { medQuality, recoveryStep, reinjuryChance, returningForm, effectivePlan, REHAB_PLANS, PLAN_BY_ID } from '../shared/utils/medical.js'
+import { medQuality, recoveryStep, reinjuryChance, returningForm, effectivePlan, REHAB_PLANS, PLAN_BY_ID, formRebuildStep, FORM_REBUILD_RESTED, FORM_REBUILD_DEPLOYED } from '../shared/utils/medical.js'
 
 describe('medical — medQuality', () => {
   it('rises with staff + infirmary, caps at 1', () => {
@@ -44,5 +44,31 @@ describe('medical — effectivePlan', () => {
   it('exposes three plans', () => {
     expect(REHAB_PLANS.map(p => p.id)).toEqual(['rush', 'standard', 'careful'])
     expect(PLAN_BY_ID.rush.label).toBe('Rush Back')
+  })
+})
+
+describe('medical — regaining match sharpness', () => {
+  it('rest rebuilds faster than work, and work is not zero', () => {
+    expect(formRebuildStep('available')).toBe(FORM_REBUILD_RESTED)
+    expect(formRebuildStep('mission')).toBe(FORM_REBUILD_DEPLOYED)
+    expect(FORM_REBUILD_RESTED).toBeGreaterThan(FORM_REBUILD_DEPLOYED)
+    // Work being ZERO was the bug: a shinobi deployed every month could never
+    // train off their rust, so they stayed permanently fragile with no way out.
+    expect(FORM_REBUILD_DEPLOYED).toBeGreaterThan(0)
+  })
+
+  it('rehab and retirement rebuild nothing', () => {
+    expect(formRebuildStep('injured')).toBe(0)
+    expect(formRebuildStep('retired')).toBe(0)
+  })
+
+  it('every rehab plan reaches full sharpness eventually, even worked through', () => {
+    for (const plan of REHAB_PLANS.map(p => p.id)) {
+      let f = returningForm(plan)
+      let months = 0
+      while (f < 100 && months < 60) { f = Math.min(100, f + formRebuildStep('mission')); months++ }
+      expect(f, plan).toBe(100)
+      expect(months, plan + ' takes too long to recover sharpness').toBeLessThanOrEqual(12)
+    }
   })
 })

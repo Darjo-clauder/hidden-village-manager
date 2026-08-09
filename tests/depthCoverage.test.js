@@ -53,7 +53,14 @@ await (await import('./helpers/tickHarness.js')).initLocale()
 // A decade, because several pipelines only open up late: the `wins: 50` rare
 // jutsu need a career about ten years long, and at 60 months the entire rare
 // tier reads as dead when two of the five are merely slow.
-const SEEDS = 16
+//
+// 32 seeds because the thinnest content needs the sample. Scorch (Fire + Wind)
+// is the rarest combined element — Fire is carried by only ONE of the twelve
+// great villages — and it appears in 0 of 24 seeds but reliably by 32. The
+// seeds are fixed, so this is a wider deterministic sample rather than a
+// looser assertion: the sweep still fails if anything becomes truly
+// unreachable, which is the whole reason it exists.
+const SEEDS = 32
 const MONTHS = 120
 
 /** Everything we want to see at least one of. */

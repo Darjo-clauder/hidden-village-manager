@@ -18,7 +18,7 @@ import { G, clamp, sn, pk, rnd, fmt, sPow, addTrait, addNotice, addChronicle, ad
 import { aL, ntf } from '../ui.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { RANKS, DOCTRINE_BY_ID } from '../constants.js'
-import { effectivePlan, medQuality, recoveryStep, reinjuryChance, returningForm } from '../../../shared/utils/medical.js'
+import { effectivePlan, medQuality, recoveryStep, reinjuryChance, returningForm, formRebuildStep } from '../../../shared/utils/medical.js'
 import { decayMemories, memoryMoraleMod } from '../../../shared/utils/memorySystem.js'
 import { assignRoleTag, tickEmotionalState } from '../../../shared/utils/personality.js'
 import { genRankUpBlurb } from '../../../shared/utils/narrativeEngine.js'
@@ -138,6 +138,17 @@ export function tickShinobi(ctx) {
         aL(sn(s) + ' recovered from injury.', 'good')
       }
     }
+    // ── Returning form ──────────────────────────────────────────────────────
+    // Deliberately OUTSIDE the available-only block below, so a shinobi who is
+    // out on a mission still recovers sharpness — just far slower. It used to
+    // live inside it, which meant anyone deployed every month never regained
+    // form and stayed permanently fragile with no way to train it off.
+    // Skipped on the month they leave rehab: they carry the rust into real work.
+    if (!_recoveredThisTick && (s.returningForm ?? 100) < 100) {
+      const _step = formRebuildStep(s.status)
+      if (_step) s.returningForm = Math.min(100, s.returningForm + _step)
+    }
+
     if (s.status === 'available') {
       // Workload + fatigue recovery
       s.workload = Math.max(0, s.workload - 10)
@@ -165,12 +176,6 @@ export function tickShinobi(ctx) {
         }
       }
 
-      // Returning form — builds back +20 a month, but NOT on the month they
-      // came out of rehab. They leave it rusty and have to carry that into real
-      // work; erasing it in the same pass is what made match sharpness inert.
-      if (!_recoveredThisTick && (s.returningForm || 100) < 100) {
-        s.returningForm = Math.min(100, s.returningForm + 20)
-      }
 
       // Stat growth
       const mentorBoost = 1 + mentorGrowthBonus(s, G.shinobi) + (cp.growthBonus || 0) + (dp.statGrowthBonus || 0) + ((DOCTRINE_BY_ID[G.villageDoctrine]?.growthMod) || 0) + kageMod(G, 'mentorship')

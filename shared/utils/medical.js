@@ -39,3 +39,22 @@ export function effectivePlan(plan, hasMedic) {
   if (plan === 'careful' && !hasMedic) return 'standard'
   return plan || 'standard'
 }
+
+/**
+ * How fast post-recovery sharpness comes back, per month.
+ *
+ * Rest is much better than work — resting from 70 is sharp in two months,
+ * working through it takes four. But work is no longer ZERO, which it was: form
+ * only rebuilt on months a shinobi was `available`, so anyone deployed every
+ * month stayed permanently rusty and therefore permanently fragile, with a
+ * standing breakdown risk they could never train off. That is a trap rather
+ * than a lesson. Rotating them is still clearly the right call; failing to
+ * rotate is now slow instead of terminal.
+ */
+export const FORM_REBUILD_RESTED = 20
+export const FORM_REBUILD_DEPLOYED = 8
+
+export function formRebuildStep(status) {
+  if (status === 'injured' || status === 'retired') return 0
+  return status === 'available' ? FORM_REBUILD_RESTED : FORM_REBUILD_DEPLOYED
+}
