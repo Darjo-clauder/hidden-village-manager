@@ -454,10 +454,12 @@ export function tickMissions(ctx) {
             applyInjury(s, injType, hL, dp.injDayReduction)
             aL(tr('toast.adv.missionFailedInjury', { mission: m.n, name: sn(s), injury: injType.n, days: s.injDays, narrative: pickNarrative(m.rk, 'failure', sn(s), s.pers.n, { wins: s.wins, streak: s.streak, season }) }), 'bad')
           }
-          // Re-injury risk for those returning from long absence
-          if ((s.returningForm || 100) < 80 && Math.random() < 0.20) {
-            aL(sn(s) + ' re-injured themselves — too soon to return to active duty.', 'warn')
-          }
+          // (The old "re-injured themselves" line lived here and was inert — it
+          // printed a warning and changed nothing, and could fire on a mission
+          // where nobody was hurt. Rushing someone back now costs something
+          // real, on the SUCCESS path where it can actually happen: a failed
+          // solo mission always rolls an injury first, so nothing after that
+          // could ever fire. See rollInjuryOnSuccess in ./missionHelpers.js.)
           // R8+: a surviving solo shinobi's failed mission is watchable too.
           G.lastMissionReport = _buildMissionReport({ id: 'solo_' + s.id, n: sn(s), members: [s.id] }, m, false, _mev, 0)
         }

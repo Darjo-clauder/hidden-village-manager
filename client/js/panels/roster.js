@@ -443,7 +443,7 @@ export function oDos(id) {
            <div style="font-size:var(--fs-body);color:${injTypeDef.color};font-weight:bold">${injTypeDef.n}</div>
            <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">${injTypeDef.desc}</div>
            <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:4px">Expected return: <b style="color:var(--text-hi)">${s.injDays} month${s.injDays!==1?'s':''}</b>${s.secondOpinionUsed ? ' <span style="color:var(--blue)">(reviewed)</span>' : ''}</div>
-           ${(s.returningForm||100) < 100 ? `<div style="font-size:var(--fs-small);color:var(--orange);margin-top:2px">Post-recovery form: ${s.returningForm}% (builds over 2–3 missions)</div>` : ''}
+           ${(s.returningForm||100) < 100 ? `<div style="font-size:var(--fs-small);color:var(--orange);margin-top:2px">Post-recovery form: ${s.returningForm}% <span style="color:var(--text-faint)">(+20 a month spent NOT on a mission. Until sharp they cost mission success and league strength${(s.returningForm||100) < 80 ? ', and carry a real breakdown risk' : ''} — rest them or keep paying for it.)</span></div>` : ''}
            <div style="display:flex;gap:6px;margin-top:7px;flex-wrap:wrap">
              ${canSecondOpinion ? `<button class="gb" style="font-size:var(--fs-micro);border-color:var(--blue);color:var(--blue)" onclick="secondOpinion('${s.id}')">Second Opinion (3,000 ryo) ▸</button>` : ''}
              ${canSpecialist ? `<button class="gb gb-g" style="font-size:var(--fs-micro)" onclick="specialistTreatment('${s.id}','${bestAlly.n}')">Specialist Treatment via ${bestAlly.n} (12,000 ryo) ▸</button>` : ''}

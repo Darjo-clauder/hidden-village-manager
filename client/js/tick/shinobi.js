@@ -109,6 +109,14 @@ export function tickShinobi(ctx) {
     if (s.returningForm === undefined) s.returningForm = 100
     if (s.injuryType === undefined) s.injuryType = null
 
+    // Set when a shinobi finishes rehab THIS tick. The two status blocks below
+    // are sequential ifs, not if/else, so without this the recovery branch sets
+    // the returning-form penalty and the available branch immediately erases
+    // 20 points of it in the same pass — a standard rehab went straight from 70
+    // to 90 before playing a single mission, which is why match sharpness never
+    // meaningfully existed.
+    let _recoveredThisTick = false
+
     if (s.status === 'injured') {
       // R25: rehab plan governs speed / re-injury risk / returning form.
       const _hasMedic = (G.staff || []).some(st => st.role === 'medical')
@@ -126,6 +134,7 @@ export function tickShinobi(ctx) {
         s.returningForm = Math.min(s.returningForm ?? 100, returningForm(_plan))
         if (_plan === 'careful') s.injuryResist = 1  // shrugs off the next injury a bit
         s.rehabPlan = null
+        _recoveredThisTick = true
         aL(sn(s) + ' recovered from injury.', 'good')
       }
     }
@@ -156,8 +165,10 @@ export function tickShinobi(ctx) {
         }
       }
 
-      // Returning form — builds back over 2–3 missions
-      if ((s.returningForm || 100) < 100) {
+      // Returning form — builds back +20 a month, but NOT on the month they
+      // came out of rehab. They leave it rusty and have to carry that into real
+      // work; erasing it in the same pass is what made match sharpness inert.
+      if (!_recoveredThisTick && (s.returningForm || 100) < 100) {
         s.returningForm = Math.min(100, s.returningForm + 20)
       }
 

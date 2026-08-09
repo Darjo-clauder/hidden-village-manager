@@ -148,11 +148,24 @@ export function applyTrauma(s) {
   addChronicle('Psychological Trauma', sn(s) + ' developed a ' + s.traumaStatus + ' personality after traumatic events.', 'shinobi')
 }
 
+/** Extra breakdown chance for someone rushed back before they were sharp. */
+export const RUSTY_REINJURY_CHANCE = 0.12
+/** Below this returning-form value a shinobi counts as rushed back. */
+export const RUSTY_THRESHOLD = 80
+
 export function rollInjuryOnSuccess(s, m, hL, injDayReduction = 0) {
   let chance = RANK_INJ_CHANCE[m.rk] || 0.02
   if ((s.age || 0) >= 40) chance += 0.08
   if ((s.consecutiveMissions || 0) >= 2) chance += 0.10
   if (G.morale < 40) chance += 0.05
+  // Rushed back from a long absence — the body gives out even when the mission
+  // went fine. This lives HERE rather than on the failure path, where an
+  // earlier attempt at it was unreachable: a failed solo mission always rolls
+  // an injury first, so a "re-injury" check after that could never fire. The
+  // success path is also the only place the fiction makes sense — coming
+  // through the job and breaking down anyway is what rushing someone costs.
+  const rusty = (s.returningForm ?? 100) < RUSTY_THRESHOLD
+  if (rusty) chance += RUSTY_REINJURY_CHANCE
   const medCount = (G.staff || []).filter(st => st.role === 'medical').length
   chance = clamp(chance - medCount * 0.03, 0, 0.90)
   if (s.pers?.effect?.riskMod) chance += s.pers.effect.riskMod
@@ -160,7 +173,12 @@ export function rollInjuryOnSuccess(s, m, hL, injDayReduction = 0) {
     const injType = pickInjuryType(m.rk)
     if (injType) {
       applyInjury(s, injType, hL, injDayReduction)
-      aL(tr('toast.adv.missionInjury', { name: sn(s), injury: injType.n, mission: m.n }), 'warn')
+      if (rusty) {
+        s.returningForm = 55            // back to square one on the way out
+        aL(sn(s) + ' broke down on "' + m.n + '" — brought back too soon. Out ' + s.injDays + 'mo.', 'warn')
+      } else {
+        aL(tr('toast.adv.missionInjury', { name: sn(s), injury: injType.n, mission: m.n }), 'warn')
+      }
     }
   }
 }

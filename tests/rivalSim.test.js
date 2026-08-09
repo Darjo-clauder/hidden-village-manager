@@ -148,6 +148,41 @@ describe('computePlayerStrength', () => {
     expect(full - starsOut).toBeGreaterThan(full - reservesOut)
   })
 
+  /**
+   * Match sharpness has to exist in the league, not only on missions.
+   *
+   * `returningForm` already docked solo missions but league strength ignored
+   * it, so a star back from a six-month layoff walked into the side at full
+   * rating. Playing them must still beat leaving them out — otherwise nobody
+   * would ever field a returning player — but it must not be free.
+   */
+  it('a shinobi rushed back is worth less than a sharp one, but more than an absence', () => {
+    const rest = Array.from({ length: 16 }, () => mkNinja(50))
+    const stars = f => Array.from({ length: 3 }, () => ({ ...mkNinja(75), returningForm: f }))
+    const sharp = Array.from({ length: 3 }, () => mkNinja(75))
+    const S = shinobi => computePlayerStrength({ shinobi, upgrades: {} })
+
+    const full = S([...sharp, ...sharp, ...rest])
+    const careful = S([...stars(88), ...sharp, ...rest])
+    const rushed = S([...stars(55), ...sharp, ...rest])
+    const absent = S([...sharp.map(s => ({ ...s, status: 'injured' })), ...sharp, ...rest])
+
+    expect(careful).toBeLessThan(full)          // any rust costs something
+    expect(rushed).toBeLessThan(careful)        // rushing costs more than careful rehab
+    expect(rushed).toBeGreaterThan(absent)      // ...but playing them still beats not
+  })
+
+  it('form weighting is bounded and tolerates missing or silly values', () => {
+    const S = shinobi => computePlayerStrength({ shinobi, upgrades: {} })
+    const base = Array.from({ length: 10 }, () => mkNinja(60))
+    const noField = base.map(s => { const c = { ...s }; delete c.returningForm; return c })
+    // An absent returningForm must mean "sharp", not "zero".
+    expect(S(noField)).toBe(S(base))
+    // Out-of-range values are clamped rather than producing negative power.
+    expect(S(base.map(s => ({ ...s, returningForm: -50 })))).toBeGreaterThan(0)
+    expect(S(base.map(s => ({ ...s, returningForm: 999 })))).toBe(S(base))
+  })
+
   it('strengthBreakdown itemises the cost coherently', () => {
     const squad = [...Array.from({ length: 6 }, () => mkNinja(75)), ...Array.from({ length: 16 }, () => mkNinja(50))]
     const G = { shinobi: squad.map((s, i) => (i < 3 ? { ...s, status: 'injured' } : s)), upgrades: {} }

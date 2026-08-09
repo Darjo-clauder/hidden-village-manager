@@ -130,11 +130,28 @@ export function computePlayerStrength(G) {
  * "my twenty-second man is out". Quality now reads the side you can actually
  * field.
  */
+/**
+ * How much of a returning shinobi's missing match sharpness the league feels.
+ *
+ * `returningForm` runs 55 (rushed back) to 100 (sharp) and already docks solo
+ * missions, but league strength ignored it entirely — a star who came back
+ * yesterday from a six-month layoff walked into the side at full rating. There
+ * was no such thing as match fitness here: you were either out, or 100%.
+ *
+ * Half the deficit, not all of it, because this is a team game — one player's
+ * rustiness is diluted by the ten around them. At 55% form that leaves a
+ * shinobi contributing 77.5% of their power, which costs meaningfully less than
+ * being unavailable outright while still making a rushed rehab a real gamble.
+ */
+export const FORM_WEIGHT = 0.5
+
 export function strengthBreakdown(G) {
   const roster = G.shinobi || []
   const pow = s => {
     const v = Object.values(s.stats || {})
-    return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0
+    const raw = v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0
+    const form = Math.max(0, Math.min(100, s.returningForm ?? 100))
+    return raw * (1 - ((100 - form) / 100) * FORM_WEIGHT)
   }
   const wallBonus = (G.upgrades?.wall || 0) * 4
   const sealBonus = (G.upgrades?.seal || 0) * 3
