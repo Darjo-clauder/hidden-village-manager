@@ -3,8 +3,9 @@ import { RANKS, EXAM_FORMATS, PRESTIGE_TIERS, LEGACY_DECISIONS, INJURY_TYPES } f
 import { aL, ntf, upUI, schEx } from '../ui.js'
 import { initSeasonTable, sortedTable, seedsFromTable, seasonSchedule, teamFixtures, teamForm, seasonState, matchPreview, matchToBeats, upcomingFixtures, SEASON_ROUNDS, MATCHDAYS_PER_MONTH } from '../../../shared/utils/season.js'
 import { identityFor, MATCH_STYLES, identityStageAdv } from '../../../shared/constants/villageIdentity.js'
-import { MATCHDAY_TACTICS, tacticRead, TACTIC_STRONG_MOD, TACTIC_WEAK_MOD } from '../../../shared/constants/matchdayTactics.js'
+import { MATCHDAY_TACTICS, tacticRead, tacticShapeLabel, TACTIC_STRONG_MOD, TACTIC_WEAK_MOD } from '../../../shared/constants/matchdayTactics.js'
 import { h2hLabel } from '../../../shared/utils/rivalry.js'
+import { hasFreshIntel, intelMonthsLeft, nowMonth } from '../../../shared/utils/intel.js'
 import { vendettaLabel, vendettaCarriers, vendettaBonus } from '../../../shared/utils/legacyMemory.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { openBattleViewer } from '../liveBattle.js'
@@ -320,13 +321,35 @@ function _tacticPicker(oppName, round) {
   const idn = identityFor(oppName)
   const st = MATCH_STYLES[idn.style] || MATCH_STYLES.balanced
   const cur = (G.matchdayTactics || {})[round] || 'standard'
-  const readCol = { strong: 'var(--green)', weak: 'var(--red)', neutral: 'var(--text-dim)' }
-  const readTxt = { strong: `+${Math.round(TACTIC_STRONG_MOD * 100)}%`, weak: `${Math.round(TACTIC_WEAK_MOD * 100)}%`, neutral: '—' }
+  // FOG OF WAR. Their style is only legible while we hold current intel on
+  // them. This gates the READ, never the sim — they play their style either
+  // way; you just have to commit without knowing which bet is favoured.
+  const _oppV = (G.villages || []).find(v => v.n === oppName)
+  const _scouted = !_oppV || hasFreshIntel(G.intelReports, _oppV, nowMonth(G.year, G.month))
+  const _left = _oppV ? intelMonthsLeft(G.intelReports, _oppV, nowMonth(G.year, G.month)) : 0
+  const readCol = { strong: 'var(--green)', weak: 'var(--red)', neutral: 'var(--text-dim)', unknown: 'var(--text-faint)' }
+  const readTxt = { strong: `+${Math.round(TACTIC_STRONG_MOD * 100)}%`, weak: `${Math.round(TACTIC_WEAK_MOD * 100)}%`, neutral: '—', unknown: '?' }
+  // What the fixture is worth to you right now — the season already knows, and
+  // it is what turns "which tactic is correct" into "what do I need from this".
+  const _sst = G.season?.table ? seasonState(G.season.table, G.vName, round, SEASON_ROUNDS) : null
+  const need = !_sst ? ''
+    : _sst.roundsLeft <= 6 && _sst.inHunt
+      ? `<span style="color:var(--gold)">Run-in, ${_sst.gapToLead} off the lead — a draw may not be enough.</span>`
+    : _sst.roundsLeft <= 6 && _sst.isLeader
+      ? `<span style="color:var(--green)">Top of the table with ${_sst.roundsLeft} to play — a point protects it.</span>`
+    : _sst.playerPos >= _sst.total
+      ? `<span style="color:var(--red)">Bottom of the table — points of any colour.</span>`
+      : ''
   return `<div style="border-top:1px solid var(--surface-3);margin-top:7px;padding-top:7px">
-    <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-bottom:5px">They play <span title="${st.desc}" style="color:var(--gold);cursor:help">${st.icon} ${st.label}</span> — choose your approach:</div>
+    <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-bottom:5px">${_scouted
+      ? `They play <span title="${st.desc}" style="color:var(--gold);cursor:help">${st.icon} ${st.label}</span>${_left ? ` <span style="color:var(--text-faint)">(intel good for ${_left}mo)</span>` : ''} — choose your approach:`
+      : `<span style="color:var(--red)">✖ No current intel on ${oppName}</span> — their style is unknown. Scout them, or commit blind:`}</div>
+    ${need ? `<div style="font-size:var(--fs-micro);margin-bottom:5px">${need}</div>` : ''}
     <div style="display:flex;gap:4px;flex-wrap:wrap">
       ${MATCHDAY_TACTICS.map(t => {
-        const read = tacticRead(t.id, idn.style)
+        // Unscouted: the matchup hint is hidden, but the risk shape is not —
+        // that half of the decision is about YOUR situation, which you always know.
+        const read = _scouted ? tacticRead(t.id, idn.style) : 'unknown'
         const sel = t.id === cur
         return `<button onclick="setMatchdayTactic(${round},'${t.id}')" title="${t.desc}"
           style="flex:1;min-width:76px;padding:5px 6px;cursor:pointer;font-size:var(--fs-small);text-align:center;
@@ -334,6 +357,7 @@ function _tacticPicker(oppName, round) {
                  border:1px solid ${sel ? 'var(--gold)' : 'var(--border)'};color:${sel ? 'var(--gold)' : 'var(--text-mid)'}">
           <div>${t.icon} ${t.label}</div>
           <div style="font-size:var(--fs-micro);margin-top:2px;color:${readCol[read]}">${readTxt[read]}</div>
+          <div style="font-size:var(--fs-micro);margin-top:1px;color:var(--text-faint);line-height:1.3">${tacticShapeLabel(t.id)}</div>
         </button>`
       }).join('')}
     </div>

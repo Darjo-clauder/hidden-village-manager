@@ -17,8 +17,8 @@ import { aL, ntf } from '../ui.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { addNewsItem } from '../news.js'
 import { initSeasonTable, playMatchday, seasonPressNotice, playerFixture, sortedTable, simMatch, styledScore, MATCHDAYS_PER_MONTH, SEASON_ROUNDS } from '../../../shared/utils/season.js'
-import { identityFor } from '../../../shared/constants/villageIdentity.js'
-import { tacticMod } from '../../../shared/constants/matchdayTactics.js'
+import { identityFor, styleParams } from '../../../shared/constants/villageIdentity.js'
+import { tacticMod, applyTacticShape } from '../../../shared/constants/matchdayTactics.js'
 import { updateH2H, pickDerbyRival } from '../../../shared/utils/rivalry.js'
 import { vendettaBonus, vendettaCarriers, settleOneDeath, vengeanceBeat, unsettledCount } from '../../../shared/utils/legacyMemory.js'
 import { addMemory } from '../../../shared/utils/memorySystem.js'
@@ -63,7 +63,6 @@ export function tickSeason(ctx) {
     // Matchday styles: rivals play to their village identity; the player's style
     // follows their coaching philosophy (aggressive→blitz, defensive→fortress).
     const _philStyle = { aggressive: 'blitz', defensive: 'fortress' }[G.coachingPhilosophy] || 'balanced'
-    const styleOf = name => name === playerName ? _philStyle : identityFor(name).style
 
     // ── Derby designation — named each January, before the month's fixtures ──
     if (G.month === 1 || !G.derbyRival) {
@@ -85,7 +84,14 @@ export function tickSeason(ctx) {
     for (let md = 0; md < MATCHDAYS_PER_MONTH && G.season.round < SEASON_ROUNDS; md++) {
       const _round = G.season.round
       const _fx = playerFixture(names, _round, playerName)
-      const _tMod = _fx ? tacticMod(G.matchdayTactics[_round] || 'standard', identityFor(_fx.opp).style) : 0
+      const _tactic = G.matchdayTactics[_round] || 'standard'
+      const _tMod = _fx ? tacticMod(_tactic, identityFor(_fx.opp).style) : 0
+      // The player's style is composed FRESH EACH ROUND, because the tactic is
+      // now per-fixture and reshapes it. Rivals keep their fixed identity style.
+      // Their character still shows through: a blitz side playing Control is
+      // steadier than usual but never as steady as a fortress playing it.
+      const _playerStyle = applyTacticShape(styleParams(_philStyle), _tactic)
+      const styleOf = name => name === playerName ? _playerStyle : identityFor(name).style
       // Vendetta: your people fight harder against the village that buried their
       // squadmates. Capped at +10% — a thumb on the scale, not a substitute for
       // a good roster.

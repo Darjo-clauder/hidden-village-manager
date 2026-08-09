@@ -7,6 +7,7 @@ import {
   playerFixture, upcomingFixtures, SEASON_ROUNDS, MATCHDAYS_PER_MONTH,
 } from '../shared/utils/season.js'
 import { withSeed } from './helpers/rng.js'
+import { styleParams, MATCH_STYLES } from '../shared/constants/villageIdentity.js'
 
 const NAMES = ['You', 'Kazegakure', 'Shimogakure', 'Gangakure', 'Raikurokure']
 
@@ -212,6 +213,36 @@ describe('season table', () => {
     expect(Object.keys(table)).toHaveLength(deduped.length)
     // The invariant the tick relies on: keys === names it was built from.
     expect(Object.keys(initSeasonTable(NAMES))).toHaveLength(NAMES.length)
+  })
+
+  it('styleParams passes a composed params object straight through', () => {
+    // This is what lets a matchday tactic reshape the player's style: the sim
+    // must accept a style that does not exist in MATCH_STYLES.
+    const composed = { varLo: 0.5, varHi: 1.5, drawMult: 2 }
+    const out = styleParams(composed)
+    expect(out.varLo).toBe(0.5)
+    expect(out.varHi).toBe(1.5)
+    expect(out.drawMult).toBe(2)
+    // ...and a partial object still gets the balanced defaults for the rest.
+    const partial = styleParams({ drawMult: 3 })
+    expect(partial.drawMult).toBe(3)
+    expect(partial.varLo).toBe(MATCH_STYLES.balanced.varLo)
+    expect(partial.underdogEdge).toBe(MATCH_STYLES.balanced.underdogEdge)
+    // ids still resolve as before
+    expect(styleParams('blitz')).toBe(MATCH_STYLES.blitz)
+    expect(styleParams('nonsense')).toBe(MATCH_STYLES.balanced)
+  })
+
+  it('simMatch honours a composed style object', () => {
+    const wide = { varLo: 0.2, varHi: 1.8, drawMult: 0.1 }
+    const narrow = { varLo: 0.98, varHi: 1.02, drawMult: 0.1 }
+    const upsets = (style) => {
+      let w = 0
+      for (let i = 0; i < 4000; i++) if (simMatch(70, 100, Math.random, style, 'balanced').winner === 'a') w++
+      return w / 4000
+    }
+    // A wild underdog steals more games than a metronomic one.
+    expect(upsets(wide)).toBeGreaterThan(upsets(narrow))
   })
 
   it('recordMatch awards win/draw/loss points correctly', () => {

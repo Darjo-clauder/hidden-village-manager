@@ -119,8 +119,20 @@ export function applyIdentityBias(stats, identity, intensity = 1) {
   return stats
 }
 
-/** Match-sim parameters for a style id (always returns a valid style). */
+/**
+ * Match-sim parameters for a style.
+ *
+ * Accepts either a style id OR an already-composed params object. That
+ * pass-through is the whole plumbing change behind matchday tactics having a
+ * risk profile: it lets a caller hand `simMatch` a style that does not exist in
+ * MATCH_STYLES — the player's philosophy style reshaped by the tactic they
+ * picked for this fixture — so a tactic can alter the SHAPE of a result
+ * (variance, draw frequency) instead of only nudging its mean.
+ *
+ * Missing keys fall back to the balanced defaults, so a partial object is safe.
+ */
 export function styleParams(styleId) {
+  if (styleId && typeof styleId === 'object') return { ...MATCH_STYLES.balanced, ...styleId }
   return MATCH_STYLES[styleId] || MATCH_STYLES.balanced
 }
 
