@@ -5,6 +5,7 @@ import {
   pickRivalEvent,
   strengthRatio,
   computePlayerStrength,
+  strengthBreakdown,
   RIVAL_EVENT_TYPES,
 } from '../shared/utils/rivalSim.js'
 
@@ -124,6 +125,62 @@ describe('computePlayerStrength', () => {
       upgrades: {},
     }
     expect(computePlayerStrength(hurt)).toBeLessThan(computePlayerStrength(healthy))
+  })
+
+  /**
+   * WHO is missing has to matter, not just how many.
+   *
+   * Quality used to average the top half of the ENTIRE roster while only depth
+   * checked availability, so an injured star still propped up the quality term.
+   * Measured before the fix: losing your best three and losing your worst three
+   * both cost exactly 2. For a management sim that is backwards.
+   */
+  it('losing stars costs more than losing reserves', () => {
+    const squad = [...Array.from({ length: 6 }, () => mkNinja(75)), ...Array.from({ length: 16 }, () => mkNinja(50))]
+    const out = (idxs) => ({
+      shinobi: squad.map((s, i) => (idxs.includes(i) ? { ...s, status: 'injured' } : s)),
+      upgrades: {},
+    })
+    const full = computePlayerStrength({ shinobi: squad, upgrades: {} })
+    const starsOut = computePlayerStrength(out([0, 1, 2]))            // three best
+    const reservesOut = computePlayerStrength(out([19, 20, 21]))      // three worst
+    expect(starsOut).toBeLessThan(full)
+    expect(full - starsOut).toBeGreaterThan(full - reservesOut)
+  })
+
+  it('strengthBreakdown itemises the cost coherently', () => {
+    const squad = [...Array.from({ length: 6 }, () => mkNinja(75)), ...Array.from({ length: 16 }, () => mkNinja(50))]
+    const G = { shinobi: squad.map((s, i) => (i < 3 ? { ...s, status: 'injured' } : s)), upgrades: {} }
+    const b = strengthBreakdown(G)
+    expect(b.total).toBe(22)
+    expect(b.available).toBe(19)
+    expect(b.missing).toBe(3)
+    expect(b.strength).toBe(computePlayerStrength(G))
+    expect(b.fullStrength).toBeGreaterThanOrEqual(b.strength)
+    expect(b.cost).toBe(b.fullStrength - b.strength)
+  })
+
+  it('a fully fit squad has no cost, and cost is never negative', () => {
+    const fit = { shinobi: Array.from({ length: 18 }, () => mkNinja(60)), upgrades: {} }
+    const b = strengthBreakdown(fit)
+    expect(b.missing).toBe(0)
+    expect(b.cost).toBe(0)
+    // A roster of only weak reserves can score better available-only than
+    // whole-roster; cost must still floor at zero rather than read as a bonus.
+    const lopsided = {
+      shinobi: [...Array.from({ length: 6 }, () => mkNinja(80)), ...Array.from({ length: 14 }, (_, i) => ({ ...mkNinja(20), status: i < 10 ? 'injured' : 'available' }))],
+      upgrades: {},
+    }
+    expect(strengthBreakdown(lopsided).cost).toBeGreaterThanOrEqual(0)
+  })
+
+  it('an empty or fully deployed village degrades gracefully', () => {
+    expect(strengthBreakdown({ shinobi: [], upgrades: {} }).total).toBe(0)
+    const allOut = { shinobi: Array.from({ length: 12 }, () => ({ ...mkNinja(50), status: 'mission' })), upgrades: {} }
+    const b = strengthBreakdown(allOut)
+    expect(b.available).toBe(0)
+    expect(Number.isFinite(b.strength)).toBe(true)
+    expect(b.strength).toBeGreaterThanOrEqual(0)
   })
 
   it('never exceeds the 200 cap', () => {

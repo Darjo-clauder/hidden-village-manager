@@ -6,6 +6,7 @@ import { identityFor, MATCH_STYLES, identityStageAdv } from '../../../shared/con
 import { MATCHDAY_TACTICS, tacticRead, tacticShapeLabel, TACTIC_STRONG_MOD, TACTIC_WEAK_MOD } from '../../../shared/constants/matchdayTactics.js'
 import { h2hLabel } from '../../../shared/utils/rivalry.js'
 import { hasFreshIntel, intelMonthsLeft, nowMonth } from '../../../shared/utils/intel.js'
+import { strengthBreakdown } from '../../../shared/utils/rivalSim.js'
 import { vendettaLabel, vendettaCarriers, vendettaBonus } from '../../../shared/utils/legacyMemory.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { openBattleViewer } from '../liveBattle.js'
@@ -300,6 +301,7 @@ function _matchPreviewCard(names, schedule, round, resultsByRound, playerName, e
     <div style="display:flex;flex-direction:column;gap:3px;border-top:1px solid var(--surface-3);padding-top:7px">
       ${formRow('Your form', p.playerForm)}
       ${formRow(p.opp + ' form', p.oppForm)}
+      ${_availabilityRow()}
       <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:1px">⚔ Head-to-head: <span style="color:var(--text-mid)">${h2hTxt}</span>${allTime ? ` · <span style="color:var(--text-mid)">${allTime}</span>` : ''}</div>
       ${(() => { const ace = (G.villages || []).find(v => v.n === p.opp)?.aces?.[0]; return ace ? `<div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:1px">⭐ Their ace: <span style="color:var(--text-hi)">${ace.name}</span> <span style="color:var(--text-faint)">(Pwr ${ace.pow})</span></div>` : '' })()}
       ${(() => {
@@ -313,6 +315,26 @@ function _matchPreviewCard(names, schedule, round, resultsByRound, playerName, e
     </div>
     ${_tacticPicker(p.opp, round)}
   </div>`
+}
+
+/**
+ * What the squad situation is costing you this matchday.
+ *
+ * League strength is a village-wide aggregate — there is no team selection —
+ * so who is fit at the moment the tick resolves is the closest thing to naming
+ * a side. That was completely invisible before: the player could send half the
+ * roster out on missions and never learn it had cost them the fixture. Missions
+ * resolve BEFORE the matchday in the same tick, so this month's casualties are
+ * priced into this month's result.
+ */
+function _availabilityRow() {
+  const b = strengthBreakdown(G)
+  if (!b.total) return ''
+  const col = b.cost >= 8 ? 'var(--red)' : b.cost >= 3 ? 'var(--orange)' : 'var(--text-mid)'
+  const tail = b.cost > 0
+    ? `<span style="color:${col}">−${b.cost} strength</span> <span style="color:var(--text-faint)">(${b.strength} of a possible ${b.fullStrength})</span>`
+    : `<span style="color:var(--green)">full strength</span> <span style="color:var(--text-faint)">(${b.strength})</span>`
+  return `<div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:1px">🩹 Available: <span style="color:var(--text-mid)">${b.available} of ${b.total}</span> — ${tail}</div>`
 }
 
 // Matchday tactic picker — the counter-play against THIS fixture's opponent.

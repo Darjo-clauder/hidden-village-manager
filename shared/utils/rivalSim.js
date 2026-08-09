@@ -110,16 +110,56 @@ export function rankStandings(playerStrength, playerName, villages = []) {
  * @returns {number}
  */
 export function computePlayerStrength(G) {
+  return strengthBreakdown(G).strength
+}
+
+/**
+ * The same calculation, itemised — so the UI can tell the player what their
+ * squad situation is actually costing them instead of leaving it invisible.
+ *
+ * `strength` is what the league uses. `fullStrength` is what the same roster
+ * would be worth with everybody fit, so the difference is the real price of
+ * this month's injuries and deployments.
+ *
+ * WHY QUALITY COUNTS ONLY THE AVAILABLE. It used to average the top half of
+ * the ENTIRE roster, injured and deployed included, while only depth checked
+ * availability. The consequence was that losing your best shinobi and losing
+ * your worst cost exactly the same — measured, both −2 — because the absent
+ * star still propped up the quality term. For a management sim that is
+ * backwards: "my ace is out for the derby" has to be a different sentence from
+ * "my twenty-second man is out". Quality now reads the side you can actually
+ * field.
+ */
+export function strengthBreakdown(G) {
   const roster = G.shinobi || []
-  const avail = roster.filter(s => s.status === 'available').length
-  const powers = roster.map(s => {
+  const pow = s => {
     const v = Object.values(s.stats || {})
     return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0
-  }).sort((a, b) => b - a)
-  const top = powers.slice(0, Math.max(6, Math.ceil(powers.length / 2)))
-  const quality = top.length ? top.reduce((a, b) => a + b, 0) / top.length : 0
-  const depth = Math.min(avail, 20) + Math.max(0, Math.min(avail - 20, 30)) * 0.4
+  }
   const wallBonus = (G.upgrades?.wall || 0) * 4
   const sealBonus = (G.upgrades?.seal || 0) * 3
-  return Math.round(Math.min(200, 5 + quality * 0.95 + depth * 1.1 + wallBonus + sealBonus))
+
+  const score = (pool, headcount) => {
+    const powers = pool.map(pow).sort((a, b) => b - a)
+    const top = powers.slice(0, Math.max(6, Math.ceil(powers.length / 2)))
+    const quality = top.length ? top.reduce((a, b) => a + b, 0) / top.length : 0
+    const depth = Math.min(headcount, 20) + Math.max(0, Math.min(headcount - 20, 30)) * 0.4
+    return {
+      quality,
+      depth,
+      strength: Math.round(Math.min(200, 5 + quality * 0.95 + depth * 1.1 + wallBonus + sealBonus)),
+    }
+  }
+
+  const fit = roster.filter(s => s.status === 'available')
+  const now = score(fit, fit.length)
+  const full = score(roster, roster.length)
+  return {
+    ...now,
+    available: fit.length,
+    total: roster.length,
+    missing: roster.length - fit.length,
+    fullStrength: full.strength,
+    cost: Math.max(0, full.strength - now.strength),
+  }
 }
