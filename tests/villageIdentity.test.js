@@ -183,3 +183,49 @@ describe('simMatch style effects', () => {
     expect(winRate(55, 70, 'grinder')).toBe(winRate(55, 70, 'balanced'))
   })
 })
+
+describe('element spread across the world', () => {
+  const ELEMENTS = ['Fire', 'Water', 'Wind', 'Earth', 'Lightning']
+  const countBy = (list, get) => {
+    const c = Object.fromEntries(ELEMENTS.map(e => [e, 0]))
+    for (const x of list) { const e = get(x); if (e in c) c[e]++ }
+    return c
+  }
+
+  /**
+   * Fire used to be carried by ONE of the twelve great villages against three
+   * each for Water, Wind and Earth. That was not cosmetic: the combined-element
+   * counters are keyed to base elements, so Rime and Quartz ("strong into
+   * Fire") were worth a third of Scald or Plasma, and Scorch (Fire + Wind) was
+   * so thin it needed 32 seeds of simulation to appear at all.
+   */
+  it('no element is starved among the great villages', () => {
+    const c = countBy(Object.values(VILLAGE_IDENTITIES), v => v.element)
+    const counts = ELEMENTS.map(e => c[e])
+    // 12 villages / 5 elements = 2.4, so 2-3 is the best achievable spread.
+    expect(Math.min(...counts), `starved: ${JSON.stringify(c)}`).toBeGreaterThanOrEqual(2)
+    expect(Math.max(...counts) - Math.min(...counts), `uneven: ${JSON.stringify(c)}`).toBeLessThanOrEqual(1)
+  })
+
+  it('every element is represented somewhere in the wider world', () => {
+    const all = [
+      ...Object.values(VILLAGE_IDENTITIES).map(v => v.element),
+      ...MINOR_NATIONS.map(n => n.element),
+    ]
+    const c = countBy(all, e => e)
+    ELEMENTS.forEach(e => expect(c[e], `${e} has no origin at all`).toBeGreaterThanOrEqual(3))
+  })
+
+  /**
+   * The counters have to be worth comparable amounts. A combined element that
+   * counters one village while another counters three is not a choice, it is a
+   * tax on whoever awakened the wrong one.
+   */
+  it('no combined-element counter is worth far less than another', async () => {
+    const { COMBINED_ELEMENTS } = await import('../shared/constants/combinedElements.js')
+    const c = countBy(Object.values(VILLAGE_IDENTITIES), v => v.element)
+    const worth = COMBINED_ELEMENTS.map(ce => ce.strongInto.reduce((a, e) => a + (c[e] || 0), 0))
+    expect(Math.min(...worth)).toBeGreaterThanOrEqual(2)
+    expect(Math.max(...worth) - Math.min(...worth)).toBeLessThanOrEqual(1)
+  })
+})

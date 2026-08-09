@@ -52,7 +52,7 @@ export const MATCH_STYLES = {
 //   flavour titles a share of its shinobi carry, so a Frostmere dossier reads
 //   differently from an Emberfall one.
 export const VILLAGE_IDENTITIES = {
-  Dunehold:    { id: 'dunehold',    label: 'Desert Endurance',  style: 'grinder',     statBias: { speed: 5, taijutsu: 4 },        element: 'Earth',     archetypes: ['Dune Strider', 'Sandveil Ascetic'],   blurb: 'Desert-forged conditioning — they outlast you, then break you.' },
+  Dunehold:    { id: 'dunehold',    label: 'Desert Endurance',  style: 'grinder',     statBias: { speed: 5, taijutsu: 4 },        element: 'Fire',      archetypes: ['Dune Strider', 'Sunscour Ascetic'],   blurb: 'Sun-forged conditioning — they let the heat do half the work, then break you.' },
   Tidefort:    { id: 'tidefort',    label: 'Tidal Discipline',  style: 'fortress',    statBias: { genjutsu: 5, chakra: 4 },       element: 'Water',     archetypes: ['Tide Caller', 'Mist Diver'],          blurb: 'Patient as the tide — illusion-heavy and maddening to attack.' },
   Stoneveil:   { id: 'stoneveil',   label: 'Stone Doctrine',    style: 'fortress',    statBias: { taijutsu: 5, chakra: 4 },       element: 'Earth',     archetypes: ['Stone Bulwark', 'Granite Monk'],      blurb: 'A wall with a village behind it. Nothing gets through cheaply.' },
   Stormreach:  { id: 'stormreach',  label: 'Storm Assault',     style: 'blitz',       statBias: { speed: 6, ninjutsu: 3 },        element: 'Lightning', archetypes: ['Storm Striker', 'Gale Skirmisher'],   blurb: 'First strike, fastest strike — devastating when it lands.' },

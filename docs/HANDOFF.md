@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-08-04 · **HEAD:** `f4b6f0b` (see PINNED section for open calls) · **Branch:** `master` · **Tests:** 1321 passing / 102 files
+**Last updated:** 2026-08-04 · **HEAD:** `7072a16`+ (see PINNED section for open calls) · **Branch:** `master` · **Tests:** 1333 passing / 102 files
 
 ---
 
@@ -31,6 +31,30 @@
 > **3. Nobody has still actually LOOKED at the type ramp or the elevation.** Everything above is DOM and computed-style measurement. The desktop build is current and installed (`C:\Users\Tyler\AppData\Local\Hidden Village Manager`) and is the place to do it — the Browser pane here never composites, so screenshots are not available to an agent.
 >
 > Two corrections to earlier handoff text, both found by that audit: **`.strip` computing `box-shadow: none` is correct** (its device is a `border-left` accent rule — the older "all three add only box-shadow" line was imprecise), and **`--red` is fine at 4.07:1** on the page background; the one bad reading came from red text on a red-tinted banner, which is a few specific elements rather than a token problem.
+
+---
+
+> ## ⚑ WORLD ELEMENT REBALANCE (2026-08-04)
+>
+> **Fire was carried by ONE of the twelve great villages** against three each for Water, Wind and Earth. Not cosmetic: the combined-element counters key off base elements, so Rime and Quartz (`strongInto: Fire`) were worth a third of Scald or Plasma, and Scorch (Fire + Wind) was thin enough to need 32 seeds of simulation to surface.
+>
+> Two flips, both better fits than what they replaced:
+>
+> - **Dunehold** Earth → **Fire**. A desert village defined by heat, whose stat bias (speed/taijutsu) never had any earth character. Archetype renamed Sandveil → Sunscour, blurb updated.
+> - **Kilnrock** (minor nation) Earth → **Fire**. A kiln is a furnace and its bloodline is literally *Kiln Skin*. **`region` stays `earth`** — geography and chakra nature are different fields and are meant to diverge here.
+>
+> | | before | after |
+> |---|---|---|
+> | great-village element spread | 1–3 | **2–3** (best achievable for 12 across 5) |
+> | counter value spread | 1–3 villages | **2–3** |
+> | Fire among 20 named origins | 2 | **4** |
+> | Fire-natured shinobi generated | 5.4% | **8.9%** |
+>
+> **Water is still 6 of 20 and deliberately left alone** — every Water origin is name-locked (tide, well, frost, reed, brine, fen) and forcing one off it would read worse than the imbalance. Locked by tests in `villageIdentity.test.js`.
+>
+> **Snapshots did not move**: the RNG stream is identical, only the resulting element values differ. A pure data rebalance with no sim drift.
+>
+> ⚠ **Scorch still needs 32 seeds to appear, and that is NOT scarcity.** `candidateFor` is uniform (verified: 25% each way for both Fire and Wind carriers). The sweep uses FIXED seeds, so 16 is a subset of 24 is a subset of 32 — scorch simply first lands in seeds 24–31. Do not "fix" this by fiddling with the odds.
 
 ---
 

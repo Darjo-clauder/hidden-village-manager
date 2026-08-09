@@ -18,7 +18,11 @@ export const MINOR_NATIONS = [
     clan: { name: 'Shiota', bloodline: 'Brine Body', b: { chakra: 10, taijutsu: 5 } } },
   { n: 'Palewood',   element: 'Fire', ico: '🍂', region: 'fire',      tier: 'D', specialty: 'ninjutsu',     blurb: 'A fading forest power that still produces the occasional prodigy.',
     clan: { name: 'Kareha', bloodline: 'Ash Bloom', b: { ninjutsu: 9, intelligence: 5 } } },
-  { n: 'Kilnrock',   element: 'Earth', ico: '🧱', region: 'earth',     tier: 'C', specialty: 'taijutsu',     blurb: 'Quarry-town toughness — their fighters are carved, not trained.',
+  // Element is Fire, region stays 'earth': the geography is quarry country, but
+  // a kiln is a furnace and the Iwabe bloodline is literally "Kiln Skin" —
+  // hardened BY fire. The two fields mean different things and are meant to
+  // diverge here.
+  { n: 'Kilnrock',   element: 'Fire',  ico: '🧱', region: 'earth',     tier: 'C', specialty: 'taijutsu',     blurb: 'Quarry-town toughness — fired in the kilns, not trained in a yard.',
     clan: { name: 'Iwabe', bloodline: 'Kiln Skin', b: { taijutsu: 10, chakra: 5 } } },
   { n: 'Galecrest',  element: 'Wind', ico: '🪁', region: 'wind',      tier: 'C', specialty: 'speed',        blurb: 'Highland runners; the fastest feet outside the great villages.',
     clan: { name: 'Kazehai', bloodline: 'Gale Step', b: { speed: 11, taijutsu: 4 } } },
