@@ -1,6 +1,6 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-08-04 · **HEAD:** `79bd096` (see PINNED section for open calls) · **Branch:** `master` · **Tests:** 1303 passing / 101 files
+**Last updated:** 2026-08-04 · **HEAD:** `f4b6f0b` (see PINNED section for open calls) · **Branch:** `master` · **Tests:** 1321 passing / 102 files
 
 ---
 
@@ -27,8 +27,6 @@
 > | raise hairline to white 8% / 12% | 1.21 / 1.38 |
 >
 > 1.00 is literally no difference — the border already outscores the whole shadow layer about **6:1**. If this gets picked up, the fix direction is *lighter edges*, not darker shadows.
->
-> **4. Matchday is a lookup, not a decision — scoped in `docs/MATCHDAY_AS_A_BET.md`.** Measured against the real field: every fixture has exactly ONE correct tactic worth a flat +8%, Control is strong into 5 of 12 villages and weak into 2 (net +3, the blind-pick default), and 2 of 12 fixtures offer no edge at all. The C/D pass made the pick per-fixture but not a *judgement*. The doc scopes giving tactics risk/reward profiles (variance and draw shape, not just a mean) so the question becomes "what do I need from this match" — which the season state already computes — plus gating the style read behind fresh intel. **This supersedes the Fortress patch:** fortress finishes 6.92 vs blitz 6.17 across 4,000 equal-strength seasons, and under a risk-profile model that deficit becomes flavour rather than a flaw. Only apply `underdogEdge: 1.05` to fortress if this work is skipped.
 >
 > **3. Nobody has still actually LOOKED at the type ramp or the elevation.** Everything above is DOM and computed-style measurement. The desktop build is current and installed (`C:\Users\Tyler\AppData\Local\Hidden Village Manager`) and is the place to do it — the Browser pane here never composites, so screenshots are not available to an agent.
 >

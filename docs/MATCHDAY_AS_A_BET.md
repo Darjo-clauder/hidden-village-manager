@@ -1,7 +1,12 @@
 # Matchday as a bet, not a lookup
 
 Scope for turning the per-fixture tactic pick into an actual management
-decision. Written at `0e3aa95`. Not started.
+decision. Written at `0e3aa95`. **SHIPPED in `f4b6f0b`** — kept as the
+rationale record; see the commit for what actually landed and how it was
+measured. The one deviation: step 1 was not landed separately as an inert
+commit, because it turned out to be inert for free (the harness never picks a
+tactic, so the characterization snapshots never moved) and that is now a
+permanent test rather than a one-off check.
 
 ---
 
