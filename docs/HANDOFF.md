@@ -8,6 +8,20 @@
 >
 > Three things Tyler has explicitly deferred. **None is a bug and none blocks anything** — they are open judgement calls, parked on purpose. The measurements are recorded here so nobody has to re-derive them; that was the expensive part.
 >
+> > ### ⏸ Items 1 and 2 are AWAITING A JOINT DECISION
+> >
+> > Tyler is holding both until his partner is back so they can call them together. **Do not apply either unilaterally**, even though both are one-line changes.
+> >
+> > **Decision bench (open this first):** <https://claude.ai/code/artifact/1b5366c1-fb43-4956-bd6a-f81f16017a81>
+> >
+> > It renders the real tokens at their real sizes on the game's actual `#0a0908` ground with the grain reproduced, computes every contrast figure live in the page rather than quoting these tables, and has a toggle for the vignette. Built because **screenshots genuinely do not work here** — re-tested this session, `computer{screenshot}` still times out after 300s, so the browser-pane note below is current, not stale.
+> >
+> > Recommendations, for when they sit down: **`#6a6054`** for item 1, and **white 8–12%** on the top hairline for item 2.
+> >
+> > ⚠ **Every contrast figure in this section is the BEST case.** The game's vignette (`body::after`) darkens screen edges by up to **42%**, so anything rendered near an edge is worse than the numbers below. That was not accounted for when these tables were first measured.
+> >
+> > Blast radius if they say yes: `.surf` is on **1,364** elements and `.well` on **217** — both changes land everywhere at once.
+>
 > **1. `--text-faint` is dim.** It sits at **2.25–2.36:1** against the backdrops it actually renders on, across ~354 real text nodes — below WCAG AA on any reading. Whether that is atmosphere or eye strain is a taste call that wants human eyes. Measured alternatives, same backdrops:
 >
 > | value | on `--bg` | on `--surface` |
