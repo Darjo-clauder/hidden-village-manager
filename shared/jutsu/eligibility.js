@@ -36,14 +36,17 @@ export function meetsReq(s, req) {
  * Full eligibility for one jutsu: clan lock, not already known, and either
  * requirement set satisfied.
  */
-export function jutsuEligible(s, j) {
+export function jutsuEligible(s, j, ctx = {}) {
   if (!s || !j) return false
   if ((s.jutsu || []).includes(j.id)) return false
   if (j.clan && s.clan !== j.clan) return false
+  // Nation techniques: gated by the VILLAGE the shinobi serves, not by the
+  // shinobi own chakra nature. Serving Ember teaches you Ember techniques.
+  if (j.element && j.element !== ctx.villageElement) return false
   return meetsReq(s, j.req) || (!!j.altReq && meetsReq(s, j.altReq))
 }
 
 /** Every jutsu this shinobi could learn right now. */
-export function eligibleJutsu(s, jutsuList) {
-  return (jutsuList || []).filter(j => jutsuEligible(s, j))
+export function eligibleJutsu(s, jutsuList, ctx = {}) {
+  return (jutsuList || []).filter(j => jutsuEligible(s, j, ctx))
 }

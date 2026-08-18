@@ -1,4 +1,6 @@
 import { G, ui, sPow, sqP, sn, fmt, clamp, getMissionSpecBonus } from '../state.js'
+import { elementOfNation, specStanding, specMod, terrainMod, TERRAIN_BY_ID, counterLabel, counterMod } from '../../../shared/constants/elementalIdentity.js'
+import { elementAffinityFor } from '../../../shared/constants/villageIdentity.js'
 import { RANKS, RKC } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
 import { pCl } from './roster.js'
@@ -18,6 +20,45 @@ export function toggleAutoWatch() {
   G._autoWatchBattles = !G._autoWatchBattles
   ntf(G._autoWatchBattles ? 'Auto-watch on — battles play live after each turn.' : 'Auto-watch off.')
   rMissionReport()
+}
+
+/**
+ * What this contract is worth to a village of your element, stated plainly.
+ *
+ * Three things the player could not previously see and now needs to: whether
+ * their nation is built for this kind of work, what the ground and weather
+ * think of their chakra nature, and whether the party involved is one their
+ * element has the better of. All three are already in the success maths — this
+ * just stops them being invisible.
+ */
+function _elementalTags(m) {
+  const el = elementOfNation(G.nationId) || G.vElement
+  if (!el) return ''
+  const out = []
+
+  const standing = specStanding(el, m.spec)
+  if (standing !== 'neutral') {
+    const spec = specMod(el, m.spec)
+    const col = spec > 0 ? 'var(--green)' : 'var(--red)'
+    const word = { signature: 'Signature work', strong: 'Suits us', weak: 'Against the grain', wall: 'Not what we are' }[standing]
+    out.push(`<span style="font-size:var(--fs-micro);border:1px solid ${col};color:${col};padding:0 4px;margin-right:3px">${word} ${spec > 0 ? '+' : ''}${Math.round(spec * 100)}%</span>`)
+  }
+
+  const terr = TERRAIN_BY_ID[m.terrain]
+  if (terr) {
+    const tm = terrainMod(m.terrain, el)
+    const col = tm > 0 ? 'var(--green)' : tm < 0 ? 'var(--orange)' : 'var(--text-dim)'
+    out.push(`<span title="${terr.desc}" style="font-size:var(--fs-micro);border:1px solid var(--border-hi);color:${col};padding:0 4px;margin-right:3px;cursor:help">${terr.icon} ${terr.n}${tm ? ` ${tm > 0 ? '+' : ''}${Math.round(tm * 100)}%` : ''}</span>`)
+  }
+
+  if (m.village) {
+    const lbl = counterLabel(el, elementAffinityFor(m.village))
+    if (lbl) {
+      const good = counterMod(el, elementAffinityFor(m.village)) > 0
+      out.push(`<span title="${lbl}" style="font-size:var(--fs-micro);border:1px solid ${good ? 'var(--green)' : 'var(--red)'};color:${good ? 'var(--green)' : 'var(--red)'};padding:0 4px;margin-right:3px;cursor:help">⚔ ${good ? 'Favourable' : 'Exposed'}</span>`)
+    }
+  }
+  return out.join('')
 }
 
 // Tactical approach picker — favored/mismatch highlighted against a mission's spec.
@@ -264,7 +305,7 @@ export function rSoloM() {
         <span class="mrb ${rc}">${m.rk}</span>
         <div style="flex:1">
           <div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold;cursor:pointer" onclick="selectMission('${m.id}')" title="View briefing ▸">${m.n}</div>
-          <div style="margin-top:3px">${crisisTag}${seasonalTag}${followUpTag}${specTag} ${_expiryBadge(m)}${_chainBadge(m)}</div>
+          <div style="margin-top:3px">${crisisTag}${seasonalTag}${followUpTag}${specTag} ${_elementalTags(m)}${_expiryBadge(m)}${_chainBadge(m)}</div>
         </div>
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:var(--fs-small);color:var(--text-dim);margin-bottom:7px">
@@ -436,7 +477,7 @@ export function rSqM() {
         <span class="mrb ${rc}">${m.rk}</span>
         <div>
           <div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold">${m.n} <span style="font-size:var(--fs-small);color:var(--purple)">Squad</span></div>
-          <div style="margin-top:3px">${_expiryBadge(m)}${_chainBadge(m)}</div>
+          <div style="margin-top:3px">${_elementalTags(m)}${_expiryBadge(m)}${_chainBadge(m)}</div>
         </div>
       </div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:var(--fs-small);color:var(--text-dim);margin-bottom:7px">

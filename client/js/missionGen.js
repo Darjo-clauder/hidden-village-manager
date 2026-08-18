@@ -1,4 +1,6 @@
 import { G, rnd, pk, clamp } from './state.js'
+import { elementOfNation, rollTerrain } from '../../shared/constants/elementalIdentity.js'
+import { signatureMissionsFor, diplomaticMissionsFor } from '../../shared/constants/elementalMissions.js'
 import { MISS_POOL } from './constants.js'
 import { aL } from './ui.js'
 import { t as tr } from '../../shared/utils/i18n.js'
@@ -83,6 +85,71 @@ export function refreshMissionBoard(G) {
 
   // 4. Inject a mission chain step if a chain is active and its next step isn't on the board
   _injectChainMissions(G)
+
+  // NOTE: the elemental layer deliberately does NOT run here. rfM() rebuilds
+  // G.avM wholesale AFTER this function in the tick, keeping each existing
+  // mission with only 60% probability and generating fresh ones with no
+  // terrain — so anything injected here is half-discarded and half the board
+  // ends up untagged. applyElementalLayer() runs after rfM instead.
+}
+
+/**
+ * Contracts that exist because of WHO YOU ARE and WHO YOU HAVE ANNOYED.
+ *
+ * Signature contracts are gated on the player's own element — the jobs you get
+ * called for because of what your village is known for. Diplomatic contracts
+ * come from standing with a specific named village, which is where the
+ * relations layer finally produces something you DO rather than something you
+ * read on a card.
+ *
+ * Both are capped hard and expire like any other contextual mission, so the
+ * board never fills with them.
+ */
+export function applyElementalLayer(G) {
+  _injectElementalMissions(G)
+  _tagTerrain(G)
+}
+
+function _injectElementalMissions(G) {
+  const el = elementOfNation(G.nationId) || G.vElement
+  const expiresMonth = G.month + 3
+  const addedYear = G.year
+  const stamp = m => ({ ...m, id: Math.random().toString(36).slice(2), expiresMonth, addedYear, contextual: true })
+
+  // One signature contract at a time, so it reads as an occasion.
+  if (el && !G.avM.some(m => m.signatureEl)) {
+    const pool = signatureMissionsFor(el)
+    if (pool.length) {
+      const pick = pool[Math.floor(Math.random() * pool.length)]
+      G.avM.push(stamp({ ...pick, signatureEl: el }))
+    }
+  }
+
+  // At most one diplomatic contract on the board at a time, from the village
+  // you are furthest from neutral with — the relationship that is actually
+  // generating pressure.
+  if (!G.avM.some(m => m.village)) {
+    const candidates = (G.villages || [])
+      .map(v => ({ v, offers: diplomaticMissionsFor(v) }))
+      .filter(x => x.offers.length)
+      .sort((a, b) => Math.abs(50 - (a.v.rel ?? 50)) < Math.abs(50 - (b.v.rel ?? 50)) ? 1 : -1)
+    const top = candidates[0]
+    if (top) {
+      const pick = top.offers[Math.floor(Math.random() * top.offers.length)]
+      G.avM.push(stamp(pick))
+    }
+  }
+}
+
+/**
+ * Give every untagged contract a terrain. Rolled once and stored, never
+ * re-rolled, so a mission the player has already read does not change under
+ * them between ticks.
+ */
+function _tagTerrain(G) {
+  for (const m of G.avM || []) {
+    if (!m.terrain) m.terrain = rollTerrain()
+  }
 }
 
 function _currentContext(G) {

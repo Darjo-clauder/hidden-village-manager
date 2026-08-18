@@ -43,7 +43,7 @@ import { pushNarrative } from './inbox.js'
 import { pushMissionLog, hasUniqueAbility, jkKIAImmune, pickInjuryType, applyInjury, applyTrauma,
          rollInjuryOnSuccess, addWorkload, fatiguePenalty, checkJutsu, tryFormBonds, maybeInduct,
          _bloodlineBonus, _formationMod, _formationRisk, _nationSuccessMod, _philosophySuccessMod,
-         _philosophyKIAMod, _squadBondBonus, recordMissionCommission, queuePressConference } from './missionHelpers.js'
+         _philosophyKIAMod, _squadBondBonus, recordMissionCommission, queuePressConference, _elementCounterMod } from './missionHelpers.js'
 import { getBeastPassives, captureChance } from '../beastEngine.js'
 import { sqSynergy, SQUAD_IDENTITIES } from '../synergy.js'
 import { roleBonus } from '../depthEngine.js'
@@ -163,7 +163,7 @@ export function tickMissions(ctx) {
       }, 0)
       const sqFatigueMod = sq.members.reduce((acc, id) => { const mb = G.shinobi.find(x => x.id === id); return acc + (mb ? fatiguePenalty(mb) : 0) }, 0) / Math.max(1, sq.members.length)
       const sqGrindMod = grindMod(sq.consecutiveDeployMonths || 0)
-      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + squadCombinedMod(sq.members.map(id => G.shinobi.find(x => x.id === id)), m) + _formationMod(sq) + _nationSuccessMod() + _philosophySuccessMod() + (am._scMod || 0) + sqFatigueMod + sqGrindMod + _appMod.sc - _appMod.risk - (am._riskMod || 0) + kageMod(G, 'command'), 0.1, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - prepRiskMod + (pw - m.mp) * 0.005 + iB + syn.successMod + bondBonus + sb.missionSuccessBonus + sb.squadMissionBonus + anbuBon + rB2.missionBonus - rB2.riskReduction + chemBonus + prepMod + sqJutsuMod + dp.missionRiskReduction + cp.successMod + sqBondMod + clP.successMod + shP.opSuccessBonus + sqDeclineMod + _bloodlineBonus(sq.members) + squadCombinedMod(sq.members.map(id => G.shinobi.find(x => x.id === id)), m) + _formationMod(sq) + _nationSuccessMod(m) + _elementCounterMod(m) + _philosophySuccessMod() + (am._scMod || 0) + sqFatigueMod + sqGrindMod + _appMod.sc - _appMod.risk - (am._riskMod || 0) + kageMod(G, 'command'), 0.1, successCeiling(m.rk))
 
       const _mev = resolveMission(sc)
       const _mq = qualityEffects(_mev.quality)
@@ -364,7 +364,7 @@ export function tickMissions(ctx) {
       const _soloAppMod = missionApproachMod(am.approach, m.spec)  // tactical approach vs mission spec
       const jLB = jutsuLoadoutBonus(s, ALL_JUTSU)
       const bMB = bondMissionBonus(s, G.shinobi)
-      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + combinedMissionMod(s, m) + _nationSuccessMod() + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0) + fatiguePenalty(s) + getMissionSpecBonus(s, m) + _soloAppMod.sc - _soloAppMod.risk - (am._riskMod || 0) + kageMod(G, 'command'), 0.08, successCeiling(m.rk))
+      const sc = clamp(1 - m.risk - rM + (pw - m.mp) * 0.01 + iB + sM + sB + sb.missionSuccessBonus + soloAnbuBon + soloFormMod + beastLuck + (s.declineMod || 0) + soloPrepMod + jLB.successMod + jLB.powerMod * 0.5 + dp.missionRiskReduction + cp.successMod + bMB.successMod + clP.successMod + shP.opSuccessBonus + _bloodlineBonus([s.id]) + combinedMissionMod(s, m) + _nationSuccessMod(m) + _elementCounterMod(m) + _philosophySuccessMod() + confidenceMod(s) + rivalScPenalty(G.villages, m.rk) + (am._scMod || 0) + fatiguePenalty(s) + getMissionSpecBonus(s, m) + _soloAppMod.sc - _soloAppMod.risk - (am._riskMod || 0) + kageMod(G, 'command'), 0.08, successCeiling(m.rk))
       const rB = ['A','S'].includes(m.rk) && s.pers.n === 'Honorable' ? 2 : 0
 
       addWorkload(s, m.rk)

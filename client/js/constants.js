@@ -1,4 +1,5 @@
 import { COMBINED_SIGNATURES } from '../../shared/constants/combinedElements.js'
+import { NATION_TECHNIQUES, ELEMENTAL_DOCTRINES } from '../../shared/constants/elementalIdentity.js'
 export const CLANS=[{n:'Kageha',t:'Kagan',b:{ninjutsu:14,genjutsu:12}},{n:'Shiromi',t:'Hakugan',b:{taijutsu:14,chakra:8}},{n:'Kagero',t:'Shadow Weave',b:{intelligence:16,ninjutsu:5}},{n:'Tsuchida',t:'Body Expansion',b:{taijutsu:12,chakra:8}},{n:'Tamashii',t:'Soul Touch',b:{genjutsu:14,intelligence:10}},{n:'Okamura',t:'Pack Fang',b:{taijutsu:12,speed:12}},{n:'Mushiba',t:'Hive Bond',b:{intelligence:12,genjutsu:8}},{n:'Kusari',t:'Chain Seal',b:{chakra:22,ninjutsu:10}},{n:'Mori',t:'Forest Birth',b:{chakra:18,ninjutsu:14}}]
 export const RANKS=['Initiate','Adept','Veteran','Shadow','Legend']
 export const RKC=['rk-g','rk-c','rk-j','rk-a','rk-s']
@@ -61,7 +62,13 @@ export const VILLAGE_DOCTRINES=[
   {id:'commerce',n:'Commerce Doctrine',icon:'💰',defBonus:-10,incomeMod:0.12,growthMod:0,   desc:'+12% income, −10 defense. Wealth over walls.'},
   {id:'sage',    n:'Way of the Sage',  icon:'📖',defBonus:0,  incomeMod:0,    growthMod:0.12,desc:'+12% shinobi growth. Mastery over money and walls.'},
 ]
-export const DOCTRINE_BY_ID=Object.fromEntries(VILLAGE_DOCTRINES.map(d=>[d.id,d]))
+/**
+ * Every doctrine, generic plus the five element-exclusive ones. DOCTRINE_BY_ID
+ * must cover both or a village that adopted its elemental doctrine would find
+ * the lookup empty on the next tick and silently lose the bonuses.
+ */
+export const ALL_DOCTRINES=[...VILLAGE_DOCTRINES, ...ELEMENTAL_DOCTRINES]
+export const DOCTRINE_BY_ID=Object.fromEntries(ALL_DOCTRINES.map(d=>[d.id,d]))
 
 // ── Start scenarios — reshape the opening board for variable playthroughs ──────
 export const START_SCENARIOS=[
@@ -664,4 +671,4 @@ export const DAIMYO_BONUS = [
  * Lookups over a shinobi's `jutsu` array must use THIS, not JUTSU_LIST, or a
  * signature silently vanishes from the UI and stops paying its bonus.
  */
-export const ALL_JUTSU = [...JUTSU_LIST, ...COMBINED_SIGNATURES]
+export const ALL_JUTSU = [...JUTSU_LIST, ...COMBINED_SIGNATURES, ...NATION_TECHNIQUES]

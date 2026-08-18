@@ -9,7 +9,7 @@ import { sqSynergy, SQUAD_IDENTITIES } from './synergy.js'
 import { tickScouts } from './scoutEngine.js'
 import { tickProspects } from './prospectEngine.js'
 import { tickCareers, ensureCareerFields } from './careerEngine.js'
-import { refreshMissionBoard, maybeSpawnChain, advanceChain } from './missionGen.js'
+import { refreshMissionBoard, maybeSpawnChain, advanceChain, applyElementalLayer } from './missionGen.js'
 import { evalDepth, roleBonus } from './depthEngine.js'
 import { jutsuLoadoutBonus } from '../../shared/jutsu/loadout.js'
 import { DISTRICTS, getDistrictPassives } from '../../shared/constants/districts.js'
@@ -1802,6 +1802,9 @@ export function adv() {
   }
 
   syncToServer(); rfM(); rfP()
+  // AFTER rfM: it rebuilds the board wholesale, so the elemental layer has to
+  // be applied to the board the player will actually see.
+  applyElementalLayer(G)
   // ── Warden development XP — base + this month's mission wins + queued events ──
   {
     const wins = (G._formThisMonth?.wins) || 0

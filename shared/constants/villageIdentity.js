@@ -70,6 +70,7 @@ export const VILLAGE_IDENTITIES = {
 const _ELEMENTS = ['Fire', 'Water', 'Wind', 'Earth', 'Lightning']
 
 import { MINOR_BY_NAME } from './minorNations.js'
+import { ELEMENTAL_IDENTITY } from './elementalIdentity.js'
 
 /**
  * Chakra-element affinity for ANY named origin — a great village's themed
@@ -88,10 +89,30 @@ export function elementAffinityFor(name) {
  */
 export function nationTalent(identity, rng = Math.random) {
   const aff = identity?.element
-  const element = aff && rng() < 0.6 ? aff : _ELEMENTS[Math.floor(rng() * _ELEMENTS.length)]
+  // Bias strength is now PER ELEMENT rather than a flat 60% for everyone: a
+  // Stone village is more uniformly Earth than a Tide village is Water, which
+  // is what makes their rosters read differently at a glance rather than just
+  // differently on average. Falls back to the old flat rate for unthemed names.
+  const bias = ELEMENTAL_IDENTITY[aff]?.talent?.bias ?? 0.6
+  const element = aff && rng() < bias ? aff : _ELEMENTS[Math.floor(rng() * _ELEMENTS.length)]
   const pool = identity?.archetypes || []
   const archetype = pool.length && rng() < 0.5 ? pool[Math.floor(rng() * pool.length)] : null
   return { element, archetype }
+}
+
+/**
+ * The stat lean a village's element gives every one of its shinobi, on top of
+ * the village's own two-stat signature bias. Small — it colours a roster
+ * without overriding the identity that already shapes it.
+ */
+export function elementStatLean(element) {
+  return ELEMENTAL_IDENTITY[element]?.talent?.stats || {}
+}
+
+/** The accent colour a village flies, from its element. Null if unthemed. */
+export function accentForVillage(name) {
+  const el = elementAffinityFor(name)
+  return ELEMENTAL_IDENTITY[el]?.accent || null
 }
 
 const DEFAULT_IDENTITY = { id: 'none', label: 'Unaligned', style: 'balanced', statBias: {}, blurb: '' }

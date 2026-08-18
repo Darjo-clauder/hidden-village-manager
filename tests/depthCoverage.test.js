@@ -48,6 +48,7 @@ const { CLANS } = await import('../shared/constants/clans.js')
 const { NARRATIVE_ARCHETYPES } = await import('../shared/utils/personality.js')
 const { definingMoments } = await import('../shared/utils/legacyMemory.js')
 const { COMBINED_ELEMENTS } = await import('../shared/constants/combinedElements.js')
+const { NATION_TECHNIQUES, TERRAINS, ELEMENTAL_IDENTITY } = await import('../shared/constants/elementalIdentity.js')
 await (await import('./helpers/tickHarness.js')).initLocale()
 
 // A decade, because several pipelines only open up late: the `wins: 50` rare
@@ -69,6 +70,7 @@ const census = {
   quirk: new Set(), dream: new Set(), jutsu: new Set(), trait: new Set(),
   persElement: new Set(), clanElement: new Set(), persArchetype: new Set(),
   combined: new Set(), combinedSource: new Set(), signature: new Set(),
+  nationTech: new Set(), terrain: new Set(), sigMission: new Set(), diploMission: new Set(),
 }
 /** Mechanics that must actually trigger, not merely exist. */
 const fired = {
@@ -97,6 +99,7 @@ function observe(G) {
     for (const j of s.jutsu || []) {
       census.jutsu.add(j)
       if (j.startsWith('ce_')) census.signature.add(j)
+      if (j.startsWith('nt_')) census.nationTech.add(j)
     }
     for (const t of s.traits || []) census.trait.add(typeof t === 'string' ? t : t?.n)
     if ((s.jutsu || []).length) fired.jutsuLearned++
@@ -106,6 +109,12 @@ function observe(G) {
     if ((s.bonds || []).length) fired.bond++
     if ((s.grudges || []).length) fired.grudge++
     if ((s.injDays || 0) > 0) fired.injury++
+  }
+  // The mission board is transient, so it has to be sampled every month.
+  for (const m of G.avM || []) {
+    if (m.terrain) census.terrain.add(m.terrain)
+    if (m.signatureEl) census.sigMission.add(m.n)
+    if (m.village) census.diploMission.add(m.mood || "?")
   }
   fired.kia = Math.max(fired.kia, (G.memorial || []).filter(m => !m.transfer).length)
   fired.mentorship = Math.max(fired.mentorship, (G.mentorships || []).length)
@@ -229,6 +238,36 @@ describe(`depth coverage — ${SEEDS} seeds x ${MONTHS} months`, () => {
 
   it('signature techniques are earned, not merely defined', () => {
     expect(census.signature.size, 'no signature technique was ever mastered').toBeGreaterThan(0)
+  })
+
+  /**
+   * The elemental-nation layer, held to the same standard as everything else.
+   * Eight workstreams of new content is eight new chances to ship something
+   * nobody ever sees.
+   */
+  it('every terrain tag reaches the mission board', () => {
+    expect(missing(TERRAINS.map(t => t.id), census.terrain)).toEqual([])
+  })
+
+  it('signature contracts appear for the village that qualifies', () => {
+    expect(census.sigMission.size, 'no signature contract ever reached the board').toBeGreaterThan(0)
+  })
+
+  it('diplomatic contracts appear once relations move off neutral', () => {
+    expect(census.diploMission.size, 'relations never generated a contract').toBeGreaterThan(0)
+  })
+
+  /**
+   * Nation techniques are gated on the VILLAGE element. The harness plays a
+   * fresh village per seed, so across 32 seeds several elements are covered —
+   * but a given run only ever sees its own. Asserting that some are learned
+   * catches the gate being wired backwards, which would make all ten dead.
+   */
+  it('nation techniques are actually learned', () => {
+    expect(census.nationTech.size, 'no nation technique was ever learned').toBeGreaterThan(0)
+    for (const id of census.nationTech) {
+      expect(NATION_TECHNIQUES.some(t => t.id === id), `learned unknown technique ${id}`).toBe(true)
+    }
   })
 
   it('reports the full census, so dead content shows up in the diff', () => {

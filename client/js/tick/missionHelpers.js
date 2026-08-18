@@ -19,8 +19,10 @@ import { G, clamp, sn, pk, rnd, fmt, addTrait, addChronicle, addLegend, addNotic
 import { aL, ntf } from '../ui.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { combinedOf, signatureUnlocked } from '../../../shared/constants/combinedElements.js'
+import { specMod, terrainMod, counterMod, elementOfNation } from '../../../shared/constants/elementalIdentity.js'
+import { elementAffinityFor } from '../../../shared/constants/villageIdentity.js'
 import { eligibleJutsu } from '../../../shared/jutsu/eligibility.js'
-import { RANKS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, JUTSU_LIST, MISSION_COMMISSION } from '../constants.js'
+import { RANKS, INJURY_TYPES, RANK_INJ_CHANCE, RANK_WORKLOAD, RANK_INJ_POOL, TRAUMA_TRAITS, JUTSU_LIST, ALL_JUTSU, MISSION_COMMISSION } from '../constants.js'
 import { hydrateQuestion } from '../../../shared/utils/pressConference.js'
 import { pickJournalist } from '../../../shared/constants/journalists.js'
 import { getPhilosophyMods } from '../../../shared/constants/coachingPhilosophy.js'
@@ -211,13 +213,15 @@ export function checkJutsu(s) {
   }
   // Eligibility lives in shared/jutsu/eligibility.js so it can be tested
   // directly and so a jutsu can offer a second way in via `altReq`.
-  const eligible = eligibleJutsu(s, JUTSU_LIST)
+  // Nation techniques are gated on the village element, so checkJutsu must
+  // hand it through — otherwise ten techniques exist and none is reachable.
+  const eligible = eligibleJutsu(s, ALL_JUTSU, { villageElement: elementOfNation(G.nationId) || G.vElement })
   if (eligible.length) {
     const j = eligible[Math.floor(Math.random() * eligible.length)]
     s.jutsu.push(j.id)
     aL(tr('toast.adv.learnedJutsu', { name: sn(s), jutsu: j.n, tier: j.tier, desc: j.desc }), 'good')
     addChronicle('Jutsu Mastered', sn(s) + ' learned ' + j.n + '.', 'shinobi')
-    addLegend(j.tier === 'rare' ? 10 : j.tier === 'uncommon' ? 5 : 2)
+    addLegend(j.tier === 'rare' ? 10 : j.tier === 'nation' ? 6 : j.tier === 'uncommon' ? 5 : 2)
   }
 }
 
@@ -270,9 +274,39 @@ export function _formationRisk(sq) {
   return formationMods(sq.formation).riskMod
 }
 
-export function _nationSuccessMod() {
+/**
+ * What your nation is worth on this contract.
+ *
+ * Used to be a flat 0–4% with no weaknesses at all, which made the five
+ * nations functionally identical. Now it is the flat trait mod PLUS the
+ * element's standing on this mission's spec (+20% signature down to −20% wall)
+ * PLUS whatever the terrain thinks of your element.
+ *
+ * Pass the mission to get any of that; called bare it degrades to the old
+ * behaviour, which keeps the several existing call sites honest.
+ */
+export function _nationSuccessMod(m = null) {
   if (!G._ff_nationHud) return 0
-  return nationMods(G.nationId).successMod
+  const base = nationMods(G.nationId).successMod
+  const el = elementOfNation(G.nationId) || G.vElement
+  if (!el || !m) return base
+  return base + specMod(el, m.spec) + terrainMod(m.terrain, el)
+}
+
+/**
+ * The elemental wheel against a named antagonist village.
+ *
+ * Only ever applied where the player did NOT choose the matchup — the mission
+ * board hands you the opponent. See COUNTER_WHEEL: a counter you cannot choose
+ * is texture, a counter you pick each time is the lookup table that
+ * docs/MATCHDAY_AS_A_BET.md exists to remove.
+ */
+export function _elementCounterMod(m = null) {
+  const theirName = m?.village
+  if (!theirName) return 0
+  const ours = elementOfNation(G.nationId) || G.vElement
+  const theirs = elementAffinityFor(theirName)
+  return counterMod(ours, theirs)
 }
 
 export function maybeInduct(s, how) {

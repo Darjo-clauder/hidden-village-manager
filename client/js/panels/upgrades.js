@@ -1,5 +1,6 @@
 import { G, fmt, clamp, addLegend, addChronicle } from '../state.js'
 import { UPGRADES_DEF, BUILDING_MAINTENANCE, VILLAGE_DOCTRINES, DOCTRINE_BY_ID } from '../constants.js'
+import { doctrinesFor, elementOfNation } from '../../../shared/constants/elementalIdentity.js'
 import { DISTRICTS, getDistrictPassives } from '../../../shared/constants/districts.js'
 import { PRESTIGE_PROJECTS, PROJECT_BY_ID, completedEffect, buildProgress, canStartProject, festivalCost, festivalReward } from '../../../shared/constants/prestigeProjects.js'
 import { t } from '../../../shared/utils/i18n.js'
@@ -13,7 +14,7 @@ function _doctrineHtml() {
       Village Doctrine ${chosen ? `<span style="color:var(--accent);margin-left:6px">${chosen.icon} ${chosen.n} — locked in</span>` : '<span style="color:var(--orange);margin-left:6px">choose one (permanent)</span>'}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
-      ${VILLAGE_DOCTRINES.map(d => {
+      ${doctrinesFor(elementOfNation(G.nationId) || G.vElement, VILLAGE_DOCTRINES).map(d => {
         const sel = G.villageDoctrine === d.id
         const locked = G.villageDoctrine && !sel
         return `<div style="border:1px solid ${sel ? 'var(--accent)' : 'var(--border)'};background:${sel ? 'var(--accent-bg)' : 'transparent'};padding:9px;opacity:${locked ? 0.45 : 1}">
