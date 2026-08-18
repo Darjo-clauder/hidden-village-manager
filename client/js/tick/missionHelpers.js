@@ -177,7 +177,7 @@ export function rollInjuryOnSuccess(s, m, hL, injDayReduction = 0) {
       applyInjury(s, injType, hL, injDayReduction)
       if (rusty) {
         s.returningForm = 55            // back to square one on the way out
-        aL(sn(s) + ' broke down on "' + m.n + '" — brought back too soon. Out ' + s.injDays + 'mo.', 'warn')
+        aL(tr('toast.med.brokeDown', { name: sn(s), mission: m.n, months: s.injDays }), 'warn')
       } else {
         aL(tr('toast.adv.missionInjury', { name: sn(s), injury: injType.n, mission: m.n }), 'warn')
       }
@@ -206,7 +206,7 @@ export function checkJutsu(s) {
   const _combined = combinedOf(s)
   if (_combined && signatureUnlocked(s) && !s.jutsu.includes(_combined.signature.id)) {
     s.jutsu.push(_combined.signature.id)
-    aL(`${_combined.icon} ${sn(s)} mastered ${_combined.signature.n} — the signature of ${_combined.name}.`, 'good')
+    aL(tr('toast.elem.signatureMastered', { icon: _combined.icon, name: sn(s), technique: _combined.signature.n, combined: _combined.name }), 'good')
     addChronicle('Signature Technique', `${sn(s)} mastered ${_combined.signature.n}. ${_combined.signature.desc}`, 'shinobi')
     addLegend(12)
     return

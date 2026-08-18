@@ -250,7 +250,7 @@ function maybeAwaken(s) {
   const how = crisis
     ? `Pushed past the edge of what they had, ${sn(s)} came back with something new.`
     : `Years of ${s.element} work finally opened into something else.`
-  aL(`${combined.icon} ${sn(s)} awakened ${combined.name} — ${combined.parents.join(' + ')}!`, 'good')
+  aL(tr('toast.elem.awakened', { icon: combined.icon, name: sn(s), combined: combined.name, parents: combined.parents.join(' + ') }), 'good')
   addChronicle(`Awakening — ${combined.name}`,
     `${how} ${combined.name}: ${combined.blurb}`, 'shinobi')
   pushNarrative({

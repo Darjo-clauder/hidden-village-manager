@@ -172,7 +172,7 @@ function _settleVendetta(oppName) {
   pushNarrative({ title: beat.title, body: beat.body, tag: 'vendetta' }, carriers.map(s => s.id))
   addChronicle(beat.title, beat.body, 'shinobi')
   addLegend(3)
-  aL(`⚑ ${fallen.name} answered — ${oppName} beaten.`, 'good')
+  aL(tr('toast.elem.vendettaAnswered', { fallen: fallen.name, village: oppName }), 'good')
 }
 
 function _applyPlayerResult(playerName) {

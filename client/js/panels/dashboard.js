@@ -14,7 +14,7 @@ import { onboardingState, shouldShowOnboarding } from '../../../shared/utils/onb
 // Manual save slots — write the current game to a slot or load another (R: save slots).
 export function saveGameSlot(n) {
   if (saveToSlot(n)) { aL(`Game saved to slot ${n}.`, 'good'); if (window.upUI) window.upUI() }
-  else ntf('Save failed.')
+  else ntf(t('toast.dash.saveFailed'))
 }
 
 function _saveSlotsCard() {

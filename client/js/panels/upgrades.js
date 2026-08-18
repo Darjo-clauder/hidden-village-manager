@@ -97,7 +97,7 @@ function _festivalHtml() {
 export function holdFestival() {
   const held = G.festivalsHeld || 0
   const cost = festivalCost(held)
-  if ((G.ryo || 0) < cost) { ntf('Not enough ryo for a festival on that scale.'); return }
+  if ((G.ryo || 0) < cost) { ntf(t('toast.upg.festivalTooExpensive')); return }
   const rw = festivalReward()
   G.ryo -= cost
   G.festivalsHeld = held + 1

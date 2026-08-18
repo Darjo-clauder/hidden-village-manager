@@ -373,6 +373,23 @@ export const en = {
   'intel.counterMax': 'Counter-intel network at maximum base rating.',
 
   // ── Toasts (P2 — aL/ntf extraction, tranche 1) ──────────────────────────
+  // ── Elemental / legacy layers (added with those systems) ────────────────
+  'toast.elem.awakened': '{icon} {name} awakened {combined} — {parents}!',
+  'toast.elem.signatureMastered': '{icon} {name} mastered {technique} — the signature of {combined}.',
+  'toast.elem.vendettaAnswered': '⚑ {fallen} answered — {village} beaten.',
+  'toast.med.brokeDown': '{name} broke down on "{mission}" — brought back too soon. Out {months}mo.',
+  // ── Toasts that had never been keyed ───────────────────────────────────
+  'toast.beast.opUnderway': 'An extraction operation is already underway.',
+  'toast.beast.opTooExpensive': 'Not enough ryo to mount the operation.',
+  'toast.beast.opCalledOff': 'Extraction operation called off.',
+  'toast.dash.saveFailed': 'Save failed.',
+  'toast.exam.noSpareTrios': 'No spare Initiate/Adept trios available to form a cell.',
+  'toast.exam.bidTooHigh': 'Not enough ryo for that bid.',
+  'toast.exam.hostingWon': 'You will host the Adept Exam — home advantage secured.',
+  'toast.roster.carefulNeedsMedic': 'Careful rehab needs a medical ninja on staff.',
+  'toast.upg.festivalTooExpensive': 'Not enough ryo for a festival on that scale.',
+  'toast.ally.pactTooExpensive': 'Not enough ryo to honour the pact.',
+  'toast.adv.scrollSold': 'Scroll sold — 4,500 ryo.',
   'toast.common.notEnoughRyo': 'Not enough ryo!',
   'toast.common.notEnoughRyoNeed': 'Not enough ryo ({need} needed)',
   'toast.common.notEnoughRyoDot': 'Not enough ryo.',

@@ -742,7 +742,7 @@ export function treatTrauma(sId) {
 export function setRehabPlan(sId, plan) {
   const s = G.shinobi.find(x => x.id === sId)
   if (!s || s.status !== 'injured') return
-  if (plan === 'careful' && !(G.staff || []).some(st => st.role === 'medical')) { ntf('Careful rehab needs a medical ninja on staff.'); return }
+  if (plan === 'careful' && !(G.staff || []).some(st => st.role === 'medical')) { ntf(tr('toast.roster.carefulNeedsMedic')); return }
   s.rehabPlan = plan
   cm('dossier'); upUI()
 }

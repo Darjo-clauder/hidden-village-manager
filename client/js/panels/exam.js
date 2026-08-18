@@ -582,7 +582,7 @@ export function quickFormExamCells() {
   if (room <= 0) { ntf(t('toast.exam.addCandidates')); return }
   // Pack elementally-coherent cells so quick-form actually earns the harmony bonus.
   const cells = packHarmonicCells(_freeAcademyPool(), 3).slice(0, room)
-  if (!cells.length) { ntf('No spare Initiate/Adept trios available to form a cell.'); return }
+  if (!cells.length) { ntf(t('toast.exam.noSpareTrios')); return }
   let formed = 0, harmonic = 0
   cells.forEach((members, i) => {
     const leader = members.slice().sort((a, b) => b.ri - a.ri || sPow(b) - sPow(a))[0]
@@ -650,7 +650,7 @@ export function bidToHostExam() {
   const tier = G.prestigeTier
   const min = minHostBid(tier)
   const amount = Math.max(min, parseInt(inp?.value || min, 10) || min)
-  if ((G.ryo || 0) < amount) { ntf('Not enough ryo for that bid.'); return }
+  if ((G.ryo || 0) < amount) { ntf(t('toast.exam.bidTooHigh')); return }
   const rivalBids = genRivalHostBids(G.villages || [])
   const res = hostBidResolve(amount, rivalBids, tier)
   G.examHostResolved = true
@@ -658,7 +658,7 @@ export function bidToHostExam() {
     G.ryo -= amount
     G.examHosting = true
     aL(`Won hosting rights for the Adept Exam with a ${amount.toLocaleString()} ryo bid (top rival: ${res.topRival.toLocaleString()}).`, 'good')
-    ntf('You will host the Adept Exam — home advantage secured.')
+    ntf(t('toast.exam.hostingWon'))
   } else {
     aL(`Outbid for hosting rights — a rival's ${res.topRival.toLocaleString()} ryo bid beat your ${res.playerEffective.toLocaleString()} effective bid. No ryo spent.`, 'warn')
   }

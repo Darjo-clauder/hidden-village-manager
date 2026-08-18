@@ -9,6 +9,7 @@
  * Same architecture as the other tick modules: operates on G, returns nothing.
  */
 import { G, clamp, fmt, addChronicle } from '../state.js'
+import { t as tr } from '../../../shared/utils/i18n.js'
 import { aL, ntf } from '../ui.js'
 import { addNewsItem } from '../news.js'
 import {
@@ -65,7 +66,7 @@ export function answerObligation(accept) {
 
   // Honouring has to be affordable — otherwise it is not a decision.
   if (accept && ob.cost > 0 && G.ryo < ob.cost) {
-    ntf('Not enough ryo to honour the pact.')
+    ntf(tr('toast.ally.pactTooExpensive'))
     return
   }
 

@@ -133,11 +133,11 @@ function _extractionBlock(b) {
 }
 
 export function startBeastExtraction(beastId) {
-  if (G.beastOp) { ntf('An extraction operation is already underway.'); return }
+  if (G.beastOp) { ntf(tr('toast.beast.opUnderway')); return }
   const b = (G.beasts || []).find(x => x.id === beastId && x.owner)
   if (!b) return
   const cost = extractionCost(_holderStrength(b.owner))
-  if ((G.ryo || 0) < cost) { ntf('Not enough ryo to mount the operation.'); return }
+  if ((G.ryo || 0) < cost) { ntf(tr('toast.beast.opTooExpensive')); return }
   G.ryo -= cost
   G.beastOp = { beastId, targetVillage: b.owner, stage: 0, log: [`Operation launched against ${b.owner}.`] }
   aL(`Extraction operation launched against ${b.owner} for ${b.n}.`, 'ev')
@@ -183,7 +183,7 @@ export function advanceBeastExtraction() {
 
 export function abortBeastExtraction() {
   if (!G.beastOp) return
-  aL('Extraction operation called off.', 'neutral')
+  aL(tr('toast.beast.opCalledOff'), 'neutral')
   G.beastOp = null
   rBe(); upUI()
 }
