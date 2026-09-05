@@ -1,12 +1,14 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-08-04 · **HEAD:** `7072a16`+ (see PINNED section for open calls) · **Branch:** `master` · **Tests:** 1333 passing / 102 files
+**Last updated:** 2026-08-18 · **HEAD:** `ee74e5b` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 1360 passing / 103 files
 
 ---
 
 > ## 📌 PINNED — DECIDED LATER, NOT FORGOTTEN
 >
-> Three things Tyler has explicitly deferred. **None is a bug and none blocks anything** — they are open judgement calls, parked on purpose. The measurements are recorded here so nobody has to re-derive them; that was the expensive part.
+> Open items Tyler has explicitly deferred or not yet directed. **None is a bug and none blocks anything.** The measurements are recorded here so nobody has to re-derive them; that was the expensive part.
+>
+> **THE ONE THAT MATTERS MOST IS NOT ON THIS LIST: nobody has played it.** Twelve systems have shipped unplayed — four from the loop pass, eight from elemental nations. All are verified by tests, seeded sweeps and DOM assertion. **Five separate times this session that verification passed while the code did nothing** (the grudge branch, three rare jutsu, the returning-form penalty cancelling itself in the same tick, the elemental layer being overwritten by `rfM`, three toast calls that would have thrown). Tests prove code executes. They cannot tell you the game got better. A full played year is the highest-value next action and only Tyler can do it.
 >
 > > ### ⏸ Items 1 and 2 are AWAITING A JOINT DECISION
 > >
@@ -42,9 +44,84 @@
 >
 > 1.00 is literally no difference — the border already outscores the whole shadow layer about **6:1**. If this gets picked up, the fix direction is *lighter edges*, not darker shadows.
 >
-> **3. Nobody has still actually LOOKED at the type ramp or the elevation.** Everything above is DOM and computed-style measurement. The desktop build is current and installed (`C:\Users\Tyler\AppData\Local\Hidden Village Manager`) and is the place to do it — the Browser pane here never composites, so screenshots are not available to an agent.
+> **3. Nobody has still actually LOOKED at the type ramp or the elevation.** Everything above is DOM and computed-style measurement — the Browser pane here never composites, so screenshots are not available to an agent.
+>
+> > ⚠ **The INSTALLED desktop copy is stale, even though the BUILD is current.** `C:\Users\Tyler\AppData\Local\Hidden Village Manager\app.exe` is dated **2026-08-03**; the freshly built one is 2026-08-18. Rebuilding the bundle does not reinstall it. To look at the real thing, either run the fresh installer from `src-tauri/target/release/bundle/nsis/` or launch `src-tauri/target/release/app.exe` directly. **Note the two keep separate save data.**
+>
+> **4. Localization backlog — 130 strings, measured.** See the L10N section below for the exact breakdown and why a scripted pass is the wrong tool. Mechanical, no design judgement, and the last real *code* gate before a store page.
+>
+> **5. Full visual overhaul — requested, brief not delivered.** Tyler asked for an art-director-level redesign (audit, industry comparison, redesign plan, screen mockups, asset list, implementation guide) and redirected to this handoff before it was written. The audit measurements are recorded below; the brief itself is still owed.
 >
 > Two corrections to earlier handoff text, both found by that audit: **`.strip` computing `box-shadow: none` is correct** (its device is a `border-left` accent rule — the older "all three add only box-shadow" line was imprecise), and **`--red` is fine at 4.07:1** on the page background; the one bad reading came from red text on a red-tinted banner, which is a few specific elements rather than a token problem.
+
+---
+
+> ## ⚑ ELEMENTAL NATIONS + L10N AUDIT (2026-08-18, `d712ce8` → `ee74e5b`)
+>
+> ### Elemental nations — all eight workstreams (`d712ce8`)
+>
+> Scoped in `docs/ELEMENTAL_NATIONS.md`, shipped whole. **The architectural call:** three overlapping "nation" concepts existed — `NATIONS` (5 elemental, the player's pick), `VILLAGE_IDENTITIES` (12 rivals), `MINOR_NATIONS` (8) — and they already agreed on **element**, with `NATIONS` mapping 1:1 onto it. `shared/constants/elementalIdentity.js` is now the single table all three read from. Rivals therefore inherit every strength the player gets, which is what makes scouting them meaningful rather than decorative.
+>
+> Before this a nation was worth `successMod` 0–4% and `ryoMod` −2–5% **with no weaknesses at all** — the five were functionally identical.
+>
+> | | combat | escort | intel | recovery | siege | stealth |
+> |---|---|---|---|---|---|---|
+> | Fire | +10 | 0 | 0 | −10 | **+20** | **−20** |
+> | Water | −10 | +10 | 0 | **+20** | **−20** | 0 |
+> | Wind | −10 | 0 | +10 | 0 | **−20** | **+20** |
+> | Earth | 0 | **+20** | −10 | 0 | +10 | **−20** |
+> | Lightning | **+20** | −10 | +10 | **−20** | 0 | 0 |
+>
+> **EVERY ROW SUMS TO ZERO** — differently shaped, not differently sized. That invariant is what stops one nation being simply the correct pick, and it is asserted. Columns deliberately do not: escort is globally easier to staff, stealth globally harder. `intel` is unowned because five elements cannot own six specs, and intel belongs to the scouting layer.
+>
+> Also shipped: rival colour identity from the same table; per-element talent bias; **ten nation-exclusive techniques gated on the village element** (jutsu eligibility previously knew about clans, win counts and prodigy status and nothing about where a shinobi served); signature contracts per element; diplomatic contracts generated by standing with a named village; six terrain/weather tags; one exclusive doctrine per element **extending** `VILLAGE_DOCTRINES`.
+>
+> **⚠ THE COUNTER WHEEL IS TEXTURE, NOT A LEVER.** Fire > Wind > Lightning > Earth > Water > Fire, capped at 5%. A base-element counter grid is the same shape as the matchday lookup that `MATCHDAY_AS_A_BET.md` exists to remove. The rule is in the source: **a counter you cannot CHOOSE is texture; a counter you pick each time is a lookup.** It applies only where the player does not select the matchup.
+>
+> **⚠ THE ORDERING TRAP THAT ATE THE FIRST ATTEMPT.** `refreshMissionBoard` runs at `adv.js:1778`, but **`rfM()` rebuilds `G.avM` wholesale at 1804**, keeping each mission with only 60% probability and generating fresh ones with no terrain. Everything injected inside `refreshMissionBoard` was half-discarded and half the board was untagged. `applyElementalLayer()` now runs *after* `rfM`. Anything else that wants to touch the board must do the same.
+>
+> Also caught in the browser, not by tests: **squad mission cards have their own render path** and were missing every elemental tag while solo cards showed them.
+>
+> ### Localization — the June "zero literal toasts" claim was wrong (`ee74e5b`)
+>
+> Fifteen strings keyed (four of them mine from this session's earlier work, eleven long-standing literals). **Three would have shipped as runtime `ReferenceError`s**, caught by checking each file's translator import against the identifier written:
+>
+> | file | imports | was written | |
+> |---|---|---|---|
+> | `dashboard.js` | `{ t }` | `tr(...)` | throws |
+> | `roster.js` | `{ t as tr }` | `t(...)` | throws |
+> | `alliances.js` | **nothing** | `tr(...)` | throws **inside the tick** |
+>
+> `alliances.js` is the dangerous one — it runs in the monthly tick, so it would have thrown mid-turn for anyone holding a pact. **The build is clean either way; only running it finds these.**
+>
+> **MEASURED COVERAGE IS ~79%, NOT 100%.** Counting all three call shapes:
+>
+> | shape | count |
+> |---|---|
+> | keyed via `t()`/`tr()` | 544 |
+> | literal single-quoted | 11 → fixed |
+> | template-literal | 36 |
+> | **string-concatenation** | **94** |
+>
+> The June sweep's grep could only see the `aL('...')` shape, so 94 concatenation-style toasts were never visible to it. **The remaining 130 are deliberately not bulk-edited** — each needs its interpolations turned into named params by hand, and a scripted pass is how the trap above gets hit at scale (it hit three times in fifteen strings). Wants a dedicated session.
+>
+> ### Desktop build — CURRENT as of 2026-08-18
+>
+> Rebuilt at `ee74e5b` (66s), smoke-tested, MSI 3.1 MB + NSIS 2.1 MB. **Verify bundle contents via `dist/` strings, never the exe** — Tauri compresses embedded assets. Ten probes confirmed present (Doctrine of the Wellspring, Sunscour Ascetic, Glacier Veil, Deep Tunnels, Salt the Wells…).
+>
+> ### Visual debt — measured, for the overhaul Tyler has asked for
+>
+> An art-director brief for a full visual overhaul was requested and **not yet delivered**. The audit numbers were taken before the redirect and are the expensive part:
+>
+> | | |
+> |---|---|
+> | panels | 30 |
+> | inline `style="` in panel JS | **3,072** |
+> | raw hex literals still inline | 108 (90 distinct) |
+> | design tokens defined | 55 |
+> | CSS class rules | 410 |
+>
+> **3,072 inline styles against 410 class rules is the headline**: the "ink & parchment" pass migrated colour onto tokens but layout, spacing and typography are still written per-element at the call site. Any real overhaul is a components-and-tokens job, not a repaint — and 90 distinct raw hexes are still bypassing the token system entirely.
 
 ---
 
