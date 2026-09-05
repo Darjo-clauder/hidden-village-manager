@@ -50,7 +50,7 @@
 >
 > **4. Localization backlog — 130 strings, measured.** See the L10N section below for the exact breakdown and why a scripted pass is the wrong tool. Mechanical, no design judgement, and the last real *code* gate before a store page.
 >
-> **5. Full visual overhaul — requested, brief not delivered.** Tyler asked for an art-director-level redesign (audit, industry comparison, redesign plan, screen mockups, asset list, implementation guide) and redirected to this handoff before it was written. The audit measurements are recorded below; the brief itself is still owed.
+> **5. Full visual overhaul — brief DELIVERED, not started.** `docs/VISUAL_OVERHAUL.md`. The thesis: *the palette was never the problem — this game is built like a card-based mobile app and it is a desktop data simulation.* Names the direction **Ink & Ledger**, a two-voice type system (IBM Plex for the simulation, Spectral for the chronicle), and a 22-component library to replace 3,072 inline styles. **The three changes that matter, in order: tables with a master–detail inspector, the component library, then charts.** Migration is strangler-fig — tokens and fonts first, build the library against a scratch page, then convert Roster end to end and measure before touching panel two.
 >
 > Two corrections to earlier handoff text, both found by that audit: **`.strip` computing `box-shadow: none` is correct** (its device is a `border-left` accent rule — the older "all three add only box-shadow" line was imprecise), and **`--red` is fine at 4.07:1** on the page background; the one bad reading came from red text on a red-tinted banner, which is a few specific elements rather than a token problem.
 
