@@ -1305,10 +1305,10 @@ function _recordsTab() {
 const _LEADER_COLS = [
   { key: 'name', label: 'Name', align: 'left', sortVal: s => `${s.fn} ${s.ln}`, render: s => `<span style="color:${s.isPlayer ? 'var(--gold)' : 'var(--text-hi)'}">${s.fn || ''} ${s.ln || ''}</span>` },
   { key: 'village', label: 'Village', align: 'left', sortVal: s => s.village || '', render: s => `<span style="color:var(--text-dim)">${s.village || ''}</span>` },
-  { key: 'power', label: 'Pwr', align: 'center', sortVal: s => sPow(s), render: s => sPow(s) },
-  { key: 'wins', label: 'Wins', align: 'center', sortVal: s => s.wins || 0, render: s => `<b style="color:var(--green)">${s.wins || 0}</b>` },
-  { key: 'winsS', label: 'S-Rank', align: 'center', sortVal: s => s.winsS || 0, render: s => s.winsS || 0 },
-  { key: 'age', label: 'Age', align: 'center', sortVal: s => s.age || 0, render: s => s.age || '?' },
+  { key: 'power', label: 'Pwr', align: 'right', sortVal: s => sPow(s), render: s => sPow(s) },
+  { key: 'wins', label: 'Wins', align: 'right', sortVal: s => s.wins || 0, render: s => `<b style="color:var(--green)">${s.wins || 0}</b>` },
+  { key: 'winsS', label: 'S-Rank', align: 'right', sortVal: s => s.winsS || 0, render: s => s.winsS || 0 },
+  { key: 'age', label: 'Age', align: 'right', sortVal: s => s.age || 0, render: s => s.age || '?' },
 ]
 export function exLeadersSort(key) { tblToggleSort('leaders', key, { key: 'wins', dir: 'desc' }); rEx() }
 
@@ -1320,10 +1320,10 @@ function _leadersTab() {
   const sort = tblSort('leaders', { key: 'wins', dir: 'desc' })
   const rows = tblSortRows(allShinobi, sort, _LEADER_COLS).slice(0, 15)
   const section = (title, rows) => `<div style="font-size:var(--fs-body);color:var(--gold);margin:12px 0 6px;text-transform:uppercase;letter-spacing:1px">${title}</div>${rows}`
-  const leaderTable = `<table style="width:100%;border-collapse:collapse">
-    <thead><tr style="background:#0a0908;border-bottom:1px solid var(--border)">${tblHeaderHtml(_LEADER_COLS, sort, 'exLeadersSort')}</tr></thead>
-    <tbody>${rows.map((s, i) => `<tr style="background:${i % 2 === 0 ? 'var(--sunken)' : 'var(--sunken)'};border-bottom:1px solid var(--sunken)">
-      ${_LEADER_COLS.map(c => `<td style="padding:4px 6px;font-size:var(--fs-body);text-align:${c.align};color:var(--text-hi)">${c.render(s)}</td>`).join('')}
+  const leaderTable = `<table class="hv-table">
+    <thead><tr>${tblHeaderHtml(_LEADER_COLS, sort, 'exLeadersSort', { plain: true })}</tr></thead>
+    <tbody>${rows.map(s => `<tr${s.isPlayer ? ' class="mine"' : ''}>
+      ${_LEADER_COLS.map(c => `<td class="${c.align === 'right' ? 'num' : c.align === 'center' ? 'ctr' : ''}" style="color:var(--text-hi)">${c.render(s)}</td>`).join('')}
     </tr>`).join('')}</tbody>
   </table>`
   return `<div>

@@ -32,7 +32,7 @@ import { rEx, tEC, startEx, runRound, quickFormExamCells } from './panels/exam.j
 import { declareWarMP, propAllianceMP, respondAlliance, breakAllianceMP, launchRaidMP, sendGiftMP, dipAccept, dipDecline } from './world.js'
 import { resolveChoiceEvent, resolveCouncilProposal, assignBlackMarket, resolveClanChain, establishSafehouse, assignDeepCoverOp, resolveWorldEventChoice, activateBloodline, resolvePressConference, resolveComplication, resolveRivalOffer, resolveQuickDecision, runTrainingCamp, gradeShinobi } from './adv.js'
 import { rFi, setBudgetPriority } from './panels/finances.js'
-import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff, staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting, staffCtx, staffHover } from './panels/staff.js'
+import { rSt, openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff, staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting, staffCtx, staffHover, staffSelect } from './panels/staff.js'
 import { rSco, assignScout, setScoutBudget, toggleWatchlist, trialDay, signProspect, draftSort, scoutCtx, scoutHover, toggleScoutDossier, scoSelect, scoFacet } from './panels/scouting.js'
 import { retainScout, dismissScout } from './scoutEngine.js'
 import { setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule, depCtx, depHover } from './panels/depthchart.js'
@@ -165,7 +165,7 @@ Object.assign(window, {
   toggleThread,
   // staff
   openStaffHire, doStaffHire, releaseStaff, openRetireToStaff, doRetireToStaff,
-  staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting, staffCtx, staffHover,
+  staffTab, designateAsstKage, resolveStaffConflict, scoutStaffCandidate, matchPoachOffer, dismissPoachOffer, staffPersonalMeeting, staffCtx, staffHover, staffSelect,
   // roster injury actions
   secondOpinion, specialistTreatment, setRehabPlan,
   retireShinobi, retireToCoach, extendCareer,

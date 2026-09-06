@@ -231,6 +231,7 @@ export const en = {
   'academy.assignSensei': 'Assign Sensei',
   'academy.recruit': 'Recruit — 2,000 ryo ►',
   'academy.prospects.none': 'No prospects. Advance month.',
+  'staff.inspect.hint': 'Select a post to read the file, or a vacancy to see what the role does and hire.',
   'academy.inspect.hint': 'Select a prospect to read their file, set a plan, scout or recruit — the list stays put.',
   'academy.assign': 'Assign ►',
 

@@ -1,7 +1,7 @@
-import { G, fmt, sn, rnd, pk, clamp, mStaff, genStaffCandidates } from '../state.js'
+import { G, ui, fmt, sn, rnd, pk, clamp, mStaff, genStaffCandidates } from '../state.js'
 import { STAFF_ROLES, RANKS, FNAMES, LNAMES, STAFF_CONFLICT_RESPONSES } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
-import { openContextMenu, showHoverPreview, hideHoverPreview } from '../uikit.js'
+import { openContextMenu, showHoverPreview, hideHoverPreview, hvInspectorHeadHtml, hvKeyNav } from '../uikit.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { staffTitle, xpForStaffLevel, STAFF_MAX_LEVEL } from '../../../shared/utils/staffDev.js'
 
@@ -11,7 +11,7 @@ export function staffCtx(e, id) {
   const st = (G.staff || []).find(x => x.id === id); if (!st) return false
   const canBeAK = (st.monthsServed || 0) >= 12 && !st.asstKage && !(G.staff || []).some(x => x.asstKage)
   const canMeet = (st.monthsServed || 0) >= 6 && st.hiddenFlaw && !st.flawRevealed
-  const items = []
+  const items = [{ label: 'Inspect', fn: () => window.staffSelect && window.staffSelect(id) }]
   if (canBeAK) items.push({ label: 'Designate Asst. Warden', fn: () => window.designateAsstKage && window.designateAsstKage(id) })
   if (st.asstKage) items.push({ label: 'Remove Asst. Warden', fn: () => window.designateAsstKage && window.designateAsstKage(null) })
   if (canMeet) items.push({ label: '1-on-1 Meeting', fn: () => window.staffPersonalMeeting && window.staffPersonalMeeting(id) })
@@ -54,13 +54,133 @@ export function rSt() {
   const poachBadge = G.staffPoachOffer ? 1 : 0
   const badge = conflictBadge + poachBadge
 
-  let html = `<div style="display:flex;gap:6px;margin-bottom:14px">
-    ${tabs.map(t => `<button onclick="staffTab('${t}')" style="background:${window._staffTab===t?'var(--gold-bg)':'var(--surface)'};border:1px solid ${window._staffTab===t?'var(--gold)':'var(--border)'};color:${window._staffTab===t?'var(--gold)':'var(--text-mid)'};border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.78rem">${tabLabels[t]}${t==='roster'&&badge>0?' ('+badge+')':''}</button>`).join('')}
+  const inspScroll = document.getElementById('stf-inspector')?.scrollTop || 0
+  let html = `<div class="tabs">
+    ${tabs.map(t => `<button class="tab${window._staffTab===t?' active':''}" onclick="staffTab('${t}')">${tabLabels[t]}${t==='roster'&&badge>0?' ('+badge+')':''}</button>`).join('')}
   </div>
   ${window._staffTab === 'roster' ? _rosterTab() : _legacyTab()}`
 
   el.innerHTML = html
+  if (window._staffTab === 'roster') {
+    _renderStaffInspector()
+    const insp = document.getElementById('stf-inspector'); if (insp && inspScroll) insp.scrollTop = inspScroll
+  }
 }
+
+// ── Slot board + inspector (VISUAL_OVERHAUL §3.3) ───────────────────────────
+// Every role slot is a row, filled or vacant, grouped Command / Field. The
+// inspector holds the person's file — or, for a vacancy, the role and a Hire.
+const _SECTIONS = [
+  { sec: 'Command', roles: ['head_sensei','anbu_cmdr','council','treasurer','strategist'] },
+  { sec: 'Field', roles: ['head_scout','team_sensei','scout_jonin','medical'] },
+]
+const _band = v => v >= 80 ? 5 : v >= 65 ? 4 : v >= 50 ? 3 : v >= 35 ? 2 : 1
+const _ambition = s => (s.ambition||0) >= 14 ? ['High', 'var(--orange)'] : (s.ambition||0) >= 10 ? ['Moderate', 'var(--gold)'] : ['Low', 'var(--text-dim)']
+function _slotRows() {
+  const rows = []
+  _SECTIONS.forEach(({ sec, roles }) => {
+    rows.push({ group: sec })
+    roles.forEach(roleId => {
+      const role = STAFF_ROLES.find(r => r.id === roleId); if (!role) return
+      const holders = (G.staff || []).filter(x => x.role === roleId)
+      holders.forEach(h => rows.push({ id: h.id, role, staff: h }))
+      for (let i = holders.length; i < role.max; i++) rows.push({ id: 'vacant:' + roleId + ':' + i, role, staff: null })
+    })
+  })
+  return rows
+}
+function _slotRowHtml(r) {
+  if (r.group) return `<tr class="hv-group"><td colspan="8">${r.group}</td></tr>`
+  const sel = ui.staffSel === r.id ? ' class="sel"' : ''
+  const role = r.role, s = r.staff
+  if (!s) return `<tr data-id="${r.id}"${sel} onclick="staffSelect('${r.id}')">
+    <td><span style="color:var(--text-dim);white-space:nowrap">${role.n}</span></td>
+    <td colspan="6"><span style="color:var(--text-faint);font-style:italic">— Vacant —</span></td>
+    <td class="ctr"><button class="gb" onclick="event.stopPropagation();openStaffHire('${role.id}')" style="padding:2px 8px;font-size:var(--fs-micro)">${tr('staff.hire')}</button></td>
+  </tr>`
+  const lvl = s.staffLevel || 1
+  const yrs = Math.floor((s.monthsServed || 0) / 12)
+  const [ambL, ambC] = _ambition(s)
+  const flags = [s.asstKage ? '<span style="color:var(--blue)" title="Assistant Warden">★</span>' : '', s.hiddenFlaw && s.flawRevealed ? `<span style="color:var(--orange)" title="${s.hiddenFlaw}">⚠</span>` : '', s.fromShinobi ? '<span style="color:var(--gold)" title="Transitioned from active duty">↳</span>' : ''].filter(Boolean).join(' ')
+  return `<tr data-id="${r.id}"${sel} onclick="staffSelect('${r.id}')" oncontextmenu="return staffCtx(event,'${s.id}')" onmousemove="staffHover(event,'${s.id}')" onmouseleave="hideHoverPreview()">
+    <td><span style="color:var(--text-dim);white-space:nowrap">${role.n}</span></td>
+    <td><div class="hv-cell-name">${s.fn} ${s.ln}</div></td>
+    <td class="num"><span class="hv-attr b${_band(s.rating)}">${s.rating}</span></td>
+    <td><span style="color:var(--green);white-space:nowrap">◆ ${staffTitle(lvl)}${lvl >= STAFF_MAX_LEVEL ? '' : ' L' + lvl}</span></td>
+    <td class="num"><span style="color:var(--text-dim)">${yrs > 0 ? yrs + 'y ' : ''}${(s.monthsServed || 0) % 12}m</span></td>
+    <td class="num"><span style="color:var(--text-faint)">${fmt(s.salary)}</span></td>
+    <td><span style="color:${ambC}">${ambL}</span></td>
+    <td class="ctr">${flags}</td>
+  </tr>`
+}
+export function staffSelect(id) {
+  ui.staffSel = ui.staffSel === id ? null : id
+  document.querySelectorAll('#stfl .hv-table tbody tr[data-id]').forEach(r => r.classList.toggle('sel', r.dataset.id === ui.staffSel))
+  _renderStaffInspector()
+}
+function _renderStaffInspector() {
+  const el = document.getElementById('stf-inspector'); if (!el) return
+  const grid = el.closest('.hv-split')
+  const row = ui.staffSel ? _slotRows().find(r => r.id === ui.staffSel) : null
+  if (!row) {
+    ui.staffSel = null
+    grid?.classList.remove('has-sel')
+    el.innerHTML = `<div class="hv-inspector-hint">${tr('staff.inspect.hint')}</div>`
+    return
+  }
+  grid?.classList.add('has-sel')
+  const close = `<button class="gb" onclick="staffSelect('${row.id}')" title="Close (Esc)" aria-label="Close">×</button>`
+  const role = row.role, s = row.staff
+  if (!s) {
+    el.innerHTML = hvInspectorHeadHtml({ name: role.n, sub: 'Vacant', actions: close }) + `<div class="hv-inspector-body">
+      <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:6px">${role.desc}</div>
+      <div style="font-size:var(--fs-small);color:var(--gold);font-style:italic;margin-bottom:12px">${role.effectDesc}</div>
+      <button class="gb gb-g" onclick="openStaffHire('${role.id}')">${tr('staff.hire')} ▸</button>
+    </div>`
+    return
+  }
+  const lvl = s.staffLevel || 1, need = xpForStaffLevel(lvl)
+  const pct = lvl >= STAFF_MAX_LEVEL ? 100 : Math.min(100, Math.round((s.staffXp || 0) / need * 100))
+  const yrs = Math.floor((s.monthsServed || 0) / 12)
+  const [ambL, ambC] = _ambition(s)
+  const canBeAK = (s.monthsServed || 0) >= 12 && !s.asstKage && !(G.staff||[]).some(x => x.asstKage)
+  const canMeet = (s.monthsServed || 0) >= 6 && s.hiddenFlaw && !s.flawRevealed
+  el.innerHTML = hvInspectorHeadHtml({
+    name: `${s.fn} ${s.ln}${s.asstKage ? ' <span style="color:var(--blue);font-size:var(--fs-small)">★ Asst. Warden</span>' : ''}`,
+    sub: `${role.n} · ${yrs > 0 ? yrs + 'yr ' : ''}${s.monthsServed || 0}mo · ${fmt(s.salary)}/mo`,
+    actions: close,
+  }) + `<div class="hv-inspector-body">
+    <div class="sect">Craft</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-bottom:10px">
+      ${Object.entries(s.stats || {}).map(([k, v]) => `<div style="text-align:center;background:var(--bg);padding:4px 3px">
+        <div style="font-size:var(--fs-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-bottom:1px">${k.slice(0,5)}</div>
+        <div style="font-size:var(--fs-lead);font-family:var(--font-num);color:${v>=15?'var(--gold)':v>=10?'var(--green)':'var(--text-dim)'};font-weight:bold">${v}</div>
+      </div>`).join('')}
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:var(--fs-small);margin-bottom:3px"><span style="color:var(--text-dim)">Rating <b style="color:var(--gold)">${s.rating}</b></span><span style="color:var(--green)">◆ ${staffTitle(lvl)}${lvl >= STAFF_MAX_LEVEL ? ' (max)' : ' L' + lvl}</span></div>
+    <div style="height:3px;background:var(--border-dim);border-radius:2px;overflow:hidden;margin-bottom:10px"><div style="height:100%;width:${pct}%;background:var(--green)"></div></div>
+    <div style="font-size:var(--fs-small);color:${ambC};margin-bottom:4px">${ambL} ambition${(s.ambition||0)>=14&&role.id==='team_sensei'?' — watching for a head sensei opening':''}</div>
+    ${s.hiddenFlaw && s.flawRevealed ? `<div style="font-size:var(--fs-small);color:var(--orange);margin-bottom:4px">⚠ ${s.hiddenFlaw}</div>` : ''}
+    ${s.institutional > 0 ? `<div style="font-size:var(--fs-small);color:var(--purple);margin-bottom:4px">Legacy bonus: +${s.institutional} to next hire</div>` : ''}
+    ${s.fromShinobi ? `<div style="font-size:var(--fs-small);color:var(--gold);margin-bottom:4px">↳ Transitioned from active duty</div>` : ''}
+    <div class="sect" style="margin-top:12px">Role</div>
+    <div style="font-size:var(--fs-small);color:var(--text-dim);margin-bottom:4px">${role.desc}</div>
+    <div style="font-size:var(--fs-small);color:var(--gold);font-style:italic;margin-bottom:12px">${role.effectDesc}</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap">
+      ${canBeAK ? `<button class="gb" onclick="designateAsstKage('${s.id}')" style="border-color:var(--blue);color:var(--blue)">${tr("staff.designateAK")}</button>` : ''}
+      ${s.asstKage ? `<button class="gb" onclick="designateAsstKage(null)">${tr("staff.removeAK")}</button>` : ''}
+      ${canMeet ? `<button class="gb" onclick="staffPersonalMeeting('${s.id}')" style="border-color:var(--gold);color:var(--gold)">${tr("staff.meeting")}</button>` : ''}
+      <button class="gb gb-r" onclick="confirm('Release ${s.fn} ${s.ln}? This cannot be undone.') && releaseStaff('${s.id}')">${tr("staff.release")}</button>
+    </div>
+  </div>`
+}
+hvKeyNav({
+  isActive: () => ui.CP === 'staff' && window._staffTab === 'roster',
+  rows: '#stfl .hv-table tbody tr[data-id]',
+  selected: () => ui.staffSel,
+  select: id => { ui.staffSel = null; staffSelect(id) },
+  close: () => staffSelect(ui.staffSel),
+})
 
 function _rosterTab() {
   let html = ''
@@ -93,71 +213,22 @@ function _rosterTab() {
     </div>`
   }
 
-  // ── Staff by section ─────────────────────────────────────────────────────
-  const staffBySec = [
-    { sec: 'Command', roles: ['head_sensei','anbu_cmdr','council','treasurer','strategist'] },
-    { sec: 'Field', roles: ['head_scout','team_sensei','scout_jonin','medical'] },
-  ]
-
-  staffBySec.forEach(({ sec, roles }) => {
-    html += `<div class="pt" style="margin-top:${html.includes('div class="pt"')?'14px':'0'}">${sec}</div>`
-    roles.forEach(roleId => {
-      const roleDef = STAFF_ROLES.find(r => r.id === roleId)
-      if (!roleDef) return
-      const current = (G.staff || []).filter(st => st.role === roleId)
-      const slots = roleDef.max
-      const isFull = current.length >= slots
-
-      html += `<div class="surf" style="border:1px solid var(--border);background:var(--surface);padding:11px;margin-bottom:7px">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-          <div>
-            <div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold">${roleDef.n} <span style="font-size:var(--fs-small);color:var(--text-dim)">(${current.length}/${slots})</span></div>
-            <div style="font-size:var(--fs-body);color:var(--text-dim);margin-top:2px">${roleDef.desc}</div>
-            <div style="font-size:var(--fs-small);color:var(--gold);margin-top:2px;font-style:italic">${roleDef.effectDesc}</div>
-          </div>
-          ${!isFull ? `<button class="gb" onclick="openStaffHire('${roleId}')">${tr("staff.hire")}</button>` : ''}
-        </div>`
-
-      if (current.length === 0) {
-        html += `<div style="font-size:var(--fs-small);color:var(--text-faint);font-style:italic;padding:4px 0">— Vacant —</div>`
-      } else {
-        current.forEach(st => {
-          const statEntries = Object.entries(st.stats || {})
-          const ambColor = (st.ambition||0) >= 14 ? 'var(--orange)' : (st.ambition||0) >= 10 ? 'var(--gold)' : 'var(--text-dim)'
-          const ambLabel = (st.ambition||0) >= 14 ? '▲ High Ambition' : (st.ambition||0) >= 10 ? 'Moderate Ambition' : 'Low Ambition'
-          const isAsstKage = st.asstKage
-          const yearsServed = Math.floor((st.monthsServed || 0) / 12)
-          const canBeAK = (st.monthsServed || 0) >= 12 && !isAsstKage && !(G.staff||[]).some(x => x.asstKage)
-
-          html += `<div class="well" style="border:1px solid var(--border);padding:8px;margin-top:6px;background:var(--sunken)" oncontextmenu="return staffCtx(event,'${st.id}')">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
-              <div onmousemove="staffHover(event,'${st.id}')" onmouseleave="hideHoverPreview()">
-                <div style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold">${st.fn} ${st.ln}${isAsstKage ? ' <span style="color:var(--blue);font-size:var(--fs-small)">★ Asst. Warden</span>' : ''}</div>
-                <div style="font-size:var(--fs-small);color:var(--text-dim)">Rating: <span style="color:var(--gold);font-weight:bold">${st.rating}</span> · ${yearsServed > 0 ? yearsServed + 'yr ' : ''}${st.monthsServed}mo · ${fmt(st.salary)}/mo</div>
-                ${(() => { const lvl = st.staffLevel || 1; const need = xpForStaffLevel(lvl); const pct = lvl >= STAFF_MAX_LEVEL ? 100 : Math.min(100, Math.round((st.staffXp || 0) / need * 100)); return `<div style="display:flex;align-items:center;gap:5px;margin-top:2px"><span style="font-size:var(--fs-micro);color:var(--green)" title="Staff mastery — improves their craft as they gain experience">◆ ${staffTitle(lvl)}${lvl >= STAFF_MAX_LEVEL ? ' (max)' : ' L' + lvl}</span><div style="flex:1;max-width:70px;height:3px;background:var(--border-dim);border-radius:2px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--green)"></div></div></div>` })()}
-                <div style="font-size:var(--fs-micro);color:${ambColor};margin-top:2px">${ambLabel}${(st.ambition||0)>=14&&roleId==='team_sensei'?' — watching for head sensei opening':''}${st.hiddenFlaw&&st.flawRevealed?' · ⚠ '+st.hiddenFlaw:''}</div>
-                ${st.institutional > 0 ? `<div style="font-size:var(--fs-small);color:var(--purple)">Legacy bonus: +${st.institutional} to next hire</div>` : ''}
-                ${st.fromShinobi ? `<div style="font-size:var(--fs-small);color:var(--gold)">↳ Transitioned from active duty</div>` : ''}
-              </div>
-              <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
-                <button class="gb gb-r" onclick="confirm('Release ${st.fn} ${st.ln}? This cannot be undone.') && releaseStaff('${st.id}')" style="font-size:var(--fs-micro);padding:3px 7px">${tr("staff.release")}</button>
-                ${canBeAK ? `<button class="gb" onclick="designateAsstKage('${st.id}')" style="font-size:var(--fs-micro);padding:3px 7px;border-color:var(--blue);color:var(--blue)">${tr("staff.designateAK")}</button>` : ''}
-                ${isAsstKage ? `<button class="gb" onclick="designateAsstKage(null)" style="font-size:var(--fs-micro);padding:3px 7px;border-color:var(--text-faint);color:var(--text-faint)">${tr("staff.removeAK")}</button>` : ''}
-                ${(st.monthsServed||0) >= 6 && st.hiddenFlaw && !st.flawRevealed ? `<button class="gb" onclick="staffPersonalMeeting('${st.id}')" style="font-size:var(--fs-micro);padding:3px 7px;border-color:var(--gold);color:var(--gold)">${tr("staff.meeting")}</button>` : ''}
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px">
-              ${statEntries.map(([k, v]) => `<div style="text-align:center;background:var(--bg);padding:3px">
-                <div style="font-size:var(--fs-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:1px;margin-bottom:1px">${k.slice(0,5)}</div>
-                <div style="font-size:var(--fs-lead);color:${v>=15?'var(--gold)':v>=10?'var(--green)':'var(--text-dim)'};font-weight:bold">${v}</div>
-              </div>`).join('')}
-            </div>
-          </div>`
-        })
-      }
-      html += `</div>`
-    })
-  })
+  // ── Slot board ─────────────────────────────────────────────────────────────
+  const slots = _slotRows()
+  const filled = slots.filter(r => r.staff).length, total = slots.filter(r => !r.group).length
+  html += `<div class="hv-split" style="margin-bottom:16px">
+    <div>
+      <div class="ros-toolbar">
+        <div class="sect" style="margin:0">Staff <span style="color:var(--text-faint)">— ${filled} of ${total} posts filled · ${fmt((G.staff||[]).reduce((a, s) => a + (s.salary || 0), 0))}/mo</span></div>
+        <span class="ros-legend">right-click a person for actions</span>
+      </div>
+      <table class="hv-table">
+        <thead><tr><th>Post</th><th>Name</th><th class="num">Rating</th><th>Mastery</th><th class="num">Tenure</th><th class="num">Salary</th><th>Ambition</th><th class="ctr"></th></tr></thead>
+        <tbody>${slots.map(_slotRowHtml).join('')}</tbody>
+      </table>
+    </div>
+    <aside class="hv-inspector" id="stf-inspector" aria-label="Inspector"></aside>
+  </div>`
 
   // ── Retire to Staff ───────────────────────────────────────────────────────
   html += `<div class="pt" style="margin-top:14px">${tr("staff.retireToStaff")}</div>
