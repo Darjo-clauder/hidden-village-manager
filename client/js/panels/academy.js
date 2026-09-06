@@ -6,7 +6,7 @@ import { isEnabled } from '../../../config/features.js'
 import { TRAINING_PLANS, PLAN_BY_ID } from '../../../shared/constants/trainingPlans.js'
 import { applyGraduationBias } from '../prospectEngine.js'
 import { mentorshipSummary } from '../../../shared/utils/mentorship.js'
-import { openContextMenu, showHoverPreview, hideHoverPreview } from '../uikit.js'
+import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort, tblSortRows, tblHeaderHtml, hvInspectorHeadHtml, hvKeyNav } from '../uikit.js'
 import { t } from '../../../shared/utils/i18n.js'
 
 let _acTab = 'prospects'
@@ -17,6 +17,7 @@ export function acCtx(e, id) {
   const p = (G.prospects || []).find(x => x.id === id); if (!p) return false
   const scoutingAm = (G.aM || []).find(am => am.isScout && am.scoutTargetId === id)
   openContextMenu(e.clientX, e.clientY, [
+    { label: 'Inspect', fn: () => window.acSelect && window.acSelect(id) },
     { label: 'Recruit — 2,000 ryo', disabled: G.ryo < 2000, fn: () => window.rec && window.rec(id) },
     ...(p.scouted || scoutingAm ? [] : [{ label: 'Scout — 3,000 ryo', disabled: G.ryo < 3000, fn: () => window.oScout && window.oScout(id) }]),
     ...(p.mentor ? [] : [{ label: 'Assign Sensei…', fn: () => window.oSensei && window.oSensei(id) }]),
@@ -297,8 +298,95 @@ const MINOR_CLANS = [
 function pk(a) { return a[Math.floor(Math.random() * a.length)] }
 function rnd(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a }
 
+// ── Prospects as a table + inspector (VISUAL_OVERHAUL §3.3) ──────────────────
+// This was the heaviest rebuild in the game: ~1,800 nodes of cards at year one.
+const _AC_DEFAULT = { key: 'power', dir: 'desc' }
+const _band = v => v >= 80 ? 5 : v >= 65 ? 4 : v >= 50 ? 3 : v >= 35 ? 2 : 1
+const _attr = v => `<span class="hv-attr b${_band(v)}">${v}</span>`
+const _cellClass = c => c.align === 'right' ? 'num' : c.align === 'center' ? 'ctr' : ''
+const _patience = p => Math.max(0, 100 - (p.monthsWaiting || 0) * 12.5)
+const _patCol = pc => pc > 60 ? 'var(--green)' : pc > 30 ? 'var(--orange)' : 'var(--red)'
+function _acCols() {
+  return [
+    { key: 'name', label: 'Name', align: 'left', sortVal: p => sn(p),
+      render: p => { const urgent = !!p.fromRegion && p.rivalInterest && p.urgencyMonths > 0
+        return `<div class="hv-cell-name" style="${p.prodigy ? 'color:var(--gold)' : ''}">${sn(p)}${p.prodigy ? ' <span style="font-size:var(--fs-micro)">✦</span>' : ''}${urgent ? ` <span style="color:var(--red);font-size:var(--fs-micro)" title="Rival village interest">⚠${p.urgencyMonths}m</span>` : ''}${p.rivalOffer ? ' <span style="color:var(--orange);font-size:var(--fs-micro)" title="Rival offer on the table">💰</span>' : ''}</div><div class="hv-cell-sub">${p.clan ? p.clan + ' · ' + p.trait : (p.spec || '—')}</div>` } },
+    { key: 'origin', label: 'Origin', align: 'left', sortVal: p => p.origin || '', render: p => p.origin ? `<span style="color:var(--purple);white-space:nowrap">${p.fromRegion ? '🗺 ' : ''}${p.origin}</span>` : '<span style="color:var(--text-faint)">Local</span>' },
+    { key: 'age', label: 'Age', align: 'right', sortVal: p => p.age || 0, render: p => `<span style="color:var(--text-dim)">${p.age}</span>` },
+    { key: 'power', label: 'Pwr', align: 'right', sortVal: p => sPow(p), render: p => _attr(sPow(p)) },
+    { key: 'potential', label: 'Pot', align: 'right',
+      sortVal: p => p.scouted ? p.potential : (p.potRange && !p.potRange.exact ? (p.potRange.lo + p.potRange.hi) / 2 : 0),
+      render: p => p.scouted ? _attr(p.potential)
+        : p.potRange && !p.potRange.exact ? `<span class="hv-attr b${_band((p.potRange.lo + p.potRange.hi) / 2)}" title="Scouted range">${p.potRange.lo}–${p.potRange.hi}</span>`
+        : '<span class="hv-attr b1" title="Unverified — scout to reveal">???</span>' },
+    { key: 'pers', label: 'Personality', align: 'left', sortVal: p => p.pers?.n || '', render: p => p.pers ? `<span class="trait-tag ${pCl(p.pers)}">${p.pers.n}</span>` : '' },
+    { key: 'plan', label: 'Plan', align: 'left', sortVal: p => PLAN_BY_ID[p.trainingPlanId]?.label || '', render: p => { const pl = PLAN_BY_ID[p.trainingPlanId]; return pl ? `<span style="color:var(--text-dim);white-space:nowrap">${pl.icon || ''} ${pl.label}</span>` : '<span style="color:var(--text-faint)">—</span>' } },
+    { key: 'sensei', label: 'Sensei', align: 'left', sortVal: p => p.mentor ? 1 : 0, render: p => { const s = p.mentor ? G.shinobi.find(x => x.id === p.mentor) : null; return s ? `<span style="color:var(--gold);white-space:nowrap">${sn(s)}</span>` : '<span style="color:var(--text-faint)">—</span>' } },
+    { key: 'patience', label: 'Patience', align: 'right', sortVal: p => -(p.monthsWaiting || 0),
+      render: p => { const pc = _patience(p); return `<span style="color:${_patCol(pc)}" title="${p.monthsWaiting || 0} months waiting">${pc > 60 ? 'Patient' : pc > 30 ? 'Restless' : 'Leaving'} · ${p.monthsWaiting || 0}m</span>` } },
+    { key: 'status', label: 'Sts', align: 'center', sortVal: p => p.scouted ? 2 : (G.aM || []).some(am => am.isScout && am.scoutTargetId === p.id) ? 1 : 0,
+      render: p => p.scouted ? '<span style="color:var(--green)" title="Scouted">✓</span>' : (G.aM || []).some(am => am.isScout && am.scoutTargetId === p.id) ? '<span style="color:var(--orange)" title="Being scouted">⟳</span>' : '<span style="color:var(--text-faint)" title="Unscouted">·</span>' },
+  ]
+}
+export function acSort(key) { tblToggleSort('academy', key, _AC_DEFAULT); rAc() }
+export function acSelect(id) {
+  ui.acSel = ui.acSel === id ? null : id
+  document.querySelectorAll('#acl .hv-table tbody tr').forEach(r => r.classList.toggle('sel', r.dataset.id === ui.acSel))
+  _renderAcInspector()
+}
+function _renderAcInspector() {
+  const el = document.getElementById('ac-inspector'); if (!el) return
+  const grid = el.closest('.hv-split')
+  const p = ui.acSel ? (G.prospects || []).find(x => x.id === ui.acSel) : null
+  if (!p) {
+    ui.acSel = null
+    grid?.classList.remove('has-sel')
+    el.innerHTML = `<div class="hv-inspector-hint">${t('academy.inspect.hint')}</div>`
+    return
+  }
+  grid?.classList.add('has-sel')
+  el.innerHTML = hvInspectorHeadHtml({
+    name: `${sn(p)}${p.prodigy ? ' <span style="font-size:var(--fs-small);color:var(--gold)">✦ Prodigy</span>' : ''}`,
+    sub: `${p.clan ? p.clan + ' · ' + p.trait : (p.spec || '—')} · Age ${p.age}${p.origin ? ' · from ' + p.origin : ''}`,
+    actions: `<button class="gb" onclick="acSelect('${p.id}')" title="Close (Esc)" aria-label="Close">×</button>`,
+  }) + `<div class="hv-inspector-body">${_prospectBodyHtml(p)}</div>`
+}
+hvKeyNav({
+  isActive: () => ui.CP === 'academy' && _acTab === 'prospects',
+  rows: '#acl .hv-table tbody tr[data-id]',
+  selected: () => ui.acSel,
+  select: id => { ui.acSel = null; acSelect(id) },
+  close: () => acSelect(ui.acSel),
+})
+
 export function rAc() {
-  document.getElementById('acl').innerHTML = G.prospects.map(p => {
+  const el = document.getElementById('acl')
+  if (!G.prospects.length) { el.innerHTML = `<div class="hv-empty">${t('academy.prospects.none')}</div>`; return }
+  const inspScroll = document.getElementById('ac-inspector')?.scrollTop || 0
+  const COLS = _acCols()
+  const sort = tblSort('academy', _AC_DEFAULT)
+  const rows = tblSortRows(G.prospects, sort, COLS)
+  el.innerHTML = `<div class="hv-split">
+    <div>
+      <div class="ros-toolbar">
+        <div class="sect" style="margin:0">${rows.length} prospects <span style="color:var(--text-faint)">— ${rows.filter(p => p.scouted).length} scouted · ${rows.filter(p => p.prodigy).length} prodigy</span></div>
+        <span class="ros-legend">right-click for actions</span>
+      </div>
+      <table class="hv-table">
+        <thead><tr>${tblHeaderHtml(COLS, sort, 'acSort', { plain: true })}</tr></thead>
+        <tbody>${rows.map(p => `<tr data-id="${p.id}"${ui.acSel === p.id ? ' class="sel"' : ''} onclick="acSelect('${p.id}')" oncontextmenu="return acCtx(event,'${p.id}')" onmousemove="acHover(event,'${p.id}')" onmouseleave="hideHoverPreview()">
+          ${COLS.map(c => `<td class="${_cellClass(c)}">${c.render(p)}</td>`).join('')}
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+    <aside class="hv-inspector" id="ac-inspector" aria-label="Inspector"></aside>
+  </div>`
+  _renderAcInspector()
+  const insp = document.getElementById('ac-inspector'); if (insp && inspScroll) insp.scrollTop = inspScroll
+}
+
+// The prospect's full file — the former card body, now the inspector body.
+function _prospectBodyHtml(p) {
     const potText = p.scouted ? p.potential : '???'
     const potColor = p.scouted ? 'var(--gold)' : 'var(--text-dim)'
     const scoutingAm = G.aM.find(am => am.isScout && am.scoutTargetId === p.id)
@@ -316,7 +404,7 @@ export function rAc() {
     const familySib = p.familyId ? G.prospects.filter(x => x.id !== p.id && x.familyId === p.familyId) : []
     const isScoutSourced = !!p.fromRegion
     const urgencyBorder = isScoutSourced && p.urgencyMonths <= 2 && p.rivalInterest ? 'border-color:var(--red)' : p.prodigy ? 'border-color:var(--gold);box-shadow:0 0 8px rgba(201,168,76,0.2)' : waited >= 6 ? 'border-color:var(--red)' : ''
-    return `<div class="card" style="${urgencyBorder}" oncontextmenu="return acCtx(event,'${p.id}')">
+    return `<div style="border-top:2px solid ${urgencyBorder.includes('red') ? 'var(--red)' : p.prodigy ? 'var(--gold)' : 'var(--border-hi)'};padding-top:8px" oncontextmenu="return acCtx(event,'${p.id}')">
       ${isScoutSourced && p.rivalInterest && p.urgencyMonths > 0 ? `<div style="background:#3a0000;border-radius:3px;padding:2px 6px;font-size:var(--fs-micro);color:var(--red-soft);margin-bottom:5px">⚠ Rival village interest — ${p.urgencyMonths}m urgency window</div>` : ''}
       ${isScoutSourced ? `<div style="font-size:var(--fs-micro);color:#9b7fbf;margin-bottom:4px">🗺 Scouted by ${p.scoutName||'unknown'} · ${p.origin}</div>` : ''}
       <div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:7px">
@@ -368,7 +456,6 @@ export function rAc() {
         ${!p.mentor ? `<button class="gb" onclick="oSensei('${p.id}')">${t('academy.assignSensei')}</button>` : ''}
       </div>
     </div>`
-  }).join('') || `<div style="color:var(--text-dim);font-size:var(--fs-body)">${t('academy.prospects.none')}</div>`
 }
 
 export function rec(id) {

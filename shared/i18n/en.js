@@ -231,6 +231,7 @@ export const en = {
   'academy.assignSensei': 'Assign Sensei',
   'academy.recruit': 'Recruit — 2,000 ryo ►',
   'academy.prospects.none': 'No prospects. Advance month.',
+  'academy.inspect.hint': 'Select a prospect to read their file, set a plan, scout or recruit — the list stays put.',
   'academy.assign': 'Assign ►',
 
   // ── Static panel titles (P2 tranche 9 — batch via data-i18n) ────────────

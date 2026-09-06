@@ -22,7 +22,7 @@ import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM, setMissionApproach, selectMission, setInspectorApproach, deployFromInspector, watchLastBattle, toggleAutoWatch } from './panels/missions.js'
 import { skipBattleViewer, closeBattleViewer, chooseBattleCall, bvTogglePause, bvCycleSpeed, replayBattle, bvSetTactic, bvToggleSettings, bvSetPref, watchArchivedMatch, bvSetOverlay } from './liveBattle.js'
 import { rUp, buyUp, buildDistrict, chooseDoctrine, startPrestigeProject, holdFestival } from './panels/upgrades.js'
-import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab, acCtx, acHover } from './panels/academy.js'
+import { rAc, rec, oScout, doScout, oSensei, doSensei, setTrainingPlan, matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab, acCtx, acHover, acSelect, acSort } from './panels/academy.js'
 import { eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, negotiateSponsor, secureRoute } from './panels/economy.js'
 import { logFilter, logSearch } from './panels/log.js'
 import { honorFallen } from './panels/memorial.js'
@@ -138,7 +138,7 @@ Object.assign(window, {
   buyUp, buildDistrict, chooseDoctrine, startPrestigeProject, holdFestival,
   // academy
   rec, oScout, doScout, oSensei, doSensei, setTrainingPlan,
-  matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab, acCtx, acHover,
+  matchRivalOffer, exceedRivalOffer, declineRivalOffer, acTab, acCtx, acHover, acSelect, acSort,
   // economy
   eTab, tgTr, tgCo, doBl, acceptSponsorship, declineSponsorship, negotiateSponsor, secureRoute,
   // log + memorial
