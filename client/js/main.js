@@ -17,7 +17,7 @@ import { initAudio, loadAudioPrefs, getAudioPrefs, setAudioPref, sfx, audioState
 import { openSettings, closeSettings, renderSettings, setVolume, toggleMute, toggleReduceMotion, setTextSize, loadDisplayPrefs, getDisplayPrefs, setDisplayPref } from './settings.js'
 import { showSetup, selIcon, beginGame, restoreGame, restoreSlot, selScenario } from './setup.js'
 import { adv } from './adv.js'
-import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, setRehabPlan, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath, rosterSortBy, rosterToggleCol, rosterColMgr, rosterCtx, rosterHover } from './panels/roster.js'
+import { rRo, oDos, mkJK, treatTrauma, secondOpinion, specialistTreatment, setRehabPlan, dosTab, retireShinobi, retireToCoach, extendCareer, setTrainingFocus, toggleRestMonth, openContractRenewal, toggleJutsuLoadout, toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath, rosterSortBy, rosterToggleCol, rosterColMgr, rosterCtx, rosterHover, rosterFilter, rosterFacet } from './panels/roster.js'
 import { rSq, oCS, csSL, csMT, doCS, disbSq, oSqA, doSqA, rSynPrev, setFormation, setSqApproach } from './panels/squads.js'
 import { mTab, oA, doA, pickSq, rDef, openWorldChoice, setMissionPrep, simTemplate, missionLogFilter, assignBM, setMissionApproach, selectMission, setInspectorApproach, deployFromInspector, watchLastBattle, toggleAutoWatch } from './panels/missions.js'
 import { skipBattleViewer, closeBattleViewer, chooseBattleCall, bvTogglePause, bvCycleSpeed, replayBattle, bvSetTactic, bvToggleSettings, bvSetPref, watchArchivedMatch, bvSetOverlay } from './liveBattle.js'
@@ -171,7 +171,7 @@ Object.assign(window, {
   retireShinobi, retireToCoach, extendCareer,
   setTrainingFocus, toggleRestMonth, openContractRenewal,
   toggleNoTrade, toggleTwoWay, executeBuyout, rosSelect, setDevPath,
-  rosterSortBy, rosterToggleCol, rosterColMgr, rosterCtx, rosterHover,
+  rosterSortBy, rosterToggleCol, rosterColMgr, rosterCtx, rosterHover, rosterFilter, rosterFacet,
   // missions
   setMissionPrep, simTemplate,
   // scouting

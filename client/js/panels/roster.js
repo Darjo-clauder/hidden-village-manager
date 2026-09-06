@@ -198,6 +198,50 @@ function _assignmentsHtml() {
   </div>`
 }
 
+// ── Filter bar (§3.4 #17) — text on name/clan/speciality, one status facet ──
+const _FACETS = [['all', 'roster.facet.all'], ['available', 'roster.facet.available'], ['mission', 'roster.facet.mission'], ['injured', 'roster.facet.injured'], ['exam', 'roster.facet.exam']]
+const _escAttr = v => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+function _filteredRows(COLS) {
+  const q = (ui.rosQ || '').trim().toLowerCase()
+  const facet = ui.rosFacet || 'all'
+  const rows = G.shinobi.filter(s =>
+    (facet === 'all' || s.status === facet) &&
+    (!q || [sn(s), s.clan, s.spec, s.element].filter(Boolean).some(v => String(v).toLowerCase().includes(q))))
+  return tblSortRows(rows, tblSort('roster', _ROSTER_DEFAULT_SORT), COLS)
+}
+function _rowsHtml(rows, visCols) {
+  if (!rows.length) return `<tr><td colspan="${visCols.length}" class="hv-empty">${tr('roster.filter.none')}</td></tr>`
+  return rows.map(s => `<tr data-id="${s.id}"${window._rosSelId === s.id ? ' class="sel"' : ''}
+      onclick="rosSelect('${s.id}')" oncontextmenu="return rosterCtx(event,'${s.id}')"
+      onmousemove="rosterHover(event,'${s.id}')" onmouseleave="hideHoverPreview()">
+      ${visCols.map(c => `<td class="${_cellClass(c)}">${c.render(s)}</td>`).join('')}
+    </tr>`).join('')
+}
+// Typing must not rebuild the panel — that would take the focus out of the input
+// on every keystroke — so filtering re-renders the rows and the count only.
+function _refreshRows() {
+  const tbody = document.querySelector('#rl .hv-table tbody'); if (!tbody) return
+  const COLS = _rosterCols()
+  const hidden = new Set(tblHidden('roster'))
+  const rows = _filteredRows(COLS)
+  tbody.innerHTML = _rowsHtml(rows, COLS.filter(c => !hidden.has(c.key)))
+  const cnt = document.getElementById('ros-count'); if (cnt) cnt.textContent = tr('roster.filter.showing', { n: rows.length, total: G.shinobi.length })
+}
+export function rosterFilter(q) { ui.rosQ = q; _refreshRows() }
+export function rosterFacet(f) {
+  ui.rosFacet = f
+  document.querySelectorAll('#rl .hv-facets .hv-chip').forEach(c => c.classList.toggle('sel', c.dataset.facet === f))
+  _refreshRows()
+}
+function _filterBarHtml(rows) {
+  const facet = ui.rosFacet || 'all'
+  return `<div class="hv-filterbar">
+    <input class="hv-filter-input" id="ros-q" type="search" placeholder="${tr('roster.filter.placeholder')}" value="${_escAttr(ui.rosQ || '')}" oninput="rosterFilter(this.value)" spellcheck="false" autocomplete="off">
+    <div class="hv-facets">${_FACETS.map(([id, key]) => `<button class="hv-chip${facet === id ? ' sel' : ''}" data-facet="${id}" onclick="rosterFacet('${id}')">${tr(key)}</button>`).join('')}</div>
+    <span class="hv-filter-count" id="ros-count">${tr('roster.filter.showing', { n: rows.length, total: G.shinobi.length })}</span>
+  </div>`
+}
+
 export function rRo() {
   const el = document.getElementById('rl')
   if (!G.shinobi.length) { el.innerHTML = `<div class="hv-empty">${tr('roster.none')}</div>`; return }
@@ -209,13 +253,8 @@ export function rRo() {
   const _sort = tblSort('roster', _ROSTER_DEFAULT_SORT)
   const _hidden = new Set(tblHidden('roster'))
   const _visCols = COLS.filter(c => !_hidden.has(c.key))
-  const rows = tblSortRows(G.shinobi, _sort, COLS)
-
-  const tableRows = rows.map(s => `<tr data-id="${s.id}"${window._rosSelId === s.id ? ' class="sel"' : ''}
-      onclick="rosSelect('${s.id}')" oncontextmenu="return rosterCtx(event,'${s.id}')"
-      onmousemove="rosterHover(event,'${s.id}')" onmouseleave="hideHoverPreview()">
-      ${_visCols.map(c => `<td class="${_cellClass(c)}">${c.render(s)}</td>`).join('')}
-    </tr>`).join('')
+  const rows = _filteredRows(COLS)
+  const tableRows = _rowsHtml(rows, _visCols)
 
   el.innerHTML = `
     <div class="ros-grid">
@@ -232,6 +271,7 @@ export function rRo() {
             ${tblColumnManagerHtml('roster', COLS, 'rosterToggleCol')}
           </div>
         </div>
+        ${_filterBarHtml(rows)}
         <table class="hv-table">
           <thead><tr>${tblHeaderHtml(_visCols, _sort, 'rosterSortBy', { plain: true })}</tr></thead>
           <tbody>${tableRows}</tbody>
@@ -251,9 +291,20 @@ export function rosSelect(id) {
   document.querySelectorAll('#rl .hv-table tbody tr').forEach(r => r.classList.toggle('sel', r.dataset.id === window._rosSelId))
   _renderRosDetail(window._rosSelId)
 }
-// Escape closes the inspector (it is a drawer below the split breakpoint).
+// Keyboard on the roster: Esc closes the inspector (a drawer below the split
+// breakpoint); ↑/↓ walk the selection through the visible rows.
 if (typeof document !== 'undefined') document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && window._rosSelId && ui.CP === 'roster' && !document.querySelector('.ov.open')) rosSelect(window._rosSelId)
+  if (ui.CP !== 'roster' || document.querySelector('.ov.open')) return
+  const inField = /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName || '')
+  if (e.key === 'Escape' && window._rosSelId) { rosSelect(window._rosSelId); return }
+  if (inField || (e.key !== 'ArrowDown' && e.key !== 'ArrowUp')) return
+  const rows = [...document.querySelectorAll('#rl .hv-table tbody tr[data-id]')]; if (!rows.length) return
+  const i = rows.findIndex(x => x.dataset.id === window._rosSelId)
+  const next = rows[Math.max(0, Math.min(rows.length - 1, i < 0 ? 0 : i + (e.key === 'ArrowDown' ? 1 : -1)))]
+  if (!next || next.dataset.id === window._rosSelId) return
+  e.preventDefault()
+  window._rosSelId = null; rosSelect(next.dataset.id)   // select, never toggle off
+  next.scrollIntoView({ block: 'nearest' })
 })
 
 // ── Table kit wrappers (P1) ────────────────────────────────────────────────────

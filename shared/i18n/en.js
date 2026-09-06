@@ -192,6 +192,14 @@ export const en = {
   'roster.inspect.hint': 'Select a shinobi to inspect — the list stays put. Right-click for actions.',
   'roster.inspect.openWindow': 'Open dossier in a window',
   'roster.inspect.close': 'Close inspector (Esc)',
+  'roster.filter.placeholder': 'Filter by name, clan, speciality…',
+  'roster.filter.showing': '{n} of {total}',
+  'roster.filter.none': 'No shinobi match.',
+  'roster.facet.all': 'All',
+  'roster.facet.available': 'Available',
+  'roster.facet.mission': 'On mission',
+  'roster.facet.injured': 'Injured',
+  'roster.facet.exam': 'Exam',
 
   // ── Squads (P2 tranche 7) ───────────────────────────────────────────────
   'squad.none': 'No squads.',
