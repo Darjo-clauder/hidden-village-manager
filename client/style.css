@@ -953,6 +953,81 @@ body::after{
 .bv-call-note.bv-call-safe{border-left-color:#c9a84c}
 .bv-call-note b{color:#e3c874}
 
+/* ══ COMPONENTS — hv-* (docs/VISUAL_OVERHAUL.md §3.4) ════════════════════════
+   The library that replaces inline layout, built as each panel converts.
+   Roster is the first. Rules here are layout and typography; colour still
+   resolves through the tokens above.                                        */
+:root{
+  --pt-h:calc(var(--fs-head) * 1.45 + var(--sp-2) * 3 + 1px);   /* the sticky .pt's box, measured 57px at scale 1 */
+  --inspector-w:340px;
+}
+
+/* Data table — header sticks under the panel title, hover + selected rows,
+   tabular figures right-aligned. Supersedes .tbl-dense as panels convert. */
+.hv-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.hv-table thead th{
+  position:sticky;top:var(--pt-h);z-index:3;background:var(--bg);
+  padding:var(--sp-2);text-align:left;white-space:nowrap;
+  font-size:var(--fs-micro);letter-spacing:var(--ls-caps);text-transform:uppercase;
+  font-weight:500;color:var(--text-faint);cursor:pointer;user-select:none;
+  border-bottom:1px solid var(--border);
+}
+.hv-table thead th:hover{color:var(--text-dim)}
+.hv-table thead th.sorted{color:var(--accent)}
+.hv-table th.num,.hv-table td.num{text-align:right;font-family:var(--font-num)}
+.hv-table th.ctr,.hv-table td.ctr{text-align:center}
+.hv-table td{padding:5px var(--sp-2);font-size:var(--fs-small);vertical-align:middle;border-bottom:1px solid var(--border-dim)}
+.hv-table tbody tr{cursor:pointer}
+.hv-table tbody tr:hover td{background:var(--surface-2)}
+.hv-table tbody tr.sel td{background:var(--accent-bg)}
+.hv-table tbody tr.sel td:first-child{box-shadow:inset 2px 0 0 var(--accent)}
+.hv-cell-name{font-size:var(--fs-body);color:var(--text-hi);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:170px}
+.hv-cell-sub{font-size:var(--fs-micro);color:var(--text-faint)}
+
+/* Attribute — a 0–100 figure tinted by value band, so a row reads as a shape
+   before it reads as six numbers. */
+.hv-attr{display:inline-block;min-width:2.2em;text-align:right;font-family:var(--font-num);font-size:var(--fs-small);padding:1px 4px;border-radius:2px}
+.hv-attr.b1{color:var(--text-faint)}
+.hv-attr.b2{color:var(--text-dim)}
+.hv-attr.b3{color:var(--text-hi)}
+.hv-attr.b4{color:var(--green-hi);background:var(--green-bg)}
+.hv-attr.b5{color:var(--gold-hi);background:var(--gold-bg)}
+
+/* Inspector — the selected entity beside its list. Sticky under the panel
+   title in the split layout; a right-hand drawer below the split breakpoint. */
+.hv-inspector{
+  position:sticky;top:var(--pt-h);align-self:start;
+  max-height:calc(100vh - var(--topbar-h) - var(--ticker-h) - var(--pt-h) - 28px);
+  overflow-y:auto;background:var(--surface);border:1px solid var(--border);
+  border-top-color:rgba(255,255,255,.09);
+}
+.hv-inspector::-webkit-scrollbar{width:3px}
+.hv-inspector::-webkit-scrollbar-thumb{background:var(--border)}
+.hv-inspector-head{
+  position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:var(--sp-2);
+  padding:var(--sp-2) var(--sp-3);background:var(--surface-2);border-bottom:1px solid var(--border);
+}
+.hv-inspector-name{font-family:var(--font-serif);font-size:var(--fs-sub);color:var(--text-hi);font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hv-inspector-sub{font-size:var(--fs-small);color:var(--text-dim)}
+.hv-inspector-head .gb{padding:2px 8px;font-size:var(--fs-body);flex-shrink:0}
+.hv-inspector-body{padding:var(--sp-3)}
+.hv-inspector-hint{padding:var(--sp-4) var(--sp-3);font-size:var(--fs-small);color:var(--text-faint);text-align:center;line-height:1.6;border-bottom:1px solid var(--border-dim)}
+.hv-empty{color:var(--text-dim);font-size:var(--fs-body);padding:var(--sp-3)}
+
+/* Roster — the first converted panel. */
+.ros-grid{display:grid;grid-template-columns:minmax(0,1fr) var(--inspector-w);gap:var(--sp-3);align-items:start}
+.ros-toolbar{display:flex;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-2);position:relative}
+.ros-legend{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:var(--fs-small);color:var(--text-faint)}
+.ros-assign{padding:var(--sp-3)}
+@keyframes hv-drawer-in{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+@media (max-width:1359px){
+  .ros-grid{grid-template-columns:minmax(0,1fr)}
+  .ros-grid.has-sel .hv-inspector{
+    position:fixed;top:var(--topbar-h);right:0;bottom:var(--ticker-h);width:380px;max-width:92vw;max-height:none;
+    z-index:40;box-shadow:-12px 0 32px rgba(0,0,0,.55);animation:hv-drawer-in 180ms var(--ease-out);
+  }
+}
+
 /* ══ INTERACTION — the feel layer ═══════════════════════════════════════════
    Measured before this block existed (2026-09-05, year-1 save, 22 shinobi):
    a click produced no visible change for 20–110ms because the panel rebuild

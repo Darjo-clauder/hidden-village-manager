@@ -88,11 +88,17 @@ export function tblSortRows(rows, sort, columns) {
 }
 
 /** Render sortable <th> cells. onSortFn = name of a window fn taking (key). */
-export function tblHeaderHtml(columns, sort, onSortFn) {
+// opts.plain: emit classes (.sorted/.num/.ctr) instead of inline styles, for tables
+// styled by .hv-table. The inline form stays for tables not yet converted.
+export function tblHeaderHtml(columns, sort, onSortFn, opts = {}) {
   return columns.map(c => {
     const active = sort && sort.key === c.key
     const arrow = active ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''
     const ariaSort = active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'
+    if (opts.plain) {
+      const cls = [active ? 'sorted' : '', c.align === 'right' ? 'num' : c.align === 'center' ? 'ctr' : ''].filter(Boolean).join(' ')
+      return `<th role="columnheader" aria-sort="${ariaSort}" tabindex="0" class="${cls}" onclick="${onSortFn}('${c.key}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${onSortFn}('${c.key}')}" title="Sort by ${c.label}">${c.label}${arrow}</th>`
+    }
     return `<th role="columnheader" aria-sort="${ariaSort}" tabindex="0" onclick="${onSortFn}('${c.key}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${onSortFn}('${c.key}')}" title="Sort by ${c.label}"
       style="padding:4px 6px;font-size:var(--fs-micro);color:${active ? 'var(--accent)' : 'var(--text-faint)'};letter-spacing:1px;text-align:${c.align || 'left'};text-transform:uppercase;cursor:pointer;user-select:none;white-space:nowrap">${c.label}${arrow}</th>`
   }).join('')

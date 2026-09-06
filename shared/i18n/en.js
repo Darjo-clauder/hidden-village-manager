@@ -189,6 +189,9 @@ export const en = {
   'roster.noAssignments': 'No active assignments.',
   'roster.header': 'Roster — {n} shinobi',
   'roster.fullDossier': 'Full Dossier ▸',
+  'roster.inspect.hint': 'Select a shinobi to inspect — the list stays put. Right-click for actions.',
+  'roster.inspect.openWindow': 'Open dossier in a window',
+  'roster.inspect.close': 'Close inspector (Esc)',
 
   // ── Squads (P2 tranche 7) ───────────────────────────────────────────────
   'squad.none': 'No squads.',

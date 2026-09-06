@@ -1,4 +1,4 @@
-import { G, sPow, clamp, rnd, sn, fmt, pDesc, personalityJudge, computeMarketValue } from '../state.js'
+import { G, ui, sPow, clamp, rnd, sn, fmt, pDesc, personalityJudge, computeMarketValue } from '../state.js'
 import { gradeShinobi } from '../adv.js'
 import { memoryStateBlurb, mostSalientMemory } from '../../../shared/utils/memorySystem.js'
 import { definingMoments } from '../../../shared/utils/legacyMemory.js'
@@ -113,24 +113,53 @@ function _potential(s) {
   return Math.round(potFactor)
 }
 
-export function rRo() {
-  const el = document.getElementById('rl')
-  if (!G.shinobi.length) { el.innerHTML = `<div style="color:var(--text-dim);font-size:var(--fs-body);padding:12px">${tr('roster.none')}</div>`; return }
+// ── Roster — the first panel converted to the hv-* library (VISUAL_OVERHAUL §3.3/3.4) ──
+// A sortable attribute table on the left, the selected shinobi's full dossier in
+// an inspector on the right. Selection never destroys the list.
+const _STAT_KEYS = ['ninjutsu', 'taijutsu', 'genjutsu', 'chakra', 'intelligence', 'speed']
+const _STAT_LABELS = { ninjutsu: 'Nin', taijutsu: 'Tai', genjutsu: 'Gen', chakra: 'Cha', intelligence: 'Int', speed: 'Spd' }
+// Value bands for .hv-attr — the FM device: a figure reads as good or bad before it reads as a number.
+const _band = v => v >= 80 ? 5 : v >= 65 ? 4 : v >= 50 ? 3 : v >= 35 ? 2 : 1
+const _attr = v => `<span class="hv-attr b${_band(v)}">${v}</span>`
+const _cellClass = c => c.align === 'right' ? 'num' : c.align === 'center' ? 'ctr' : ''
 
-  // Sort: by rank desc, then power desc
+function _rosterCols() {
+  const _statusCell = s => s.status === 'available' ? `<span style="color:var(--green)" title="Available">●</span>`
+    : s.status === 'mission' ? `<span style="color:var(--gold)" title="On mission">▶</span>`
+    : s.status === 'injured' ? `<span style="color:var(--red)" title="Injured ${s.injDays}m">✕</span>`
+    : `<span style="color:var(--blue)" title="Exam">⚑</span>`
+  const _nameCell = s => {
+    const nt = s.noTrade ? `<span style="font-size:var(--fs-micro);color:var(--red-soft);border:1px solid var(--red);padding:0 3px;margin-left:3px">NT</span>` : ''
+    const tw = s.twoWay  ? `<span style="font-size:var(--fs-micro);color:var(--blue);border:1px solid #468;padding:0 3px;margin-left:2px">2W</span>` : ''
+    const peak = s.peakAge && Math.abs((s.age||0) - s.peakAge) <= 1 ? `<span style="font-size:var(--fs-micro);color:var(--gold);border:1px solid #c9a84c66;padding:0 3px;margin-left:3px" title="Peak years">★</span>`
+      : s.peakAge && (s.age||0) > s.peakAge + 3 ? `<span style="font-size:var(--fs-micro);color:var(--red);border:1px solid #f6644;padding:0 3px;margin-left:3px" title="Past peak">↘</span>` : ''
+    return `<div class="hv-cell-name">${sn(s)}${s.jk ? '<span style="font-size:var(--fs-micro);color:var(--gold)"> ⚡</span>' : ''}${nt}${tw}${peak}</div><div class="hv-cell-sub">${s.clan || s.spec || '—'}</div>`
+  }
+  return [
+    { key: 'rank', label: 'Rank', align: 'left', hideable: false, sortVal: s => s.ri,
+      render: s => `<span style="font-size:var(--fs-micro);font-weight:bold;color:${_rankColor(s.ri)};background:${_rankColor(s.ri)}22;padding:1px 5px;border:1px solid ${_rankColor(s.ri)}44">${RANKS[s.ri].slice(0,3).toUpperCase()}</span>` },
+    { key: 'name', label: 'Name', align: 'left', hideable: false, sortVal: s => sn(s), render: _nameCell },
+    { key: 'age', label: 'Age', align: 'right', sortVal: s => s.age || 0, render: s => `<span style="color:var(--text-dim)">${s.age}</span>` },
+    { key: 'power', label: 'Abl', align: 'right', sortVal: s => sPow(s), render: s => _attr(sPow(s)) },
+    { key: 'potential', label: 'Pot', align: 'right', sortVal: s => _potential(s), render: s => _attr(_potential(s)) },
+    ..._STAT_KEYS.map(k => ({ key: k, label: _STAT_LABELS[k], align: 'right', sortVal: s => s.stats?.[k] || 0, render: s => _attr(s.stats?.[k] || 0) })),
+    { key: 'status', label: 'Sts', align: 'center', sortVal: s => s.status, render: _statusCell },
+    { key: 'grade', label: 'Grd', align: 'center', sortVal: s => _GRADE_ORDER[gradeShinobi(s).label] ?? 0,
+      render: s => { const g = gradeShinobi(s); return `<span style="font-size:var(--fs-small);font-weight:bold;color:${g.color};background:${g.color}22;padding:1px 5px;border:1px solid ${g.color}44">${g.label}</span>` } },
+    { key: 'salary', label: 'Salary', align: 'right', sortVal: s => s.salary || 0, render: s => `<span style="color:var(--text-faint)">${fmt(s.salary)}</span>` },
+  ]
+}
+
+function _assignmentsHtml() {
   const sorted = [...G.shinobi].sort((a, b) => (b.ri - a.ri) || (sPow(b) - sPow(a)))
-
-  // Active-assignments panel: shinobi on missions
   const active = sorted.filter(s => s.status === 'mission' || s.status === 'exam' || s.status === 'injured')
-
-  const assignedHtml = active.length === 0
+  const cards = active.length === 0
     ? `<div style="font-size:var(--fs-small);color:var(--text-faint);padding:10px 0">${tr('roster.noAssignments')}</div>`
     : active.map(s => {
         const sq = G.squads.find(q => q.members.includes(s.id))
         const mission = s.missId ? (G.missions || []).find(m => m.id === s.missId) : null
         const rankLabel = RANKS[s.ri]
-        const rankCol = ['var(--text-dim)','var(--blue)','var(--green)','var(--purple)','var(--gold)'][s.ri] || 'var(--text-dim)'
-
+        const rankCol = _rankColor(s.ri)
         let label, detail, progress, barColor
         if (s.status === 'mission' && mission) {
           label = mission.n
@@ -143,21 +172,14 @@ export function rRo() {
           progress = s.injuryMax ? Math.min(100, Math.round((1 - s.injDays / s.injuryMax) * 100)) : 30
           barColor = 'var(--red)'
         } else if (s.status === 'exam') {
-          label = 'Adept Exam'
-          detail = 'In progress'
-          progress = 50
-          barColor = 'var(--blue)'
+          label = 'Adept Exam'; detail = 'In progress'; progress = 50; barColor = 'var(--blue)'
         } else {
-          label = s.status
-          detail = ''
-          progress = 50
-          barColor = 'var(--text-faint)'
+          label = s.status; detail = ''; progress = 50; barColor = 'var(--text-faint)'
         }
-
         return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:10px 12px;margin-bottom:8px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-            <span style="font-size:var(--fs-small);font-weight:bold;color:${rankCol};background:${rankCol}22;padding:1px 5px;border:1px solid ${rankCol}44">${rankLabel.slice(0,3).toUpperCase()}</span>
-            <span style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold;cursor:pointer" onclick="oDos('${s.id}')">${sn(s)}</span>
+            <span style="font-size:var(--fs-micro);font-weight:bold;color:${rankCol};background:${rankCol}22;padding:1px 5px;border:1px solid ${rankCol}44">${rankLabel.slice(0,3).toUpperCase()}</span>
+            <span style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold;cursor:pointer" onclick="rosSelect('${s.id}')">${sn(s)}</span>
             ${s.jk ? `<span style="font-size:var(--fs-micro);color:var(--gold)">[JK]</span>` : ''}
             <span style="font-size:var(--fs-small);color:var(--text-faint);margin-left:auto">${label}</span>
           </div>
@@ -170,54 +192,38 @@ export function rRo() {
           </div>
         </div>`
       }).join('')
+  return `<div class="ros-assign">
+    <div class="sect">Active Assignments <span style="color:var(--text-faint)">— ${active.length}/${G.shinobi.length}</span></div>
+    ${cards}
+  </div>`
+}
 
-  // ── Main roster table — sortable headers + customizable columns (P1 kit) ──
-  const _statusCell = s => s.status === 'available' ? `<span style="color:var(--green);font-size:var(--fs-small)" title="Available">●</span>`
-    : s.status === 'mission' ? `<span style="color:var(--gold);font-size:var(--fs-small)" title="On mission">▶</span>`
-    : s.status === 'injured' ? `<span style="color:var(--red);font-size:var(--fs-small)" title="Injured ${s.injDays}m">✕</span>`
-    : `<span style="color:var(--blue);font-size:var(--fs-small)" title="Exam">⚑</span>`
-  const _nameCell = s => {
-    const nt = s.noTrade ? `<span style="font-size:var(--fs-micro);color:var(--red-soft);border:1px solid var(--red);padding:0 3px;margin-left:3px">NT</span>` : ''
-    const tw = s.twoWay  ? `<span style="font-size:var(--fs-micro);color:var(--blue);border:1px solid #468;padding:0 3px;margin-left:2px">2W</span>` : ''
-    const peak = s.peakAge && Math.abs((s.age||0) - s.peakAge) <= 1 ? `<span style="font-size:var(--fs-micro);color:var(--gold);border:1px solid #c9a84c66;padding:0 3px;margin-left:3px" title="Peak years">★</span>`
-      : s.peakAge && (s.age||0) > s.peakAge + 3 ? `<span style="font-size:var(--fs-micro);color:var(--red);border:1px solid #f6644;padding:0 3px;margin-left:3px" title="Past peak">↘</span>` : ''
-    return `<div style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">${sn(s)}${s.jk ? '<span style="font-size:var(--fs-micro);color:var(--gold)"> ⚡</span>' : ''}${nt}${tw}${peak}</div><div style="font-size:var(--fs-micro);color:var(--text-faint)">${s.clan || s.spec || '—'}</div>`
-  }
-  const COLS = [
-    { key: 'rank', label: 'Rank', align: 'left', hideable: false, sortVal: s => s.ri,
-      render: s => `<span style="font-size:var(--fs-small);font-weight:bold;color:${_rankColor(s.ri)};background:${_rankColor(s.ri)}22;padding:1px 5px;border:1px solid ${_rankColor(s.ri)}44">${RANKS[s.ri].slice(0,3).toUpperCase()}</span>` },
-    { key: 'name', label: 'Name', align: 'left', hideable: false, sortVal: s => sn(s), render: _nameCell },
-    { key: 'age', label: 'Age', align: 'center', sortVal: s => s.age || 0, render: s => `<span style="font-size:var(--fs-small);color:var(--text-dim)">${s.age}</span>` },
-    { key: 'power', label: 'Ability', align: 'center', sortVal: s => sPow(s), render: s => _starsHtml(sPow(s)) },
-    { key: 'potential', label: 'Potential', align: 'center', sortVal: s => _potential(s), render: s => _starsHtml(_potential(s)) },
-    { key: 'status', label: 'Sts', align: 'center', sortVal: s => s.status, render: _statusCell },
-    { key: 'grade', label: 'Grd', align: 'center', sortVal: s => _GRADE_ORDER[gradeShinobi(s).label] ?? 0,
-      render: s => { const g = gradeShinobi(s); return `<span style="font-size:var(--fs-body);font-weight:bold;color:${g.color};background:${g.color}22;padding:1px 5px;border:1px solid ${g.color}44">${g.label}</span>` } },
-    { key: 'salary', label: 'Salary', align: 'right', sortVal: s => s.salary || 0, render: s => `<span style="font-size:var(--fs-small);color:var(--text-faint)">${fmt(s.salary)}</span>` },
-  ]
+export function rRo() {
+  const el = document.getElementById('rl')
+  if (!G.shinobi.length) { el.innerHTML = `<div class="hv-empty">${tr('roster.none')}</div>`; return }
+
+  // The inspector's own scroll survives the rebuild every dossier action triggers via upUI().
+  const inspScroll = document.getElementById('ros-detail')?.scrollTop || 0
+
+  const COLS = _rosterCols()
   const _sort = tblSort('roster', _ROSTER_DEFAULT_SORT)
   const _hidden = new Set(tblHidden('roster'))
   const _visCols = COLS.filter(c => !_hidden.has(c.key))
-  const _rosterRows = tblSortRows(G.shinobi, _sort, COLS)
+  const rows = tblSortRows(G.shinobi, _sort, COLS)
 
-  const tableRows = _rosterRows.map((s, i) => {
-    const isSelected = window._rosSelId === s.id
-    return `<tr style="background:${isSelected ? '#1e1c16' : i%2===0 ? 'var(--sunken)' : 'var(--sunken)'};cursor:pointer;border-bottom:1px solid var(--sunken)"
+  const tableRows = rows.map(s => `<tr data-id="${s.id}"${window._rosSelId === s.id ? ' class="sel"' : ''}
       onclick="rosSelect('${s.id}')" oncontextmenu="return rosterCtx(event,'${s.id}')"
       onmousemove="rosterHover(event,'${s.id}')" onmouseleave="hideHoverPreview()">
-      ${_visCols.map(c => `<td style="padding:5px 6px;text-align:${c.align || 'left'}">${c.render(s)}</td>`).join('')}
-    </tr>`
-  }).join('')
+      ${_visCols.map(c => `<td class="${_cellClass(c)}">${c.render(s)}</td>`).join('')}
+    </tr>`).join('')
 
   el.innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 280px;gap:12px;align-items:start">
-
-      <!-- Left: roster table -->
-      <div>
+    <div class="ros-grid">
+      <div class="ros-main">
         ${_clanBar()}
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;position:relative">
-          <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase">${tr('roster.header', { n: G.shinobi.length })}</div>
-          <div style="margin-left:auto;display:flex;gap:10px;align-items:center;font-size:var(--fs-small);color:var(--text-faint)">
+        <div class="ros-toolbar">
+          <div class="sect" style="margin:0">${tr('roster.header', { n: G.shinobi.length })}</div>
+          <div class="ros-legend">
             <span><span style="color:var(--green)">●</span> Avail</span>
             <span><span style="color:var(--gold)">▶</span> Mission</span>
             <span><span style="color:var(--red)">✕</span> Injured</span>
@@ -226,33 +232,29 @@ export function rRo() {
             ${tblColumnManagerHtml('roster', COLS, 'rosterToggleCol')}
           </div>
         </div>
-        <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-bottom:4px">Click a column to sort · right-click a shinobi for actions</div>
-        <table style="width:100%;border-collapse:collapse">
-          <thead>
-            <tr style="background:#0a0908;border-bottom:1px solid var(--border)">${tblHeaderHtml(_visCols, _sort, 'rosterSortBy')}</tr>
-          </thead>
+        <table class="hv-table">
+          <thead><tr>${tblHeaderHtml(_visCols, _sort, 'rosterSortBy', { plain: true })}</tr></thead>
           <tbody>${tableRows}</tbody>
         </table>
       </div>
-
-      <!-- Right: active assignments + selected dossier -->
-      <div>
-        <div style="font-size:var(--fs-micro);letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px">
-          Active Assignments <span style="color:var(--text-faint)">— ${active.length}/${G.shinobi.length}</span>
-        </div>
-        ${assignedHtml}
-        <div id="ros-detail"></div>
-      </div>
+      <aside class="hv-inspector" id="ros-detail" aria-label="Inspector"></aside>
     </div>`
 
-  // Render selected shinobi quick-view if one is selected
-  if (window._rosSelId) _renderRosDetail(window._rosSelId)
+  _renderRosDetail(window._rosSelId)
+  const insp = document.getElementById('ros-detail'); if (insp && inspScroll) insp.scrollTop = inspScroll
 }
 
 export function rosSelect(id) {
   window._rosSelId = (window._rosSelId === id) ? null : id
-  rRo()
+  // Selection changes two things — the row highlight and the inspector — so
+  // it touches only those, not the 400+ node table around them.
+  document.querySelectorAll('#rl .hv-table tbody tr').forEach(r => r.classList.toggle('sel', r.dataset.id === window._rosSelId))
+  _renderRosDetail(window._rosSelId)
 }
+// Escape closes the inspector (it is a drawer below the split breakpoint).
+if (typeof document !== 'undefined') document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && window._rosSelId && ui.CP === 'roster' && !document.querySelector('.ov.open')) rosSelect(window._rosSelId)
+})
 
 // ── Table kit wrappers (P1) ────────────────────────────────────────────────────
 export function rosterSortBy(key) { tblToggleSort('roster', key, _ROSTER_DEFAULT_SORT); rRo() }
@@ -304,77 +306,32 @@ export function rosterCtx(e, id) {
 
 function _renderRosDetail(id) {
   const el = document.getElementById('ros-detail'); if (!el) return
-  const s = G.shinobi.find(x => x.id === id); if (!s) return
-  const pw  = sPow(s)
-  const pot = _potential(s)
-  const sq  = G.squads.find(q => q.members.includes(s.id))
-  const rankCol = ['var(--text-dim)','var(--blue)','var(--green)','var(--purple)','var(--gold)'][s.ri] || 'var(--text-dim)'
-
+  const grid = el.closest('.ros-grid')
+  const s = id ? G.shinobi.find(x => x.id === id) : null
+  if (!s) {
+    window._rosSelId = null
+    grid?.classList.remove('has-sel')
+    el.innerHTML = `<div class="hv-inspector-hint">${tr('roster.inspect.hint')}</div>${_assignmentsHtml()}`
+    return
+  }
+  grid?.classList.add('has-sel')
   el.innerHTML = `
-    <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:12px;margin-top:10px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-        <span style="font-size:var(--fs-body);font-weight:bold;color:${rankCol};background:${rankCol}22;padding:2px 7px;border:1px solid ${rankCol}44">${RANKS[s.ri]}</span>
-        <div>
-          <div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold">${sn(s)}</div>
-          <div style="font-size:var(--fs-small);color:var(--text-faint)">${s.clan || s.spec || ''} · Age ${s.age}</div>
-        </div>
-        <button class="gb" style="margin-left:auto;font-size:var(--fs-micro);padding:2px 8px" onclick="oDos('${s.id}')">${tr('roster.fullDossier')}</button>
+    <div class="hv-inspector-head">
+      <div style="flex:1;min-width:0">
+        <div class="hv-inspector-name">${sn(s)}</div>
+        <div class="hv-inspector-sub">${RANKS[s.ri]} · ${s.clan || s.spec || '—'} · Age ${s.age}</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
-        ${['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed'].map(k => {
-          const v = s.stats?.[k] || 0
-          return `<div>
-            <div style="display:flex;justify-content:space-between;font-size:var(--fs-micro);color:var(--text-faint);margin-bottom:2px">
-              <span>${k.slice(0,5)}</span><span>${v}</span>
-            </div>
-            <div style="background:var(--sunken);height:3px;border-radius:1px">
-              <div style="background:var(--gold);height:3px;border-radius:1px;width:${v}%"></div>
-            </div>
-          </div>`
-        }).join('')}
-      </div>
-      <div style="display:flex;gap:8px;font-size:var(--fs-small);margin-bottom:10px;flex-wrap:wrap">
-        <span style="color:var(--text-dim)">Pwr <b style="color:var(--text-hi)">${pw}</b></span>
-        <span style="color:var(--text-dim)">Salary <b style="color:var(--red)">${fmt(s.salary)}</b></span>
-        <span style="color:var(--text-dim)">Wins <b style="color:var(--text-hi)">${s.wins||0}</b></span>
-        ${(() => { const total = (s.wins||0) + (s.losses||0); const pct = total > 0 ? Math.round((s.wins||0)/total*100) : null; return pct !== null ? `<span style="color:var(--text-dim)">Win% <b style="color:${pct>=70?'var(--green)':pct>=50?'var(--text-hi)':'var(--red-soft)'}">${pct}%</b></span>` : '' })()}
-        ${(s.winsS||0) > 0 ? `<span style="font-size:var(--fs-micro);color:var(--gold)">★ ${s.winsS} S-rank</span>` : ''}
-        ${sq ? `<span style="color:var(--text-dim)">Squad <b style="color:var(--blue)">${sq.n}</b></span>` : ''}
-      </div>
-      ${(() => {
-        const age = s.age || 20
-        const trajectory = age < 22 ? 'Ascending' : age < 27 ? 'Prime' : age < 31 ? 'Late Career' : 'Declining'
-        const trajCol = age < 22 ? 'var(--blue)' : age < 27 ? 'var(--green)' : age < 31 ? 'var(--orange)' : 'var(--red)'
-        const peakCeil = Math.round((s.potential || 50) * 0.92)
-        return `<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-top:1px solid var(--surface);margin-top:5px;font-size:var(--fs-small)">
-          <span style="color:var(--text-faint)">Peak Ceiling <b style="color:var(--text-hi)">${peakCeil}</b></span>
-          <span style="color:var(--text-faint)">Trajectory <b style="color:${trajCol}">${trajectory}</b></span>
-        </div>`
-      })()}
-      ${_devPathSelector(s)}
-      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px">
-        ${s.noTrade ? `<span style="font-size:var(--fs-micro);color:var(--red-soft);border:1px solid var(--red);padding:1px 5px">No-Trade</span>` : ''}
-        ${s.twoWay  ? `<span style="font-size:var(--fs-micro);color:var(--blue);border:1px solid #468;padding:1px 5px">Two-Way</span>` : ''}
-        ${s.buyoutCost ? `<span style="font-size:var(--fs-micro);color:var(--text-faint)">Buyout: ${fmt(s.buyoutCost)}</span>` : ''}
-      </div>
-      <div style="margin-top:10px;display:flex;gap:5px;flex-wrap:wrap">
-        <button class="gb gb-b" style="font-size:var(--fs-micro);padding:2px 8px" onclick="toggleNoTrade('${s.id}')">
-          ${s.noTrade ? 'Remove No-Trade' : 'Add No-Trade'}
-        </button>
-        <button class="gb gb-b" style="font-size:var(--fs-micro);padding:2px 8px" onclick="toggleTwoWay('${s.id}')">
-          ${s.twoWay ? 'Remove Two-Way' : 'Add Two-Way'}
-        </button>
-        ${s.buyoutCost ? `<button class="gb gb-r" style="font-size:var(--fs-micro);padding:2px 8px" onclick="executeBuyout('${s.id}')" ${(window.G?.ryo||G.ryo||0)<s.buyoutCost?'disabled':''}>Release (${fmt(s.buyoutCost)})</button>` : ''}
-      </div>
-    </div>`
+      <button class="gb" onclick="oDos('${s.id}')" title="${tr('roster.inspect.openWindow')}" aria-label="${tr('roster.inspect.openWindow')}">↗</button>
+      <button class="gb" onclick="rosSelect('${s.id}')" title="${tr('roster.inspect.close')}" aria-label="${tr('roster.inspect.close')}">×</button>
+    </div>
+    <div class="hv-inspector-body">${_dossierHtml(s)}</div>`
 }
 
-export function oDos(id) {
-  window._dosActiveId = id
-  const s = G.shinobi.find(x => x.id === id); if (!s) return
+// The dossier body. Rendered into the roster inspector beside the list, and into
+// the ov-dossier modal for every other panel that links to a shinobi.
+function _dossierHtml(s) {
   const jkB = s.jk ? G.beasts.find(b => b.n === s.jk) : null
   const sq = G.squads.find(q => q.members.includes(s.id))
-  document.getElementById('dos-t').textContent = sn(s) + ' — Dossier'
   // Build jutsu section
   const knownJutsu = (s.jutsu || []).map(jId => ALL_JUTSU.find(j => j.id === jId)).filter(Boolean)
   const loadout = s.jutsuLoadout || []
@@ -721,11 +678,23 @@ export function oDos(id) {
   const careerHtml = `${arcHtml}${memoryHtml}${legacyHtml}${mentorHtml}${_activityHtml}<div style="margin-bottom:12px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Mission Record</div><div style="display:flex;gap:10px;flex-wrap:wrap"><div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:8px 12px;flex:1;min-width:70px;text-align:center"><div style="font-size:var(--fs-lead);color:var(--text-hi);font-weight:bold">${s.wins||0}</div><div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;margin-top:2px">Total</div></div><div style="background:var(--surface);border:1px solid #c9a84c33;padding:8px 12px;flex:1;min-width:70px;text-align:center"><div style="font-size:var(--fs-lead);color:var(--gold);font-weight:bold">${s.winsS||0}</div><div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;margin-top:2px">S-Rank</div></div><div style="background:var(--surface);border:1px solid #87ceeb33;padding:8px 12px;flex:1;min-width:70px;text-align:center"><div style="font-size:var(--fs-lead);color:var(--blue);font-weight:bold">${s.winsB||0}</div><div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;margin-top:2px">B/C-Rank</div></div></div></div>${traumaHistHtml}${darkHtml}${bondsHtml}${careerInjHtml}`
   const profileHtml = phase4Html +
     `<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px"><div><div style="font-size:var(--fs-sub);color:var(--text-hi);font-weight:bold">${sn(s)}</div><div style="font-size:var(--fs-body);color:var(--text-dim);margin-top:2px">${RANKS[s.ri]} · ${s.clan ? s.clan + ' Clan' : s.spec} · Age ${s.age}${s.prodigy ? ' · <span style="color:var(--gold)">✦ Prodigy</span>' : ''}${s.homegrown ? ' · <span style="color:var(--green)">🌱 Homegrown</span>' : ''}</div><div style="font-size:var(--fs-body);margin-top:3px">Ability ${_starsHtml(sPow(s))}<span style="color:var(--text-faint);margin:0 5px">·</span>Potential ${_starsHtml(_potential(s))}<span style="color:var(--text-faint);margin:0 5px">·</span><span style="font-size:var(--fs-small);color:var(--text-dim)">Pwr <b style="color:var(--text-hi)">${sPow(s)}</b></span></div>${jkB ? `<div style="font-size:var(--fs-body);color:var(--gold);margin-top:2px">Vessel of ${jkB.n} (${jkB.tails} tails)</div>` : ''}${sq ? `<div style="font-size:var(--fs-body);color:var(--purple);margin-top:2px">Member of ${sq.n}</div>` : ''}</div><span class="rk ${RKC[s.ri]}" style="font-size:var(--fs-body)">${RANKS[s.ri]}</span></div><div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">Stats</div><div class="sg">${sBars(s)}</div></div>${injuryHtml}${moraleCommitHtml}<div style="margin-bottom:10px"><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Personality</div><span class="trait-tag ${pCl(s.pers)}">${s.pers.n}</span>${s.narrativeArchetype ? `<span style="margin-left:6px;font-size:var(--fs-micro);color:var(--purple);text-transform:uppercase;letter-spacing:1px;padding:2px 6px;border:1px solid #cc7fb855">${s.narrativeArchetype.replace('_',' ')}</span>` : ''}${s.confidence !== undefined ? `<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;font-size:var(--fs-micro);color:var(--text-dim);margin-bottom:2px"><span>Confidence</span><span style="color:${s.confidence>=70?'var(--green)':s.confidence<=30?'var(--red)':'var(--text)'}">${s.confidence}/100</span></div><div class="well" style="background:var(--surface);border:1px solid var(--border);height:4px;border-radius:2px"><div style="background:${s.confidence>=70?'var(--green)':s.confidence<=30?'var(--red)':'var(--gold)'};width:${s.confidence}%;height:100%;border-radius:2px"></div></div></div>` : ''}<div style="font-size:var(--fs-body);color:var(--text-dim);margin-top:5px">${s.pers.desc}</div></div>${pmHtml}${evolvedHtml}<div>${s.archetype ? `<div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Archetype</div><div style="font-size:var(--fs-body);color:var(--purple);margin-bottom:3px">${s.archetype.n}</div><div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:10px;font-style:italic">${s.archetype.flavor}</div>` : ''}</div>${darkHtml}${jutsuHtml}${bondsHtml}<div><div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Background</div><div class="dossier">${s.backstory}</div>${(s.element||s.quirk||s.dream)?`<div style="margin-top:7px;font-size:var(--fs-small);color:var(--text-dim);line-height:1.8">${s.element?`<div>Chakra nature: <span style="color:var(--gold)">${s.element}</span></div>`:''}${_combinedDossier(s)}${s.nationArchetype?`<div>School: <span style="color:var(--green)">${s.nationArchetype}</span></div>`:''}${s.quirk?`<div>Quirk: <span style="color:var(--text);font-style:italic">${s.quirk}</span></div>`:''}${s.dream?`<div>Dream: <span style="color:var(--purple);font-style:italic">“${s.dream}”</span></div>`:''}</div>`:''}</div><div style="margin-top:10px;display:flex;gap:10px;font-size:var(--fs-body);color:var(--text-dim);flex-wrap:wrap"><span>Power: <b style="color:var(--text-hi)">${sPow(s)}</b></span><span>Potential: <b style="color:var(--gold)">${s.scouted === false ? '???' : s.potential}</b></span><span>Wins: <b style="color:var(--green)">${s.wins}</b></span><span>Streak: <b style="color:${(s.streak||0)>=3?'var(--gold)':'var(--text-dim)'}">${s.streak||0}</b></span><span>Grade: <b style="color:${dosGrade.color}">${dosGrade.label}</b></span><span>Market Value: <b style="color:var(--orange)">${fmt(marketVal)}</b></span></div>${s.status === 'available' && !jkB && G.beasts.some(b => b.sealed && !b.jk) ? `<div style="margin-top:10px"><div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:6px">Assign as Vessel:</div>${G.beasts.filter(b => b.sealed && !b.jk).map(b => `<button class="gb gb-g" onclick="mkJK('${s.id}','${b.n}')" style="margin-right:5px">Seal ${b.n} ►</button>`).join('')}</div>` : ''}`
-  document.getElementById('dos-c').innerHTML = `<div style="display:flex;gap:6px;margin-bottom:12px"><button class="tab${dosActiveTab==='profile'?' active':''}" onclick="dosTab('profile')">Profile</button><button class="tab${dosActiveTab==='career'?' active':''}" onclick="dosTab('career')">Career</button></div><div style="${dosActiveTab==='career'?'display:none':''}">${profileHtml}</div><div style="${dosActiveTab==='profile'?'display:none':''}">${careerHtml}</div>`
+  return `<div class="tabs"><button class="tab${dosActiveTab==='profile'?' active':''}" onclick="dosTab('profile')">Profile</button><button class="tab${dosActiveTab==='career'?' active':''}" onclick="dosTab('career')">Career</button></div><div style="${dosActiveTab==='career'?'display:none':''}">${profileHtml}</div><div style="${dosActiveTab==='profile'?'display:none':''}">${careerHtml}</div>`
+}
+
+export function oDos(id) {
+  window._dosActiveId = id
+  const s = G.shinobi.find(x => x.id === id); if (!s) return
+  document.getElementById('dos-t').textContent = sn(s) + ' — Dossier'
+  document.getElementById('dos-c').innerHTML = _dossierHtml(s)
   document.getElementById('ov-dossier').classList.add('open')
 }
 
-export function dosTab(tab) { window._dosTab = tab; if (window._dosActiveId) oDos(window._dosActiveId) }
+// A tab switch re-renders whichever dossier surfaces are showing.
+export function dosTab(tab) {
+  window._dosTab = tab
+  if (window._dosActiveId && document.getElementById('ov-dossier')?.classList.contains('open')) oDos(window._dosActiveId)
+  if (window._rosSelId && document.getElementById('ros-detail')) _renderRosDetail(window._rosSelId)
+}
 
 export function treatTrauma(sId) {
   const s = G.shinobi.find(x => x.id === sId)
