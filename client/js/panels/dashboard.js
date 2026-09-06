@@ -1,5 +1,6 @@
 import { G, fmt } from '../state.js'
 import { hvMeterHtml } from '../uikit.js'
+import { lineChartSvg } from '../charts.js'
 import { RANKS } from '../constants.js'
 import { NATIONS, nationMods } from '../../../shared/constants/nations.js'
 import { villageRevenue } from '../../../shared/utils/economy.js'
@@ -136,6 +137,35 @@ function _onboardingCard() {
 export function dismissOnboarding() {
   G._onboardingDismissed = true
   rDash()
+}
+
+// ── Trends (VISUAL_OVERHAUL §3.5 #1) — the last twelve monthly snapshots ────────
+// Own series only: analyticsHistory snapshots this village, not the league,
+// so there is no honest league-average line to draw yet.
+const _TRENDS = [
+  { key: 'ryo',        label: 'card.treasury', color: 'var(--viz-1)', fmt: v => fmt(v) },
+  { key: 'morale',     label: 'card.morale',   color: 'var(--viz-3)', fmt: v => String(Math.round(v)) },
+  { key: 'reputation', label: 'trend.reputation', color: 'var(--viz-2)', fmt: v => String(Math.round(v)) },
+]
+function _trendsHtml() {
+  const hist = (G.analyticsHistory || []).slice(-12)
+  if (hist.length < 2) return ''
+  const first = hist[0], lastS = hist[hist.length - 1]
+  const span = `Y${first.year}·M${first.month} → Y${lastS.year}·M${lastS.month}`
+  return `<div class="dash-card" style="margin-bottom:14px">
+    <div class="dash-card-title" style="display:flex;justify-content:space-between"><span>${t('trend.title', { n: hist.length })}</span><span style="color:var(--text-faint)">${span}</span></div>
+    <div class="hv-trends">
+      ${_TRENDS.map(tr => {
+        const vals = hist.map(h => h[tr.key] || 0)
+        const last = vals[vals.length - 1], delta = last - vals[0]
+        const dc = delta > 0 ? 'var(--viz-pos)' : delta < 0 ? 'var(--viz-neg)' : 'var(--text-faint)'
+        return `<div class="hv-trend">
+          <div class="hv-trend-h"><span class="hv-trend-l">${t(tr.label)}</span><span class="hv-trend-v" style="color:${tr.color}">${tr.fmt(last)}</span><span class="hv-trend-d" style="color:${dc}">${delta > 0 ? '▲' : delta < 0 ? '▼' : '▬'} ${tr.fmt(Math.abs(delta))}</span></div>
+          ${lineChartSvg(vals, { height: 44, color: tr.color, format: tr.fmt })}
+        </div>`
+      }).join('')}
+    </div>
+  </div>`
 }
 
 export function rDash() {
@@ -299,6 +329,8 @@ export function rDash() {
         <div class="dash-stat-sub" style="margin-top:3px">Alumni: ${(G.alumni||[]).length} · Sponsor: ${G.sponsorship ? G.sponsorship.n.slice(0,12) : 'none'}</div>
       </div>
     </div>
+
+    ${_trendsHtml()}
 
     <!-- Two-column layout: alerts + calendar -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">

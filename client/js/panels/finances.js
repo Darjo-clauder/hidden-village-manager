@@ -4,6 +4,7 @@ import { nationMods } from '../../../shared/constants/nations.js'
 import { villageRevenue } from '../../../shared/utils/economy.js'
 import { capStatus, SALARY_CAP } from '../../../shared/constants/salaryCap.js'
 import { hvMeterHtml, lineChartSvg, barRowsSvg } from '../uikit.js'
+import { sparklineSvg } from '../charts.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { moodTier, moodPayoutMult } from '../../../shared/utils/sponsors.js'
 import { BUDGET_KEYS, DEFAULT_ALLOCATION, normalizeAllocation, monthsToConverge, allocationEffects, trackBand } from '../../../shared/utils/budgetRamp.js'
@@ -331,18 +332,11 @@ function _analyticsHtml() {
   if (hist.length < 2) return ''
   const last = hist.slice(-12)
 
-  function sparkBar(values, color, maxOverride) {
-    const max = maxOverride || Math.max(1, ...values)
-    return `<div style="display:flex;align-items:flex-end;gap:2px;height:28px">
-      ${values.map((v, i) => {
-        const h = Math.max(2, Math.round((v / max) * 26))
-        return `<div style="flex:1;background:${color};height:${h}px;opacity:${0.5 + 0.5*(i/values.length)}" title="${Math.round(v)}"></div>`
-      }).join('')}
-    </div>`
-  }
+  // Was a row of div bars; the sparkline is the same shape in one SVG.
+  const sparkBar = (values, color) => `<div style="height:28px">${sparklineSvg(values, { width: 120, height: 28, color })}</div>`
 
   const ryoVals = last.map(s => s.ryo || 0)
-  const repVals = last.map(s => s.rep || 0)
+  const repVals = last.map(s => s.reputation || 0)   // snapshots store `reputation`; `rep` read as 0 forever
   const powVals = last.map(s => s.avgPow || 0)
   const morVals = last.map(s => s.morale || 0)
   const legVals = last.map(s => s.legend || 0)

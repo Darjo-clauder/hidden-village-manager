@@ -114,6 +114,8 @@ export const en = {
   'digest.resolve': 'Resolve ▸',
   'digest.go': 'Go ▸',
   // Health cards
+  'trend.title': 'Trends — last {n} months',
+  'trend.reputation': 'Reputation',
   'card.treasury': 'Treasury',
   'card.rosterDepth': 'Roster Depth',
   'card.academy': 'Academy',

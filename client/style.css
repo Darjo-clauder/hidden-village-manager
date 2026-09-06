@@ -1025,6 +1025,14 @@ body::after{
 .hv-key-cmp{border-top:1px dashed var(--viz-6)}
 .hv-spark{display:inline-block;vertical-align:middle}
 
+/* Trends — three small line charts in a row (§3.5 #1). */
+.hv-trends{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--sp-4)}
+.hv-trend-h{display:flex;align-items:baseline;gap:var(--sp-2);margin-bottom:2px;font-size:var(--fs-small)}
+.hv-trend-l{color:var(--text-dim);flex:1}
+.hv-trend-v{font-family:var(--font-num);font-size:var(--fs-lead);font-weight:600}
+.hv-trend-d{font-family:var(--font-num);font-size:var(--fs-micro)}
+.hv-trends svg{display:block}
+
 /* Card — one surface for the eight near-duplicates (§3.2 correction 1:
    elevation from a lit top edge, not a dark shadow that has nothing darker
    to fall onto). The old class names stay in markup as aliases. */
