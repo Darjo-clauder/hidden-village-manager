@@ -162,6 +162,7 @@ function _updateContinueBtn() {
   }
 }
 
+let _turnPending = false   // set while a turn waits for its frame (continueTurn)
 /** Wraps endTurn: blocking decisions route the player to them instead of advancing. */
 export function continueTurn() {
   const p = _pendingState()
@@ -173,13 +174,36 @@ export function continueTurn() {
     ntf(t('turn.resolveFirst'))
     return
   }
+  if (_turnPending) return
   sfx('turn')
-  if (typeof window.endTurn === 'function') window.endTurn()
+  if (typeof window.endTurn !== 'function') return
+  // adv() is 100ms+ of synchronous work. Without a painted frame between the
+  // click and that work the button looks dead, so: mark busy, let one frame
+  // land (rAF fires before paint, the macrotask after it), then advance. Where
+  // rAF does not exist (tests, headless) this runs synchronously as before.
+  const btn = document.getElementById('btn-end-turn')
+  let ran = false
+  const run = () => { if (ran) return; ran = true; try { window.endTurn() } finally { _turnPending = false; btn?.classList.remove('busy') } }
+  if (btn && typeof requestAnimationFrame === 'function') {
+    _turnPending = true
+    btn.classList.add('busy')
+    requestAnimationFrame(() => setTimeout(run, 0))
+    setTimeout(run, 50)   // a hidden or minimised window gets no frames; do not hold the turn hostage
+  } else run()
 }
 
 function _set(id, val) {
   const el = document.getElementById(id)
-  if (el) el.textContent = val
+  if (!el) return
+  const next = String(val)
+  if (el.textContent === next) return
+  el.textContent = next
+  // style.css §7 — a changed top-bar readout tints for one beat. A second
+  // change inside that beat simply rides the running animation.
+  if (el.classList.contains('tb-stat-v') && !el.classList.contains('val-tick')) {
+    el.classList.add('val-tick')
+    el.addEventListener('animationend', () => el.classList.remove('val-tick'), { once: true })
+  }
 }
 
 // ── Nation theme applicator ──────────────────────────────────────────────────
@@ -217,12 +241,14 @@ function _applyNationTheme(nationId) {
 let _lastPanel = null
 
 export function sp(id) {
-  document.querySelectorAll('[id^="p-"]').forEach(p => p.style.display = 'none')
+  document.querySelectorAll('[id^="p-"]').forEach(p => { p.style.display = 'none'; p.classList.remove('panel-enter') })
   document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'))
   const panel = document.getElementById('p-' + id)
   if (!panel) return
-  // Only sound a real change — sp() is also called programmatically on refresh.
-  if (id !== _lastPanel) { sfx('tab'); _lastPanel = id }
+  // Only sound (and animate) a real change — sp() is also re-entered by upUI()
+  // on every action to rebuild the current panel, and that must not flash.
+  const changed = id !== _lastPanel
+  if (changed) { sfx('tab'); _lastPanel = id }
   // Which screens the player has actually opened. One map here serves every
   // "go and look at this" onboarding step, instead of a flag per screen.
   if (G) (G._visited = G._visited || {})[id] = true
@@ -236,6 +262,10 @@ export function sp(id) {
   }
   ui.CP = id
   rP(id)
+  if (changed) {
+    panel.classList.add('panel-enter')   // style.css §4: 140ms crossfade + rise
+    panel.addEventListener('animationend', () => panel.classList.remove('panel-enter'), { once: true })
+  }
 }
 
 export function rP(id) {

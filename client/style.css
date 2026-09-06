@@ -933,3 +933,73 @@ body::after{
 .bv-call-note.bv-call-overcommit{border-left-color:#cc5a4a;color:#e0b0a8}
 .bv-call-note.bv-call-safe{border-left-color:#c9a84c}
 .bv-call-note b{color:#e3c874}
+
+/* ══ INTERACTION — the feel layer ═══════════════════════════════════════════
+   Measured before this block existed (2026-09-05, year-1 save, 22 shinobi):
+   a click produced no visible change for 20–110ms because the panel rebuild
+   is synchronous; there was not one :active rule in this file; and ~3,900
+   inline-styled elements carried an onclick with no hover response at all.
+   Durations follow docs/VISUAL_OVERHAUL.md §3.7. Nothing here loops. Reduced
+   motion is honoured by the global clamp at the top of this file.
+   Cascade note: this block is last on purpose — it retunes earlier rules.  */
+:root{
+  --ease-out:cubic-bezier(.2,.7,.2,1);
+  --t-fast:100ms;     /* hover, press */
+  --t-panel:140ms;    /* panel change: crossfade + 4px rise */
+  --t-modal:180ms;    /* modal open */
+  --t-value:400ms;    /* a figure that moved */
+}
+
+/* 1. Hover — every clickable thing answers the mouse, including the
+      inline-styled ones no class rule reaches. Elements with their own hover
+      language (buttons, nav, tabs, cards, scrims) are left to it. */
+[onclick]:not(button):not(.card):not(.ov):not(.mo):not([id^="p-"]){
+  transition:filter var(--t-fast) var(--ease-out);
+}
+[onclick]:not(button):not(.card):not(.ov):not(.mo):not([id^="p-"]):hover{
+  filter:brightness(1.12);
+}
+
+/* 2. Press — the click must show before the rebuild lands. */
+[onclick]:not(button):not(.ov):not(.mo):not([id^="p-"]):active{
+  filter:brightness(.86);transition-duration:0ms;
+}
+.gb:not(:disabled):active,.bc:active,.ab:not(.ct-blocked):active,
+.tb-icon-btn:active,.bstart:active,.sp-ico:active,.tbl-colbtn:active,.bv-ctl-btn:active,.bv-tac-btn:active{
+  transform:translateY(1px);filter:brightness(.9);transition-duration:0ms;
+}
+.nb:active,.tab:active,.nsg-toggle:active{filter:brightness(.8);transition-duration:0ms}
+
+/* 3. Buttons, nav, tabs — one easing family instead of five ad-hoc ones. */
+.gb,.bc,.ab,.tb-icon-btn,.nb,.tab,.tbl-colbtn,.sp-ico,.bstart,.set-toggle,.hd-item-go{
+  transition:background var(--t-fast) var(--ease-out),border-color var(--t-fast) var(--ease-out),
+             color var(--t-fast) var(--ease-out),filter var(--t-fast) var(--ease-out),
+             transform var(--t-fast) var(--ease-out),box-shadow var(--t-fast) var(--ease-out);
+}
+.card{transition:border-color var(--t-fast) var(--ease-out),background var(--t-fast) var(--ease-out),
+                 box-shadow var(--t-fast) var(--ease-out),filter var(--t-fast) var(--ease-out)}
+
+/* 4. Panel change — crossfade + 4px rise. Applied by sp() only on a real
+      change of panel; the every-action rebuild re-enters sp() and must not
+      flash. The class is removed on animationend so no transform lingers. */
+@keyframes hv-panel-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.panel-enter{animation:hv-panel-in var(--t-panel) var(--ease-out) both}
+
+/* 5. Modal open — fade the scrim, rise the sheet. */
+@keyframes hv-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes hv-rise-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ov.open{animation:hv-fade-in var(--t-modal) ease-out}
+.ov.open .mo{animation:hv-rise-in var(--t-modal) var(--ease-out)}
+
+/* 6. Toast — slide up, dwell, fade (200 / 2800 / 200). */
+.nf{transform:translateY(8px);transition:opacity 200ms var(--ease-out),transform 200ms var(--ease-out)}
+.nf.show{transform:none}
+
+/* 7. A figure that moved — the top-bar readouts tint for one beat when their
+      value changes (ui.js _set), so a turn reads as "things happened" rather
+      than a silent renumbering. */
+@keyframes hv-val-tick{from{color:var(--accent)}to{color:var(--text-hi)}}
+.tb-stat-v.val-tick{animation:hv-val-tick var(--t-value) ease-out}
+
+/* 8. End Turn — the press paints, then the simulation runs (ui.js continueTurn). */
+.ab.busy{opacity:.65;cursor:progress;pointer-events:none}
