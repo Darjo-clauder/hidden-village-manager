@@ -1,7 +1,7 @@
 import { G, ui, fmt, sn, rnd, pk, clamp, mStaff, genStaffCandidates } from '../state.js'
 import { STAFF_ROLES, RANKS, FNAMES, LNAMES, STAFF_CONFLICT_RESPONSES } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
-import { openContextMenu, showHoverPreview, hideHoverPreview, hvInspectorHeadHtml, hvKeyNav } from '../uikit.js'
+import { hvMeterHtml, openContextMenu, showHoverPreview, hideHoverPreview, hvInspectorHeadHtml, hvKeyNav } from '../uikit.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { staffTitle, xpForStaffLevel, STAFF_MAX_LEVEL } from '../../../shared/utils/staffDev.js'
 
@@ -158,7 +158,7 @@ function _renderStaffInspector() {
       </div>`).join('')}
     </div>
     <div style="display:flex;justify-content:space-between;font-size:var(--fs-small);margin-bottom:3px"><span style="color:var(--text-dim)">Rating <b style="color:var(--gold)">${s.rating}</b></span><span style="color:var(--green)">◆ ${staffTitle(lvl)}${lvl >= STAFF_MAX_LEVEL ? ' (max)' : ' L' + lvl}</span></div>
-    <div style="height:3px;background:var(--border-dim);border-radius:2px;overflow:hidden;margin-bottom:10px"><div style="height:100%;width:${pct}%;background:var(--green)"></div></div>
+    ${hvMeterHtml({ bare: true, value: pct, color: 'var(--green)', style: 'margin-bottom:10px' })}
     <div style="font-size:var(--fs-small);color:${ambC};margin-bottom:4px">${ambL} ambition${(s.ambition||0)>=14&&role.id==='team_sensei'?' — watching for a head sensei opening':''}</div>
     ${s.hiddenFlaw && s.flawRevealed ? `<div style="font-size:var(--fs-small);color:var(--orange);margin-bottom:4px">⚠ ${s.hiddenFlaw}</div>` : ''}
     ${s.institutional > 0 ? `<div style="font-size:var(--fs-small);color:var(--purple);margin-bottom:4px">Legacy bonus: +${s.institutional} to next hire</div>` : ''}

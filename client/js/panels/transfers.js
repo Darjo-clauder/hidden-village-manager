@@ -3,7 +3,7 @@ import { createPromise } from '../../../shared/utils/promises.js'
 import { adjustMinorRel } from '../../../shared/constants/minorNations.js'
 import { TRANSFER_CATS, TRANSFER_WINDOWS, BINGO_TIERS, RANKS, VILLAGES_DEF } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
-import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort, tblSortRows, tblHeaderHtml, hvInspectorHeadHtml, hvKeyNav } from '../uikit.js'
+import { hvMeterHtml, openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort, tblSortRows, tblHeaderHtml, hvInspectorHeadHtml, hvKeyNav } from '../uikit.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { standingTier, adjustStanding, effectiveFeePercent } from '../../../shared/utils/agentRelations.js'
 
@@ -167,7 +167,7 @@ function renderAgents() {
           <span style="color:var(--purple);font-weight:bold;font-size:.82rem">🤝 ${ag.name}</span>
           <span style="font-size:.72rem;color:${tier.color};border:1px solid ${tier.color};padding:1px 6px;border-radius:3px" title="${tier.desc}">${tier.label}</span>
         </div>
-        <div style="height:5px;background:var(--border-dim);border-radius:3px;overflow:hidden;margin-bottom:6px"><div style="height:100%;width:${ag.standing ?? 50}%;background:${tier.color}"></div></div>
+        ${hvMeterHtml({ bare: true, value: ag.standing ?? 50, color: tier.color, style: 'margin-bottom:6px' })}
         <div style="font-size:.72rem;color:var(--text-mid);margin-bottom:3px">${ag.agendaDesc || ''}</div>
         <div style="font-size:.72rem;color:var(--text-dim)">Cut: <b style="color:var(--gold-hi)">${fee}%</b> · ${ag.deals || 0} deal${(ag.deals || 0) === 1 ? '' : 's'} done</div>
         ${clients.length ? `<div style="font-size:.7rem;color:var(--green);margin-top:4px;border-top:1px solid #262626;padding-top:4px">Now repping: ${clients.map(c => c.fn + ' ' + c.ln).join(', ')}</div>` : ''}

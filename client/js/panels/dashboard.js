@@ -1,4 +1,5 @@
 import { G, fmt } from '../state.js'
+import { hvMeterHtml } from '../uikit.js'
 import { RANKS } from '../constants.js'
 import { NATIONS, nationMods } from '../../../shared/constants/nations.js'
 import { villageRevenue } from '../../../shared/utils/economy.js'
@@ -43,7 +44,7 @@ function _populaceStrip() {
   return `<div class="strip" title="Civilian support shifts gate revenue and can spark festivals or unrest">
     <span style="font-size:var(--fs-lead)">🎏</span>
     <span style="font-size:var(--fs-body);color:${tier.color};font-weight:bold">Populace: ${tier.label}</span>
-    <div style="flex:1;max-width:160px;background:var(--bg);height:5px;border-radius:3px;overflow:hidden"><div style="height:5px;width:${Math.round(sup)}%;background:${tier.color}"></div></div>
+    ${hvMeterHtml({ bare: true, value: Math.round(sup), color: tier.color, style: 'flex:1;max-width:160px' })}
     <span style="font-size:var(--fs-small);color:var(--text-dim);margin-left:auto">Gate revenue ${mult > 1 ? '+' : ''}${Math.round((mult - 1) * 100)}%</span>
   </div>`
 }
@@ -58,7 +59,7 @@ function _kageStrip() {
   return `<div class="strip" onclick="sp('kagedev')" title="Open Warden Path" style="cursor:pointer">
     <span style="font-size:var(--fs-lead);color:var(--accent);font-weight:bold">${G.kName || 'Warden'}</span>
     <span style="font-size:var(--fs-small);color:var(--text-dim)">Lvl ${k.level}${path ? ` · ${path.icon} ${path.n}` : ' · no path chosen'}</span>
-    <div style="flex:1;max-width:160px;background:var(--bg);height:5px;border-radius:3px;overflow:hidden"><div style="height:5px;width:${xpPct}%;background:var(--accent)"></div></div>
+    ${hvMeterHtml({ bare: true, value: xpPct, style: 'flex:1;max-width:160px' })}
     <span style="font-size:var(--fs-micro);color:var(--text-faint);font-family:var(--font-num)">${k.xp}/${xpNext} XP</span>
     ${k.points > 0 ? `<span style="font-size:var(--fs-small);color:var(--green);margin-left:auto">● ${k.points} point${k.points !== 1 ? 's' : ''} to spend ▸</span>` : '<span style="font-size:var(--fs-small);color:var(--text-faint);margin-left:auto">Warden Path ▸</span>'}
   </div>`

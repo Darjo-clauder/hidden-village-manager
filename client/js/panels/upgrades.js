@@ -1,4 +1,5 @@
 import { G, fmt, clamp, addLegend, addChronicle } from '../state.js'
+import { hvMeterHtml } from '../uikit.js'
 import { UPGRADES_DEF, BUILDING_MAINTENANCE, VILLAGE_DOCTRINES, DOCTRINE_BY_ID } from '../constants.js'
 import { doctrinesFor, elementOfNation } from '../../../shared/constants/elementalIdentity.js'
 import { DISTRICTS, getDistrictPassives } from '../../../shared/constants/districts.js'
@@ -67,7 +68,7 @@ function _prestigeProjectsHtml() {
         <div style="flex:1"><div style="font-size:var(--fs-body);color:var(--text-hi)">${p.name}</div><div style="font-size:var(--fs-micro);color:var(--text-dim)">${p.desc} · ${Math.round(p.buildMonths / 12 * 10) / 10}yr build</div></div>
         ${status}
       </div>
-      ${build ? `<div style="height:3px;background:var(--sunken);margin-top:6px;border-radius:2px;overflow:hidden"><div style="width:${prog * 100}%;height:100%;background:var(--gold)"></div></div>` : ''}
+      ${build ? `${hvMeterHtml({ bare: true, value: prog * 100, color: 'var(--gold)', style: 'margin-top:6px' })}` : ''}
     </div>`
   }).join('')
   return `<div style="margin-top:16px">

@@ -122,8 +122,10 @@ export function tblToggleColumnManager(id) {
 
 // ── hv-meter (VISUAL_OVERHAUL §3.4 #8) — a labelled bar with its figure ────────
 /** label · bar · figure. value/max → width; color tints the fill; text overrides the figure. */
-export function hvMeterHtml({ label = '', value = 0, max = 100, color = 'var(--accent)', text, title = '', small = false }) {
+export function hvMeterHtml({ label = '', value = 0, max = 100, color = 'var(--accent)', text, title = '', small = false, bare = false, style = '' }) {
   const pct = Math.max(0, Math.min(100, max ? (value / max) * 100 : 0))
+  // bare: only the track + fill, for sites that lay out their own label and figure.
+  if (bare) return `<span class="hv-meter-bar"${style ? ` style="${style}"` : ''}${title ? ` title="${title}"` : ''}><span class="hv-meter-fill" style="width:${pct.toFixed(1)}%;background:${color}"></span></span>`
   return `<div class="hv-meter${small ? ' hv-meter-sm' : ''}"${title ? ` title="${title}"` : ''}>
     ${label ? `<span class="hv-meter-l">${label}</span>` : ''}
     <span class="hv-meter-bar"><span class="hv-meter-fill" style="width:${pct.toFixed(1)}%;background:${color}"></span></span>

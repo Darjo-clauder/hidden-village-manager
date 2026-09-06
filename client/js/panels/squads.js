@@ -5,7 +5,7 @@ import { sqSynergy, cohesionLabel, calcChemistry } from '../synergy.js'
 import { bondThresholdInfo } from '../../../shared/bonds/bondTypes.js'
 import { FORMATIONS } from '../../../shared/utils/formation.js'
 import { MISSION_APPROACHES } from '../../../shared/utils/missionEngine.js'
-import { heatmapHtml } from '../uikit.js'
+import { hvMeterHtml, heatmapHtml } from '../uikit.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { staminaStart, unitCompRead, staminaBand } from '../../../shared/utils/matchSim.js'
 import { grindMod, idleCohesionDecay } from '../../../shared/utils/squadCadence.js'
@@ -122,7 +122,7 @@ export function rSq() {
           <span>Cohesion — <span style="color:var(--text-hi)">${cohesionLabel(cohesion)}</span></span>
           <span style="color:var(--gold)">${cohesion}/100</span>
         </div>
-        <div style="background:var(--border);height:3px;border-radius:2px"><div style="background:var(--gold);height:3px;border-radius:2px;width:${cohesionPct}"></div></div>
+        ${hvMeterHtml({ bare: true, value: cohesion, color: 'var(--gold)' })}
         ${_cadenceNote(sq)}
       </div>
       <div style="margin-bottom:6px">
@@ -130,7 +130,7 @@ export function rSq() {
           <span>Chemistry — <span style="color:${chem.color}">${chem.tier}</span></span>
           <span style="color:${chem.color}">${chem.score}/100</span>
         </div>
-        <div style="background:var(--border);height:3px;border-radius:2px"><div style="background:${chem.color};height:3px;border-radius:2px;width:${chem.score}%"></div></div>
+        ${hvMeterHtml({ bare: true, value: chem.score, color: chem.color })}
       </div>
       ${synHtml}
       ${_squadConditionPreview(sq)}

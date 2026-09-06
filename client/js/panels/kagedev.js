@@ -1,4 +1,5 @@
 import { G } from '../state.js'
+import { hvMeterHtml } from '../uikit.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { KAGE_ATTRS, KAGE_PATHS, KAGE_ATTR_CAP, ATTR_BY_ID, PATH_BY_ID, xpForLevel, newKageDev, spendKagePoint, applyKagePath } from '../../../shared/constants/kageDev.js'
 import { t } from '../../../shared/utils/i18n.js'
@@ -21,7 +22,7 @@ export function rKageDev() {
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
       <span style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;width:24px">XP</span>
-      <div style="flex:1;background:var(--bg);height:6px;border-radius:3px;overflow:hidden"><div style="height:6px;width:${xpPct}%;background:var(--accent);transition:width .3s"></div></div>
+      ${hvMeterHtml({ bare: true, value: xpPct, style: 'flex:1' })}
       <span style="font-size:var(--fs-small);color:var(--text-dim);font-family:var(--font-num)">${k.xp} / ${xpNext}</span>
     </div>
     <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:5px">Earn XP each month by completing missions, promoting at the Adept Exam, and surviving the Nation War.</div>
@@ -64,7 +65,7 @@ export function rKageDev() {
               ? '<span style="font-size:var(--fs-small);color:var(--green)">MAX</span>'
               : `<button class="gb gb-g" style="font-size:var(--fs-small);padding:2px 9px" onclick="spendKagePt('${a.id}')" ${k.points > 0 ? '' : 'disabled'}>+ Invest</button>`}</span>
           </div>
-          <div style="background:var(--bg);height:5px;border-radius:2px;overflow:hidden;margin-bottom:4px"><div style="height:5px;width:${pct}%;background:var(--accent)"></div></div>
+          ${hvMeterHtml({ bare: true, value: pct, style: 'margin-bottom:4px' })}
           <div style="font-size:var(--fs-micro);color:var(--text-dim)">${a.desc}</div>
         </div>`
       }).join('')}

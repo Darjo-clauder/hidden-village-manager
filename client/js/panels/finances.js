@@ -3,7 +3,7 @@ import { FINANCE_TIERS, MISSION_COMMISSION, BUILDING_MAINTENANCE, DAIMYO_BONUS, 
 import { nationMods } from '../../../shared/constants/nations.js'
 import { villageRevenue } from '../../../shared/utils/economy.js'
 import { capStatus, SALARY_CAP } from '../../../shared/constants/salaryCap.js'
-import { lineChartSvg, barRowsSvg } from '../uikit.js'
+import { hvMeterHtml, lineChartSvg, barRowsSvg } from '../uikit.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { moodTier, moodPayoutMult } from '../../../shared/utils/sponsors.js'
 import { BUDGET_KEYS, DEFAULT_ALLOCATION, normalizeAllocation, monthsToConverge, allocationEffects, trackBand } from '../../../shared/utils/budgetRamp.js'
@@ -394,7 +394,7 @@ function _sponsorshipHtml() {
       const eff = Math.round(active.monthlyRyo * mult)
       return `<div style="font-size:var(--fs-body);color:var(--text-hi);margin-bottom:4px">${active.n} — active</div>
       <div style="font-size:var(--fs-small);color:var(--green);margin-bottom:4px">+${fmt(eff)} ryo/month ${mult !== 1 ? `<span style="color:${mt.color}">(${mult > 1 ? '+' : ''}${Math.round((mult - 1) * 100)}% mood)</span>` : ''}</div>
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:var(--fs-small);color:var(--text-dim)">Mood:</span><span style="font-size:var(--fs-small);color:${mt.color}">${mt.label}</span><div style="flex:1;max-width:90px;height:4px;background:var(--border-dim);border-radius:2px;overflow:hidden"><div style="height:100%;width:${active.mood ?? 60}%;background:${mt.color}"></div></div></div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span style="font-size:var(--fs-small);color:var(--text-dim)">Mood:</span><span style="font-size:var(--fs-small);color:${mt.color}">${mt.label}</span>${hvMeterHtml({ bare: true, value: active.mood ?? 60, color: mt.color, style: 'flex:1;max-width:90px' })}</div>
       <div style="font-size:var(--fs-small);color:var(--text-dim)">Obligation: ${active.obligation}</div>` })() : ''}
     ${offer ? `<div style="font-size:var(--fs-body);color:var(--text-hi);margin-bottom:4px">${offer.n} — offer pending${offer.negotiated ? ' (revised)' : ''}</div>
       <div style="font-size:var(--fs-small);color:var(--green);margin-bottom:4px">+${fmt(offer.monthlyRyo)} ryo/month</div>

@@ -1,4 +1,5 @@
 import { G, sn, fmt, clamp } from '../state.js'
+import { hvMeterHtml } from '../uikit.js'
 import { ntf, aL, upUI } from '../ui.js'
 import { t } from '../../../shared/utils/i18n.js'
 import {
@@ -41,7 +42,7 @@ export function rSafehouses() {
                 <span style="font-size:var(--fs-micro);color:${riskCol};margin-left:6px">${risk} exposure</span>
               </div>
             </div>
-            <div style="background:var(--sunken);height:4px;border-radius:2px;overflow:hidden"><div style="background:var(--gold);height:4px;width:${pct}%"></div></div>
+            ${hvMeterHtml({ bare: true, value: pct, color: 'var(--gold)' })}
             <div style="text-align:right;margin-top:4px"><button class="gb gb-r" style="font-size:var(--fs-micro);padding:2px 7px" onclick="abortDeepCover('${am.id}')">${t("safehouses.abort")}</button></div>
           </div>`
         }).join('')}

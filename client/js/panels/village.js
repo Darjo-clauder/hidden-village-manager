@@ -1,4 +1,5 @@
 import { G, fmt } from '../state.js'
+import { hvMeterHtml } from '../uikit.js'
 import { PRESTIGE_TIERS, UPGRADES_DEF, WORLD_CLIMATES, DOCTRINE_BY_ID } from '../constants.js'
 import { villageRevenue } from '../../../shared/utils/economy.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
@@ -41,7 +42,7 @@ export function rVi() {
       ${body}</div>`
 
   const bar = (pct, color) =>
-    `<div style="background:var(--bg);height:5px;border-radius:2px;overflow:hidden;margin-top:4px"><div style="background:${color};height:5px;width:${Math.max(0, Math.min(100, pct))}%;transition:width .3s"></div></div>`
+    `${hvMeterHtml({ bare: true, value: pct, color, style: 'margin-top:4px' })}`
 
   const jump = (id, label) => `<button class="gb" style="font-size:var(--fs-small);padding:4px 9px" onclick="sp('${id}')">${label} ►</button>`
 

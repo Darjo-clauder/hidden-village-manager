@@ -1,4 +1,5 @@
 import { G, WS, clamp, fmt, setDipCb, _dipCb } from './state.js'
+import { hvMeterHtml } from './uikit.js'
 import { aL, ntf, upUI, cm, setOnline } from './ui.js'
 import { t } from '../../shared/utils/i18n.js'
 import { shiftKageRel, kageToneDialogue, getKageTier, ensureKageRels } from './rivalKage.js'
@@ -153,7 +154,7 @@ export function rWorldList() {
             const tier = minorRelTier(rel)
             return `<div style="display:flex;align-items:center;gap:6px;margin-top:6px">
               <span style="font-size:var(--fs-micro);color:var(--text-dim);width:5.5em;flex-shrink:0">Standing</span>
-              <div style="flex:1;height:4px;background:var(--sunken);border-radius:2px;overflow:hidden"><div style="width:${rel}%;height:100%;background:${tier.color}"></div></div>
+              ${hvMeterHtml({ bare: true, value: rel, color: tier.color, style: 'flex:1' })}
               <span style="font-size:var(--fs-micro);color:${tier.color}">${tier.label}</span>
             </div>`
           })()}

@@ -1,4 +1,5 @@
 import { G, ui, fmt } from '../state.js'
+import { hvMeterHtml } from '../uikit.js'
 import { BLACK_MARKET } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
@@ -94,7 +95,7 @@ export function rBl() {
         <span style="font-size:var(--fs-small);color:var(--orange);letter-spacing:1px;text-transform:uppercase">${tr("economy.underworldHeat")}</span>
         <span style="font-size:var(--fs-body);color:${heatColor}">${heat}/100 · exposure ×${heatMult.toFixed(2)}</span>
       </div>
-      <div style="background:var(--sunken);height:5px;border-radius:2px;overflow:hidden"><div style="background:${heatColor};height:5px;width:${heat}%"></div></div>
+      ${hvMeterHtml({ bare: true, value: heat, color: heatColor })}
       <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:5px">Each deal raises heat and multiplies exposure risk. Heat cools ~6/month if you lie low.</div>
     </div>`
   document.getElementById('ec-black').innerHTML =
