@@ -137,6 +137,10 @@
         <span class="tb-stat-v" id="tdate">Y1 M1</span>
         <span class="tb-stat-l">Date</span>
       </div>
+      <div class="tb-stat" title="The next fixed event on the calendar">
+        <span class="tb-stat-v" id="tnext">—</span>
+        <span class="tb-stat-l">Next</span>
+      </div>
     </div>
     <div class="tb-actions">
       <div class="tb-morale" title="Village Morale">
@@ -173,7 +177,7 @@
           Dashboard
         </button>
 
-        <!-- VILLAGE -->
+        <!-- Six groups (VISUAL_OVERHAUL §3.3): Village · Squad · Matches · World · Academy · Legacy -->
         <div class="nsg" id="nsg-village">
           <button class="nsg-toggle" onclick="toggleNav('village')">
             <span class="nsg-label" data-i18n="nav.group.village">Village</span>
@@ -183,121 +187,71 @@
             <button class="nb" onclick="sp('village')" id="nv-village" data-i18n="nav.overview">Overview</button>
             <button class="nb" onclick="sp('finances')" id="nv-finances" data-i18n="nav.finances">Finances</button>
             <button class="nb" onclick="sp('upgrades')" id="nv-upgrades" data-i18n="nav.upgrades">Upgrades</button>
-            <button class="nb" onclick="sp('kagedev')" id="nv-kagedev" data-i18n="nav.kagePath">Warden Path</button>
-            <button class="nb" onclick="sp('legacy')" id="nv-legacy" data-i18n="nav.legacy">Legacy &amp; Prestige</button>
-            <button class="nb" onclick="sp('chronicles')" id="nv-chronicles" data-i18n="nav.chronicles">Chronicles</button>
-            <button class="nb" onclick="sp('memorial')" id="nv-memorial" data-i18n="nav.memorial">Memorial Wall</button>
+            <button class="nb" onclick="sp('economy')" id="nv-economy" data-i18n="nav.tradeRoutes">Trade Routes</button>
+            <button class="nb" onclick="sp('beasts')" id="nv-beasts" data-i18n="nav.beastStatus">Beast Status</button>
           </div>
         </div>
-
-        <!-- ROSTER -->
-        <div class="nsg" id="nsg-roster">
-          <button class="nsg-toggle" onclick="toggleNav('roster')">
-            <span class="nsg-label" data-i18n="nav.group.roster">Roster</span>
-            <span class="nsg-chevron" id="nsc-roster">▾</span>
+        <div class="nsg" id="nsg-squad">
+          <button class="nsg-toggle" onclick="toggleNav('squad')">
+            <span class="nsg-label" data-i18n="nav.group.squad">Squad</span>
+            <span class="nsg-chevron" id="nsc-squad">▾</span>
           </button>
-          <div class="nsg-items" id="nsi-roster">
+          <div class="nsg-items" id="nsi-squad">
             <button class="nb active" onclick="sp('roster')" id="nv-roster" data-i18n="nav.shinobi">Shinobi</button>
             <button class="nb" onclick="sp('squads')" id="nv-squads" data-i18n="nav.squads">Squads</button>
             <button class="nb" onclick="sp('depth')" id="nv-depth" data-i18n="nav.depth">Depth Chart</button>
             <button class="nb" onclick="sp('missions')" id="nv-missions" data-i18n="nav.missions">Missions</button>
-            <button class="nb" onclick="sp('meetings')" id="nv-meetings">
-              <span data-i18n="nav.people">People</span>
-              <span class="nb-badge" id="meet-badge" style="display:none">!</span>
-            </button>
+            <button class="nb" onclick="sp('meetings')" id="nv-meetings"><span data-i18n="nav.people">People</span><span class="nb-badge" id="meet-badge" style="display:none">!</span></button>
             <button class="nb" onclick="sp('clans')" id="nv-clans" data-i18n="nav.clans">Clans</button>
-            <button class="nb" onclick="sp('safehouses')" id="nv-safehouses" data-i18n="nav.safehouses">Safehouses</button>
-          </div>
-        </div>
-
-        <!-- DEVELOPMENT -->
-        <div class="nsg" id="nsg-dev">
-          <button class="nsg-toggle" onclick="toggleNav('dev')">
-            <span class="nsg-label" data-i18n="nav.group.dev">Development</span>
-            <span class="nsg-chevron" id="nsc-dev">▾</span>
-          </button>
-          <div class="nsg-items" id="nsi-dev">
-            <button class="nb" onclick="sp('youthacademy')" id="nv-youthacademy" data-i18n="nav.youthAcademy">Youth Academy</button>
-            <button class="nb" onclick="sp('academy')" id="nv-academy" data-i18n="nav.prospects">Prospects</button>
-            <button class="nb" onclick="sp('scouting')" id="nv-scouting" data-i18n="nav.scouting">Scouting Network</button>
-          </div>
-        </div>
-
-        <!-- STAFF -->
-        <div class="nsg" id="nsg-staff">
-          <button class="nsg-toggle" onclick="toggleNav('staff')">
-            <span class="nsg-label" data-i18n="nav.group.staff">Staff</span>
-            <span class="nsg-chevron" id="nsc-staff">▾</span>
-          </button>
-          <div class="nsg-items" id="nsi-staff">
             <button class="nb" onclick="sp('staff')" id="nv-staff" data-i18n="nav.allStaff">All Staff</button>
+            <button class="nb" onclick="sp('transfers')" id="nv-transfers" data-i18n="nav.transferMarket">Transfer Market</button>
           </div>
         </div>
-
-        <!-- COMPETITIONS -->
-        <div class="nsg" id="nsg-comp">
-          <button class="nsg-toggle" onclick="toggleNav('comp')">
-            <span class="nsg-label" data-i18n="nav.group.comp">Competitions</span>
-            <span class="nsg-chevron" id="nsc-comp">▾</span>
+        <div class="nsg" id="nsg-matches">
+          <button class="nsg-toggle" onclick="toggleNav('matches')">
+            <span class="nsg-label" data-i18n="nav.group.matches">Matches</span>
+            <span class="nsg-chevron" id="nsc-matches">▾</span>
           </button>
-          <div class="nsg-items" id="nsi-comp">
+          <div class="nsg-items" id="nsi-matches">
             <button class="nb" onclick="sp('exam')" id="nv-exam" data-i18n="nav.chuninExam">Adept Exam</button>
             <button class="nb" onclick="sp('kage')" id="nv-kage" data-i18n="nav.summit">Five Warden Summit</button>
             <button class="nb" onclick="sp('log')" id="nv-log" data-i18n="nav.eventLog">Event Log</button>
           </div>
         </div>
-
-        <!-- DIPLOMACY -->
-        <div class="nsg" id="nsg-dip">
-          <button class="nsg-toggle" onclick="toggleNav('dip')">
-            <span class="nsg-label" data-i18n="nav.group.dip">Diplomacy</span>
-            <span class="nsg-chevron" id="nsc-dip">▾</span>
-          </button>
-          <div class="nsg-items" id="nsi-dip">
-            <button class="nb" onclick="sp('world')" id="nv-world">
-              <span data-i18n="nav.relations">Village Relations</span>
-              <span class="nb-badge" id="wp-badge" style="display:none">!</span>
-            </button>
-            <button class="nb" onclick="sp('intel')" id="nv-intel" data-i18n="nav.intel">Intel</button>
-            <button class="nb" onclick="sp('economy')" id="nv-economy" data-i18n="nav.tradeRoutes">Trade Routes</button>
-            <button class="nb" onclick="sp('calendar')" id="nv-calendar" style="color:#c9a84c" data-i18n="nav.calendar">📅 Calendar</button>
-          </div>
-        </div>
-
-        <!-- PRIMALS -->
-        <div class="nsg" id="nsg-beasts">
-          <button class="nsg-toggle" onclick="toggleNav('beasts')">
-            <span class="nsg-label" data-i18n="nav.group.beasts">Primals</span>
-            <span class="nsg-chevron" id="nsc-beasts">▾</span>
-          </button>
-          <div class="nsg-items" id="nsi-beasts">
-            <button class="nb" onclick="sp('beasts')" id="nv-beasts" data-i18n="nav.beastStatus">Beast Status</button>
-          </div>
-        </div>
-
-        <!-- MARKET -->
-        <div class="nsg" id="nsg-market">
-          <button class="nsg-toggle" onclick="toggleNav('market')">
-            <span class="nsg-label" data-i18n="nav.group.market">Market</span>
-            <span class="nsg-chevron" id="nsc-market">▾</span>
-          </button>
-          <div class="nsg-items" id="nsi-market">
-            <button class="nb" onclick="sp('transfers')" id="nv-transfers" data-i18n="nav.transferMarket">Transfer Market</button>
-          </div>
-        </div>
-
-        <!-- WORLD / MULTIPLAYER -->
-        <div class="nsg" id="nsg-mp">
-          <button class="nsg-toggle" onclick="toggleNav('mp')">
+        <div class="nsg" id="nsg-world">
+          <button class="nsg-toggle" onclick="toggleNav('world')">
             <span class="nsg-label" data-i18n="nav.group.world">World</span>
-            <span class="nsg-chevron" id="nsc-mp">▾</span>
+            <span class="nsg-chevron" id="nsc-world">▾</span>
           </button>
-          <div class="nsg-items" id="nsi-mp">
-            <button class="nb" onclick="sp('world')" id="nv-world-mp" data-i18n="nav.worldMap">World Map</button>
-            <button class="nb" onclick="sp('lobby')" id="nv-lobby">
-              <span data-i18n="nav.roomLobby">Room Lobby</span>
-              <span class="nb-badge-gold" id="lob-room-code" style="display:none"></span>
-            </button>
+          <div class="nsg-items" id="nsi-world">
+            <button class="nb" onclick="sp('world')" id="nv-world"><span data-i18n="nav.relations">Village Relations</span><span class="nb-badge" id="wp-badge" style="display:none">!</span></button>
+            <button class="nb" onclick="sp('intel')" id="nv-intel" data-i18n="nav.intel">Intel</button>
+            <button class="nb" onclick="sp('calendar')" id="nv-calendar" data-i18n="nav.calendar">📅 Calendar</button>
+            <button class="nb" onclick="sp('lobby')" id="nv-lobby"><span data-i18n="nav.roomLobby">Room Lobby</span><span class="nb-badge-gold" id="lob-room-code" style="display:none"></span></button>
+          </div>
+        </div>
+        <div class="nsg" id="nsg-academy">
+          <button class="nsg-toggle" onclick="toggleNav('academy')">
+            <span class="nsg-label" data-i18n="nav.group.academy">Academy</span>
+            <span class="nsg-chevron" id="nsc-academy">▾</span>
+          </button>
+          <div class="nsg-items" id="nsi-academy">
+            <button class="nb" onclick="sp('youthacademy')" id="nv-youthacademy" data-i18n="nav.youthAcademy">Youth Academy</button>
+            <button class="nb" onclick="sp('academy')" id="nv-academy" data-i18n="nav.prospects">Prospects</button>
+            <button class="nb" onclick="sp('scouting')" id="nv-scouting" data-i18n="nav.scouting">Scouting Network</button>
+            <button class="nb" onclick="sp('safehouses')" id="nv-safehouses" data-i18n="nav.safehouses">Safehouses</button>
+          </div>
+        </div>
+        <div class="nsg" id="nsg-legacy">
+          <button class="nsg-toggle" onclick="toggleNav('legacy')">
+            <span class="nsg-label" data-i18n="nav.group.legacy">Legacy</span>
+            <span class="nsg-chevron" id="nsc-legacy">▾</span>
+          </button>
+          <div class="nsg-items" id="nsi-legacy">
+            <button class="nb" onclick="sp('kagedev')" id="nv-kagedev" data-i18n="nav.kagePath">Warden Path</button>
+            <button class="nb" onclick="sp('legacy')" id="nv-legacy" data-i18n="nav.legacy">Legacy &amp; Prestige</button>
+            <button class="nb" onclick="sp('chronicles')" id="nv-chronicles" data-i18n="nav.chronicles">Chronicles</button>
+            <button class="nb" onclick="sp('memorial')" id="nv-memorial" data-i18n="nav.memorial">Memorial Wall</button>
           </div>
         </div>
 

@@ -42,6 +42,10 @@ export const en = {
   // ── Sidebar nav (P2 tranche 1) ──────────────────────────────────────────
   // Group headers
   'nav.group.village': 'Village',
+  'nav.group.squad': 'Squad',
+  'nav.group.matches': 'Matches',
+  'nav.group.academy': 'Academy',
+  'nav.group.legacy': 'Legacy',
   'nav.group.roster': 'Roster',
   'nav.group.dev': 'Development',
   'nav.group.staff': 'Staff',

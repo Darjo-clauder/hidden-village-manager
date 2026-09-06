@@ -72,6 +72,7 @@ export function upUI() {
   _set('tmiss',   G.lifetimeMissions || 0)
   _set('tinc',    (monthlyNet >= 0 ? '+' : '') + fmt(monthlyNet) + '/mo')
   _set('tdate',   'Y' + G.year + ' · ' + monthName)
+  _set('tnext',   _nextEventLabel())
   const legEl = document.getElementById('tlegend')
   if (legEl) {
     const leg   = G.legend || 0
@@ -190,6 +191,19 @@ export function continueTurn() {
     requestAnimationFrame(() => setTimeout(run, 0))
     setTimeout(run, 50)   // a hidden or minimised window gets no frames; do not hold the turn hostage
   } else run()
+}
+
+// The nearest fixed calendar event — what the context bar exists to keep in
+// view (§3.3). Same dates the dashboard calendar uses.
+function _nextEventLabel() {
+  const fixed = [[4, 'Exam'], [10, 'Exam'], [6, 'Summit'], [4, 'Intake']]
+  let best = null
+  for (const [m, name] of fixed) {
+    const d = (m - G.month + 12) % 12
+    if (best === null || d < best.d) best = { d, name }
+  }
+  if (!best) return '—'
+  return best.d === 0 ? `${best.name} · now` : `${best.name} · ${best.d}mo`
 }
 
 function _set(id, val) {
