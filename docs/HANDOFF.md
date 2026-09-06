@@ -1,21 +1,21 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-09-05 · **HEAD:** `3d1dad0` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 1360 passing / 103 files
+**Last updated:** 2026-09-05 · **HEAD:** `21320e1` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 1360 passing / 103 files
 
 ---
 
 > ## ▶ START HERE
 >
-> **The build is healthy and nothing is broken.** Tests green, all three clones in sync. There is no fire to put out. *(The desktop installer has NOT been rebuilt since `4be11d9` — it predates the two visual commits below — and the copy installed under `AppData` is older still; see pinned item 3.)*
+> **The build is healthy and nothing is broken.** Tests green, all three clones in sync, **desktop installer rebuilt from `21320e1`** (`src-tauri/target/release/bundle/nsis/`). There is no fire to put out. *(Rebuilding does not reinstall: the copy under `AppData` is still whatever was last run through the installer — run the fresh setup.exe to look at the real thing; see pinned item 3.)*
 >
-> **Tyler's call on 2026-09-05: the visual overhaul is top priority** — the game felt clunky and unresponsive. Two commits landed against `docs/VISUAL_OVERHAUL.md`: `25cb4b3` the *feel* pass (press/hover/motion — measured first: a click showed nothing for 20–110ms, there was no `:active` rule at all) and `3d1dad0` *type* (IBM Plex Sans/Mono + Spectral bundled via @fontsource, every font tokenised, ramp raised to the 11px floor). Both DOM-verified only — **nobody has looked at either yet**; open `http://localhost:5173` after `npm run dev` (port 3000 serves the stale `dist`). The playtest stance still stands underneath: twelve systems have shipped unplayed.
+> **Tyler's call on 2026-09-05: the visual overhaul is top priority** — the game felt clunky and unresponsive. Four commits landed against `docs/VISUAL_OVERHAUL.md`: `25cb4b3` the *feel* pass (press/hover/motion — measured first: a click showed nothing for 20–110ms, there was no `:active` rule at all), `3d1dad0` *type* (IBM Plex Sans/Mono + Spectral bundled via @fontsource, every font tokenised, ramp raised to the 11px floor), and `16f46d4` + `21320e1` **Roster as the first panel on the `hv-*` library** — `.hv-table` with value-tinted attributes, the dossier in a sticky `.hv-inspector` beside the list (a drawer below 1360px), filter bar, ↑/↓ selection; `oDos` is now a thin wrapper over `_dossierHtml(s)`. All DOM-verified only — **nobody has looked at any of it yet**; open `http://localhost:5173` after `npm run dev` (port 3000 serves the stale `dist`). The playtest stance still stands underneath: twelve systems have shipped unplayed.
 >
 > If you are here to write code, the queue in priority order is:
 >
 > | # | Work | Size | Blocked on |
 > |---|---|---|---|
 > | 1 | **Localization backlog** — 130 strings | a session | nothing |
-> | 2 | **Visual overhaul** — `docs/VISUAL_OVERHAUL.md`. Done: motion (§3.7), type (§3.1). **Next: the component library (§3.4) built on a scratch page, then Roster as a master–detail table (§3.3).** The rebuild cost itself (every action re-renders the panel via `upUI()→rP()`; academy is 1,818 nodes at year 1) is the underlying problem and is that table work, not CSS | weeks | nothing |
+> | 2 | **Visual overhaul** — `docs/VISUAL_OVERHAUL.md`. Done: motion (§3.7), type (§3.1), Roster on `hv-table`/`hv-attr`/`hv-inspector`/`hv-filterbar` (§3.3–3.4). **Next: convert the other table panels onto the same components — squads, transfers, scouting (the two remaining inline `tblHeaderHtml` callers) — keeping the roster pattern: select without a full rebuild, preserve inspector scroll across `upUI()`. Then charts (§3.5).** Academy (1,818 nodes at year 1) is the heaviest rebuild and the best next target for the inspector pattern | weeks | nothing |
 > | 3 | `--text-faint` and elevation fixes | minutes | Tyler + partner |
 > | 4 | Non-code Steam gates (Direct fee, signing, store page, key art) | — | Tyler |
 >
