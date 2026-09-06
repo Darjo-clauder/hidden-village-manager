@@ -33,16 +33,19 @@ import { PHASE_META, ensureCareerFields } from '../careerEngine.js'
 import { t as tr } from '../../../shared/utils/i18n.js'
 import { computeStrain, strainBand } from '../../../shared/utils/strain.js'
 import { REHAB_PLANS } from '../../../shared/utils/medical.js'
-import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort, tblHidden, tblToggleCol, tblSortRows, tblHeaderHtml, tblColumnManagerHtml, tblToggleColumnManager, activityGridHtml } from '../uikit.js'
+import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort, tblHidden, tblToggleCol, tblSortRows, tblHeaderHtml, tblColumnManagerHtml, tblToggleColumnManager, activityGridHtml, hvMeterHtml } from '../uikit.js'
 
 const _ROSTER_DEFAULT_SORT = { key: 'power', dir: 'desc' }
 const _GRADE_ORDER = { S: 6, A: 5, B: 4, C: 3, D: 2, E: 1, F: 0 }
 const _rankColor = ri => ['var(--text-dim)', 'var(--blue)', 'var(--green)', 'var(--purple)', 'var(--gold)'][ri] || 'var(--text-dim)'
 
+// The six-attribute block every dossier and prospect file shows. Fill colour
+// follows the same value bands as .hv-attr so the two read as one system.
+const _bandColor = v => v >= 80 ? 'var(--gold)' : v >= 65 ? 'var(--green)' : v >= 50 ? 'var(--text-hi)' : v >= 35 ? 'var(--text-dim)' : 'var(--text-faint)'
 export function sBars(s) {
   const st = s.stats || {}
   return ['ninjutsu','taijutsu','genjutsu','chakra','intelligence','speed'].map(k =>
-    `<div class="sr"><div class="sl">${k.slice(0,5)}</div><div class="sw"><div class="bar"><div class="fill" style="width:${st[k]||0}%"></div></div><div class="sn">${st[k]||0}</div></div></div>`
+    hvMeterHtml({ label: k.slice(0, 5), value: st[k] || 0, color: _bandColor(st[k] || 0), small: true })
   ).join('')
 }
 
@@ -436,7 +439,6 @@ function _dossierHtml(s) {
   const injTypeDef = s.injuryType ? INJURY_TYPES.find(t => t.id === s.injuryType) : null
   const workload = s.workload || 0
   const wColor = workload >= 80 ? 'var(--red)' : workload >= 60 ? 'var(--red-soft)' : workload >= 40 ? 'var(--orange)' : 'var(--green)'
-  const workloadBar = `<div style="background:var(--border-dim);height:5px;border-radius:2px;overflow:hidden"><div style="width:${workload}%;height:100%;background:${wColor};transition:width .3s"></div></div>`
   // Second opinion & specialist treatment options
   const hasMedical = (G.staff||[]).some(st => st.role === 'medical')
   const alliedVillages = G.villages.filter(v => v.rel >= 50)
@@ -476,14 +478,10 @@ function _dossierHtml(s) {
       <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">Stat penalty active. ${s.traumaCount >= 2 ? '<b style="color:var(--red)">High defection risk</b>' : 'Assign medical ninja for faster recovery.'}</div>
       ${hasMedical ? `<button class="gb gb-g" style="margin-top:5px;font-size:var(--fs-micro)" onclick="treatTrauma('${s.id}')">Treat Trauma (5,000 ryo) ▸</button>` : ''}
     </div>` : ''}
-    <div style="display:flex;align-items:center;gap:8px;margin-top:5px">
-      <div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;width:60px">Workload</div>
-      <div style="flex:1">${workloadBar}</div>
-      <div style="font-size:var(--fs-small);color:${wColor};min-width:28px;text-align:right">${workload}%</div>
-    </div>
+    ${hvMeterHtml({ label: 'Workload', value: workload, color: wColor, text: workload + '%' })}
     <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:2px">High workload (60%+) increases injury risk.</div>
     ${(s.consecutiveMissions||0) >= 2 ? `<div style="font-size:var(--fs-micro);color:var(--orange);margin-top:2px">⚠ ${s.consecutiveMissions} consecutive missions — overuse risk +10%</div>` : ''}
-    ${(() => { const f = s.fatigue||0; const fc = f >= 80 ? 'var(--red)' : f >= 60 ? 'var(--red-soft)' : f >= 40 ? 'var(--orange)' : 'var(--text-faint)'; return `<div style="display:flex;align-items:center;gap:8px;margin-top:5px"><div style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;width:60px">Fatigue</div><div style="flex:1;background:var(--border-dim);height:4px;border-radius:2px;overflow:hidden"><div style="width:${f}%;height:100%;background:${fc};transition:width .3s"></div></div><div style="font-size:var(--fs-small);color:${fc};min-width:28px;text-align:right">${f}%</div></div>${f >= 40 ? `<div style="font-size:var(--fs-micro);color:${fc};margin-top:2px">${f >= 80 ? '⚠ Exhausted — mission penalty −15%' : f >= 60 ? '⚠ Very tired — mission penalty −9%' : 'Fatigued — mission penalty −4%'}</div>` : ''}` })()}
+    ${(() => { const f = s.fatigue||0; const fc = f >= 80 ? 'var(--red)' : f >= 60 ? 'var(--red-soft)' : f >= 40 ? 'var(--orange)' : 'var(--text-faint)'; return `${hvMeterHtml({ label: 'Fatigue', value: f, color: fc, text: f + '%' })}${f >= 40 ? `<div style="font-size:var(--fs-micro);color:${fc};margin-top:2px">${f >= 80 ? '⚠ Exhausted — mission penalty −15%' : f >= 60 ? '⚠ Very tired — mission penalty −9%' : 'Fatigued — mission penalty −4%'}</div>` : ''}` })()}
   </div>
   ${(s.injuryHistory||[]).length > 0 ? `<div style="margin-bottom:10px">
     <div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">Injury History (${s.injuryHistory.length})</div>
@@ -524,21 +522,9 @@ function _dossierHtml(s) {
   const cColor = commit >= 60 ? 'var(--gold)' : commit >= 30 ? 'var(--orange)' : 'var(--red)'
   const moraleCommitHtml = `<div style="margin-bottom:10px">
     <div style="font-size:var(--fs-small);color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">State of Mind</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-      <div style="font-size:var(--fs-micro);color:var(--text-dim);width:70px">Individual Morale</div>
-      <div style="flex:1;background:var(--border-dim);height:4px;border-radius:2px"><div style="width:${indMor}%;height:100%;background:${mColor}"></div></div>
-      <div style="font-size:var(--fs-small);color:${mColor};min-width:24px">${indMor}</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-      <div style="font-size:var(--fs-micro);color:var(--text-dim);width:70px">Commitment</div>
-      <div style="flex:1;background:var(--border-dim);height:4px;border-radius:2px"><div style="width:${commit}%;height:100%;background:${cColor}"></div></div>
-      <div style="font-size:var(--fs-small);color:${cColor};min-width:24px">${commit}</div>
-    </div>
-    ${(() => { const st = computeStrain(s), b = strainBand(st); return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-      <div style="font-size:var(--fs-micro);color:var(--text-dim);width:70px">Strain</div>
-      <div style="flex:1;background:var(--border-dim);height:4px;border-radius:2px"><div style="width:${st}%;height:100%;background:${b.color}"></div></div>
-      <div style="font-size:var(--fs-small);color:${b.color};min-width:50px">${st} ${b.label}</div>
-    </div>` })()}
+    ${hvMeterHtml({ label: 'Morale', value: indMor, color: mColor })}
+    ${hvMeterHtml({ label: 'Commitment', value: commit, color: cColor })}
+    ${(() => { const st = computeStrain(s), b = strainBand(st); return hvMeterHtml({ label: 'Strain', value: st, color: b.color, text: `${st} ${b.label}` }) })()}
     ${s.legendStatus ? '<div style="font-size:var(--fs-small);color:var(--gold);margin-top:2px">★ Village Legend — exceptionally loyal</div>' : ''}
     ${commit <= 25 ? '<div style="font-size:var(--fs-micro);color:var(--red);margin-top:2px">⚠ Low commitment — transfer risk! Consider a 1-on-1 meeting.</div>' : ''}
     ${s.roleGuarantee ? '<div style="font-size:var(--fs-micro);color:var(--blue);margin-top:2px">Role guarantee promised — must deploy regularly.</div>' : ''}
