@@ -150,6 +150,19 @@ body{
   --font-num:   "IBM Plex Mono",ui-monospace,Consolas,monospace;
   --font-serif: Spectral,Georgia,'Times New Roman',serif;
 
+  /* Data-visualisation palette (§3.2 addition 2) — a categorical ramp that
+     survives the dark ground and does not collide with the semantic colours.
+     --viz-1 is always the player's own series; --viz-6 the comparison. */
+  --viz-1: #c9a84c;
+  --viz-2: #6b93b0;
+  --viz-3: #7d9c62;
+  --viz-4: #a2789e;
+  --viz-5: #d4883a;
+  --viz-6: #8a8578;
+  --viz-pos: #7d9c62;
+  --viz-neg: #c8432f;
+  --viz-mid: #544c42;
+
   /* Spacing rhythm */
   --sp-1: 4px;
   --sp-2: 8px;
@@ -1001,6 +1014,16 @@ body::after{
 .hv-meter-sm{margin:1px 0}
 .hv-meter-sm .hv-meter-l{flex-basis:44px}
 .hv-meter-sm .hv-meter-bar{height:3px}
+
+/* Stats block — radar beside the six meters (§3.5). */
+.hv-stats{display:flex;gap:var(--sp-3);align-items:center}
+.hv-stats-radar{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:2px}
+.hv-stats .sg{flex:1;grid-template-columns:1fr 1fr;min-width:0}
+.hv-radar{display:block;overflow:visible}
+.hv-stats-key{font-size:var(--fs-micro);color:var(--text-faint);display:flex;align-items:center;gap:4px;white-space:nowrap}
+.hv-key-self,.hv-key-cmp{display:inline-block;width:10px;height:0;border-top:2px solid var(--viz-1)}
+.hv-key-cmp{border-top:1px dashed var(--viz-6)}
+.hv-spark{display:inline-block;vertical-align:middle}
 
 /* Card — one surface for the eight near-duplicates (§3.2 correction 1:
    elevation from a lit top edge, not a dark shadow that has nothing darker

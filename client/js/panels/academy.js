@@ -1,7 +1,7 @@
 import { G, ui, sPow, sn, clamp, fmt } from '../state.js'
 import { RANKS, RKC } from '../constants.js'
 import { aL, ntf, upUI, cm } from '../ui.js'
-import { sBars, pCl } from './roster.js'
+import { sBars, pCl, statsBlock } from './roster.js'
 import { isEnabled } from '../../../config/features.js'
 import { TRAINING_PLANS, PLAN_BY_ID } from '../../../shared/constants/trainingPlans.js'
 import { applyGraduationBias } from '../prospectEngine.js'
@@ -421,7 +421,7 @@ function _prospectBodyHtml(p) {
           : `<span class="rk ${RKC[p.ri]}">${RANKS[p.ri]}</span>`}
       </div>
       <div style="font-size:var(--fs-small);color:var(--text-dim);font-style:italic;margin-bottom:7px;line-height:1.5">${archFlavorTrunc}</div>
-      <div class="sg">${sBars(p)}</div>
+      ${statsBlock(p, { size: 120, compareTo: G.prospects })}
       <div style="margin-top:7px;display:flex;align-items:center;justify-content:space-between">
         ${p.pers ? `<span class="trait-tag ${pCl(p.pers)}">${p.pers.n}</span>` : ''}
         <div style="font-size:var(--fs-small)">
