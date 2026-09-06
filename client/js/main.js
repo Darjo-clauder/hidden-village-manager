@@ -1,3 +1,16 @@
+// ── Type — bundled, not linked (docs/VISUAL_OVERHAUL.md §3.1) ─────────────────
+// Vite inlines these as hashed woff2 in dist/, so the Tauri build ships them
+// offline. Latin subsets only: the few CJK glyphs on the title screen fall
+// through to the system stack, which is what they did before.
+import '@fontsource/ibm-plex-sans/latin-400.css'
+import '@fontsource/ibm-plex-sans/latin-400-italic.css'
+import '@fontsource/ibm-plex-sans/latin-500.css'
+import '@fontsource/ibm-plex-sans/latin-600.css'
+import '@fontsource/ibm-plex-mono/latin-400.css'
+import '@fontsource/ibm-plex-mono/latin-600.css'
+import '@fontsource/spectral/latin-400.css'
+import '@fontsource/spectral/latin-400-italic.css'
+import '@fontsource/spectral/latin-600.css'
 import { G } from './state.js'
 import { sp, cm, upUI, schEx, setNation, toggleColorblind, ntf, continueTurn } from './ui.js'
 import { initAudio, loadAudioPrefs, getAudioPrefs, setAudioPref, sfx, audioState, SFX_NAMES } from './audio.js'

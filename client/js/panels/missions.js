@@ -125,7 +125,7 @@ export function rMissionInspector() {
              const col = c.sc >= 0.65 ? 'var(--green)' : c.sc >= 0.4 ? 'var(--orange)' : 'var(--red)'
              return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--surface)">
                <div style="flex:1"><div style="font-size:var(--fs-body);color:var(--text-hi)">${sn(c.s)}</div><div style="font-size:var(--fs-micro);color:var(--text-faint)">${RANKS[c.s.ri]} · Pwr ${c.pw}</div></div>
-               <span style="font-size:var(--fs-body);color:${col};font-family:var(--font-num,'Courier New',monospace)">${Math.round(c.sc * 100)}%</span>
+               <span style="font-size:var(--fs-body);color:${col};font-family:var(--font-num)">${Math.round(c.sc * 100)}%</span>
                <button class="gb" style="font-size:var(--fs-micro);padding:2px 7px" onclick="deployFromInspector('${c.s.id}')">${tr('mission.deploy')}</button>
              </div>`
            }).join('') : `<div style="font-size:var(--fs-small);color:var(--red)">No eligible shinobi (need power ${m.mp}+).</div>`}`}

@@ -348,7 +348,7 @@ function _renderServerBrowser(list) {
         <div style="font-size:var(--fs-body);color:var(--text-hi)">${esc(r.hostName)}</div>
         <div style="font-size:var(--fs-small);color:var(--text-dim)">${esc(r.playerCount)}/${esc(r.maxPlayers)} players · Turn ${esc(r.turnNumber)} · Auto-ready: ${esc(r.autoReadyTimeout)}m</div>
       </div>
-      <div style="font-size:var(--fs-small);color:var(--gold);font-family:monospace">${esc(r.code)}</div>
+      <div style="font-size:var(--fs-small);color:var(--gold);font-family:var(--font-num)">${esc(r.code)}</div>
       <button class="gb" style="font-size:var(--fs-body)" onclick="joinRoomByCode('${r.code}')">Join ▸</button>
     </div>
   `).join('')

@@ -5,7 +5,7 @@
 
 <!-- ══ TITLE SCREEN ══════════════════════════════════════════════════════ -->
 <div id="st" class="screen active">
-  <div style="position:absolute;font-size:120px;color:var(--gold);opacity:.04;font-family:serif;top:5vh;letter-spacing:12px;pointer-events:none;user-select:none">忍里</div>
+  <div style="position:absolute;font-size:120px;color:var(--gold);opacity:.04;font-family:var(--font-serif);top:5vh;letter-spacing:12px;pointer-events:none;user-select:none">忍里</div>
   <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center">
     <div class="tm">Hidden Village</div>
     <div class="tk">忍の里</div>
@@ -53,7 +53,7 @@
     <div style="border:1px solid var(--border);padding:14px;margin-bottom:10px">
       <div style="font-size:var(--fs-small);color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Join by Code</div>
       <div style="display:flex;gap:7px">
-        <input id="sl-join-code" class="sp-input" placeholder="LEAF42" maxlength="6" style="flex:1;text-transform:uppercase;font-family:monospace;letter-spacing:5px">
+        <input id="sl-join-code" class="sp-input" placeholder="LEAF42" maxlength="6" style="flex:1;text-transform:uppercase;font-family:var(--font-num);letter-spacing:5px">
         <button class="gb" style="margin-top:0" onclick="joinRoomFlow()">Join ▸</button>
       </div>
       <div id="lob-join-error" style="font-size:var(--fs-small);color:var(--red);margin-top:5px"></div>
@@ -68,7 +68,7 @@
     </div>
 
     <div style="margin-top:12px;text-align:center">
-      <button style="background:none;border:none;color:var(--text-dim);font-size:var(--fs-small);cursor:pointer;letter-spacing:1px;font-family:'Courier New',monospace" onclick="showSetup()">New village (solo) ▸</button>
+      <button style="background:none;border:none;color:var(--text-dim);font-size:var(--fs-small);cursor:pointer;letter-spacing:1px;font-family:var(--font-num)" onclick="showSetup()">New village (solo) ▸</button>
     </div>
   </div>
 </div>
@@ -565,7 +565,7 @@
     <div id="cs-m"></div>
     <div id="cs-synergy" style="margin:8px 0;min-height:24px"></div>
     <div style="margin-top:9px;font-size:var(--fs-body);color:var(--text-dim)">
-      Name: <input id="sqni" style="background:var(--surface-2);border:1px solid var(--border);color:var(--text-hi);padding:3px 8px;font-family:'Courier New',monospace;font-size:var(--fs-body);width:160px;margin-left:6px" placeholder="Squad 7">
+      Name: <input id="sqni" style="background:var(--surface-2);border:1px solid var(--border);color:var(--text-hi);padding:3px 8px;font-family:var(--font-num);font-size:var(--fs-body);width:160px;margin-left:6px" placeholder="Squad 7">
     </div>
     <div class="mbc">
       <button class="bc" onclick="cm('csquad')">Cancel</button>
@@ -655,7 +655,7 @@
     <div style="font-size:var(--fs-body);color:var(--text-dim);margin-bottom:10px">Submit an offer to the shinobi's village. Asking price: <strong id="neg-asking" style="color:var(--gold)"></strong> ryo.</div>
     <div style="margin-bottom:10px">
       <label style="font-size:var(--fs-body);color:var(--text-dim)">Your offer (ryo):</label><br>
-      <input id="neg-offer" type="number" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:6px 9px;width:100%;margin-top:5px;font-size:var(--fs-lead);font-family:'Courier New',monospace">
+      <input id="neg-offer" type="number" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:6px 9px;width:100%;margin-top:5px;font-size:var(--fs-lead);font-family:var(--font-num)">
     </div>
     <div id="neg-result" style="font-size:var(--fs-body);margin-bottom:10px;min-height:16px"></div>
     <div class="mbc">
@@ -680,7 +680,7 @@
     </div>
     <div style="margin-bottom:10px">
       <label style="font-size:var(--fs-body);color:var(--text-dim)">Rank timeline expectation:</label>
-      <select id="pt-rank-tl" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:5px 9px;width:100%;margin-top:5px;font-size:var(--fs-body);font-family:'Courier New',monospace">
+      <select id="pt-rank-tl" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:5px 9px;width:100%;margin-top:5px;font-size:var(--fs-body);font-family:var(--font-num)">
         <option value="0">No promise</option>
         <option value="3">Promote within 3 months</option>
         <option value="6">Promote within 6 months</option>
@@ -689,7 +689,7 @@
     </div>
     <div style="margin-bottom:10px">
       <label style="font-size:var(--fs-body);color:var(--text-dim)">Signing bonus:</label>
-      <select id="pt-sig-bonus" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:5px 9px;width:100%;margin-top:5px;font-size:var(--fs-body);font-family:'Courier New',monospace">
+      <select id="pt-sig-bonus" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:5px 9px;width:100%;margin-top:5px;font-size:var(--fs-body);font-family:var(--font-num)">
         <option value="0">None</option>
         <option value="1000">1,000 ryo</option>
         <option value="3000">3,000 ryo</option>
@@ -698,7 +698,7 @@
     </div>
     <div style="margin-bottom:10px">
       <label style="font-size:var(--fs-body);color:var(--text-dim)">Sign as loan (temporary):</label>
-      <select id="pt-loan-dur" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:5px 9px;width:100%;margin-top:5px;font-size:var(--fs-body);font-family:'Courier New',monospace">
+      <select id="pt-loan-dur" style="background:var(--surface-2);color:var(--text-hi);border:1px solid var(--border);padding:5px 9px;width:100%;margin-top:5px;font-size:var(--fs-body);font-family:var(--font-num)">
         <option value="0">Permanent signing</option>
         <option value="3">Loan — 3 months</option>
         <option value="6">Loan — 6 months</option>

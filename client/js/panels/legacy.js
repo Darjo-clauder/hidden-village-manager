@@ -73,7 +73,7 @@ function _achievements() {
   return `<div>
     <div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:10px 12px;margin-bottom:12px">
       <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
-        <span style="font-size:var(--fs-title);color:var(--gold);font-family:'Courier New',monospace">${prog.unlocked}/${prog.total}</span>
+        <span style="font-size:var(--fs-title);color:var(--gold);font-family:var(--font-num)">${prog.unlocked}/${prog.total}</span>
         <span style="font-size:var(--fs-body);color:var(--text-dim)">${pct}% complete</span>
         <span style="margin-left:auto;font-size:var(--fs-small);color:var(--text-dim)">
           ${TIER_ORDER.map(t => `<span style="color:${TIER_COLOR[t]}">${prog.byTier[t].unlocked}/${prog.byTier[t].total} ${t}</span>`).join(' · ')}
@@ -376,7 +376,7 @@ function _legacyStandingCard() {
   return `<div class="surf" style="background:var(--surface);border:1px solid var(--border);padding:10px 12px;margin-bottom:12px">
     <div class="sect">The Lineage</div>
     <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
-      <span style="font-size:var(--fs-title);color:var(--gold);font-family:'Courier New',monospace">${store.points}</span>
+      <span style="font-size:var(--fs-title);color:var(--gold);font-family:var(--font-num)">${store.points}</span>
       <span style="font-size:var(--fs-body);color:var(--text-hi)">${tier.name}</span>
       ${store.dynastiesCompleted ? `<span style="font-size:var(--fs-small);color:var(--text-dim)">· ${store.dynastiesCompleted} dynast${store.dynastiesCompleted === 1 ? 'y' : 'ies'} completed</span>` : ''}
       ${store.bestGrade ? `<span style="font-size:var(--fs-small);color:var(--text-dim)">· best grade ${store.bestGrade}</span>` : ''}

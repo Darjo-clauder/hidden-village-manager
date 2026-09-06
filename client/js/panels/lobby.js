@@ -22,7 +22,7 @@ export function rLob() {
   const inviteLink = inviteUrl(snap.code)
 
   el.innerHTML = `
-    <div class="pt">Lobby — Room <span style="color:var(--gold);font-family:monospace">${snap.code}</span></div>
+    <div class="pt">Lobby — Room <span style="color:var(--gold);font-family:var(--font-num)">${snap.code}</span></div>
 
     <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
       <span style="font-size:var(--fs-body);color:var(--text-dim)">Turn ${snap.turnNumber}</span>

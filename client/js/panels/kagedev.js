@@ -22,7 +22,7 @@ export function rKageDev() {
     <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
       <span style="font-size:var(--fs-micro);color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;width:24px">XP</span>
       <div style="flex:1;background:var(--bg);height:6px;border-radius:3px;overflow:hidden"><div style="height:6px;width:${xpPct}%;background:var(--accent);transition:width .3s"></div></div>
-      <span style="font-size:var(--fs-small);color:var(--text-dim);font-family:var(--font-num,'Courier New',monospace)">${k.xp} / ${xpNext}</span>
+      <span style="font-size:var(--fs-small);color:var(--text-dim);font-family:var(--font-num)">${k.xp} / ${xpNext}</span>
     </div>
     <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:5px">Earn XP each month by completing missions, promoting at the Adept Exam, and surviving the Nation War.</div>
   </div>`
@@ -58,7 +58,7 @@ export function rKageDev() {
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
             <span style="font-size:var(--fs-sub)">${a.icon}</span>
             <span style="font-size:var(--fs-body);color:var(--text-hi);font-weight:bold">${a.n}</span>
-            <span style="font-size:var(--fs-body);color:var(--accent);font-family:var(--font-num,'Courier New',monospace);margin-left:4px">${v}/${KAGE_ATTR_CAP}</span>
+            <span style="font-size:var(--fs-body);color:var(--accent);font-family:var(--font-num);margin-left:4px">${v}/${KAGE_ATTR_CAP}</span>
             <span style="font-size:var(--fs-small);color:var(--green);margin-left:4px">+${bonus}%</span>
             <span style="margin-left:auto">${maxed
               ? '<span style="font-size:var(--fs-small);color:var(--green)">MAX</span>'

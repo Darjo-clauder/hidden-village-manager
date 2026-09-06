@@ -186,7 +186,7 @@ function _exhibitionCard() {
         <span style="color:var(--text-faint);width:24px">M${e.month}</span>
         <span style="width:16px">${e.ico}</span>
         <span style="flex:1;color:var(--text-hi)">${e.opp} <span style="font-size:var(--fs-micro);color:var(--text-faint)">Tier ${e.tier}</span> ${cupTag(e.cup)}</span>
-        <span style="color:var(--text-mid);font-family:monospace">${e.ps}–${e.os}</span>
+        <span style="color:var(--text-mid);font-family:var(--font-num)">${e.ps}–${e.os}</span>
         <span style="color:${resCol(e.result)};font-weight:bold;width:14px;text-align:center">${e.result}</span>
       </div>`).join('')}
     </div>
@@ -493,7 +493,7 @@ function _seasonResultsCard(round, resultsByRound, playerName) {
     const aWon = m.winner === m.a, bWon = m.winner === m.b
     return `<div style="display:flex;align-items:center;gap:8px;font-size:var(--fs-small);padding:3px 6px;background:${me ? 'rgba(201,168,76,.06)' : 'transparent'};border-left:2px solid ${me ? 'var(--gold)' : 'transparent'}">
       <span style="flex:1;text-align:right;color:${m.a === playerName ? 'var(--gold)' : aWon ? 'var(--text-hi)' : '#8a8276'};font-weight:${m.a === playerName || aWon ? 'bold' : 'normal'}">${m.a}</span>
-      <span style="font-family:'Courier New',monospace;color:var(--gold);min-width:30px;text-align:center">${m.scoreA ?? '·'}–${m.scoreB ?? '·'}</span>
+      <span style="font-family:var(--font-num);color:var(--gold);min-width:30px;text-align:center">${m.scoreA ?? '·'}–${m.scoreB ?? '·'}</span>
       <span style="flex:1;color:${m.b === playerName ? 'var(--gold)' : bWon ? 'var(--text-hi)' : '#8a8276'};font-weight:${m.b === playerName || bWon ? 'bold' : 'normal'}">${m.b}</span>
     </div>`
   }

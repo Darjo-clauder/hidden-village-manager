@@ -38,7 +38,7 @@ html[data-reduce-motion="1"] *::after{
 .set-row input[type=range]{width:170px;accent-color:var(--accent);cursor:pointer}
 .set-val{
   width:44px;text-align:right;font-size:var(--fs-small);color:var(--gold);
-  font-family:'Courier New',monospace;
+  font-family:var(--font-num);
 }
 /* Pill toggle — reads its state without needing a colour legend. */
 .set-toggle{
@@ -57,7 +57,8 @@ html[data-reduce-motion="1"] *::after{
 .set-seg button.on{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
 html,body{height:100%;overflow:hidden}
 body{
-  font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+  font-family:var(--font-ui);
+  font-variant-numeric:tabular-nums;
   background:var(--bg);
   color:var(--text);
   font-size:var(--fs-body);
@@ -128,15 +129,26 @@ body{
      game resolves through this block, one multiplier rescales the entire UI
      proportionally — hierarchy is preserved at any setting. */
   --fs-scale:  1;
-  --fs-micro:  calc(10px * var(--fs-scale));  /* caps rubrics, footnotes — the floor */
-  --fs-small:  calc(11px * var(--fs-scale));  /* secondary detail beside a value */
-  --fs-body:   calc(12px * var(--fs-scale));  /* default running text */
-  --fs-lead:   calc(13px * var(--fs-scale));  /* emphasised rows, nav, card names */
-  --fs-sub:    calc(15px * var(--fs-scale));  /* card titles, sub-heads */
-  --fs-head:   calc(18px * var(--fs-scale));  /* panel titles */
-  --fs-title:  calc(22px * var(--fs-scale));  /* headline stat values */
-  --fs-display:calc(28px * var(--fs-scale));  /* screen-level display type */
+  --fs-micro:  calc(11px * var(--fs-scale));  /* caps rubrics, footnotes — the floor */
+  --fs-small:  calc(12px * var(--fs-scale));  /* secondary detail beside a value */
+  --fs-body:   calc(13px * var(--fs-scale));  /* default running text */
+  --fs-lead:   calc(15px * var(--fs-scale));  /* emphasised rows, nav, card names */
+  --fs-sub:    calc(18px * var(--fs-scale));  /* card titles, sub-heads */
+  --fs-head:   calc(22px * var(--fs-scale));  /* panel titles */
+  --fs-title:  calc(28px * var(--fs-scale));  /* headline stat values */
+  --fs-display:calc(40px * var(--fs-scale));  /* screen-level display type */
   --ls-caps:   .14em;
+
+  /* Type — two voices (docs/VISUAL_OVERHAUL.md §3.1). Plex Sans is the
+     simulation: chrome, labels, tables. Plex Mono is every figure in a column
+     (true tabular digits — Courier New was the single most dated thing on
+     screen). Spectral is the chronicle: titles, memorial, narrative prose,
+     never anything clickable. All three bundle from @fontsource via main.js,
+     so the desktop build has them offline; the fallbacks are for the moment
+     before they load. */
+  --font-ui:    "IBM Plex Sans",'Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+  --font-num:   "IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --font-serif: Spectral,Georgia,'Times New Roman',serif;
 
   /* Spacing rhythm */
   --sp-1: 4px;
@@ -156,9 +168,9 @@ body{
 
 /* ══ TITLE SCREEN ═════════════════════════════════════════════════════════ */
 #st{align-items:center;justify-content:center;background:var(--bg);position:relative;overflow:hidden}
-.tm{font-size:20px;letter-spacing:6px;color:var(--gold);text-align:center;margin-bottom:4px;text-transform:uppercase;font-weight:300}
+.tm{font-family:var(--font-serif);font-size:20px;letter-spacing:6px;color:var(--gold);text-align:center;margin-bottom:4px;text-transform:uppercase;font-weight:300}
 .tk{
-  font-size:38px;color:var(--gold);font-family:Georgia,serif;
+  font-size:38px;color:var(--gold);font-family:var(--font-serif);
   text-align:center;margin-bottom:4px;opacity:.9;
   text-shadow:0 0 28px rgba(201,168,76,.22);
 }
@@ -252,7 +264,7 @@ body::after{
   padding:0 13px;border-right:1px solid var(--border-dim);
   white-space:nowrap;flex-shrink:0;
 }
-.tb-stat-v{font-size:var(--fs-sub);color:var(--text-hi);font-weight:600;line-height:1.2;display:block;font-family:'Courier New',monospace}
+.tb-stat-v{font-size:var(--fs-sub);color:var(--text-hi);font-weight:600;line-height:1.2;display:block;font-family:var(--font-num)}
 /* Number over a small-caps rubric — the readout grammar used game-wide. The
    label has to stay well under the value or the pair reads as two labels. */
 .tb-stat-l{font-size:var(--fs-micro);color:var(--text-dim);letter-spacing:var(--ls-caps);text-transform:uppercase}
@@ -285,7 +297,7 @@ body::after{
   display:inline-flex;align-items:center;justify-content:center;
   min-width:16px;height:16px;padding:0 4px;border-radius:8px;
   background:rgba(10,9,8,.35);color:var(--bg);
-  font-size:var(--fs-body);font-weight:700;font-family:var(--font-num,'Courier New',monospace);
+  font-size:var(--fs-body);font-weight:700;font-family:var(--font-num);
 }
 @media (prefers-reduced-motion:reduce){.ab{transition:none}}
 /* ── Context-menu portal (FM24 P1) ─────────────────────────────────────── */
@@ -293,7 +305,7 @@ body::after{
   position:fixed;z-index:9999;min-width:170px;
   background:var(--surface,#1a1814);border:1px solid var(--accent-border,rgba(201,168,76,.3));
   box-shadow:0 6px 22px rgba(0,0,0,.55);padding:4px;border-radius:3px;
-  font-family:var(--font-ui,'Segoe UI',system-ui,sans-serif);
+  font-family:var(--font-ui);
 }
 .ctx-item{padding:5px 10px;font-size:var(--fs-body);color:var(--text-hi,#e8e0cc);cursor:pointer;border-radius:2px;white-space:nowrap}
 .ctx-item:hover{background:var(--accent-bg,rgba(201,168,76,.1));color:var(--accent,#c9a84c)}
@@ -317,12 +329,12 @@ body::after{
   position:fixed;z-index:9998;pointer-events:none;min-width:170px;max-width:230px;
   background:var(--surface,#1a1814);border:1px solid var(--accent-border,rgba(201,168,76,.3));
   box-shadow:0 6px 20px rgba(0,0,0,.55);padding:9px 11px;border-radius:3px;
-  font-family:var(--font-ui,'Segoe UI',system-ui,sans-serif);
+  font-family:var(--font-ui);
 }
 .hp-name{font-size:var(--fs-lead);color:var(--text-hi,#e8e0cc);font-weight:bold;margin-bottom:2px}
 .hp-sub{font-size:var(--fs-small);color:var(--text-dim,#7a7060);margin-bottom:7px}
 .hp-row{display:flex;justify-content:space-between;font-size:var(--fs-small);color:var(--text-mid,#9a9080);padding:1px 0}
-.hp-row b{color:var(--text-hi,#e8e0cc);font-family:var(--font-num,'Courier New',monospace)}
+.hp-row b{color:var(--text-hi,#e8e0cc);font-family:var(--font-num)}
 /* ── Home pending-decisions digest (P2) ────────────────────────────────── */
 .hd-digest{background:var(--surface,#1a1814);border:1px solid var(--accent-border,rgba(201,168,76,.3));border-left:3px solid var(--orange,#f0a030);padding:11px 13px;margin-bottom:14px}
 .hd-digest.is-clear{border-left-color:var(--green,#8fbc8f)}
@@ -342,7 +354,7 @@ body::after{
   background:var(--surface);flex-shrink:0;min-height:var(--topbar-h);
 }
 .ts2{padding:8px 12px;border-right:1px solid var(--border);font-size:var(--fs-body);color:var(--text-dim);white-space:nowrap}
-.ts2 span{color:var(--text-hi);display:block;font-size:var(--fs-sub);font-weight:600;line-height:1.2;font-family:'Courier New',monospace}
+.ts2 span{color:var(--text-hi);display:block;font-size:var(--fs-sub);font-weight:600;line-height:1.2;font-family:var(--font-num)}
 
 /* ══ SIDEBAR ═══════════════════════════════════════════════════════════════ */
 .sb{
@@ -421,7 +433,7 @@ body::after{
 .sb-dot.on{background:var(--green)}
 .sbst{padding:0}
 .sbs{display:flex;justify-content:space-between;padding:2px 0;font-size:var(--fs-body)}
-.sbs .l{color:var(--text-dim)}.sbs .v{color:var(--gold);font-weight:600;font-family:'Courier New',monospace}
+.sbs .l{color:var(--text-dim)}.sbs .v{color:var(--gold);font-weight:600;font-family:var(--font-num)}
 
 /* ══ MAIN CONTENT AREA ═════════════════════════════════════════════════════ */
 .ma{flex:1;display:flex;flex-direction:column;overflow:hidden}
@@ -457,7 +469,7 @@ body::after{
    ink stroke lifting off the page.                                        */
 .pt{
   position:sticky;top:0;z-index:5;
-  font-size:var(--fs-head);color:var(--text-hi);font-weight:600;
+  font-family:var(--font-serif);font-size:var(--fs-head);color:var(--text-hi);font-weight:600;
   margin:0 0 var(--sp-4);padding:var(--sp-2) 0;
   letter-spacing:.01em;
   background:linear-gradient(var(--bg) 72%,transparent);
@@ -468,6 +480,13 @@ body::after{
   background:linear-gradient(90deg,var(--gold) 0%,var(--gold-2) 18%,var(--border) 52%,transparent 100%);
   opacity:.7;
 }
+
+/* The two prose panels read in the chronicle voice; anything clickable or
+   tabular inside them stays in the simulation voice (§3.1: Spectral is never
+   used for chrome). */
+#p-chronicles,#p-memorial{font-family:var(--font-serif);font-size:var(--fs-lead)}
+#p-chronicles button,#p-memorial button,#p-chronicles input,#p-memorial input,
+#p-chronicles .tbl-dense,#p-memorial .tbl-dense,#p-chronicles .sect,#p-memorial .sect{font-family:var(--font-ui)}
 
 /* Section label — the small caps rubric above a block of content */
 .sect{
@@ -541,7 +560,7 @@ body::after{
 
 /* Stat readout — big number over a caps label, used across dashboards */
 .stat{display:flex;flex-direction:column;gap:2px}
-.stat-v{font-size:var(--fs-title);font-weight:700;color:var(--text-hi);line-height:1.1;font-family:'Courier New',monospace}
+.stat-v{font-size:var(--fs-title);font-weight:700;color:var(--text-hi);line-height:1.1;font-family:var(--font-num)}
 .stat-l{font-size:var(--fs-micro);letter-spacing:var(--ls-caps);text-transform:uppercase;color:var(--text-dim)}
 
 /* Chip — inline tag for bands, roles, statuses */
@@ -557,7 +576,7 @@ body::after{
 .dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:14px}
 .dash-card{background:var(--surface);border:1px solid var(--border);padding:12px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 1px 2px rgba(0,0,0,.40)}
 .dash-card-title{font-size:var(--fs-body);color:var(--text-dim);margin-bottom:8px;font-weight:500}
-.dash-stat{font-size:22px;color:var(--text-hi);font-weight:600;line-height:1;margin-bottom:2px;font-family:'Courier New',monospace}
+.dash-stat{font-size:22px;color:var(--text-hi);font-weight:600;line-height:1;margin-bottom:2px;font-family:var(--font-num)}
 .dash-stat-sub{font-size:var(--fs-body);color:var(--text-dim)}
 .dash-card.alert{border-color:rgba(200,72,72,.4);border-left:2px solid var(--red)}
 .dash-card.good{border-color:rgba(90,170,104,.4);border-left:2px solid var(--green)}
@@ -585,7 +604,7 @@ body::after{
 .cal-item:last-child{border-bottom:none}
 .cal-date{
   min-width:34px;text-align:center;font-weight:600;
-  color:var(--gold);font-size:var(--fs-lead);flex-shrink:0;font-family:'Courier New',monospace;
+  color:var(--gold);font-size:var(--fs-lead);flex-shrink:0;font-family:var(--font-num);
 }
 .cal-event{flex:1;color:var(--text)}
 .cal-tag{
@@ -608,7 +627,7 @@ body::after{
 .inbox-title{font-size:var(--fs-lead);color:var(--text-hi);font-weight:600;flex:1}
 .inbox-cat{font-size:var(--fs-body);color:var(--text-dim);padding:1px 5px;background:var(--surface-2);border:1px solid var(--border)}
 .inbox-deadline{font-size:var(--fs-body);color:var(--orange);margin-left:auto;flex-shrink:0}
-.inbox-desc{font-size:var(--fs-body);color:var(--text-dim);margin-bottom:7px;line-height:1.55}
+.inbox-desc{font-family:var(--font-serif);font-size:var(--fs-lead);color:var(--text-dim);margin-bottom:7px;line-height:1.55}
 .inbox-actions{display:flex;gap:5px;flex-wrap:wrap}
 
 /* ── Shinobi rank badges ── */
@@ -636,7 +655,7 @@ body::after{
 .sr{display:flex;flex-direction:column;gap:2px}
 .sl{font-size:var(--fs-small);color:var(--text-dim);letter-spacing:.3px}
 .sw{display:flex;align-items:center;gap:4px}
-.sn{font-size:var(--fs-body);color:var(--text-dim);min-width:16px;text-align:right;font-family:'Courier New',monospace}
+.sn{font-size:var(--fs-body);color:var(--text-dim);min-width:16px;text-align:right;font-family:var(--font-num)}
 
 /* ── Mission cards ── */
 .mc{border:1px solid var(--border);padding:10px 11px;background:var(--surface);margin-bottom:6px}
@@ -705,13 +724,13 @@ body::after{
 .vg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px}
 .vc{background:var(--surface);border:1px solid var(--border);padding:10px 12px}
 .vcl{font-size:var(--fs-body);color:var(--text-dim);margin-bottom:3px;font-weight:500}
-.vcv{font-size:var(--fs-head);color:var(--text-hi);font-weight:600;font-family:'Courier New',monospace}
+.vcv{font-size:var(--fs-head);color:var(--text-hi);font-weight:600;font-family:var(--font-num)}
 .vcs{font-size:var(--fs-body);color:var(--text-dim);margin-top:1px}
 
 /* ── Primals ── */
 .tb-card{border:1px solid var(--border);padding:12px;margin-bottom:8px;background:var(--surface)}
 .tb-sealed{border-color:rgba(201,168,76,.4);border-left:2px solid var(--gold)}
-.tb-name{font-size:var(--fs-sub);color:var(--gold);font-weight:600;margin-bottom:2px;font-family:Georgia,serif}
+.tb-name{font-size:var(--fs-sub);color:var(--gold);font-weight:600;margin-bottom:2px;font-family:var(--font-serif)}
 .tb-tails{font-size:var(--fs-body);color:var(--text-dim);margin-bottom:6px}
 .tb-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:4px}
 .tb-lbl{font-size:var(--fs-body);color:var(--text-dim);width:70px}
@@ -878,7 +897,7 @@ body::after{
 .bv-ovl-on{border-color:#c9a84c!important;color:#0d0d0f!important;background:#c9a84c!important}
 .bv-sheet{margin-top:10px;padding:8px 10px;border:1px solid #2e2a22;background:#0a0a0a;text-align:left}
 .bv-sheet-row{display:flex;align-items:center;gap:8px;font-size:var(--fs-small);color:#7a7060;padding:2px 0}
-.bv-sheet-row b{margin-left:auto;color:#e8e0cc;font-family:'Courier New',monospace}
+.bv-sheet-row b{margin-left:auto;color:#e8e0cc;font-family:var(--font-num)}
 .bv-sheet-bar{flex:1;height:4px;background:#3a2a28;border-radius:2px;overflow:hidden}
 .bv-sheet-bar i{display:block;height:100%;background:#c9a84c}
 .bv-sheet-line{font-size:var(--fs-micro);color:#9a9080;padding:1px 0}
@@ -913,7 +932,7 @@ body::after{
 .bv-close{background:#0d0a04;border:1px solid #c9a84c;color:#c9a84c;font-size:var(--fs-body);padding:5px 18px;cursor:pointer}
 .bv-close:hover{background:#c9a84c;color:#0a0a0a}
 .bv-result.bv-draw{color:#c9a84c}
-.bv-scoreline{font-size:var(--fs-sub);color:#e8e0cc;margin-bottom:12px;font-family:'Courier New',monospace}
+.bv-scoreline{font-size:var(--fs-sub);color:#e8e0cc;margin-bottom:12px;font-family:var(--font-num)}
 .bv-scoreline b{color:#c9a84c;font-size:var(--fs-head);margin:0 4px}
 /* R8 live-battle micro-call */
 .bv-call{margin-top:12px;opacity:0;max-height:0;overflow:hidden;transition:opacity .3s}

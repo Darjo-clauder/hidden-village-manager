@@ -175,7 +175,7 @@ export function barRowsSvg(items, opts = {}) {
     return `<div style="display:flex;align-items:center;gap:6px;font-size:var(--fs-small)">
       <span style="width:84px;color:var(--text-dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.label}</span>
       <div style="flex:1;background:var(--bg);height:8px;border-radius:2px;overflow:hidden"><div style="height:8px;width:${pct}%;background:${it.color || 'var(--accent)'}"></div></div>
-      <span style="width:62px;text-align:right;color:var(--text-hi);font-family:var(--font-num,'Courier New',monospace)">${format(it.value)}</span>
+      <span style="width:62px;text-align:right;color:var(--text-hi);font-family:var(--font-num)">${format(it.value)}</span>
     </div>`
   }).join('')}</div>`
 }

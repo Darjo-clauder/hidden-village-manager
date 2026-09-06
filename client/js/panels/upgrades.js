@@ -136,17 +136,17 @@ export function rUp() {
     <div class="surf" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding:10px 13px;background:var(--surface);border:1px solid var(--border)">
       <div>
         <div style="font-size:var(--fs-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("upgrades.defenseRating")}</div>
-        <div style="font-size:var(--fs-head);color:${defColor};font-family:'Courier New',monospace">${def.total}</div>
+        <div style="font-size:var(--fs-head);color:${defColor};font-family:var(--font-num)">${def.total}</div>
         <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:2px">Walls +${def.wall} · Seals +${def.seal}${def.temp ? ` · Temp +${def.temp}` : ''}${def.doc ? ` · Doctrine ${def.doc > 0 ? '+' : ''}${def.doc}` : ''}${def.proj ? ` · Monuments +${def.proj}` : ''}</div>
       </div>
       <div>
         <div style="font-size:var(--fs-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("upgrades.upkeep")}</div>
-        <div style="font-size:var(--fs-head);color:var(--red);font-family:'Courier New',monospace">-${fmt(maint)}</div>
+        <div style="font-size:var(--fs-head);color:var(--red);font-family:var(--font-num)">-${fmt(maint)}</div>
         <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:2px">${t("upgrades.maintNote")}</div>
       </div>
       <div>
         <div style="font-size:var(--fs-micro);color:var(--text-faint);text-transform:uppercase;letter-spacing:1px">${t("upgrades.districts")}</div>
-        <div style="font-size:var(--fs-head);color:var(--blue);font-family:'Courier New',monospace">${builtCount}</div>
+        <div style="font-size:var(--fs-head);color:var(--blue);font-family:var(--font-num)">${builtCount}</div>
         <div style="font-size:var(--fs-micro);color:var(--text-dim);margin-top:2px">${building ? `⚒ ${building.id} (${building.buildMonthsLeft}mo)` : 'None under construction'}</div>
       </div>
       <div style="margin-left:auto;align-self:center;max-width:200px;font-size:var(--fs-micro);color:var(--text-dim);text-align:right">

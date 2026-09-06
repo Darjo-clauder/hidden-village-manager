@@ -57,9 +57,9 @@ export function rVi() {
     // Finances
     card(tr('village.card.finances'), `
       <div style="display:flex;gap:18px;flex-wrap:wrap">
-        <div><div style="font-size:var(--fs-micro);color:var(--text-dim)">${tr('village.income')}</div><div style="font-size:var(--fs-sub);color:var(--green);font-family:'Courier New',monospace">+${fmt(income)}</div></div>
-        <div><div style="font-size:var(--fs-micro);color:var(--text-dim)">${tr('village.expenses')}</div><div style="font-size:var(--fs-sub);color:var(--red);font-family:'Courier New',monospace">-${fmt(expense)}</div></div>
-        <div><div style="font-size:var(--fs-micro);color:var(--text-dim)">${tr('village.net')}</div><div style="font-size:var(--fs-sub);color:${net >= 0 ? 'var(--green)' : 'var(--red)'};font-family:'Courier New',monospace">${net >= 0 ? '+' : ''}${fmt(net)}</div></div>
+        <div><div style="font-size:var(--fs-micro);color:var(--text-dim)">${tr('village.income')}</div><div style="font-size:var(--fs-sub);color:var(--green);font-family:var(--font-num)">+${fmt(income)}</div></div>
+        <div><div style="font-size:var(--fs-micro);color:var(--text-dim)">${tr('village.expenses')}</div><div style="font-size:var(--fs-sub);color:var(--red);font-family:var(--font-num)">-${fmt(expense)}</div></div>
+        <div><div style="font-size:var(--fs-micro);color:var(--text-dim)">${tr('village.net')}</div><div style="font-size:var(--fs-sub);color:${net >= 0 ? 'var(--green)' : 'var(--red)'};font-family:var(--font-num)">${net >= 0 ? '+' : ''}${fmt(net)}</div></div>
       </div>
       <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:7px">Village revenue ${fmt(vRev)} · Trade ${fmt(trI)} · Contracts ${fmt(coI)} · Salaries -${fmt(sal)} · Staff -${fmt(staffSal)}</div>
       <div style="margin-top:8px">${jump('economy', tr('village.economy'))} ${jump('finances', tr('panel.finances'))}</div>
@@ -67,7 +67,7 @@ export function rVi() {
 
     // Roster health
     card(tr('village.card.roster'), `
-      <div style="font-size:15px;color:var(--text-hi);font-family:'Courier New',monospace">${G.shinobi.length}</div>
+      <div style="font-size:15px;color:var(--text-hi);font-family:var(--font-num)">${G.shinobi.length}</div>
       <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px"><span style="color:var(--green)">${av} available</span> · <span style="color:var(--gold)">${onM} deployed</span>${inj ? ` · <span style="color:var(--red)">${inj} injured</span>` : ''}</div>
       ${idle > 0 ? `<div style="font-size:var(--fs-small);color:var(--orange);margin-top:4px">⚠ ${idle} idle — assign missions</div>` : '<div style="font-size:var(--fs-small);color:#5a6a5a;margin-top:4px">✓ Fully deployed</div>'}
       <div style="margin-top:8px">${jump('roster', tr('village.card.roster'))} ${jump('missions', tr('panel.missions'))}</div>
@@ -75,7 +75,7 @@ export function rVi() {
 
     // Morale
     card(tr('village.card.morale'), `
-      <div style="font-size:15px;color:${G.morale > 70 ? 'var(--green)' : G.morale > 40 ? 'var(--gold)' : 'var(--red)'};font-family:'Courier New',monospace">${G.morale}%</div>
+      <div style="font-size:15px;color:${G.morale > 70 ? 'var(--green)' : G.morale > 40 ? 'var(--gold)' : 'var(--red)'};font-family:var(--font-num)">${G.morale}%</div>
       <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">${G.morale > 70 ? 'High morale' : G.morale > 40 ? 'Steady' : 'Discontent brewing'}</div>
       <div style="font-size:var(--fs-micro);color:var(--text-faint);margin-top:4px">Reputation ${G.reputation} · ${G.squads.length} squads</div>
       ${bar(G.morale, G.morale > 70 ? 'var(--green)' : G.morale > 40 ? 'var(--gold)' : 'var(--red)')}
@@ -111,7 +111,7 @@ export function rVi() {
 
     // Vessel
     card(tr('village.card.beasts'), `
-      <div style="font-size:15px;color:var(--purple);font-family:'Courier New',monospace">${G.beasts.filter(b => b.sealed && b.jk).length}<span style="font-size:var(--fs-body);color:var(--text-faint)"> / ${G.beasts.filter(b => b.sealed).length} sealed</span></div>
+      <div style="font-size:15px;color:var(--purple);font-family:var(--font-num)">${G.beasts.filter(b => b.sealed && b.jk).length}<span style="font-size:var(--fs-body);color:var(--text-faint)"> / ${G.beasts.filter(b => b.sealed).length} sealed</span></div>
       <div style="font-size:var(--fs-small);color:var(--text-dim);margin-top:2px">${G.beasts.filter(b => b.sealed).length ? G.beasts.filter(b => b.sealed).map(b => b.n).join(', ') : 'None sealed'}</div>
       <div style="margin-top:8px">${jump('beasts', tr('nav.beastStatus'))}</div>
     `, 2)
