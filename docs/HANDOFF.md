@@ -1,6 +1,31 @@
 # Session Handoff — Hidden Village Manager
 
-**Last updated:** 2026-08-18 · **HEAD:** `ee74e5b` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 1360 passing / 103 files
+**Last updated:** 2026-08-18 · **HEAD:** `4be11d9` (committed + pushed, mirror ff'd) · **Branch:** `master` · **Tests:** 1360 passing / 103 files
+
+---
+
+> ## ▶ START HERE
+>
+> **The build is healthy and nothing is broken.** Tests green, all three clones in sync, installers freshly built. There is no fire to put out. *(The installer file is current; the copy already installed under `AppData` is not — see pinned item 3.)*
+>
+> **The highest-value next action is not a coding task: play the game for a full year.** Twelve systems have shipped unplayed. Everything below is polish on top of something nobody has confirmed is fun.
+>
+> If you are here to write code, the queue in priority order is:
+>
+> | # | Work | Size | Blocked on |
+> |---|---|---|---|
+> | 1 | **Localization backlog** — 130 strings | a session | nothing |
+> | 2 | **Visual overhaul** — `docs/VISUAL_OVERHAUL.md`, start with tokens + fonts, then Roster | weeks | nothing |
+> | 3 | `--text-faint` and elevation fixes | minutes | Tyler + partner |
+> | 4 | Non-code Steam gates (Direct fee, signing, store page, key art) | — | Tyler |
+>
+> **The three rules this codebase has paid for the hard way:**
+>
+> 1. **Green tests do not mean the code runs.** Five times in one session a suite passed while the feature did nothing. If you add something that reacts to a rare event, write the integration test that *forces* the event — `tests/depthCoverage.test.js` is the pattern.
+> 2. **Measure before you claim.** Every balance number in this doc came from a seeded harness, and several overturned confident guesses (including mine).
+> 3. **Verify in the browser, not just the suite.** The board-ordering bug, the missing squad-card tags and three runtime `ReferenceError`s were all invisible to a clean build and a green suite.
+>
+> **Doc map** — read `LOOP_ANALYSIS_2026-08-03.md` for why the game is shaped the way it is; `ELEMENTAL_NATIONS.md`, `MATCHDAY_AS_A_BET.md` and `VISUAL_OVERHAUL.md` for the three most recent design threads. The rest are historical.
 
 ---
 
