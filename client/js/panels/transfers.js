@@ -1,31 +1,82 @@
-import { G, sn, sPow, clamp, fmt, rnd, pk, pDesc, personalityJudge, genTransferPool, computeMarketValue } from '../state.js'
+import { G, ui, sn, sPow, clamp, fmt, rnd, pk, pDesc, personalityJudge, genTransferPool, computeMarketValue } from '../state.js'
 import { createPromise } from '../../../shared/utils/promises.js'
 import { adjustMinorRel } from '../../../shared/constants/minorNations.js'
 import { TRANSFER_CATS, TRANSFER_WINDOWS, BINGO_TIERS, RANKS, VILLAGES_DEF } from '../constants.js'
 import { aL, ntf, upUI } from '../ui.js'
-import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort } from '../uikit.js'
+import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort, tblSortRows, tblHeaderHtml, hvInspectorHeadHtml, hvKeyNav } from '../uikit.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { standingTier, adjustStanding, effectiveFeePercent } from '../../../shared/utils/agentRelations.js'
 
-// Market sort (P1 kit reuse — card grid, so a sort bar instead of table headers).
-const _TR_SORTS = [
-  { key: 'power', label: 'Power', val: p => sPow(p) },
-  { key: 'potential', label: 'Potential', val: p => p.potential || 0 },
-  { key: 'fee', label: 'Fee', val: p => p.askingFee || 0 },
-  { key: 'avail', label: 'Avail', val: p => p.monthsAvailable || 1 },
-]
+// ── Market as a table (VISUAL_OVERHAUL §3.3) — the pool is a comparison task ──
 const _TR_DEFAULT = { key: 'power', dir: 'desc' }
+const _FREE_CATS = ['free_agent', 'missing_nin', 'retired_return', 'foreign_specialist']
+const _band = v => v >= 80 ? 5 : v >= 65 ? 4 : v >= 50 ? 3 : v >= 35 ? 2 : 1
+const _attr = v => `<span class="hv-attr b${_band(v)}">${v}</span>`
+const _cellClass = c => c.align === 'right' ? 'num' : c.align === 'center' ? 'ctr' : ''
+const _cat = p => TRANSFER_CATS.find(c => c.id === p.transferCategory) || TRANSFER_CATS[0]
+function _trCols() {
+  return [
+    { key: 'name', label: 'Name', align: 'left', sortVal: p => p.fn + ' ' + p.ln,
+      render: p => `<div class="hv-cell-name">${p.fn} ${p.ln}</div><div class="hv-cell-sub">${RANKS[p.ri]} · ${p.clan || p.spec || '—'}${p.originVillage ? ' · ' + p.originVillage : ''}</div>` },
+    { key: 'cat', label: 'Type', align: 'left', sortVal: p => _cat(p).n,
+      render: p => { const c = _cat(p); return `<span style="color:${c.color};font-size:var(--fs-micro);white-space:nowrap" title="${c.desc}">${c.icon} ${c.n}</span>` } },
+    { key: 'age', label: 'Age', align: 'right', sortVal: p => p.age || 0, render: p => `<span style="color:var(--text-dim)">${p.age}</span>` },
+    { key: 'power', label: 'Pow', align: 'right', sortVal: p => sPow(p), render: p => _attr(sPow(p)) },
+    { key: 'potential', label: 'Pot', align: 'right', sortVal: p => p.potential || 0, render: p => _attr(p.potential || 0) },
+    { key: 'avail', label: 'Avail', align: 'right', sortVal: p => p.monthsAvailable || 1,
+      render: p => { const m = p.monthsAvailable || 1; return `<span style="color:${m <= 1 ? 'var(--red)' : 'var(--text-dim)'}">${m}mo</span>` } },
+    { key: 'value', label: 'Value', align: 'right', sortVal: p => computeMarketValue(p), render: p => `<span style="color:var(--text-dim)">${fmt(computeMarketValue(p))}</span>` },
+    { key: 'fee', label: 'Asking', align: 'right', sortVal: p => p.askingFee || 0,
+      render: p => `<span style="color:${G.ryo >= p.askingFee ? 'var(--gold)' : 'var(--red-soft)'};font-weight:600">${fmt(p.askingFee)}</span>` },
+    { key: 'delta', label: 'Δ', align: 'right', sortVal: p => computeMarketValue(p) - (p.askingFee || 0),
+      render: p => { const d = computeMarketValue(p) - (p.askingFee || 0); return `<span style="color:${d >= 0 ? 'var(--green)' : 'var(--orange)'}" title="${d >= 0 ? 'Bargain at asking price' : 'Asking above value'}">${d >= 0 ? '+' : ''}${fmt(d)}</span>` } },
+    { key: 'agent', label: '🤝', align: 'center', sortVal: p => p.agent ? 1 : 0,
+      render: p => p.agent ? `<span style="color:var(--purple)" title="${p.agent.name} · ${p.agent.feePercent}% fee">🤝</span>` : '' },
+  ]
+}
 
 export function trSort(key) { tblToggleSort('transfers', key, _TR_DEFAULT); rTr() }
+// Selection touches only the row highlight and the inspector.
+export function trSelect(id) {
+  ui.trSel = ui.trSel === id ? null : id
+  document.querySelectorAll('#trl .hv-table tbody tr').forEach(r => r.classList.toggle('sel', r.dataset.id === ui.trSel))
+  _renderTrInspector()
+}
+function _renderTrInspector() {
+  const el = document.getElementById('tr-inspector'); if (!el) return
+  const grid = el.closest('.hv-split')
+  const p = ui.trSel ? (G.transferMarket?.pool || []).find(x => x.id === ui.trSel) : null
+  if (!p) {
+    ui.trSel = null
+    grid?.classList.remove('has-sel')
+    el.innerHTML = `<div class="hv-inspector-hint">${t('transfers.inspect.hint')}</div>
+      <div class="hv-inspector-body">${TRANSFER_CATS.map(c => `<div style="display:flex;gap:8px;align-items:baseline;margin-bottom:6px;font-size:var(--fs-small)"><span style="color:${c.color};white-space:nowrap">${c.icon} ${c.n}</span><span style="color:var(--text-faint)">${c.desc}</span></div>`).join('')}</div>`
+    return
+  }
+  grid?.classList.add('has-sel')
+  const c = _cat(p)
+  el.innerHTML = hvInspectorHeadHtml({
+    name: `${p.fn} ${p.ln}`,
+    sub: `${RANKS[p.ri]} · ${p.clan || p.spec || '—'} · Age ${p.age} · <span style="color:${c.color}">${c.icon} ${c.n}</span>`,
+    actions: `<button class="gb" onclick="trSelect('${p.id}')" title="Close (Esc)" aria-label="Close">×</button>`,
+  }) + `<div class="hv-inspector-body">${marketCard(p, personalityJudge())}</div>`
+}
+hvKeyNav({
+  isActive: () => ui.CP === 'transfers' && (window._trTab || 'market') === 'market',
+  rows: '#trl .hv-table tbody tr[data-id]',
+  selected: () => ui.trSel,
+  select: id => { ui.trSel = null; trSelect(id) },
+  close: () => trSelect(ui.trSel),
+})
 
 export function trCtx(e, id) {
   e.preventDefault()
   const p = (G.transferMarket?.pool || []).find(x => x.id === id); if (!p) return false
   const isFree = ['free_agent', 'missing_nin', 'retired_return', 'foreign_specialist'].includes(p.transferCategory)
-  const items = isFree
+  const items = [{ label: 'Inspect', fn: () => window.trSelect && window.trSelect(id) }, { separator: true }, ...(isFree
     ? [{ label: 'Sign Direct…', fn: () => window.openPersonalTerms && window.openPersonalTerms(id) }]
     : [{ label: 'Open Negotiation…', fn: () => window.openNegotiation && window.openNegotiation(id) },
-       { label: 'Poach (risky)', danger: true, fn: () => window.poachAttempt && window.poachAttempt(id) }]
+       { label: 'Poach (risky)', danger: true, fn: () => window.poachAttempt && window.poachAttempt(id) }])]
   openContextMenu(e.clientX, e.clientY, items)
   return false
 }
@@ -55,6 +106,7 @@ export function rTr() {
   const judgeLevel = personalityJudge()
 
   const tabId = window._trTab || 'market'
+  const inspScroll = document.getElementById('tr-inspector')?.scrollTop || 0
 
   el.innerHTML = `
     <!-- Window status bar -->
@@ -77,9 +129,9 @@ export function rTr() {
     ${tm.deadlinePressure ? `<div style="background:#2e1500;border:1px solid #a64;border-radius:6px;padding:8px 14px;margin-bottom:14px;font-size:.78rem;color:var(--orange)">⏰ Deadline pressure — final stretch of the window. Prices have inflated 10–20% and rival villages are making panic signings.</div>` : ''}
 
     <!-- Tabs -->
-    <div style="display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap">
+    <div class="tabs" style="flex-wrap:wrap">
       ${[['market','🏪 Market',' ('+((tm.pool||[]).length)+')'],['sellpressure','📨 Approaches',' ('+(G.sellPressure||[]).length+')'],['loans','🔄 Loans',' ('+((tm.loanOut||[]).length + (tm.loanIn||[]).length)+')'],['bingo','📖 Bingo Book'],['agents','🤝 Agents',' ('+((G.agents||[]).length)+')'],['offers','📋 Offer History',' ('+(tm.offers||[]).length+')'],['history','📜 History',' ('+((tm.completedDeals||[]).length)+')']].map(([tid,tlabel,tbadge]) =>
-        `<button onclick="trTab('${tid}')" style="background:${tabId===tid?'var(--gold-bg)':'var(--sunken)'};border:1px solid ${tabId===tid?'var(--gold)':'var(--border)'};color:${tabId===tid?'var(--gold)':'var(--text-dim)'};border-radius:4px;padding:4px 10px;cursor:pointer;font-size:.78rem">${tlabel}${tbadge||''}</button>`
+        `<button class="tab${tabId===tid?' active':''}" onclick="trTab('${tid}')">${tlabel}${tbadge||''}</button>`
       ).join('')}
     </div>
 
@@ -91,6 +143,10 @@ export function rTr() {
     ${tabId === 'offers' ? renderOffers(tm) : ''}
     ${tabId === 'history' ? renderHistory(tm) : ''}
   `
+  if (tabId === 'market') {
+    _renderTrInspector()
+    const insp = document.getElementById('tr-inspector'); if (insp && inspScroll) insp.scrollTop = inspScroll
+  }
 }
 
 // R12: persistent agent roster — standing, deal count, agenda, current clients.
@@ -134,16 +190,24 @@ function renderMarket(tm, judgeLevel) {
   if (pool.length === 0) {
     return `<div style="color:var(--text-faint);text-align:center;padding:30px;font-size:.85rem">Window is open but pool is empty — try refreshing.</div>`
   }
+  const COLS = _trCols()
   const sort = tblSort('transfers', _TR_DEFAULT)
-  const sdef = _TR_SORTS.find(s => s.key === sort.key) || _TR_SORTS[0]
-  const sorted = [...pool].sort((a, b) => (sdef.val(a) - sdef.val(b)) * (sort.dir === 'asc' ? 1 : -1))
-  const sortBar = `<div style="display:flex;gap:5px;align-items:center;margin-bottom:10px;font-size:var(--fs-small);color:var(--text-faint)">
-    <span style="text-transform:uppercase;letter-spacing:1px">${t("transfers.sort")}</span>
-    ${_TR_SORTS.map(s => { const a = sort.key === s.key; return `<button class="tbl-colbtn"${a ? ' style="color:var(--accent);border-color:var(--accent-border)"' : ''} onclick="trSort('${s.key}')">${s.label}${a ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ''}</button>` }).join('')}
-    <span style="margin-left:auto;color:var(--text-faint)">right-click a card for actions</span>
-  </div>`
-  return sortBar + `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px">
-    ${sorted.map(p => marketCard(p, judgeLevel)).join('')}
+  const rows = tblSortRows(pool, sort, COLS)
+  const free = freeAgents.length, listed = windowOnly.length
+  return `<div class="hv-split">
+    <div>
+      <div class="ros-toolbar">
+        <div class="sect" style="margin:0">${rows.length} on the market <span style="color:var(--text-faint)">— ${free} free, ${listed} village-listed</span></div>
+        <span class="ros-legend">${t('transfers.sort')} by column · right-click for actions</span>
+      </div>
+      <table class="hv-table">
+        <thead><tr>${tblHeaderHtml(COLS, sort, 'trSort', { plain: true })}</tr></thead>
+        <tbody>${rows.map(p => `<tr data-id="${p.id}"${ui.trSel === p.id ? ' class="sel"' : ''} onclick="trSelect('${p.id}')" oncontextmenu="return trCtx(event,'${p.id}')" onmousemove="trHover(event,'${p.id}')" onmouseleave="hideHoverPreview()">
+          ${COLS.map(c => `<td class="${_cellClass(c)}">${c.render(p)}</td>`).join('')}
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+    <aside class="hv-inspector" id="tr-inspector" aria-label="Inspector"></aside>
   </div>`
 }
 
@@ -162,7 +226,7 @@ function marketCard(p, judgeLevel) {
 
   const marketVal = computeMarketValue(p)
   const valueDelta = marketVal - p.askingFee
-  return `<div style="background:var(--surface);border:1px solid ${catDef.color}33;border-radius:6px;padding:12px;border-top:2px solid ${catDef.color}" oncontextmenu="return trCtx(event,'${p.id}')">
+  return `<div style="border-top:2px solid ${catDef.color};padding-top:8px" oncontextmenu="return trCtx(event,'${p.id}')">
     <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:6px">
       <div onmousemove="trHover(event,'${p.id}')" onmouseleave="hideHoverPreview()">
         <div style="color:var(--gold-hi);font-weight:bold">${p.fn} ${p.ln}</div>

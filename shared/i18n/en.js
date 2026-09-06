@@ -200,6 +200,7 @@ export const en = {
   'roster.facet.mission': 'On mission',
   'roster.facet.injured': 'Injured',
   'roster.facet.exam': 'Exam',
+  'transfers.inspect.hint': 'Select a candidate to read their file and act — the market stays put.',
 
   // ── Squads (P2 tranche 7) ───────────────────────────────────────────────
   'squad.none': 'No squads.',

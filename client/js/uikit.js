@@ -120,6 +120,39 @@ export function tblToggleColumnManager(id) {
   if (el) el.classList.toggle('open')
 }
 
+// ── hv-inspector helpers (VISUAL_OVERHAUL §3.3) ────────────────────────────────
+/** The sticky head of an inspector: name, sub-line, then action buttons. */
+export function hvInspectorHeadHtml({ name, sub = '', actions = '' }) {
+  return `<div class="hv-inspector-head">
+    <div style="flex:1;min-width:0">
+      <div class="hv-inspector-name">${name}</div>
+      ${sub ? `<div class="hv-inspector-sub">${sub}</div>` : ''}
+    </div>
+    ${actions}
+  </div>`
+}
+/**
+ * Keyboard for a list + inspector panel: Esc closes, ↑/↓ walk the visible rows.
+ * Ignored while a field has focus or a modal is open. `rows` is a selector for
+ * the row elements, each carrying data-id.
+ */
+export function hvKeyNav({ isActive, rows, selected, select, close }) {
+  if (typeof document === 'undefined') return
+  document.addEventListener('keydown', e => {
+    if (!isActive() || document.querySelector('.ov.open')) return
+    const inField = /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName || '')
+    if (e.key === 'Escape' && selected()) { close(); return }
+    if (inField || (e.key !== 'ArrowDown' && e.key !== 'ArrowUp')) return
+    const list = [...document.querySelectorAll(rows)]; if (!list.length) return
+    const i = list.findIndex(x => x.dataset.id === selected())
+    const next = list[Math.max(0, Math.min(list.length - 1, i < 0 ? 0 : i + (e.key === 'ArrowDown' ? 1 : -1)))]
+    if (!next || next.dataset.id === selected()) return
+    e.preventDefault()
+    select(next.dataset.id)
+    next.scrollIntoView({ block: 'nearest' })
+  })
+}
+
 // ── Charts (P4) — dependency-free inline SVG ───────────────────────────────────
 /** Line + area chart with a zero baseline. values: number[]. */
 export function lineChartSvg(values, opts = {}) {

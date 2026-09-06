@@ -38,7 +38,7 @@ import { retainScout, dismissScout } from './scoutEngine.js'
 import { setDepthSlot, clearDepthSlot, emergencyCallUp, setPromotionRule, depCtx, depHover } from './panels/depthchart.js'
 import { rYA, yaSetTrack, yaSetIntensity, yaSetSensei, yaSetAllTrack, yaSetAllIntensity, yaKageTraining, yaTab, watchYouthCup } from './panels/youthacademy.js'
 import { rMeet, doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction, consultSeniorGroup } from './panels/meetings.js'
-import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms, confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide, sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter, trSort, trCtx, trHover } from './panels/transfers.js'
+import { rTr, trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms, confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide, sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter, trSort, trCtx, trHover, trSelect } from './panels/transfers.js'
 import { rLeg, legTab, designateSuccessor, resolveLegacyDecision, triggerDynastyHandoff, sellDraftPick } from './panels/legacy.js'
 import { rKageDev, spendKagePt, chooseKagePath } from './panels/kagedev.js'
 import { intelTab, launchAnbu, shadowScout, ransomAnbu, abandonAnbu, upgradeCounterIntel, intelCtx, runLeveragePlay } from './panels/intel.js'
@@ -185,7 +185,7 @@ Object.assign(window, {
   doMeeting, meetTab, resolveServiceAward, resolveReview, rumorAction, consultSeniorGroup,
   // transfer market
   trTab, refreshTransferPool, openNegotiation, submitOffer, negConfirm, openPersonalTerms,
-  trSort, trCtx, trHover,
+  trSort, trCtx, trHover, trSelect,
   confirmTransfer, poachAttempt, sellPressureBlock, sellPressureAccept, sellPressureLetDecide,
   sendLoan, recallLoan, bingoSuppress, bingoPromote, acceptCounter,
   // legacy + records

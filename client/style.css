@@ -1033,15 +1033,15 @@ body::after{
 .hv-filter-count{margin-left:auto;font-family:var(--font-num);font-size:var(--fs-small);color:var(--text-faint)}
 .hv-table td.hv-empty{text-align:center;padding:var(--sp-4)}
 
-/* Roster — the first converted panel. */
-.ros-grid{display:grid;grid-template-columns:minmax(0,1fr) var(--inspector-w);gap:var(--sp-3);align-items:start}
+/* Split — list beside inspector. .ros-grid is the roster's older name for it. */
+.hv-split,.ros-grid{display:grid;grid-template-columns:minmax(0,1fr) var(--inspector-w);gap:var(--sp-3);align-items:start}
 .ros-toolbar{display:flex;align-items:center;gap:var(--sp-2);margin-bottom:var(--sp-2);position:relative}
 .ros-legend{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:var(--fs-small);color:var(--text-faint)}
 .ros-assign{padding:var(--sp-3)}
 @keyframes hv-drawer-in{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
 @media (max-width:1359px){
-  .ros-grid{grid-template-columns:minmax(0,1fr)}
-  .ros-grid.has-sel .hv-inspector{
+  .hv-split,.ros-grid{grid-template-columns:minmax(0,1fr)}
+  .hv-split.has-sel .hv-inspector,.ros-grid.has-sel .hv-inspector{
     position:fixed;top:var(--topbar-h);right:0;bottom:var(--ticker-h);width:380px;max-width:92vw;max-height:none;
     z-index:40;box-shadow:-12px 0 32px rgba(0,0,0,.55);animation:hv-drawer-in 180ms var(--ease-out);
   }
