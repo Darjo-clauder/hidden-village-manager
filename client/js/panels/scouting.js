@@ -1,17 +1,18 @@
-import { G, pDesc, personalityJudge, fmt } from '../state.js'
+import { G, ui, pDesc, personalityJudge, fmt } from '../state.js'
 import { REGIONS, REGION_EVENTS } from '../constants.js'
 import { aL, ntf } from '../ui.js'
 import { conductTrialDay } from '../scoutEngine.js'
-import { openContextMenu, showHoverPreview, hideHoverPreview } from '../uikit.js'
+import { openContextMenu, showHoverPreview, hideHoverPreview, tblSort, tblToggleSort, tblSortRows, tblHeaderHtml, hvInspectorHeadHtml, hvKeyNav } from '../uikit.js'
 import { t } from '../../../shared/utils/i18n.js'
 import { buildDossier } from '../../../shared/utils/scoutDossier.js'
 import { MONTHS } from '../constants.js'
 
-// Transient UI: which prospect dossiers are expanded (not persisted).
+// Transient UI: which prospect dossiers are expanded (not persisted). The
+// inspector shows the selected prospect's dossier open regardless.
 const _dossierOpen = new Set()
 export function toggleScoutDossier(id) {
   if (_dossierOpen.has(id)) _dossierOpen.delete(id); else _dossierOpen.add(id)
-  rSco()
+  if (ui.scoSel === id) _renderScoInspector(); else rSco()
 }
 
 const TREND_META = {
@@ -57,6 +58,7 @@ export function scoutCtx(e, id) {
   const p = (G.prospects || []).find(x => x.id === id); if (!p) return false
   const watching = (G.scoutWatchlist || []).includes(id)
   openContextMenu(e.clientX, e.clientY, [
+    { label: 'Inspect', fn: () => window.scoSelect && window.scoSelect(id) },
     { label: watching ? 'Remove from Watchlist' : 'Add to Watchlist', fn: () => window.toggleWatchlist && window.toggleWatchlist(id) },
     ...(p.trialDayDone ? [] : [{ label: 'Trial Day (2,000 ryo)', fn: () => window.trialDay && window.trialDay(id) }]),
     { separator: true },
@@ -91,8 +93,8 @@ export function rSco() {
   const regionCoverage = {}
   REGIONS.forEach(r => { regionCoverage[r.id] = scouts.filter(s => s.regionAssigned === r.id) })
 
+  const inspScroll = document.getElementById('sco-inspector')?.scrollTop || 0
   el.innerHTML = `
-    <h2 style="color:var(--gold);margin:0 0 16px">🗺 Scouting Network</h2>
 
     <!-- Budget allocation -->
     <div class="surf" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:16px">
@@ -201,12 +203,8 @@ export function rSco() {
       </div>
     </div>
 
-    <!-- Watchlist -->
-    ${G.scoutWatchlist.length > 0 ? `
-    <h3 style="color:var(--text-mid);font-size:.85rem;margin:0 0 10px;text-transform:uppercase;letter-spacing:.08em">⭐ Watchlist (${G.scoutWatchlist.length})</h3>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:20px">
-      ${G.scoutWatchlist.map(id => G.prospects.find(p => p.id === id)).filter(Boolean).map(p => prospectCard(p, true)).join('')}
-    </div>` : ''}
+    <!-- Prospects — one table, facets instead of three card grids (VISUAL_OVERHAUL §3.3) -->
+    ${_prospectsHtml()}
 
     <!-- Scout Reports -->
     <h3 style="color:var(--text-mid);font-size:.85rem;margin:0 0 6px;text-transform:uppercase;letter-spacing:.08em">Recent Reports (${reports.length})</h3>
@@ -245,103 +243,115 @@ export function rSco() {
         </div>`
     }
 
-    <!-- Scout-sourced prospects in pool -->
-    ${(() => {
-      const scouted = G.prospects.filter(p => p.fromRegion)
-      if (!scouted.length) return ''
-      return `<h3 style="color:var(--text-mid);font-size:.85rem;margin:20px 0 10px;text-transform:uppercase;letter-spacing:.08em">Scout-Sourced Prospects (${scouted.length})</h3>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">
-          ${scouted.map(p => prospectCard(p, false)).join('')}
-        </div>`
-    })()}
-
-    <!-- Draft Board -->
-    ${_draftBoard()}
   `
+  _renderScoInspector()
+  const insp = document.getElementById('sco-inspector'); if (insp && inspScroll) insp.scrollTop = inspScroll
 }
 
-function _draftBoard() {
-  const all = (G.prospects || []).slice()
-  if (!all.length) return ''
-  const sortKey = window._draftSort || 'potential'
-  const sortDir = window._draftDir ?? -1
-
-  const sorted = all.slice().sort((a, b) => {
-    const va = sortKey === 'potential' ? (a.potential || 0)
-      : sortKey === 'age' ? (a.age || 0)
-      : sortKey === 'cost' ? (4000 + ((a.potential || 50) >= 85 ? 3 : (a.potential || 50) >= 70 ? 2 : 1) * 2500)
-      : sortKey === 'confidence' ? (a.scoutHistory?.length ? Math.max(...a.scoutHistory.map(r => r.confidence || 0)) : 0)
-      : 0
-    const vb = sortKey === 'potential' ? (b.potential || 0)
-      : sortKey === 'age' ? (b.age || 0)
-      : sortKey === 'cost' ? (4000 + ((b.potential || 50) >= 85 ? 3 : (b.potential || 50) >= 70 ? 2 : 1) * 2500)
-      : sortKey === 'confidence' ? (b.scoutHistory?.length ? Math.max(...b.scoutHistory.map(r => r.confidence || 0)) : 0)
-      : 0
-    return (va - vb) * sortDir
-  })
-
-  const cols = [
-    { key: 'name', label: 'Name', sortable: false },
-    { key: 'age', label: 'Age', sortable: true },
-    { key: 'potential', label: 'Potential', sortable: true },
-    { key: 'confidence', label: 'Confidence', sortable: true },
-    { key: 'cost', label: 'Cost', sortable: true },
-    { key: 'watch', label: '★', sortable: false },
+// ── Prospects table + inspector ─────────────────────────────────────────────
+const _SCO_DEFAULT = { key: 'potential', dir: 'desc' }
+const _FACETS = [['all', 'roster.facet.all'], ['watch', 'scouting.facet.watch'], ['scouted', 'scouting.facet.scouted'], ['urgent', 'scouting.facet.urgent']]
+const _band = v => v >= 80 ? 5 : v >= 65 ? 4 : v >= 50 ? 3 : v >= 35 ? 2 : 1
+const _cellClass = c => c.align === 'right' ? 'num' : c.align === 'center' ? 'ctr' : ''
+function _cost(p) {
+  const potTier = (p.potential || 50) >= 85 ? 3 : (p.potential || 50) >= 70 ? 2 : 1
+  return 4000 + potTier * 2500 + (p.urgencyMonths > 0 && p.urgencyMonths <= 2 ? 3000 : 0)
+}
+const _bestConf = p => p.scoutHistory?.length ? Math.max(...p.scoutHistory.map(r => r.confidence || 0)) : (p.scoutConfidence || 0)
+function _scoCols() {
+  return [
+    { key: 'name', label: 'Name', align: 'left', sortVal: p => p.fn + ' ' + p.ln,
+      render: p => { const urgent = p.urgencyMonths > 0 && p.urgencyMonths <= 2
+        return `<div class="hv-cell-name">${p.fn} ${p.ln}${urgent ? ` <span style="color:var(--red);font-size:var(--fs-micro)" title="Rival interest">⚠${p.urgencyMonths}m</span>` : ''}</div><div class="hv-cell-sub">${p.clan ? p.clan + ' · ' : ''}via ${p.scoutName || '?'}</div>` } },
+    { key: 'region', label: 'Region', align: 'left', sortVal: p => REGIONS.find(r => r.id === p.fromRegion)?.n || '',
+      render: p => { const r = REGIONS.find(x => x.id === p.fromRegion); return r ? `<span style="white-space:nowrap;color:var(--text-dim)">${r.icon} ${r.n}</span>` : '<span style="color:var(--text-faint)">—</span>' } },
+    { key: 'age', label: 'Age', align: 'right', sortVal: p => p.age || 0, render: p => `<span style="color:var(--text-dim)">${p.age || '?'}</span>` },
+    { key: 'potential', label: 'Pot', align: 'right', sortVal: p => p.potential || 0,
+      render: p => p.statRanges && !p.potRange?.exact
+        ? `<span class="hv-attr b${_band(p.potential || 50)}" title="Scouted range">${p.potRange?.lo ?? '?'}–${p.potRange?.hi ?? '?'}</span>`
+        : `<span class="hv-attr b${_band(p.potential || 0)}">${p.potential ?? '?'}</span>` },
+    { key: 'confidence', label: 'Conf', align: 'right', sortVal: _bestConf,
+      render: p => { const c = _bestConf(p); return c ? `<span style="color:${c >= 70 ? 'var(--green)' : c >= 50 ? 'var(--orange)' : 'var(--text-faint)'}">${c}%</span>` : '<span style="color:var(--text-faint)">—</span>' } },
+    { key: 'trend', label: 'Trend', align: 'center', sortVal: p => ({ rising: 3, steady: 2, volatile: 1, falling: 0 })[buildDossier(p, G.year, G.month)?.trend] ?? -1,
+      render: p => { const d = buildDossier(p, G.year, G.month); const tm = TREND_META[d?.trend] || TREND_META.single; return `<span style="color:${tm.color}" title="${tm.label}">${tm.icon}</span>` } },
+    { key: 'reports', label: 'Rpts', align: 'right', sortVal: p => (p.scoutHistory || []).length, render: p => `<span style="color:var(--text-dim)">${(p.scoutHistory || []).length || '—'}</span>` },
+    { key: 'cost', label: 'Cost', align: 'right', sortVal: _cost,
+      render: p => { const c = _cost(p); return `<span style="color:${(G.ryo || 0) >= c ? 'var(--gold)' : 'var(--red-soft)'}">${c.toLocaleString()}</span>` } },
+    { key: 'watch', label: '★', align: 'center', sortVal: p => (G.scoutWatchlist || []).includes(p.id) ? 1 : 0,
+      render: p => { const w = (G.scoutWatchlist || []).includes(p.id); return `<button class="hv-star${w ? ' on' : ''}" onclick="event.stopPropagation();toggleWatchlist('${p.id}')" title="${w ? 'Remove from' : 'Add to'} watchlist" aria-label="Watchlist">★</button>` } },
   ]
-
-  const thStyle = (k) => `cursor:pointer;padding:5px 8px;text-align:left;font-size:.72rem;color:${sortKey===k?'var(--gold)':'var(--text-dim)'};white-space:nowrap`
-
-  return `
-    <h3 style="color:var(--text-mid);font-size:.85rem;margin:24px 0 10px;text-transform:uppercase;letter-spacing:.08em">📋 Draft Board (${all.length})</h3>
-    <div style="font-size:.72rem;color:var(--text-faint);margin-bottom:8px">Click column headers to sort. All known prospects.</div>
-    <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:.78rem">
-        <thead>
-          <tr style="border-bottom:1px solid var(--border)">
-            ${cols.map(c => c.sortable
-              ? `<th onclick="draftSort('${c.key}')" style="${thStyle(c.key)}">${c.label} ${sortKey===c.key?(sortDir>0?'↑':'↓'):''}</th>`
-              : `<th style="padding:5px 8px;text-align:left;font-size:.72rem;color:var(--text-dim)">${c.label}</th>`
-            ).join('')}
-          </tr>
-        </thead>
-        <tbody>
-          ${sorted.map((p, i) => {
-            const potTier = (p.potential || 50) >= 85 ? 3 : (p.potential || 50) >= 70 ? 2 : 1
-            const cost = 4000 + potTier * 2500 + (p.urgencyMonths > 0 && p.urgencyMonths <= 2 ? 3000 : 0)
-            const bestConf = p.scoutHistory?.length ? Math.max(...p.scoutHistory.map(r => r.confidence || 0)) : 0
-            const confColor = bestConf >= 70 ? 'var(--green)' : bestConf >= 50 ? 'var(--orange)' : 'var(--text-faint)'
-            const potLabel = p.statRanges ? `${p.potRange?.lo ?? '?'}–${p.potRange?.hi ?? '?'}` : String(p.potential || '?')
-            const watching = (G.scoutWatchlist || []).includes(p.id)
-            const rowBg = i % 2 === 0 ? 'var(--sunken)' : '#161616'
-            const urgency = p.urgencyMonths > 0 && p.urgencyMonths <= 2
-            return `<tr style="background:${rowBg};border-bottom:1px solid var(--surface);${urgency?'border-left:2px solid var(--red);':''}">
-              <td style="padding:6px 8px;color:var(--gold-hi)">${p.fn} ${p.ln}${urgency ? ' <span style="color:var(--red);font-size:.68rem">⚠'+p.urgencyMonths+'m</span>' : ''}</td>
-              <td style="padding:6px 8px;color:var(--text-mid)">${p.age || '?'}</td>
-              <td style="padding:6px 8px;color:var(--gold);font-weight:bold">${potLabel}</td>
-              <td style="padding:6px 8px;color:${confColor}">${bestConf ? bestConf+'%' : '—'}</td>
-              <td style="padding:6px 8px;color:${(G.ryo||0)>=cost?'var(--green)':'var(--red)'}">${cost.toLocaleString()}</td>
-              <td style="padding:6px 8px"><button onclick="toggleWatchlist('${p.id}')" style="background:none;border:none;cursor:pointer;font-size:.9rem;color:${watching?'var(--gold)':'var(--border)'}">★</button></td>
-            </tr>`
-          }).join('')}
-        </tbody>
+}
+function _filteredProspects(COLS) {
+  const facet = ui.scoFacet || 'all'
+  const watch = new Set(G.scoutWatchlist || [])
+  const rows = (G.prospects || []).filter(p =>
+    facet === 'all' ? true
+    : facet === 'watch' ? watch.has(p.id)
+    : facet === 'scouted' ? !!p.fromRegion
+    : p.urgencyMonths > 0)
+  return tblSortRows(rows, tblSort('scouting', _SCO_DEFAULT), COLS)
+}
+function _prospectsHtml() {
+  const all = G.prospects || []
+  if (!all.length) return ''
+  const COLS = _scoCols()
+  const sort = tblSort('scouting', _SCO_DEFAULT)
+  const rows = _filteredProspects(COLS)
+  const facet = ui.scoFacet || 'all'
+  return `<div class="hv-split" style="margin-bottom:20px">
+    <div>
+      <div class="ros-toolbar">
+        <div class="sect" style="margin:0">📋 ${t('scouting.prospects')} <span style="color:var(--text-faint)">— ${rows.length} of ${all.length}</span></div>
+        <div class="hv-facets" style="margin-left:auto">${_FACETS.map(([id, key]) => `<button class="hv-chip${facet === id ? ' sel' : ''}" data-facet="${id}" onclick="scoFacet('${id}')">${t(key)}</button>`).join('')}</div>
+      </div>
+      <table class="hv-table">
+        <thead><tr>${tblHeaderHtml(COLS, sort, 'draftSort', { plain: true })}</tr></thead>
+        <tbody>${rows.length ? rows.map(p => `<tr data-id="${p.id}"${ui.scoSel === p.id ? ' class="sel"' : ''} onclick="scoSelect('${p.id}')" oncontextmenu="return scoutCtx(event,'${p.id}')" onmousemove="scoutHover(event,'${p.id}')" onmouseleave="hideHoverPreview()">
+          ${COLS.map(c => `<td class="${_cellClass(c)}">${c.render(p)}</td>`).join('')}
+        </tr>`).join('') : `<tr><td colspan="${COLS.length}" class="hv-empty">${t('scouting.facet.none')}</td></tr>`}</tbody>
       </table>
     </div>
-  `
+    <aside class="hv-inspector" id="sco-inspector" aria-label="Inspector"></aside>
+  </div>`
 }
-
-export function draftSort(key) {
-  if (window._draftSort === key) {
-    window._draftDir = (window._draftDir ?? -1) * -1
-  } else {
-    window._draftSort = key
-    window._draftDir = -1
+export function scoSelect(id) {
+  ui.scoSel = ui.scoSel === id ? null : id
+  document.querySelectorAll('#scol .hv-table tbody tr').forEach(r => r.classList.toggle('sel', r.dataset.id === ui.scoSel))
+  _renderScoInspector()
+}
+export function scoFacet(f) { ui.scoFacet = f; rSco() }
+function _renderScoInspector() {
+  const el = document.getElementById('sco-inspector'); if (!el) return
+  const grid = el.closest('.hv-split')
+  const p = ui.scoSel ? (G.prospects || []).find(x => x.id === ui.scoSel) : null
+  if (!p) {
+    ui.scoSel = null
+    grid?.classList.remove('has-sel')
+    el.innerHTML = `<div class="hv-inspector-hint">${t('scouting.inspect.hint')}</div>`
+    return
   }
-  rSco()
+  grid?.classList.add('has-sel')
+  const r = REGIONS.find(x => x.id === p.fromRegion)
+  const watching = (G.scoutWatchlist || []).includes(p.id)
+  el.innerHTML = hvInspectorHeadHtml({
+    name: `${p.fn} ${p.ln}`,
+    sub: `${r ? r.icon + ' ' + r.n : 'Unknown region'}${p.clan ? ' · ' + p.clan : ''}${p.age ? ' · Age ' + p.age : ''}`,
+    actions: `<button class="gb${watching ? ' sel' : ''}" onclick="toggleWatchlist('${p.id}')" title="${watching ? 'Remove from' : 'Add to'} watchlist">★</button><button class="gb" onclick="scoSelect('${p.id}')" title="Close (Esc)" aria-label="Close">×</button>`,
+  }) + `<div class="hv-inspector-body">${prospectCard(p, watching, true)}</div>`
 }
+hvKeyNav({
+  isActive: () => ui.CP === 'scouting',
+  rows: '#scol .hv-table tbody tr[data-id]',
+  selected: () => ui.scoSel,
+  select: id => { ui.scoSel = null; scoSelect(id) },
+  close: () => scoSelect(ui.scoSel),
+})
+
+export function draftSort(key) { tblToggleSort('scouting', key, _SCO_DEFAULT); rSco() }
 
 export function trialDay(prospectId) { conductTrialDay(prospectId); rSco() }
 
-function prospectCard(p, inWatchlist) {
+function prospectCard(p, inWatchlist, inInspector = false) {
   const regionObj = REGIONS.find(r => r.id === p.fromRegion)
   const urgency = p.urgencyMonths > 0
   const watching = (G.scoutWatchlist || []).includes(p.id)
@@ -349,7 +359,7 @@ function prospectCard(p, inWatchlist) {
   const persReady = p.personalityRevealed
   const history = p.scoutHistory || []
   const conflicts = p.conflictingRanges || []
-  return `<div style="background:var(--surface);border:1px solid ${urgency&&p.urgencyMonths<=2?'var(--red)':'var(--border)'};border-radius:6px;padding:10px;font-size:.8rem" oncontextmenu="return scoutCtx(event,'${p.id}')">
+  return `<div style="border-top:2px solid ${urgency&&p.urgencyMonths<=2?'var(--red)':'var(--border-hi)'};padding-top:8px;font-size:var(--fs-small)" oncontextmenu="return scoutCtx(event,'${p.id}')">
     ${urgency && p.urgencyMonths <= 2 ? `<div style="color:var(--red);font-size:.72rem;margin-bottom:4px">⚠ Rival interest! ${p.urgencyMonths}m left</div>` : ''}
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div style="color:var(--gold-hi);font-weight:bold;margin-bottom:4px" onmousemove="scoutHover(event,'${p.id}')" onmouseleave="hideHoverPreview()">${p.fn} ${p.ln}</div>
@@ -396,7 +406,7 @@ function prospectCard(p, inWatchlist) {
       ⚠ Conflicting reports: ${conflicts.map(c => c.scoutName + ' (' + c.confidence + '%)').join(', ')} disagree with the primary read.
     </div>` : ''}
     ${history.length ? (() => {
-      const open = _dossierOpen.has(p.id)
+      const open = inInspector || _dossierOpen.has(p.id)
       return `<div style="font-size:.68rem;color:#8ab;margin-top:4px;cursor:pointer" onclick="toggleScoutDossier('${p.id}')">📋 ${history.length} report${history.length > 1 ? 's' : ''} · Dossier ${open ? '▾' : '▸'}</div>
         ${open ? _dossierHtml(p) : ''}`
     })() : ''}

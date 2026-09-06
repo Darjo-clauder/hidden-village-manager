@@ -201,6 +201,12 @@ export const en = {
   'roster.facet.injured': 'Injured',
   'roster.facet.exam': 'Exam',
   'transfers.inspect.hint': 'Select a candidate to read their file and act — the market stays put.',
+  'scouting.prospects': 'Prospects',
+  'scouting.inspect.hint': 'Select a prospect to read every report on them and act — the board stays put.',
+  'scouting.facet.watch': 'Watchlist',
+  'scouting.facet.scouted': 'Scout-sourced',
+  'scouting.facet.urgent': 'Rival interest',
+  'scouting.facet.none': 'No prospects match.',
 
   // ── Squads (P2 tranche 7) ───────────────────────────────────────────────
   'squad.none': 'No squads.',

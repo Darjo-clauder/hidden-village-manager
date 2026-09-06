@@ -1032,6 +1032,9 @@ body::after{
 .hv-chip.sel{color:var(--accent);border-color:var(--accent);background:var(--accent-bg)}
 .hv-filter-count{margin-left:auto;font-family:var(--font-num);font-size:var(--fs-small);color:var(--text-faint)}
 .hv-table td.hv-empty{text-align:center;padding:var(--sp-4)}
+.hv-star{background:none;border:none;cursor:pointer;font-size:var(--fs-lead);line-height:1;color:var(--border-hi);padding:0 4px;transition:color var(--t-fast) var(--ease-out)}
+.hv-star:hover{color:var(--text-dim)}
+.hv-star.on{color:var(--gold)}
 
 /* Split — list beside inspector. .ros-grid is the roster's older name for it. */
 .hv-split,.ros-grid{display:grid;grid-template-columns:minmax(0,1fr) var(--inspector-w);gap:var(--sp-3);align-items:start}
